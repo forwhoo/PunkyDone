@@ -3,7 +3,8 @@ import { Layout } from './components/Layout';
 import { TopCharts } from './components/TopCharts';
 import { HeroCarousel } from './components/HeroCarousel';
 import { RankingWidget } from './components/RankingWidget';
-import { AIChartWidget } from './components/AIChartWidget';
+// Removed legacy AIChartWidget
+import { AISpotlight } from './components/AISpotlight';
 import { WrappedModal } from './components/WrappedModal';
 import { rankingMockData } from './mockData';
 import { ChevronRight, Play, Music, BarChart2, Mic2, Disc, Trophy} from 'lucide-react';
@@ -412,7 +413,7 @@ function App() {
                 color="#BF5AF2"
              />
              <div className="md:col-span-2 lg:col-span-3">
-                 <AIChartWidget />
+                 <AISpotlight genres={["Pop", "HipHop", "Rock"]} />
              </div>
         </div>
 
