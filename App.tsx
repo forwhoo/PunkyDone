@@ -34,8 +34,8 @@ const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
                 <img src={album.cover} alt={album.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
-                     <span className="text-white font-bold text-2xl drop-shadow-md">{album.totalListens}m</span>
-                     <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Listened</span>
+                     <span className="text-white font-bold text-2xl drop-shadow-md">{album.totalListens}</span>
+                     <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Plays</span>
                 </div>
             </div>
             <div className="mt-3 relative z-20">
@@ -92,7 +92,7 @@ const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
                 <div className="flex items-center gap-2 mt-1">
                    <p className="text-[10px] text-[#FA2D48] font-medium uppercase tracking-wide">{song.listens} Plays</p>
                    <span className="text-[10px] text-white/40">•</span>
-                   <p className="text-[10px] text-white/60">{song.duration}m</p>
+                   <p className="text-[10px] text-white/60">{song.duration}</p>
                 </div>
             </div>
         </div>
@@ -112,12 +112,6 @@ function App() {
 
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
-
-  // --- Real-time Tracking State ---
-  const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
-  const [sessionTrack, setSessionTrack] = useState<any>(null);
-  const [listenedMs, setListenedMs] = useState<number>(0);
-  const [lastCheckTime, setLastCheckTime] = useState<number>(Date.now());
 
   // Function to refresh DB view
   const refreshDbStats = async () => {
@@ -150,84 +144,31 @@ function App() {
      };
   }, []);
 
-  // Sync Data to Supabase when data is loaded (still needed to push data)
+  // Sync Data to Supabase when data is loaded
   useEffect(() => {
       const syncAndFetchStats = async () => {
         if (data && data.recentRaw) {
-             // We still sync recent plays as a BACKUP for missed polls
-             // But our realtime tracker is the primary source for "skips"
-             // await syncRecentPlays(data.recentRaw); 
+             // Use syncRecentPlays as the source of truth
+             await syncRecentPlays(data.recentRaw); 
              
              // Initial fetch
-             refreshDbStats();
+             if (!dbStats) refreshDbStats();
         }
       };
-      // Only run initial fetch on mount or major data change, not every poll
-      if (!dbStats) syncAndFetchStats();
+      syncAndFetchStats();
   }, [data]);
 
 
-  // Polling Effect - Refresh every 1.5 seconds
+  // Polling Effect - Refresh every 10 seconds (as requested by user)
   useEffect(() => {
     if (!token) return;
 
     const loadData = async () => {
-        const now = Date.now();
         const spotifyData = await fetchSpotifyData(token);
         
         if (spotifyData) {
             setData(spotifyData);
-            
-            // --- Custom Tracking Logic ---
-            const { playbackState } = spotifyData;
-            
-            // Calculate time passed since last check
-            const delta = now - lastCheckTime;
-            setLastCheckTime(now);
-
-            // Cap delta to avoid huge jumps if tab was suspended (max 10 seconds per poll of 1.5s)
-            const validDelta = Math.min(delta, 10000);
-
-            // If playing, accumulate time
-            if (playbackState.is_playing && playbackState.item) {
-                 // Check if track changed
-                 if (playbackState.item.id !== currentTrackId) {
-                     // It's a new song!
-                     // 1. Log the PREVIOUS song if it existed
-                     // Log if > 3s listened
-                     if (currentTrackId && sessionTrack && listenedMs > 3000) { 
-                         // Ensure we don't log more than the song's actual duration
-                         const finalMs = Math.min(listenedMs, sessionTrack.duration_ms || Infinity);
-                         // console.log("Track changed. Logging:", sessionTrack.name, finalMs);
-                         await logSinglePlay(sessionTrack, finalMs, { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
-                     }
-
-                     // 2. Reset for NEW song
-                     setCurrentTrackId(playbackState.item.id);
-                     setSessionTrack(playbackState.item);
-                     setListenedMs(0); 
-                 } else {
-                     // Same song, just playing. Add delta to listenedMs
-                     setListenedMs(prev => {
-                         // Don't exceed track duration
-                         const maxDuration = playbackState.item.duration_ms || Infinity;
-                         return Math.min(prev + validDelta, maxDuration);
-                     });
-                 }
-            } else {
-                // Not playing (paused or stopped)
-                if (!playbackState.item && currentTrackId && sessionTrack) {
-                    // Player stopped/closed
-                     if (listenedMs > 3000) {
-                         const finalMs = Math.min(listenedMs, sessionTrack.duration_ms || Infinity);
-                         await logSinglePlay(sessionTrack, finalMs, { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
-                     }
-                     setCurrentTrackId(null);
-                     setSessionTrack(null);
-                     setListenedMs(0);
-                }
-            }
-
+            // syncRecentPlays is called in the useEffect above when data changes
         } else {
              if (!data) setLoading(false);
         }
@@ -235,22 +176,14 @@ function App() {
 
     // Initial load
     setLoading(true);
-    setLastCheckTime(Date.now()); // Init time
     loadData().then(() => setLoading(false));
 
-
-    // Set interval for 1.5s usually, but since user requested "make it update every 10 seconds" for the chart/dashboard:
-    // We can keep the poll fast (for tracking state) but maybe refresh dashboard less often?
-    // Actually, user said "make it update every 10 seconds" referring to the LIST.
-    // The previous 1.5s was for *Now Playing*. We will keep 1.5s for poll, but refresh DB stats every 10s.
-    
-    // Polling for Spotify Data (Fast - 1.5s)
+    // Polling for Spotify Data & Recently Played (10s)
     const spotifyInterval = setInterval(() => {
         loadData();
-    }, 1500);
+    }, 10000);
 
-    // Polling for Dashboard/DB Data (Medium - 10s)
-    // This ensures ranking updates even if no "Realtime" event fires (e.g. other devices playing)
+    // Also refresh DB stats regularly to keep UI in sync with potential remote changes
     const dbInterval = setInterval(() => {
         if (token) refreshDbStats();
     }, 10000);
@@ -259,7 +192,7 @@ function App() {
         clearInterval(spotifyInterval);
         clearInterval(dbInterval);
     };
-  }, [token, currentTrackId, sessionTrack]); // Add dependencies for tracking state
+  }, [token]);
 
   useEffect(() => {
     const handleAuth = async () => {
@@ -452,10 +385,10 @@ function App() {
         <div className="mb-8">
             <TopCharts 
                 title="Listening Trends"
-                artists={data.artists}
-                songs={data.songs}
-                albums={data.albums}
-                hourlyActivity={data.hourly}
+                artists={dbUnifiedData?.artists || data.artists}
+                songs={dbUnifiedData?.songs || data.songs}
+                albums={dbUnifiedData?.albums || data.albums}
+                hourlyActivity={dbUnifiedData?.hourlyActivity || data.hourly}
             />
         </div>
     </Layout>

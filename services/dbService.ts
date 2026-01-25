@@ -14,8 +14,8 @@ export interface HistoryItem {
 }
 
 export const logSinglePlay = async (track: any, listenedMs: number, extraData: any = {}) => {
-    // Log if at least 3 seconds
-    if (!track || listenedMs < 3000) return;
+    // Log if at least 30 seconds (Spotify standard)
+    if (!track || listenedMs < 30000) return;
 
     // Cap duration
     const duration = track.duration_ms ? Math.min(listenedMs, track.duration_ms) : listenedMs;

@@ -163,8 +163,8 @@ const mapArtists = (items: any[]): Artist[] => {
     id: item.id,
     name: item.name,
     image: item.images[0]?.url || '',
-    totalListens: (10 - index) * 1000000 + Math.floor(Math.random() * 500000), // Spotify doesn't give play counts, so we simulate relative popularity based on rank
-    trend: Math.floor(Math.random() * 20) - 5
+    totalListens: 0, // Will be populated by DB stats
+    trend: 0
   }));
 };
 
@@ -176,8 +176,8 @@ const mapSongs = (items: any[]): Song[] => {
     album: item.album.name,
     cover: item.album.images[0]?.url || '',
     duration: msToTime(item.duration_ms),
-    listens: Math.floor(Math.random() * 5000000) + 1000000, // Simulate counts
-    dailyChange: Math.floor(Math.random() * 5000)
+    listens: 0, // Will be populated by DB stats
+    dailyChange: 0
   }));
 };
 
