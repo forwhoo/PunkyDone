@@ -13,6 +13,16 @@ interface TopChartsProps {
   hourlyActivity?: any[];
 }
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+         // Hidden because we use side widget
+         <div className="custom-tooltip"></div>
+      );
+    }
+    return null;
+};
+
 export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs = [], albums = [], hourlyActivity = [] }) => {
   const [viewMode, setViewMode] = useState<'Chart' | 'List'>('List');
   const [activeTab, setActiveTab] = useState<'Songs' | 'Albums' | 'Artists'>('Artists');

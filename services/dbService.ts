@@ -9,13 +9,15 @@ export interface HistoryItem {
   album_name: string;
   album_cover: string;
   duration_ms: number;
+  user_timezone?: string;
+  popularity?: number; // Requires extra fetch usually, but we can store if we had it
 }
 
-export const logSinglePlay = async (track: any, listenedMs: number) => {
-    if (!track || listenedMs < 3000) return; // Ignore plays less than 3 seconds (was 5)
+export const logSinglePlay = async (track: any, listenedMs: number, extraData: any = {}) => {
+    // Log if at least 3 seconds
+    if (!track || listenedMs < 3000) return;
 
-    // Ensure we don't log crazy duration (cap at track length + small buffer, or just track length)
-    // If track.duration_ms is available, use it to cap.
+    // Cap duration
     const duration = track.duration_ms ? Math.min(listenedMs, track.duration_ms) : listenedMs;
 
     const historyItem: HistoryItem = {
@@ -25,7 +27,8 @@ export const logSinglePlay = async (track: any, listenedMs: number) => {
         artist_name: track.artists[0].name,
         album_name: track.album.name,
         album_cover: track.album.images[0]?.url || '',
-        duration_ms: listenedMs // Recording ACTUAL time listened, not track length
+        duration_ms: listenedMs,
+        user_timezone: extraData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
     };
 
     const { error } = await supabase
@@ -140,19 +143,20 @@ export const fetchListeningStats = async () => {
 
 export const fetchDashboardStats = async () => {
     // 1. Top Artists (count by artist_name)
-    const { data: artistsData, error: artistsError } = await supabase
+    const { data: artistsData } = await supabase
        .from('listening_history')
-       .select('artist_name')
+       .select('artist_name, duration_ms');
     
-    // Client-side aggregation for Top Artists
-    const artistCounts: Record<string, number> = {};
+    const artistCounts: Record<string, { count: number, time: number }> = {};
     const artistImages: Record<string, string> = {}; // Helper to find an image
 
     artistsData?.forEach((item: any) => {
-        artistCounts[item.artist_name] = (artistCounts[item.artist_name] || 0) + 1;
+        if (!artistCounts[item.artist_name]) artistCounts[item.artist_name] = { count: 0, time: 0 };
+        artistCounts[item.artist_name].count += 1;
+        artistCounts[item.artist_name].time += item.duration_ms;
     });
 
-    // Also scan albums to find matching images for artists (Hack since we don't have artist_image)
+    // Also scan albums to find matching images for artists
     const { data: albumCovers } = await supabase.from('listening_history').select('artist_name, album_cover');
     albumCovers?.forEach((item:any) => {
         if (!artistImages[item.artist_name] && item.album_cover) {
@@ -160,34 +164,35 @@ export const fetchDashboardStats = async () => {
         }
     });
     
-    // Sort and map
     const topArtists = Object.entries(artistCounts)
-        .sort(([, a], [, b]) => b - a)
+        .sort(([, a], [, b]) => b.time - a.time) // Sort by TIME listened, not just adds
         .slice(0, 10)
-        .map(([name, count], index) => ({
+        .map(([name, info], index) => ({
             id: `artist-${index}`,
             name,
-            image: artistImages[name] || '', // Use found album cover as artist image proxy
-            totalListens: count,
+            image: artistImages[name] || '', 
+            totalListens: info.count,
+            timeStr: `${Math.floor(info.time / 60000)}m`,
             trend: 0
         }));
 
-    // 2. Top Songs (count by track_name)
-    const { data: songsData, error: songsError } = await supabase
+    // 2. Top Songs
+    const { data: songsData } = await supabase
         .from('listening_history')
         .select('track_name, artist_name, album_cover, duration_ms');
         
-    const songCounts: Record<string, { count: number, artist: string, cover: string, duration: number }> = {};
+    const songCounts: Record<string, { count: number, artist: string, cover: string, duration: number, totalTime: number }> = {};
     songsData?.forEach((item: any) => {
-        const key = item.track_name; // unique by name for now
+        const key = item.track_name; 
         if (!songCounts[key]) {
-            songCounts[key] = { count: 0, artist: item.artist_name, cover: item.album_cover, duration: item.duration_ms };
+            songCounts[key] = { count: 0, artist: item.artist_name, cover: item.album_cover, duration: item.duration_ms, totalTime: 0 };
         }
         songCounts[key].count++;
+        songCounts[key].totalTime += item.duration_ms;
     });
 
     const topSongs = Object.entries(songCounts)
-        .sort(([, a], [, b]) => b.count - a.count)
+        .sort(([, a], [, b]) => b.totalTime - a.totalTime)
         .slice(0, 20)
         .map(([title, info], index) => ({
             id: `song-${index}`,
@@ -195,12 +200,12 @@ export const fetchDashboardStats = async () => {
             artist: info.artist,
             album: '', 
             cover: info.cover,
-            duration: msToTime(info.duration),
+            duration: msToTime(info.duration), // Track length
             listens: info.count,
-            dailyChange: 0
+            timeStr: `${Math.floor(info.totalTime / 60000)}m`
         }));
 
-    // 3. Top Albums (sum duration or count)
+    // 3. Top Albums
     const { data: albumsData } = await supabase
         .from('listening_history')
         .select('album_name, artist_name, album_cover, duration_ms');
@@ -216,7 +221,7 @@ export const fetchDashboardStats = async () => {
     });
 
     const topAlbums = Object.entries(albumStats)
-        .sort(([, a], [, b]) => b.duration - a.duration) // Sort by duration listened
+        .sort(([, a], [, b]) => b.duration - a.duration)
         .slice(0, 10)
         .map(([title, info], index) => ({
             id: `album-${index}`,
@@ -224,8 +229,72 @@ export const fetchDashboardStats = async () => {
             artist: info.artist,
             cover: info.cover,
             year: 2024,
-            totalListens: Math.floor(info.duration / 60000) // Storing Minutes here instead of plays
+            totalListens: info.count,
+            timeStr: `${Math.floor(info.duration / 60000)}m`
         }));
+    
+    // 4. Hourly Activity Graph (Today)
+    const today = new Date().toISOString().split('T')[0];
+    const { data: todayData } = await supabase
+        .from('listening_history')
+        .select('*') // Get everything to do aggregation
+        .gte('played_at', `${today}T00:00:00.000Z`)
+        .order('played_at', { ascending: true });
+    
+    // Bucket by hour (00 to 23)
+    // We must use LOCAL time logic if possible, but 'today' string above is UTC based in ISO.
+    // For simplicity, we assume browser/local time for display.
+    const hourlyMap: Record<number, { min: number, topSong: string, topSongCover: string, topSongArtist: string }> = {};
+    for (let i=0; i<24; i++) hourlyMap[i] = { min: 0, topSong: '', topSongCover: '', topSongArtist: '' };
+
+    if (todayData) {
+        // Find most played song PER hour
+        const hourSongs: Record<number, Record<string, any>> = {}; // hour -> songName -> {count, ...obj}
+        
+        todayData.forEach((item: any) => {
+            const date = new Date(item.played_at);
+            const hour = date.getHours(); // Local browser time
+            
+            hourlyMap[hour].min += (item.duration_ms / 60000);
+            
+            // Track song occurrence in this hour
+            if (!hourSongs[hour]) hourSongs[hour] = {};
+            if (!hourSongs[hour][item.track_name]) {
+                hourSongs[hour][item.track_name] = { count: 0, ...item };
+            }
+            hourSongs[hour][item.track_name].count++;
+        });
+
+        // Determine top song for each hour
+        Object.keys(hourSongs).forEach((h) => {
+            const hour = parseInt(h);
+            const songsInHour = Object.values(hourSongs[hour]);
+            if (songsInHour.length > 0) {
+                 // Sort by count
+                 songsInHour.sort((a: any, b: any) => b.count - a.count);
+                 const best = songsInHour[0];
+                 hourlyMap[hour].topSong = best.track_name;
+                 hourlyMap[hour].topSongCover = best.album_cover;
+                 hourlyMap[hour].topSongArtist = best.artist_name;
+            }
+        });
+    }
+
+    const hourlyActivity = Object.entries(hourlyMap).map(([hour, data]) => ({
+        time: `${hour}:00`,
+        value: Math.round(data.min), // Minutes
+        song: data.topSong,
+        artist: data.topSongArtist,
+        cover: data.topSongCover
+    }));
+
+    return {
+        artists: topArtists,
+        songs: topSongs,
+        albums: topAlbums,
+        hourlyActivity
+    };
+};
 
     return {
         artists: topArtists,

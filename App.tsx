@@ -199,7 +199,7 @@ function App() {
                          // Ensure we don't log more than the song's actual duration
                          const finalMs = Math.min(listenedMs, sessionTrack.duration_ms || Infinity);
                          // console.log("Track changed. Logging:", sessionTrack.name, finalMs);
-                         await logSinglePlay(sessionTrack, finalMs);
+                         await logSinglePlay(sessionTrack, finalMs, { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
                      }
 
                      // 2. Reset for NEW song
@@ -220,7 +220,7 @@ function App() {
                     // Player stopped/closed
                      if (listenedMs > 3000) {
                          const finalMs = Math.min(listenedMs, sessionTrack.duration_ms || Infinity);
-                         await logSinglePlay(sessionTrack, finalMs);
+                         await logSinglePlay(sessionTrack, finalMs, { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
                      }
                      setCurrentTrackId(null);
                      setSessionTrack(null);
