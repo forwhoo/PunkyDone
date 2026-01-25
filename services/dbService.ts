@@ -98,6 +98,17 @@ export const fetchListeningStats = async () => {
   
   // Calculate trend
   const hoursDiff = currentHours - (lastHours || 0);
+  const trendString = hoursDiff >= 0 ? `+${hoursDiff}h vs last week` : `${hoursDiff}h vs last week`;
+
+  // Get total tracks count for "New Discoveries" proxy or just total db count
+  const { count } = await supabase.from('listening_history').select('*', { count: 'exact', head: true });
+
+  return {
+    weeklyTime: `${currentHours}h ${currentMins}m`,
+    weeklyTrend: trendString,
+    totalTracks: count || 0
+  };
+};
 
 export const fetchDashboardStats = async () => {
     // 1. Top Artists (count by artist_name)
