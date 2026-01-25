@@ -210,6 +210,25 @@ function App() {
       );
   }
 
+// Set dynamic favicon (user wanted random album cover)
+  useEffect(() => {
+     if (data && data.albums && data.albums.length > 0) {
+         // Pick random album
+         const randomAlbum = data.albums[Math.floor(Math.random() * data.albums.length)];
+         // Find or create favicon link
+         let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+         if (!link) {
+             link = document.createElement('link');
+             link.rel = 'icon';
+             document.head.appendChild(link);
+         }
+         
+         if (randomAlbum.cover) {
+             link.href = randomAlbum.cover;
+         }
+     }
+  }, [data]);
+
   if (loading || !data) {
       return (
           <Layout user={null} currentTrack={null}>

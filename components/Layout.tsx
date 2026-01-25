@@ -24,7 +24,7 @@ const Navbar = ({ user, currentTrack }: { user: any, currentTrack: any }) => (
     </div>
 
     {/* Center - Now Playing / Previous */}
-    {currentTrack && (
+    {currentTrack ? (
         <div className="hidden lg:flex items-center gap-4 absolute left-1/2 -translate-x-1/2">
             <button className="flex items-center gap-2 text-[#8E8E93] hover:text-white transition-colors group">
                 <SkipBack className="w-4 h-4" />
@@ -33,9 +33,15 @@ const Navbar = ({ user, currentTrack }: { user: any, currentTrack: any }) => (
             <div className="flex items-center gap-3 bg-[#1C1C1E] border border-white/10 rounded-full py-1 pl-1 pr-4">
                  <img src={currentTrack.cover} className="w-8 h-8 rounded-full border border-white/10 animate-[spin_10s_linear_infinite]" />
                  <div className="flex flex-col">
-                     <span className="text-[10px] font-bold text-white uppercase tracking-wider leading-none">{currentTrack.title}</span>
+                     <span className="text-[10px] font-bold text-white uppercase tracking-wider leading-none truncate max-w-[120px]">{currentTrack.title}</span>
                      <span className="text-[9px] font-medium text-[#FA2D48] leading-none mt-0.5">Now Listening</span>
                  </div>
+            </div>
+        </div>
+    ) : (
+        <div className="hidden lg:flex items-center gap-4 absolute left-1/2 -translate-x-1/2 opacity-50">
+            <div className="flex items-center gap-2 text-[#8E8E93]">
+                 <span className="text-xs font-medium uppercase tracking-wide">Not Playing</span>
             </div>
         </div>
     )}

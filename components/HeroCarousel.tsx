@@ -79,6 +79,8 @@ interface HeroCarouselProps {
   insight: string | null;
   loadingInsight: boolean;
   onGenerateInsight: (query?: string) => void;
+  topArtistImage?: string;
+  topAlbumImage?: string;
 }
 
 const SUGGESTIONS = [
@@ -88,7 +90,7 @@ const SUGGESTIONS = [
     { label: "Workout energy check", icon: Clock, color: "from-emerald-500 to-teal-500" },
 ];
 
-export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight }: HeroCarouselProps) => {
+export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topArtistImage, topAlbumImage }: HeroCarouselProps) => {
   const [showInput, setShowInput] = useState(false);
   const [inputValue, setInputValue] = useState('');
   
@@ -192,8 +194,11 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight }: Her
             meta="45% of total plays"
             gradientClass="bg-gradient-to-tl from-emerald-500/80 via-teal-500/50 to-transparent mix-blend-overlay"
             icon={Music}
-            image={topArtistImage}
-        />
+        >
+            {topArtistImage && (
+                 <div className="absolute right-0 bottom-0 w-32 h-32 opacity-20 -mr-4 -mb-4 rotate-12 bg-cover bg-center rounded-full blur-[1px]" style={{ backgroundImage: `url(${topArtistImage})` }}></div>
+            )}
+        </HeroCard>
         
         {/* CARD 4: NEW DISCOVERIES */}
         <HeroCard 
@@ -202,8 +207,11 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight }: Her
             meta="Added to library"
             gradientClass="bg-gradient-to-br from-purple-500/80 via-indigo-500/50 to-transparent mix-blend-overlay"
             icon={Headphones}
-            image={topAlbumImage}
-        />
+        >
+             {topAlbumImage && (
+                 <div className="absolute right-0 bottom-0 w-full h-full opacity-10 bg-cover bg-center rounded-2xl" style={{ backgroundImage: `url(${topAlbumImage})` }}></div>
+            )}
+        </HeroCard>
 
       </div>
     </div>

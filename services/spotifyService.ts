@@ -92,11 +92,12 @@ export const fetchSpotifyData = async (token: string) => {
   const headers = { Authorization: `Bearer ${token}` };
 
   try {
-    const [artistsRes, tracksRes, recentRes, userRes] = await Promise.all([
+    const [artistsRes, tracksRes, recentRes, userRes, nowPlayingRes] = await Promise.all([
       fetch('https://api.spotify.com/v1/me/top/artists?limit=10&time_range=short_term', { headers }),
       fetch('https://api.spotify.com/v1/me/top/tracks?limit=20&time_range=short_term', { headers }),
       fetch('https://api.spotify.com/v1/me/player/recently-played?limit=50', { headers }),
-      fetch('https://api.spotify.com/v1/me', { headers })
+      fetch('https://api.spotify.com/v1/me', { headers }),
+      fetch('https://api.spotify.com/v1/me/player/currently-playing', { headers })
     ]);
 
     if (!artistsRes.ok || !tracksRes.ok || !recentRes.ok || !userRes.ok) {
@@ -107,6 +108,27 @@ export const fetchSpotifyData = async (token: string) => {
     const tracksData = await tracksRes.json();
     const recentData = await recentRes.json();
     const userData = await userRes.json();
+    
+    // Check Now Playing
+    let currentTrack = null;
+    if (nowPlayingRes.status === 200) {
+        const nowPlayingData = await nowPlayingRes.json();
+        if (nowPlayingData.item) {
+             currentTrack = {
+                 title: nowPlayingData.item.name,
+                 artist: nowPlayingData.item.artists[0].name,
+                 cover: nowPlayingData.item.album.images[0]?.url || '',
+             };
+        }
+    } 
+    // Fallback to recent if not playing
+    if (!currentTrack && recentData.items[0]) {
+         currentTrack = {
+          title: recentData.items[0].track.name,
+          artist: recentData.items[0].track.artists[0].name,
+          cover: recentData.items[0].track.album.images[0]?.url,
+      } 
+    }
 
     return {
       user: {
@@ -114,11 +136,7 @@ export const fetchSpotifyData = async (token: string) => {
           image: userData.images?.[0]?.url || "",
           product: userData.product
       },
-      currentTrack: recentData.items[0] ? {
-          title: recentData.items[0].track.name,
-          artist: recentData.items[0].track.artists[0].name,
-          cover: recentData.items[0].track.album.images[0]?.url,
-      } : null,
+      currentTrack,
       artists: mapArtists(artistsData.items),
       songs: mapSongs(tracksData.items),
       albums: mapAlbumsFromTracks(tracksData.items),
