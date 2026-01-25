@@ -58,7 +58,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
         try {
             // Determine if user wants SQL analysis or just a chat response
             // Keywords that trigger analysis mode
-            const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover'];
+            const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover', 'top', 'best', 'most', 'rank', 'chart'];
             const isAnalysisQuery = analysisKeywords.some(k => userPrompt.toLowerCase().includes(k));
             
             if (isAnalysisQuery) {
@@ -102,7 +102,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                 
                 {/* Chat Display Area */}
                 {(displayedText || mode === 'chat' || loading) && (
-                    <div className="w-full max-w-2xl text-left mb-10 min-h-[60px]">
+                    <div className="w-full max-w-2xl text-left mb-10 min-h-[60px] max-h-[300px] overflow-y-auto p-4 rounded-xl bg-white/5 border border-white/10 scrollbar-thin scrollbar-thumb-[#FA2D48] scrollbar-track-transparent">
                          {loading ? (
                             <div className="flex items-center gap-2 text-[#FA2D48] font-mono text-sm animate-pulse">
                                 <span className="w-2 h-2 bg-[#FA2D48] rounded-full"></span>

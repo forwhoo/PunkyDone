@@ -53,12 +53,6 @@ const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
             <div className="mt-3 relative z-20">
                 <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{album.title}</h3>
                 <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">{album.artist} • <span className="text-[#FA2D48]">{album.timeStr}</span></p>
-                {/* MUSE INSIGHT */}
-                {album.museInsight && (
-                    <p className="text-[10px] text-[#FA2D48]/80 font-mono mt-1 italic leading-tight border-l border-[#FA2D48]/30 pl-2">
-                        {album.museInsight}
-                    </p>
-                )}
             </div>
         </div>
     </div>
@@ -84,12 +78,6 @@ const RankedArtist = ({ artist, rank }: { artist: Artist, rank: number }) => (
             </div>
             <div className="mt-3 relative z-20">
                 <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{artist.name}</h3>
-                {/* MUSE INSIGHT */}
-                {artist.museInsight && (
-                    <p className="text-[10px] text-[#FA2D48]/80 font-mono mt-1 italic leading-tight border-l border-[#FA2D48]/30 pl-2">
-                        {artist.museInsight}
-                    </p>
-                )}
             </div>
         </div>
     </div>
@@ -116,14 +104,6 @@ const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
                     </div>
                 </div>
             </div>
-             {/* MUSE INSIGHT */}
-             {song.museInsight && (
-                <div className="mt-2 pt-2 border-t border-white/5">
-                    <p className="text-[10px] text-[#FA2D48]/80 font-mono italic leading-tight">
-                        "{song.museInsight}"
-                    </p>
-                </div>
-            )}
         </div>
     </div>
 );
@@ -147,46 +127,13 @@ function App() {
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
 
-  // Function to refresh DB view
-  const refreshDbStats = async () => {
-      const stats = await fetchListeningStats();
-      setDbStats(stats);
-      const dashboardStuff = await fetchDashboardStats(timeRange);
-      
-      // Inject AI Insights for top items
-      if (dashboardStuff) {
-          const topNames = [
-              ...(dashboardStuff.artists?.slice(0, 3).map((a: any) => a.name) || []),
-              ...(dashboardStuff.albums?.slice(0, 3).map((a: any) => a.title) || []),
-              ...(dashboardStuff.songs?.slice(0, 3).map((a: any) => a.title) || [])
-          ];
-          
-          if (topNames.length > 0) {
-              const insights = await generateRankingInsights(topNames);
-              
-              if (dashboardStuff.artists) {
-                  dashboardStuff.artists = dashboardStuff.artists.map((a: any) => ({
-                      ...a,
-                      museInsight: insights[a.name]
-                  }));
-              }
-              if (dashboardStuff.albums) {
-                  dashboardStuff.albums = dashboardStuff.albums.map((a: any) => ({
-                      ...a,
-                      museInsight: insights[a.title]
-                  }));
-              }
-              if (dashboardStuff.songs) {
-                  dashboardStuff.songs = dashboardStuff.songs.map((s: any) => ({
-                      ...s,
-                      museInsight: insights[s.title]
-                  }));
-              }
-          }
-      }
-
-      setDbUnifiedData(dashboardStuff);
-  };
+      // Function to refresh DB view
+      const refreshDbStats = async () => {
+          const stats = await fetchListeningStats();
+          setDbStats(stats);
+          const dashboardStuff = await fetchDashboardStats(timeRange);
+          setDbUnifiedData(dashboardStuff);
+      };
 
   // Realtime Subscription for Instant Updates
   useEffect(() => {

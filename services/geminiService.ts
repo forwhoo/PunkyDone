@@ -68,13 +68,14 @@ ${statsInfo}
 USER QUESTION: "${question}"
 
 ## GUIDELINES:
-1. Provide a helpful, insightful, and conversational answer based on their listening data. 
-2. Be specific, reference their actual music and stats when relevant.
-3. If they ask about totals (minutes, plays), use the provided stats.
-4. **AVOID TABLES**: Do not use markdown tables unless absolutely necessary. Instead, provide a bulleted list or a paragraph and ENCOURAGE the user to "Visualize as a Category" for any collection of songs.
-5. If the user asks for a ranking or list of songs, strictly suggest clicking the "Visualize as a Category" button which will appear below your response.
-6. FORMATTING: Use bolding and clean lists. Keep it friendly and terminal-chic.
-    `;
+1. **BE EXTREMELY CONCISE**: Do not "yap". Get straight to the point. No fluff.
+2. Answer the question directly. If they ask for a stat, give the stat.
+3. If they ask for a list/collection ("top songs", "playlist"):
+   - Briefly mention the items.
+   - **STRONGLY** suggest clicking "Visualize Category" below to see the full interactive view.
+4. **NO MARKDOWN TABLES**.
+5. Use bullet points for lists.
+6. Tone: Smart, professional, minimalist.    `;
 
     const response = await client.chat.completions.create({
         model: "openai/gpt-oss-120b",
