@@ -27,7 +27,7 @@ export const generateMusicInsights = async (contextData: string): Promise<string
     `;
 
     const response = await client.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-20b",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7
     });
@@ -74,7 +74,7 @@ export const generateDynamicCategoryQuery = async (availableGenres: string[]): P
         `;
 
         const response = await client.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+            model: "openai/gpt-oss-20b",
             messages: [{ role: "user", content: prompt }],
             response_format: { type: "json_object" },
             temperature: 0.9 
@@ -112,7 +112,7 @@ export const generateWrappedStory = async (period: string): Promise<any> => {
         `;
          
         const response = await client.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+            model: "openai/gpt-oss-20b",
             messages: [{ role: "user", content: prompt }],
             response_format: { type: "json_object" },
             temperature: 0.7
