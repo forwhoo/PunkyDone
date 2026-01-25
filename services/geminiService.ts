@@ -252,9 +252,9 @@ Your job: Create **ONE OR MORE** unique, creative listening categories from the 
 ## SPECIAL MODES:
 1. **"DISCOVER" / "SUGGEST" / "SEARCH"**:
    - If user asks to "find new songs", "search for Drake songs", "suggest music like X":
-   - Set `useSpotify: true`.
-   - Set `spotifyQuery` to the relevant search term (Artist Name, Genre, or Vibe).
-   - `type` should usually be "song".
+   - Set "useSpotify": true.
+   - Set "spotifyQuery" to the relevant search term (Artist Name, Genre, or Vibe).
+   - "type" should usually be "song".
 
 2. **"WRAPPED" / "RECAP"**: If user asks for "Wrapped", "Daily Recap", or similar:
    - Generate 3-5 distinct categories that tell a story.

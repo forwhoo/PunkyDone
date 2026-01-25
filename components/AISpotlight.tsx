@@ -4,6 +4,7 @@ import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send } from 'lucide
 import { generateDynamicCategoryQuery, answerMusicQuestion } from '../services/geminiService';
 import { fetchSmartPlaylist } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
+import { WrappedView } from './WrappedView'; // New Component
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -39,6 +40,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
     const [typing, setTyping] = useState(false);
     const [discoveryMode, setDiscoveryMode] = useState(false);
     const sectionRef = useRef<HTMLDivElement>(null);
+
+    const [activeWrapped, setActiveWrapped] = useState<CategoryResult | null>(null);
 
     // Typing effect logic
     useEffect(() => {
@@ -354,6 +357,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/60 text-[11px] font-bold font-mono">
                                     {category.stats}
                                 </div>
+                                <button 
+                                    onClick={() => setActiveWrapped(category)}
+                                    className="ml-4 text-xs text-[#FA2D48] hover:text-white underline transition-colors"
+                                >
+                                    View as Story
+                                </button>
                             </div>
                             
                             {/* Tracks Carousel */}
@@ -398,6 +407,15 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                      <div className="w-10 h-10 border-2 border-[#FA2D48] border-t-transparent rounded-full animate-spin mb-4"></div>
                      <p className="text-[#8E8E93] text-sm animate-pulse">Designing your collection...</p>
                 </div>
+            )}
+            {/* Wrapped Story Modal */}
+            {activeWrapped && (
+                <WrappedView 
+                    data={activeWrapped.tracks}
+                    title={activeWrapped.title}
+                    description={activeWrapped.description}
+                    onClose={() => setActiveWrapped(null)}
+                />
             )}
         </div>
     );
