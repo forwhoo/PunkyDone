@@ -40,11 +40,27 @@ export const generateMusicInsights = async (contextData: string): Promise<string
 };
 
 export interface AIFilterArgs {
-    field?: 'artist_name' | 'album_name' | 'track_name'; // What column to filter
-    value?: string; // The value to match
-    timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | 'latenight'; // Time filter
-    sortBy?: 'plays' | 'minutes'; // What to rank by
-    sortOrder?: 'highest' | 'lowest'; // Top or Bottom
+    // Field matching
+    field?: 'artist_name' | 'album_name' | 'track_name';
+    value?: string; // Exact match
+    contains?: string; // Partial match (broader results)
+    
+    // Time filters
+    timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | 'latenight';
+    dayOfWeek?: 'weekday' | 'weekend';
+    recentDays?: number; // Last N days (e.g., 7, 30)
+    
+    // Duration filters
+    minDurationMs?: number; // Songs longer than X
+    maxDurationMs?: number; // Songs shorter than X
+    
+    // Aggregation
+    sortBy?: 'plays' | 'minutes' | 'recency';
+    sortOrder?: 'highest' | 'lowest';
+    
+    // Result control
+    minPlays?: number; // Ensure at least X plays
+    limit?: number; // How many results (default 20)
 }
 
 export interface AIFilterResult {
@@ -75,53 +91,49 @@ export const generateDynamicCategoryQuery = async (context: {
 You are the DJ Algorithm for a premium music dashboard.
 Your job: Create ONE unique, creative listening category from the user's REAL library.
 
-## USER'S LIBRARY (What you can use):
-- Artists: [${shuffledArtists.slice(0, 30).join(', ')}]
-- Albums: [${shuffledAlbums.slice(0, 20).join(', ')}]
-- Songs: [${shuffledSongs.slice(0, 15).join(', ')}]
+## USER'S LIBRARY:
+- Top Artists: [${shuffledArtists.slice(0, 25).join(', ')}]
+- Top Albums: [${shuffledAlbums.slice(0, 15).join(', ')}]
 - Current Time: ${hour}:00 (${timeOfDay})
 
-## DATABASE SCHEMA:
-Table: listening_history
-Columns: track_name, artist_name, album_name, played_at (timestamp), duration_ms
+## FILTER PARAMETERS (all optional, combine as needed):
 
-## YOUR SINGLE TOOL: "filter"
-You must output ONE filter object. Parameters:
+| Parameter      | Type                                        | Description                                    |
+|----------------|---------------------------------------------|------------------------------------------------|
+| field          | "artist_name" | "album_name" | "track_name" | Column to match                                |
+| value          | string                                      | EXACT match (use for specific artist/album)    |
+| contains       | string                                      | PARTIAL match (broader, e.g. "love", "remix") |
+| timeOfDay      | "morning"|"afternoon"|"evening"|"night"|"latenight" | When played               |
+| dayOfWeek      | "weekday" | "weekend"                     | Weekday vs weekend listening                   |
+| recentDays     | number                                      | Only last N days (7=week, 30=month)            |
+| minDurationMs  | number                                      | Songs > X ms (240000 = 4min, for epics)        |
+| maxDurationMs  | number                                      | Songs < X ms (180000 = 3min, for quick hits)   |
+| sortBy         | "plays" | "minutes" | "recency"            | How to rank results                            |
+| sortOrder      | "highest" | "lowest"                      | Top or Bottom                                  |
+| minPlays       | number                                      | Minimum play count (ensures variety)           |
 
-| Parameter   | Type                                                    | Description                                      |
-|-------------|---------------------------------------------------------|--------------------------------------------------|
-| field       | "artist_name" \| "album_name" \| "track_name"          | Which column to match (OPTIONAL)                 |
-| value       | string                                                  | EXACT value from the library lists above         |
-| timeOfDay   | "morning" \| "afternoon" \| "evening" \| "night" \| "latenight" | Filter by when songs were played (OPTIONAL)     |
-| sortBy      | "plays" \| "minutes"                                    | Rank by total play count or total listening time |
-| sortOrder   | "highest" \| "lowest"                                   | Top (most) or Bottom (least)                     |
+## CREATIVE GUIDELINES:
+- FORBIDDEN titles: "Morning Playlist", "Top Tracks", "Best Of", "Daily Mix"
+- GOOD titles: "The Marathon", "Quick Hits", "Weekend Warriors", "Deep Cuts", "Repeat Offenders", "Fresh Finds"
+- For broad categories (time-based, duration-based), use general filters NOT specific artists
+- For artist spotlights, use exact artist name from the list
 
-## RULES:
-1. "value" MUST be an EXACT match from the Artists/Albums/Songs lists. Do NOT invent names.
-2. You can combine filters (e.g., Artist + Morning + Most Played).
-3. Be CREATIVE with titles. FORBIDDEN: "Morning Playlist", "Top Tracks", "Best Of".
-   GOOD: "Drake Season", "3AM Thoughts", "Hidden Gems", "The Long Game", "Album Deep Dive".
-4. If you pick "lowest" for sortOrder, make the title reflect discovery (e.g., "Buried Treasure").
+## EXAMPLE FILTERS:
+1. Weekend vibes: { "dayOfWeek": "weekend", "sortBy": "plays", "sortOrder": "highest" }
+2. Epic tracks: { "minDurationMs": 300000, "sortBy": "plays", "sortOrder": "highest" }
+3. Quick hits: { "maxDurationMs": 180000, "sortBy": "plays", "sortOrder": "highest" }
+4. Fresh this week: { "recentDays": 7, "sortBy": "recency", "sortOrder": "highest" }
+5. Hidden gems: { "sortBy": "plays", "sortOrder": "lowest", "minPlays": 2 }
+6. Artist deep dive: { "field": "artist_name", "value": "Drake", "sortBy": "minutes", "sortOrder": "highest" }
+7. Love songs: { "contains": "love", "sortBy": "plays", "sortOrder": "highest" }
+8. Late night sessions: { "timeOfDay": "latenight", "sortBy": "minutes", "sortOrder": "highest" }
 
-## OUTPUT (JSON only, no markdown):
+## OUTPUT (JSON only):
 {
-    "title": "Creative Title Here",
-    "description": "Short fun description",
-    "filter": {
-        "field": "artist_name",
-        "value": "Drake",
-        "timeOfDay": "night",
-        "sortBy": "plays",
-        "sortOrder": "highest"
-    }
+    "title": "Creative Title",
+    "description": "Fun 1-liner",
+    "filter": { ...your filter params... }
 }
-
-NOTE: All filter fields are optional. You can use just one, or combine them.
-Examples:
-- Artist spotlight: { "field": "artist_name", "value": "The Weeknd", "sortBy": "plays", "sortOrder": "highest" }
-- Morning vibes: { "timeOfDay": "morning", "sortBy": "plays", "sortOrder": "highest" }
-- Hidden gems: { "sortBy": "plays", "sortOrder": "lowest" }
-- Album deep dive: { "field": "album_name", "value": "Graduation", "sortBy": "minutes", "sortOrder": "highest" }
 `;
 
         const response = await client.chat.completions.create({
@@ -145,9 +157,9 @@ Examples:
     } catch (e: any) {
         console.error("AI Category Gen Error:", e);
         return {
-            title: "Fallback Mix",
-            description: `Error: ${e.message || 'Unknown'}`,
-            filter: { sortBy: 'plays', sortOrder: 'highest' },
+            title: "Your Heavy Rotation",
+            description: `Most played tracks overall`,
+            filter: { sortBy: 'plays', sortOrder: 'highest', minPlays: 2 },
             isError: true
         };
     }

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardHeader, CardTitle, Badge } from './UIComponents';
-import { Play, TrendingUp, TrendingDown, Minus, Clock, Calendar } from 'lucide-react';
+import { Play, TrendingUp, TrendingDown, Minus, Clock, Calendar, GitBranch } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
 
 interface TopChartsProps {
@@ -12,6 +12,35 @@ interface TopChartsProps {
   albums?: Album[];
   hourlyActivity?: any[];
 }
+
+// Graph Node Component for the new Graph View
+const GraphNode = ({ item, size, x, y, onClick, isCenter }: any) => (
+    <div 
+        className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group transition-all duration-300 hover:scale-110 hover:z-50 ${isCenter ? 'z-40' : 'z-10'}`}
+        style={{ left: `${x}%`, top: `${y}%` }}
+        onClick={onClick}
+    >
+        <div className={`rounded-full overflow-hidden border-2 ${isCenter ? 'border-[#FA2D48] shadow-lg shadow-[#FA2D48]/30' : 'border-white/20'} bg-[#2C2C2E]`}
+             style={{ width: size, height: size }}>
+            <img src={item.image || item.cover} alt={item.name || item.title} className="w-full h-full object-cover" />
+        </div>
+        <div className={`absolute left-1/2 -translate-x-1/2 mt-2 text-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}>
+            <div className="bg-black/90 rounded-lg px-2 py-1 whitespace-nowrap">
+                <p className="text-white text-xs font-bold">{item.name || item.title}</p>
+                <p className="text-[#8E8E93] text-[10px]">{item.totalListens || item.listens} plays</p>
+            </div>
+        </div>
+        {/* Connection Lines */}
+        {isCenter && (
+            <div className="absolute inset-0 pointer-events-none">
+                {[45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
+                    <div key={i} className="absolute left-1/2 top-1/2 w-20 h-px bg-gradient-to-r from-white/20 to-transparent origin-left"
+                         style={{ transform: `rotate(${angle}deg)` }} />
+                ))}
+            </div>
+        )}
+    </div>
+);
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -24,9 +53,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs = [], albums = [], hourlyActivity = [] }) => {
-  const [viewMode, setViewMode] = useState<'Chart' | 'List'>('List');
+  const [viewMode, setViewMode] = useState<'Chart' | 'List' | 'Graph'>('List');
   const [activeTab, setActiveTab] = useState<'Songs' | 'Albums' | 'Artists'>('Artists');
   const [hoverData, setHoverData] = useState<any>(null);
+  const [selectedNode, setSelectedNode] = useState<any>(null);
 
   // Helper to get today's date
   const todayDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
@@ -86,6 +116,12 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs
                className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide rounded-[6px] transition-all ${viewMode === 'Chart' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
              >
                Trends
+             </button>
+             <button
+               onClick={() => setViewMode('Graph')}
+               className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide rounded-[6px] transition-all ${viewMode === 'Graph' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+             >
+               Graph
              </button>
            </div>
 
@@ -189,6 +225,94 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs
                     </div>
                   )}
                </div>
+           </div>
+         ) : viewMode === 'Graph' ? (
+           /* GRAPH VIEW - Node Visualization */
+           <div className="h-[400px] relative bg-[#0D0D0D] overflow-hidden">
+              {/* Background Pattern */}
+              <div className="absolute inset-0 opacity-10">
+                  <div className="absolute inset-0" style={{ 
+                      backgroundImage: 'radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)',
+                      backgroundSize: '40px 40px'
+                  }}></div>
+              </div>
+              
+              {/* Center Node - #1 */}
+              {listData[0] && (
+                  <GraphNode 
+                      item={listData[0]} 
+                      size={100} 
+                      x={50} 
+                      y={50} 
+                      isCenter={true}
+                      onClick={() => setSelectedNode(listData[0])}
+                  />
+              )}
+              
+              {/* Orbiting Nodes */}
+              {listData.slice(1, 7).map((item, index) => {
+                  const angle = (index * 60) * (Math.PI / 180);
+                  const radius = 35;
+                  const x = 50 + radius * Math.cos(angle);
+                  const y = 50 + radius * Math.sin(angle);
+                  const size = 60 - (index * 5);
+                  
+                  return (
+                      <GraphNode 
+                          key={item.id}
+                          item={item} 
+                          size={size} 
+                          x={x} 
+                          y={y} 
+                          isCenter={false}
+                          onClick={() => setSelectedNode(item)}
+                      />
+                  );
+              })}
+              
+              {/* Connection Lines from Center */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 5 }}>
+                  {listData.slice(1, 7).map((_, index) => {
+                      const angle = (index * 60) * (Math.PI / 180);
+                      const radius = 35;
+                      const x2 = 50 + radius * Math.cos(angle);
+                      const y2 = 50 + radius * Math.sin(angle);
+                      
+                      return (
+                          <line 
+                              key={index}
+                              x1="50%" y1="50%" 
+                              x2={`${x2}%`} y2={`${y2}%`}
+                              stroke="rgba(255,255,255,0.1)"
+                              strokeWidth="1"
+                              strokeDasharray="4 4"
+                          />
+                      );
+                  })}
+              </svg>
+              
+              {/* Selected Node Detail */}
+              {selectedNode && (
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-md rounded-xl p-4 border border-white/10 animate-in slide-in-from-bottom-4 z-50">
+                      <div className="flex items-center gap-4">
+                          <img src={selectedNode.image || selectedNode.cover} alt="" className="w-16 h-16 rounded-lg object-cover" />
+                          <div className="flex-1 min-w-0">
+                              <h4 className="text-white font-bold text-lg truncate">{selectedNode.name || selectedNode.title}</h4>
+                              <p className="text-[#8E8E93] text-sm">{selectedNode.artist || 'Artist'}</p>
+                          </div>
+                          <div className="text-right">
+                              <div className="text-2xl font-black text-[#FA2D48]">{selectedNode.totalListens || selectedNode.listens}</div>
+                              <div className="text-[10px] text-[#8E8E93] uppercase tracking-widest">plays</div>
+                          </div>
+                      </div>
+                  </div>
+              )}
+              
+              {/* Legend */}
+              <div className="absolute top-4 left-4 flex items-center gap-2 text-[10px] text-[#8E8E93] uppercase tracking-widest">
+                  <GitBranch className="w-3 h-3" />
+                  <span>Connection Graph • Click nodes for details</span>
+              </div>
            </div>
          ) : (
            /* LIST VIEW */

@@ -306,9 +306,16 @@ const getDayOfWeek = (i: number) => {
 interface AIFilter {
     field?: 'artist_name' | 'album_name' | 'track_name';
     value?: string;
+    contains?: string;
     timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | 'latenight';
-    sortBy?: 'plays' | 'minutes';
+    dayOfWeek?: 'weekday' | 'weekend';
+    recentDays?: number;
+    minDurationMs?: number;
+    maxDurationMs?: number;
+    sortBy?: 'plays' | 'minutes' | 'recency';
     sortOrder?: 'highest' | 'lowest';
+    minPlays?: number;
+    limit?: number;
 }
 
 const TIME_RANGES: Record<string, [number, number]> = {
@@ -322,17 +329,30 @@ const TIME_RANGES: Record<string, [number, number]> = {
 export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
     try {
         const filter = concept.filter;
+        const resultLimit = filter.limit || 20;
         
-        // Start with base query
+        // Start with base query - get more data for better filtering
         let query = supabase
             .from('listening_history')
             .select('*')
             .order('played_at', { ascending: false })
-            .limit(3000);
+            .limit(5000);
 
-        // Apply field filter at DB level if possible
+        // Apply exact field filter at DB level
         if (filter.field && filter.value) {
             query = query.ilike(filter.field, `%${filter.value}%`);
+        }
+        
+        // Apply contains filter (partial match across multiple fields)
+        if (filter.contains) {
+            query = query.or(`track_name.ilike.%${filter.contains}%,album_name.ilike.%${filter.contains}%,artist_name.ilike.%${filter.contains}%`);
+        }
+        
+        // Apply recent days filter at DB level
+        if (filter.recentDays) {
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - filter.recentDays);
+            query = query.gte('played_at', cutoff.toISOString());
         }
 
         const { data, error } = await query;
@@ -343,7 +363,7 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
 
         let filtered = data;
 
-        // Apply time filter (client-side for timezone accuracy)
+        // Apply time of day filter (client-side for timezone accuracy)
         if (filter.timeOfDay && TIME_RANGES[filter.timeOfDay]) {
             const [start, end] = TIME_RANGES[filter.timeOfDay];
             filtered = filtered.filter(item => {
@@ -351,10 +371,27 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
                 if (start <= end) {
                     return h >= start && h <= end;
                 } else {
-                    // Handle wrap (e.g., latenight 0-4 doesn't wrap, but night 21-23 + latenight does if combined)
                     return h >= start || h <= end;
                 }
             });
+        }
+        
+        // Apply day of week filter
+        if (filter.dayOfWeek) {
+            const isWeekend = filter.dayOfWeek === 'weekend';
+            filtered = filtered.filter(item => {
+                const day = new Date(item.played_at).getDay();
+                const itemIsWeekend = day === 0 || day === 6;
+                return isWeekend ? itemIsWeekend : !itemIsWeekend;
+            });
+        }
+        
+        // Apply duration filters
+        if (filter.minDurationMs) {
+            filtered = filtered.filter(item => (item.duration_ms || 0) >= filter.minDurationMs!);
+        }
+        if (filter.maxDurationMs) {
+            filtered = filtered.filter(item => (item.duration_ms || 0) <= filter.maxDurationMs!);
         }
 
         // Aggregate by unique song
@@ -366,6 +403,7 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
             cover: string;
             plays: number;
             totalMs: number;
+            lastPlayed: Date;
         }> = {};
 
         filtered.forEach((item: any) => {
@@ -378,24 +416,40 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
                     album: item.album_name,
                     cover: item.album_cover,
                     plays: 0,
-                    totalMs: 0
+                    totalMs: 0,
+                    lastPlayed: new Date(item.played_at)
                 };
             }
             stats[key].plays += 1;
             stats[key].totalMs += item.duration_ms || 0;
+            const itemDate = new Date(item.played_at);
+            if (itemDate > stats[key].lastPlayed) {
+                stats[key].lastPlayed = itemDate;
+            }
         });
 
         // Convert to array
         let results = Object.values(stats);
+        
+        // Apply minPlays filter
+        if (filter.minPlays) {
+            results = results.filter(r => r.plays >= filter.minPlays!);
+        }
 
-        // Sort by plays or minutes
-        const sortField = filter.sortBy === 'minutes' ? 'totalMs' : 'plays';
+        // Sort
         const ascending = filter.sortOrder === 'lowest';
-
-        results.sort((a, b) => ascending ? a[sortField] - b[sortField] : b[sortField] - a[sortField]);
+        if (filter.sortBy === 'minutes') {
+            results.sort((a, b) => ascending ? a.totalMs - b.totalMs : b.totalMs - a.totalMs);
+        } else if (filter.sortBy === 'recency') {
+            results.sort((a, b) => ascending 
+                ? a.lastPlayed.getTime() - b.lastPlayed.getTime() 
+                : b.lastPlayed.getTime() - a.lastPlayed.getTime());
+        } else {
+            results.sort((a, b) => ascending ? a.plays - b.plays : b.plays - a.plays);
+        }
 
         // Map to output format
-        return results.slice(0, 20).map(item => ({
+        return results.slice(0, resultLimit).map(item => ({
             id: item.id,
             title: item.title,
             artist: item.artist,
