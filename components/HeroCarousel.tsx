@@ -143,18 +143,18 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
                          <span className="text-[11px] font-bold uppercase tracking-widest text-white/60">Music Intelligence</span>
                     </div>
 
-                    <div className="min-h-[60px]">
+                    <div className="h-[100px] overflow-y-auto no-scrollbar pr-2 mb-2">
                         {loadingInsight ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mt-4">
                                 <WaveLoading />
                                 <span className="text-white/50 text-sm animate-pulse">Thinking...</span>
                             </div>
                         ) : insight ? (
-                            <div className="text-white/90 text-[15px] leading-relaxed">
+                            <div className="text-white/90 text-[14px] leading-relaxed">
                                 <Typewriter text={insight} />
                             </div>
                         ) : (
-                            <div>
+                            <div className="mt-2">
                                 <h3 className="text-2xl font-bold text-white mb-2">Your Daily Recap</h3>
                                 <p className="text-[#9CA3AF] text-sm leading-relaxed">Unlock deep insights about your listening habits.</p>
                             </div>
@@ -162,7 +162,7 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
                     </div>
                 </div>
 
-                <div className="mt-4">
+                <div className="mt-auto">
                     {showInput ? (
                         <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 border border-white/10">
                              <input 
