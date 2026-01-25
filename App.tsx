@@ -238,12 +238,27 @@ function App() {
     setLastCheckTime(Date.now()); // Init time
     loadData().then(() => setLoading(false));
 
-    // Set interval for 1.5 seconds (1500 ms) for near-instant updates
-    const intervalId = setInterval(() => {
+
+    // Set interval for 1.5s usually, but since user requested "make it update every 10 seconds" for the chart/dashboard:
+    // We can keep the poll fast (for tracking state) but maybe refresh dashboard less often?
+    // Actually, user said "make it update every 10 seconds" referring to the LIST.
+    // The previous 1.5s was for *Now Playing*. We will keep 1.5s for poll, but refresh DB stats every 10s.
+    
+    // Polling for Spotify Data (Fast - 1.5s)
+    const spotifyInterval = setInterval(() => {
         loadData();
     }, 1500);
 
-    return () => clearInterval(intervalId);
+    // Polling for Dashboard/DB Data (Medium - 10s)
+    // This ensures ranking updates even if no "Realtime" event fires (e.g. other devices playing)
+    const dbInterval = setInterval(() => {
+        if (token) refreshDbStats();
+    }, 10000);
+
+    return () => {
+        clearInterval(spotifyInterval);
+        clearInterval(dbInterval);
+    };
   }, [token, currentTrackId, sessionTrack]); // Add dependencies for tracking state
 
   useEffect(() => {

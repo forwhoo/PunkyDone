@@ -177,24 +177,20 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs
          ) : (
            /* LIST VIEW */
            <div className="w-full">
-               <div className="grid grid-cols-[50px_80px_1fr_80px_80px_80px] px-6 py-3 border-b border-white/5 text-[10px] font-bold uppercase tracking-widest text-[#8E8E93]">
+               <div className="grid grid-cols-[50px_1fr_100px_80px] px-6 py-3 border-b border-white/5 text-[10px] font-bold uppercase tracking-widest text-[#8E8E93]">
                    <div>#</div>
-                   <div>Change</div>
                    <div>{activeTab.slice(0, -1).toUpperCase()}</div>
-                   <div className="text-center">Peak</div>
-                   <div className="text-center">Prev</div>
-                   <div className="text-center">Streak</div>
+                   <div className="text-right">Time</div>
+                   <div className="text-right">Plays</div>
                </div>
                
                <div className="flex flex-col">
                    {listData.map((item: any, idx) => (
-                       <div key={item.id} className="grid grid-cols-[50px_80px_1fr_80px_80px_80px] items-center px-6 py-4 hover:bg-white/5 transition-colors group">
-                           <div className="font-bold text-white text-md">{item.rank || idx + 1}</div>
-                           <div className="flex items-center gap-1">
-                               {renderTrendIcon(item.trend || 0)}
-                           </div>
+                       <div key={item.id} className="grid grid-cols-[50px_1fr_100px_80px] items-center px-6 py-4 hover:bg-white/5 transition-colors group">
+                           <div className="font-bold text-white text-md">{idx + 1}</div>
+                           
                            <div className="flex items-center gap-4">
-                               <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#2C2C2E] relative group-hover:shadow-lg transition-all shrink-0">
+                               <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#2C2C2E] relative group-hover:shadow-lg transition-all shrink-0">
                                    <img 
                                       src={getImageSrc(item)} 
                                       className="w-full h-full object-cover" 
@@ -202,18 +198,22 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs
                                    />
                                    {activeTab === 'Songs' && (
                                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                         <Play className="w-5 h-5 text-white fill-white" />
+                                         <Play className="w-4 h-4 text-white fill-white" />
                                      </div>
                                    )}
                                </div>
-                               <div>
-                                   <div className="font-bold text-white text-[15px]">{item.name || item.title}</div>
-                                   {(item.artist && activeTab !== 'Artists') && <div className="text-[13px] text-[#8E8E93]">{item.artist}</div>}
+                               <div className="min-w-0">
+                                   <div className="font-bold text-white text-[14px] truncate">{item.name || item.title}</div>
+                                   {(item.artist && activeTab !== 'Artists') && <div className="text-[12px] text-[#8E8E93] truncate">{item.artist}</div>}
                                </div>
                            </div>
-                           <div className="text-center text-white/60 font-medium">{item.peak || '-'}</div>
-                           <div className="text-center text-white/60 font-medium">{item.prev || '-'}</div>
-                           <div className="text-center text-white/60 font-medium">{item.streak || '-'}</div>
+                           
+                           <div className="text-right text-white/90 font-bold text-[13px]">{item.timeStr || '0m'}</div>
+                           <div className="text-right">
+                               <div className="inline-block bg-[#2C2C2E] text-[#8E8E93] text-[11px] font-bold px-2 py-0.5 rounded-md">
+                                  {item.totalListens || item.listens}
+                               </div>
+                           </div>
                        </div>
                    ))}
                </div>
