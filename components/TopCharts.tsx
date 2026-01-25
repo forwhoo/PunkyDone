@@ -160,17 +160,32 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs
                <div className="w-full lg:w-[280px] p-6 border-l border-white/5 bg-[#1C1C1E]/50 backdrop-blur-sm flex flex-col justify-center">
                   <div className="flex items-center gap-3 mb-6">
                      <div className="w-2 h-2 rounded-full bg-[#FA2D48] animate-pulse"></div>
-                     <span className="text-xs font-bold uppercase tracking-widest text-[#FA2D48]">Live Activity</span>
+                     <span className="text-xs font-bold uppercase tracking-widest text-[#FA2D48]">Peak Activity</span>
                   </div>
                   
                   {hoverData ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
                         <div className="text-sm text-[#8E8E93] mb-1">{hoverData.time}</div>
-                        <div className="text-4xl font-black text-white mb-2">{hoverData.value} <span className="text-lg font-medium text-[#8E8E93]">listens</span></div>
-                        <div className="text-sm text-white/40 font-medium">Activity Level</div>
+                        <div className="text-4xl font-black text-white mb-4">{hoverData.value} <span className="text-lg font-medium text-[#8E8E93]">min</span></div>
+                        
+                        <div className="flex flex-col gap-3 pt-4 border-t border-white/5">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8E8E93]">Most Played At This Hour</span>
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-md overflow-hidden bg-[#2C2C2E] flex-shrink-0">
+                                    <img src={hoverData.cover} alt="" className="w-full h-full object-cover" />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="text-sm font-bold text-white truncate">{hoverData.song}</div>
+                                    <div className="text-xs text-[#8E8E93] truncate">{hoverData.artist}</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                   ) : (
-                    <div className="text-[#636366]">Hover over the chart to see hourly details.</div>
+                    <div className="flex flex-col items-center text-center space-y-4 py-8">
+                       <Clock className="w-8 h-8 text-[#2C2C2E]" />
+                      <div className="text-[#636366] text-sm font-medium">Hover over the chart to see what you played at each hour.</div>
+                    </div>
                   )}
                </div>
            </div>

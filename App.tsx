@@ -151,11 +151,11 @@ function App() {
              // Use syncRecentPlays as the source of truth
              await syncRecentPlays(data.recentRaw); 
              
-             // Initial fetch
-             if (!dbStats) refreshDbStats();
+             // Refresh stats after every sync to ensure live updates
+             refreshDbStats();
         }
       };
-      syncAndFetchStats();
+      if (token && data) syncAndFetchStats();
   }, [data]);
 
 
