@@ -115,6 +115,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [dbStats, setDbStats] = useState<any>(null);
   const [dbUnifiedData, setDbUnifiedData] = useState<any>(null);
+  
+  // Wrapped Modal State
+  const [wrappedOpen, setWrappedOpen] = useState(false);
+  const [currentWrappedPeriod, setCurrentWrappedPeriod] = useState("Week");
 
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
