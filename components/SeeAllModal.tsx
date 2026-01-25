@@ -19,8 +19,8 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
     }, []);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in p-4 overflow-y-auto">
-            <div className="bg-[#1C1C1E] w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl border border-white/10 shadow-2xl relative my-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in p-4">
+            <div className="bg-[#1C1C1E] w-full max-w-4xl max-h-[85vh] flex flex-col rounded-2xl border border-white/10 shadow-2xl relative">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-white/5 bg-[#1C1C1E] z-10 shrink-0">
                     <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
@@ -33,14 +33,14 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-700 hover:scrollbar-thumb-gray-500">
+                <div className="flex-1 overflow-y-auto p-6">{/* Properly sized content */}
                         
                         {/* Artists Grid */}
                         {type === 'Artists' && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-10">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                             {data.map((artist, idx) => (
                                 <div key={idx} className="flex flex-col items-center group cursor-pointer">
-                                    <div className="w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-transform duration-300 shadow-xl mb-4 relative">
+                                    <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-transform duration-300 shadow-xl mb-3 relative">
                                         <img 
                                             src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
                                             alt={artist.name} 
@@ -51,7 +51,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
                                             <span className="text-white/80 text-[10px] uppercase font-bold tracking-widest">Listened</span>
                                         </div>
                                     </div>
-                                    <h3 className="text-[15px] font-medium text-white text-center truncate w-full px-2 group-hover:text-[#FA2D48] transition-colors">{artist.name}</h3>
+                                    <h3 className="text-[14px] font-medium text-white text-center truncate w-full px-2 group-hover:text-[#FA2D48] transition-colors">{artist.name}</h3>
                                 </div>
                             ))}
                         </div>
@@ -59,7 +59,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
 
                     {/* Albums Grid */}
                     {type === 'Albums' && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                             {data.map((album, idx) => (
                                 <div key={idx} className="group cursor-pointer">
                                     <div className="aspect-square rounded-xl overflow-hidden bg-[#2C2C2E] border border-white/5 shadow-xl mb-3 relative group-hover:-translate-y-1 transition-transform">
