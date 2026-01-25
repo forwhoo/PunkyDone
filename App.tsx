@@ -93,6 +93,10 @@ const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
     </div>
 );
 
+import { supabase } from './services/supabaseClient';
+
+// ... (previous imports)
+
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('spotify_token'));
   const [data, setData] = useState<any>(null);
@@ -103,21 +107,49 @@ function App() {
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
 
-  // Sync Data to Supabase when data is loaded
+  // Function to refresh DB view
+  const refreshDbStats = async () => {
+      const stats = await fetchListeningStats();
+      setDbStats(stats);
+      const dashboardStuff = await fetchDashboardStats();
+      setDbUnifiedData(dashboardStuff);
+  };
+
+  // Realtime Subscription for Instant Updates
+  useEffect(() => {
+     const channel = supabase
+        .channel('schema-db-changes')
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'listening_history'
+            },
+            (payload) => {
+                console.log('Realtime change detected:', payload);
+                refreshDbStats();
+            }
+        )
+        .subscribe();
+
+     return () => {
+         supabase.removeChannel(channel);
+     };
+  }, []);
+
+  // Sync Data to Supabase when data is loaded (still needed to push data)
   useEffect(() => {
       const syncAndFetchStats = async () => {
         if (data && data.recentRaw) {
             await syncRecentPlays(data.recentRaw);
-            const stats = await fetchListeningStats();
-            setDbStats(stats);
-            
-            // Fetch DB dashboard data
-            const dashboardStuff = await fetchDashboardStats();
-            setDbUnifiedData(dashboardStuff);
+            // Initial fetch
+            refreshDbStats();
         }
       };
       syncAndFetchStats();
   }, [data]);
+
 
   // Polling Effect - Refresh every 3 minutes
   useEffect(() => {
@@ -138,11 +170,10 @@ function App() {
     setLoading(true);
     loadData().then(() => setLoading(false));
 
-    // Set interval for 6 seconds (6000 ms) for near-realtime updates
+    // Set interval for 1.5 seconds (1500 ms) for near-instant updates
     const intervalId = setInterval(() => {
-        console.log("Refreshing data...");
         loadData();
-    }, 6000);
+    }, 1500);
 
     return () => clearInterval(intervalId);
   }, [token]);

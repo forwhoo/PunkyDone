@@ -62,7 +62,7 @@ export const syncRecentPlays = async (recentItems: any[]) => {
     , newItems[0]);
     
     lastSyncedTime = latest.played_at;
-    console.log(`Synced ${historyItems.length} NEW items to Supabase`);
+    // console.log(`Synced ${historyItems.length} NEW items to Supabase`);
   }
 };
 
