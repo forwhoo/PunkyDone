@@ -3,10 +3,12 @@ import { Card } from './UIComponents';
 import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion } from '../services/geminiService';
 import { fetchSmartPlaylist } from '../services/dbService';
+import { fetchArtistImages } from '../services/spotifyService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 interface TopAIProps {
+    token?: string | null;
     contextData: { 
         artists: string[], 
         albums: string[], 
@@ -23,7 +25,7 @@ interface CategoryResult {
     tracks: any[];
 }
 
-export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
+export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
     const [loading, setLoading] = useState(false);
     
     // Store array of category results
@@ -95,6 +97,37 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                         }
                     }
                 }));
+
+                // Fetch real images for artists if needed
+                if (token && newResults.length > 0) {
+                    const artistNames = new Set<string>();
+                    newResults.forEach(cat => {
+                        cat.tracks.forEach(t => {
+                            if (t.type === 'artist' && !t.cover) {
+                                artistNames.add(t.title);
+                            }
+                        });
+                    });
+
+                    if (artistNames.size > 0) {
+                        try {
+                            const images = await fetchArtistImages(token, Array.from(artistNames));
+                            newResults.forEach(cat => {
+                                cat.tracks.forEach(t => {
+                                    if (t.type === 'artist' && !t.cover) {
+                                        if (images[t.title]) {
+                                            t.cover = images[t.title];
+                                        } else {
+                                            t.cover = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.title)}&background=1DB954&color=fff&length=1`;
+                                        }
+                                    }
+                                });
+                            });
+                        } catch (e) {
+                            console.error("Failed to load artist images", e);
+                        }
+                    }
+                }
 
                 // Sort by title or original order (concepts order matches index)
                 // But simplified: just use pushed order or sort by idx if needed.
@@ -171,6 +204,34 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                                                 }
                                              }
                                         }));
+
+                                        // Fetch real images for artists if needed
+                                        if (token && newResults.length > 0) {
+                                            const artistNames = new Set<string>();
+                                            newResults.forEach(cat => {
+                                                cat.tracks.forEach(t => {
+                                                    if (t.type === 'artist' && !t.cover) {
+                                                        artistNames.add(t.title);
+                                                    }
+                                                });
+                                            });
+
+                                            if (artistNames.size > 0) {
+                                                try {
+                                                    const images = await fetchArtistImages(token, Array.from(artistNames));
+                                                    newResults.forEach(cat => {
+                                                        cat.tracks.forEach(t => {
+                                                            if (t.type === 'artist' && !t.cover) {
+                                                                if (images[t.title]) t.cover = images[t.title];
+                                                                else t.cover = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.title)}&background=1DB954&color=fff&length=1`;
+                                                            }
+                                                        });
+                                                    });
+                                                } catch (e) {
+                                                    console.error("Failed to load artist images", e);
+                                                }
+                                            }
+                                        }
                                         
                                         if(newResults.length > 0) {
                                             setCategoryResults(newResults);
@@ -258,7 +319,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                                             </div>
                                             <div className="mt-3 relative z-20">
                                                 <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{item.title}</h3>
-                                                <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5">{item.artist}</p>
+                                                <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5">
+                                                    {(item.type === 'artist' || item.title === item.artist) ? 'Artist' : item.artist}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>

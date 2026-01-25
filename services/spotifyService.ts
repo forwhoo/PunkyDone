@@ -297,3 +297,39 @@ const msToTime = (duration: number) => {
   const seconds = ((duration % 60000) / 1000).toFixed(0);
   return minutes + ":" + (parseInt(seconds) < 10 ? '0' : '') + seconds;
 };
+
+export const fetchArtistImages = async (token: string, artistNames: string[]) => {
+    if (!token || !artistNames.length) return {};
+    
+    // Batch in groups of 5? No, Search API is 1 by 1.
+    // Or we use 'Get Several Artists' if we have IDs. We don't have IDs.
+    // We have names. We can try to match with 'Get User's Top Artists' cache? 
+    // No, that's not reliable.
+    
+    // We will search for each artist. Limit to first 5 or so to avoid rate limits?
+    // Let's assume the component calls this for the top items.
+    
+    const imageMap: Record<string, string> = {};
+    
+    // Minimal optimization: Only fetch unique names
+    const uniqueNames = Array.from(new Set(artistNames));
+
+    // Parallel fetch with limit (don't spam 50 requests)
+    const promises = uniqueNames.slice(0, 10).map(async (name) => {
+        try {
+            const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(name)}&type=artist&limit=1`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            const artist = data.artists?.items[0];
+            if (artist && artist.images?.length > 0) {
+                imageMap[name] = artist.images[0].url;
+            }
+        } catch (e) {
+            console.error('Artist fetch error:', e);
+        }
+    });
+
+    await Promise.all(promises);
+    return imageMap;
+};

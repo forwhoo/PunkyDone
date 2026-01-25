@@ -156,6 +156,9 @@ export const generateRankingInsights = async (items: string[]): Promise<Record<s
 }
 
 export interface AIFilterArgs {
+    // Result Type
+    type?: 'song' | 'album' | 'artist'; 
+
     // Field matching
     field?: 'artist_name' | 'album_name' | 'track_name';
     value?: string; // Exact match
@@ -218,6 +221,7 @@ Your job: Create **ONE OR MORE** unique, creative listening categories from the 
 
 | Parameter      | Type                                        | Description                                    |
 |----------------|---------------------------------------------|------------------------------------------------|
+| type           | "song" | "artist" | "album"                | **REQUIRED**: The type of items to return      |
 | field          | "artist_name" | "album_name" | "track_name" | Column to match                                |
 | value          | string                                      | EXACT match (use for specific artist/album)    |
 | contains       | string                                      | PARTIAL match (broader, e.g. "love", "remix") |
@@ -231,13 +235,20 @@ Your job: Create **ONE OR MORE** unique, creative listening categories from the 
 | minPlays       | number                                      | Minimum play count (ensures variety)           |
 | limit          | number                                      | MAX results (Default 20, Max 50)               |
 
-## COMPLEX QUERY LOGIC:
-- If the user asks for **MULTIPLE things** (e.g., "Top 5 artists AND top 5 songs"), generate **TWO separate categories**.
-- If the user specifies a **NUMBER** (e.g., "Top 5"), YOU MUST set the "limit" parameter to that number.
-- If the user asks for "least favorite" or "bottom", use "sortOrder": "lowest".
+## SPECIAL MODES:
+1. **"WRAPPED" / "RECAP"**: If user asks for "Wrapped", "Daily Recap", or similar:
+   - Generate 3-5 distinct categories that tell a story.
+   - Example 1: "Top Artists" (type: "artist", recentDays: 30)
+   - Example 2: "Morning Routine" (timeOfDay: "morning")
+   - Example 3: "Late Night Vibes" (timeOfDay: "night")
+   - Use creative titles like "The Punky Wrapped", "Your Day in Audio".
+
+2. **COMPLEX QUERY**:
+   - "Top Artists": Use { type: "artist", sortBy: "plays", sortOrder: "highest" }
+   - "Top Albums": Use { type: "album", sortBy: "plays", sortOrder: "highest" }
 
 ## CREATIVE GUIDELINES:
-- **Title Creativity**: Avoid "Top Tracks". Use "The Marathon", "Deep Cuts", "Heavy Rotation".
+- **Title Creativity**: Avoid "Top Tracks". Use "The Marathon", "Quick Hits", "Heavy Rotation".
 - **Context Awareness**: Use the user's data to check if an artist exists before creating a filter.
 - **Accuracy**: If user wants "Top 5 Kanye", use { field: "artist_name", value: "Kanye West", limit: 5 }.
 

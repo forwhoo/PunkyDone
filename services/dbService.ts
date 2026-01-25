@@ -341,6 +341,7 @@ const getDayOfWeek = (i: number) => {
 };
 
 interface AIFilter {
+    type?: 'song' | 'album' | 'artist';
     field?: 'artist_name' | 'album_name' | 'track_name';
     value?: string;
     contains?: string;
@@ -367,6 +368,7 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
     try {
         const filter = concept.filter;
         const resultLimit = filter.limit || 20;
+        const type = filter.type || 'song';
         
         // Start with base query - get more data for better filtering
         let query = supabase
@@ -431,7 +433,7 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
             filtered = filtered.filter(item => (item.duration_ms || 0) <= filter.maxDurationMs!);
         }
 
-        // Aggregate by unique song
+        // Aggregate by result type
         const stats: Record<string, {
             id: string;
             title: string;
@@ -441,20 +443,42 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
             plays: number;
             totalMs: number;
             lastPlayed: Date;
+            type: 'song' | 'album' | 'artist';
         }> = {};
 
         filtered.forEach((item: any) => {
-            const key = `${item.track_name}|||${item.artist_name}`;
+            let key = ''; 
+            let title = '';
+            let cover = item.album_cover || '';
+            const artist = item.artist_name || 'Unknown';
+            const album = item.album_name || '';
+
+            if (type === 'artist') {
+                key = artist;
+                title = artist;
+                // Artist image not available in listening_history, handled in frontend or separate fetch
+                cover = ''; 
+            } else if (type === 'album') {
+                key = `${album}|||${artist}`;
+                title = album;
+                cover = item.album_cover;
+            } else {
+                // Song
+                key = `${item.track_name}|||${item.artist_name}`;
+                title = item.track_name;
+            }
+
             if (!stats[key]) {
                 stats[key] = {
-                    id: item.spotify_id,
-                    title: item.track_name,
-                    artist: item.artist_name,
-                    album: item.album_name,
-                    cover: item.album_cover,
+                    id: item.spotify_id, // For song/album links?
+                    title: title,
+                    artist: artist,
+                    album: album,
+                    cover: cover,
                     plays: 0,
                     totalMs: 0,
-                    lastPlayed: new Date(item.played_at)
+                    lastPlayed: new Date(item.played_at),
+                    type: type
                 };
             }
             stats[key].plays += 1;
@@ -462,6 +486,10 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
             const itemDate = new Date(item.played_at);
             if (itemDate > stats[key].lastPlayed) {
                 stats[key].lastPlayed = itemDate;
+                // Update cover to latest
+                if (type !== 'artist' && item.album_cover) {
+                     stats[key].cover = item.album_cover;
+                }
             }
         });
 
@@ -475,9 +503,11 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
 
         // Sort
         const ascending = filter.sortOrder === 'lowest';
-        if (filter.sortBy === 'minutes') {
+        const sortField = filter.sortBy || 'plays';
+        
+        if (sortField === 'minutes') {
             results.sort((a, b) => ascending ? a.totalMs - b.totalMs : b.totalMs - a.totalMs);
-        } else if (filter.sortBy === 'recency') {
+        } else if (sortField === 'recency') {
             results.sort((a, b) => ascending 
                 ? a.lastPlayed.getTime() - b.lastPlayed.getTime() 
                 : b.lastPlayed.getTime() - a.lastPlayed.getTime());
@@ -494,7 +524,8 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
             cover: item.cover,
             listens: item.plays,
             timeStr: `${Math.round(item.totalMs / 60000)}m`,
-            totalMinutes: Math.round(item.totalMs / 60000)
+            totalMinutes: Math.round(item.totalMs / 60000),
+            type: item.type
         }));
 
     } catch (e) {

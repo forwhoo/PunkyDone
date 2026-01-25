@@ -404,6 +404,7 @@ function App() {
         {/* THE DISCOVERY - Moved to top as requested */}
         <div className="mb-16 px-1">
              <AISpotlight 
+                token={token}
                 contextData={{
                     artists: (dbUnifiedData?.artists || data.artists).map((a: Artist) => {
                         const time = a.timeStr || '';
