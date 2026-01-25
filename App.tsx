@@ -392,36 +392,13 @@ function App() {
         />
 
         {/* NEW WIDGETS GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 px-1">
-             <RankingWidget 
-                title="Top Genres" 
-                items={rankingMockData.topGenre} 
-                icon={<Disc className="w-5 h-5" />}
-                color="#FA2D48"
-                onExpand={() => { setCurrentWrappedPeriod("Week"); setWrappedOpen(true); }}
-             />
-             <RankingWidget 
-                title="Most Played" 
-                items={rankingMockData.mostPlayed} 
-                icon={<Trophy className="w-5 h-5" />}
-                color="#FF9F0A"
-             />
-              <RankingWidget 
-                title="Rap World" 
-                items={rankingMockData.rapStars} 
-                icon={<Mic2 className="w-5 h-5" />}
-                color="#BF5AF2"
-             />
-             <div className="md:col-span-2 lg:col-span-3">
-                 <AISpotlight genres={["Pop", "HipHop", "Rock"]} />
+        <div className="grid grid-cols-1 mb-12 px-1">
+             <div className="w-full">
+                 <AISpotlight genres={[]} />
              </div>
         </div>
 
-        <WrappedModal 
-            isOpen={wrappedOpen} 
-            onClose={() => setWrappedOpen(false)} 
-            period={currentWrappedPeriod}
-        />
+        {/* WrappedModal removed */}
 
         {/* TOP ALBUMS - Horizontal Scroll */}
         <div className="mb-12">

@@ -298,81 +298,74 @@ const msToTime = (duration: number) => {
 };
 
 // Helper to get day of week (0-6)
-const getDayOfWeek = (timestamp: string) => new Date(timestamp).getDay();
-
-// Helper to get hour (0-23)
-const getHour = (timestamp: string) => new Date(timestamp).getHours();
-
-export const fetchSmartPlaylist = async (criteria: any): Promise<Song[]> => {
-    // We'll perform most filtering client-side for simplicity on the "formula" part
-    // unless the dataset is massive. For ~10k songs, client-side filter is instant.
-    
-    // 1. Fetch recent history (e.g. last 30 days or last 1000 tracks)
-    const { data, error } = await supabase
-        .from('listening_history')
-        .select('*')
-        .order('played_at', { ascending: false })
-        .limit(2000); // Sample size
-
-    if (error || !data) return [];
-
-    // 2. Apply "Formula"
-    let filtered = data;
-
-    if (criteria.filterType === 'time') {
-        const { startHour, endHour } = criteria.filterParams;
-        filtered = data.filter(item => {
-            const h = getHour(item.played_at);
-            // Handle cross-midnight (e.g. 22 to 04)
-            if (startHour > endHour) {
-                return h >= startHour || h <= endHour;
-            }
-            return h >= startHour && h <= endHour;
-        });
-    } else if (criteria.filterType === 'keyword') {
-        const kw = criteria.filterParams.keyword.toLowerCase();
-        filtered = data.filter(item => 
-            item.track_name.toLowerCase().includes(kw) || 
-            item.artist_name.toLowerCase().includes(kw)
-        );
-    } 
-    // Genre filtering would require joining with artist/track genre data which might not be in the simple history table yet.
-    // For now we skip strict genre filtering or use simple keyword matching if 'genreKeyword' is provided.
-    else if (criteria.filterType === 'genre') {
-        const kw = criteria.filterParams.genreKeyword.toLowerCase();
-        // Since we don't store genres in history directly yet (optimized), we search artist names or fallback
-        // In a full implementation, we'd fetching artist metadata.
-         filtered = data.filter(item => 
-            item.artist_name.toLowerCase().includes(kw)
-        );
-    }
-
-    // 3. Aggregate (Count plays)
-    const counts: Record<string, { count: number, track: any }> = {};
-    
-    filtered.forEach(item => {
-        const id = item.spotify_id;
-        if (!counts[id]) {
-            counts[id] = { count: 0, track: item };
-        }
-        counts[id].count++;
-    });
-
-    // 4. Sort and Format
-    const sorted = Object.values(counts)
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10) // Top 10
-        .map((entry, index) => ({
-            id: entry.track.spotify_id,
-            title: entry.track.track_name,
-            artist: entry.track.artist_name,
-            album: entry.track.album_name,
-            cover: entry.track.album_cover,
-            duration: new Date(entry.track.duration_ms).toISOString().substr(14, 5),
-            listens: entry.count,
-            dailyChange: 0,
-            rank: index + 1
-        }));
-
-    return sorted;
+const getDayOfWeek = (i: number) => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return days[i % 7];
 };
+
+export const fetchSmartPlaylist = async (concept: any) => {
+    // concept = { tool: '...', args: {...} }
+    try {
+        let query = supabase.from('listening_history').select('*').order('played_at', { ascending: false }).limit(2000); // Fetch ample history to filter
+
+        // Basic Filtering at DB level where possible
+        if (concept.tool === 'filterByArtist' && concept.args?.artistName) {
+            query = query.ilike('artist_name', `%${concept.args.artistName}%`);
+        }
+        else if (concept.tool === 'filterByKeyword' && concept.args?.keyword) {
+             query = query.or(`track_name.ilike.%${concept.args.keyword}%,album_name.ilike.%${concept.args.keyword}%`);
+        }
+
+        const { data, error } = await query;
+        if (error || !data) {
+            console.error("Smart Playlist Fetch Error:", error);
+            return [];
+        }
+
+        // Advanced Logic / Memory Filtering (Crucial for Time, or complex AI logic)
+        let filtered = data;
+
+        if (concept.tool === 'filterByTime' && concept.args) {
+            const { startHour, endHour } = concept.args;
+            filtered = data.filter(item => {
+                const h = new Date(item.played_at).getHours();
+                // Handle wrap around (e.g. 22 to 04)
+                if (startHour <= endHour) {
+                    return h >= startHour && h <= endHour;
+                } else {
+                    return h >= startHour || h <= endHour;
+                }
+            });
+        }
+
+        // Now Aggregation: Group by Song to simulate "Top Charts" for this category
+        const stats: Record<string, any> = {};
+        filtered.forEach((item: any) => {
+             // Unique key: Artist + Track
+             const key = `${item.track_name}-${item.artist_name}`;
+             if (!stats[key]) {
+                 stats[key] = {
+                     id: item.spotify_id,
+                     title: item.track_name,
+                     artist: item.artist_name,
+                     cover: item.album_cover,
+                     listens: 0,
+                     duration: 0
+                 };
+             }
+             stats[key].listens += 1;
+        });
+
+        // Convert to Array and Sort by Listens
+        return Object.values(stats)
+            .sort((a: any, b: any) => b.listens - a.listens)
+            .slice(0, 20); // Top 20 for the spotlight
+
+    } catch (e) {
+        console.error("Smart Fetch Exception:", e);
+        return [];
+    }
+};
+
+
+
