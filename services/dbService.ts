@@ -336,8 +336,15 @@ export const fetchSmartPlaylist = async (concept: any) => {
                     return h >= startHour || h <= endHour;
                 }
             });
+        }        else if (concept.tool === 'filterByDiscovery' && concept.args) {
+            // Find songs played LESS than X times or simple "long tail"
+            // For now, simple random shuffle of history to simulate "rediscovery"
+            filtered = data.sort(() => 0.5 - Math.random()).slice(0, 50);
         }
-
+        else if (concept.tool === 'filterByLongest' && concept.args) {
+             // Filter for songs > 4 minutes (240000ms)
+             filtered = data.filter(item => item.duration_ms > 240000);
+        }
         // Now Aggregation: Group by Song to simulate "Top Charts" for this category
         const stats: Record<string, any> = {};
         filtered.forEach((item: any) => {

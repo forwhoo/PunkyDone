@@ -55,8 +55,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
              {/* Header */}
             <div className="flex justify-between items-end mb-6 px-1 mx-1">
                 <div className="flex items-center gap-3">
-                     <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
-                         <Sparkles className="w-4 h-4 text-white" />
+                     <div className="w-8 h-8 rounded-full bg-[#FA2D48]/10 flex items-center justify-center border border-[#FA2D48]/20">
+                         <Sparkles className="w-4 h-4 text-[#FA2D48]" />
                      </div>
                      <div>
                         <h2 className="text-[22px] font-bold text-white tracking-tight leading-none">

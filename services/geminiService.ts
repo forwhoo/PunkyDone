@@ -63,7 +63,9 @@ export const generateDynamicCategoryQuery = async (context: { artists: string[],
 
             TASK:
             1. Analyze the Time of Day + Available Artists.
-            2. Invent a creative Title & Description. (AVOID generic names like "Morning Playlist". Be cool. e.g. "Doja Cat & Friends", "3AM in Toronto", "The Weeknd Loop").
+            2. Invent a creative, specific Title & Description.
+               - FORBIDDEN: "Morning Playlist", "Daytime Vibes", "Sunrise Serenade".
+               - REQUIRED: Use cool/abstract names like "Coffee & 808s", "Late Registration", "Toronto 3AM", "Focus Flow", "Gems Only", "High Fidelity".
             3. Select the best TOOL from the list below to build this playlist from the DB.
             
             TOOLS (Choose ONE):
@@ -73,12 +75,20 @@ export const generateDynamicCategoryQuery = async (context: { artists: string[],
                - CRITICAL: "artistName" MUST actully exist in the "User's Top Artists" list above. Do not hallucinate an artist.
             
             B. { "tool": "filterByTime", "args": { "startHour": 0-23, "endHour": 0-23 } }
-               - Use this for time-based vibes (e.g. "Late Night Drive").
+               - Use this for time-based vibes (e.g. "After Hours" or "Breakfast Club").
                - Set hours correctly for the context (Night = 22-04, Morning = 05-10).
             
             C. { "tool": "filterByKeyword", "args": { "keyword": "AnyString" } }
                - Use this to match words in Track Title or Album.
-               - Examples: "Love", "Remix", "Live", "Acoustic".
+               - Examples: "Love", "Remix", "Live", "Acoustic", "Feat", "Interlude".
+
+            D. { "tool": "filterByDiscovery", "args": {} }
+               - Use this if you want to surface "Hidden Gems" or random shuffles.
+               - Title ideas: "Buried Treasure", "Shuffle Play", "Forgotten Favorites".
+
+            E. { "tool": "filterByLongest", "args": {} }
+               - Use this for "Deep Cuts" or extended plays.
+               - Title ideas: "Extended Versions", "The Long Game", "Progressive Journey".
 
             OUTPUT JSON ONLY:
             {
