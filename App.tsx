@@ -15,7 +15,8 @@ import {
     fetchSpotifyData, 
     redirectToAuthCodeFlow, 
     getAccessToken,
-    refreshAccessToken
+    refreshAccessToken,
+    fetchArtistImages
 } from './services/spotifyService';
 import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay } from './services/dbService';
 import { generateMusicInsight, generateRankingInsights } from './services/geminiService';
@@ -59,7 +60,7 @@ const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
 );
 
 // RANKED COMPONENT: Top Artist (Number style like Top Albums)
-const RankedArtist = ({ artist, rank }: { artist: Artist, rank: number }) => (
+const RankedArtist = ({ artist, rank, realImage }: { artist: Artist, rank: number, realImage?: string }) => (
     <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
         <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40">
             {rank}
@@ -67,7 +68,7 @@ const RankedArtist = ({ artist, rank }: { artist: Artist, rank: number }) => (
         <div className="relative z-10 ml-10 md:ml-12">
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
                 <img 
-                    src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
+                    src={realImage || artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
                     alt={artist.name} 
                     className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" 
                 />
@@ -118,6 +119,41 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [dbStats, setDbStats] = useState<any>(null);
   const [dbUnifiedData, setDbUnifiedData] = useState<any>(null);
+  const [artistImages, setArtistImages] = useState<Record<string, string>>({}); // Real artist images
+
+  // Fetch Artist Images when data loads
+  useEffect(() => {
+    const loadImages = async () => {
+        if (!token) return;
+        const artistsToFetch = new Set<string>();
+        
+        // 1. Get names from Top Artists
+        const topArtists = dbUnifiedData?.artists || data.artists || [];
+        topArtists.slice(0, 15).forEach((a: Artist) => artistsToFetch.add(a.name));
+
+        // 2. Get names from Recent to help Trending
+        const recent = dbUnifiedData?.recentPlays || [];
+        recent.slice(0, 50).forEach((p: any) => artistsToFetch.add(p.artist_name));
+
+        if (artistsToFetch.size === 0) return;
+
+        const needed = Array.from(artistsToFetch).filter(name => !artistImages[name]);
+        
+        if (needed.length > 0) {
+            try {
+                const newImages = await fetchArtistImages(token, needed);
+                setArtistImages(prev => ({ ...prev, ...newImages }));
+            } catch (e) {
+                console.error("BG Image Fetch Error", e);
+            }
+        }
+    };
+    
+    if (dbUnifiedData || data.artists.length > 0) {
+        loadImages();
+    }
+  }, [dbUnifiedData, data, token]);
+
   const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly'>('Weekly');
   
   // Wrapped Modal State
@@ -459,7 +495,7 @@ function App() {
              </div>
              <div className="flex items-start overflow-x-auto pb-8 pt-6 no-scrollbar snap-x pl-4 scroll-smooth">
                 {(dbUnifiedData?.artists || data.artists).slice(0, 10).map((artist: Artist, index: number) => (
-                    <RankedArtist key={artist.id} artist={artist} rank={index + 1} />
+                    <RankedArtist key={artist.id} artist={artist} rank={index + 1} realImage={artistImages[artist.name]} />
                 ))}
              </div>
         </div>
@@ -468,6 +504,7 @@ function App() {
         <TrendingArtists 
             artists={dbUnifiedData?.artists || data.artists}
             recentPlays={dbUnifiedData?.recentPlays || []}
+            artistImages={artistImages}
         />
 
         {/* RECENTLY PLAYED - New Section */}

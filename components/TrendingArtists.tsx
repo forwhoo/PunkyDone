@@ -13,9 +13,10 @@ interface TrendingArtist {
 interface TrendingArtistsProps {
     artists: any[];
     recentPlays: any[];
+    artistImages?: Record<string, string>;
 }
 
-export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recentPlays }) => {
+export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recentPlays, artistImages }) => {
     const [trendingArtists, setTrendingArtists] = useState<TrendingArtist[]>([]);
     const [lastUpdate, setLastUpdate] = useState(new Date());
 
@@ -42,9 +43,16 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
             if (!artistStats[artist]) {
                 artistStats[artist] = {
                     plays: [],
-                    image: play.album_cover || play.cover
+                    image: (artistImages && artistImages[artist]) 
+                        ? artistImages[artist] 
+                        : (play.album_cover || play.cover)
                 };
             }
+            // Update image if we got a better one later (or passed in props update)
+            if (artistImages && artistImages[artist]) {
+                artistStats[artist].image = artistImages[artist];
+            }
+            
             artistStats[artist].plays.push({
                 time: new Date(play.played_at).getTime()
             });
@@ -109,7 +117,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
     // Initial calculation
     useEffect(() => {
         calculateTrendingArtists();
-    }, [artists, recentPlays]);
+    }, [artists, recentPlays, artistImages]);
 
     // Live update every 1 second
     useEffect(() => {

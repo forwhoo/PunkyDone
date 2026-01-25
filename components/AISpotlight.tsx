@@ -61,9 +61,13 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
         }
     }, [typing, chatResponse]);
 
-    const handleQuery = async () => {
-        if (!userPrompt.trim()) return;
+    const handleQuery = async (manualPrompt?: string) => {
+        const promptToUse = manualPrompt || userPrompt;
+        if (!promptToUse.trim()) return;
         
+        // Update input if manual
+        if(manualPrompt) setUserPrompt(manualPrompt);
+
         setLoading(true);
         setErrorMsg(null);
         setChatResponse(null);
@@ -72,13 +76,13 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
         
         try {
             // Determine query type
-            const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover', 'top', 'best', 'most', 'rank', 'chart', 'favorite', 'least'];
-            const isAnalysisQuery = analysisKeywords.some(k => userPrompt.toLowerCase().includes(k));
+            const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover', 'top', 'best', 'most', 'rank', 'chart', 'favorite', 'least', 'wrapped', 'gems', 'rewind', 'vibes', 'mix'];
+            const isAnalysisQuery = analysisKeywords.some(k => promptToUse.toLowerCase().includes(k));
             
             if (isAnalysisQuery) {
                 // SQL Analysis Mode
                 setMode('discover');
-                const concepts = await generateDynamicCategoryQuery(contextData, userPrompt);
+                const concepts = await generateDynamicCategoryQuery(contextData, promptToUse);
                 
                 const newResults: CategoryResult[] = [];
                 
@@ -143,7 +147,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
             } else {
                 // Chat Mode
                 setMode('chat');
-                const answer = await answerMusicQuestion(userPrompt, contextData);
+                const answer = await answerMusicQuestion(promptToUse, contextData);
                 setChatResponse(answer);
                 setDisplayedText(""); // Reset text for typing
                 setTyping(true);
@@ -153,7 +157,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
         }
         
         setLoading(false);
-        setUserPrompt("");
+        if(!manualPrompt) setUserPrompt(""); 
     };
 
     return (
@@ -275,6 +279,21 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                         </button>
                     </div>
                 </div>
+
+                {/* Quick Feature Suggestions */}
+                {mode === 'discover' && categoryResults.length === 0 && !loading && !displayedText && (
+                    <div className="flex flex-wrap items-center justify-center gap-2 mt-8 max-w-2xl mx-auto">
+                        {['Create a Wrapped', 'Top Artists', 'Morning Vibes', 'Hidden Gems', '80s Rewind', 'Chill Mix'].map((suggestion) => (
+                            <button
+                                key={suggestion}
+                                onClick={() => handleQuery(suggestion)}
+                                className="px-4 py-2 rounded-full bg-white/5 border border-white/5 text-[#8E8E93] text-sm hover:bg-white/10 hover:text-white hover:border-white/20 transition-all active:scale-95"
+                            >
+                                {suggestion}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Error Messages */}
