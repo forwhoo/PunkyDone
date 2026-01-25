@@ -391,19 +391,6 @@ function App() {
             longestSession={dbUnifiedData?.songs?.[0]}
         />
 
-        {/* NEW WIDGETS GRID */}
-        <div className="grid grid-cols-1 mb-12 px-1">
-             <div className="w-full">
-                 <AISpotlight 
-                    contextData={{
-                        artists: (dbUnifiedData?.artists || data.artists).map(a => a.name),
-                        albums: (dbUnifiedData?.albums || data.albums).map(a => a.title),
-                        songs: (dbUnifiedData?.songs || data.songs).map(s => s.title)
-                    }} 
-                 />
-             </div>
-        </div>
-
         {/* WrappedModal removed */}
 
         {/* TOP ALBUMS - Horizontal Scroll */}
@@ -434,6 +421,17 @@ function App() {
                     <RankedArtist key={artist.id} artist={artist} rank={index + 1} />
                 ))}
              </div>
+        </div>
+
+        {/* AI SPOTLIGHT - Replaced and moved after Top Artists */}
+        <div className="mb-16 px-1">
+             <AISpotlight 
+                contextData={{
+                    artists: (dbUnifiedData?.artists || data.artists).map((a: Artist) => `${a.name} (${a.totalListens} plays)`),
+                    albums: (dbUnifiedData?.albums || data.albums).map((a: Album) => `${a.title} by ${a.artist} (${a.totalListens} plays)`),
+                    songs: (dbUnifiedData?.songs || data.songs).map((s: Song) => `${s.title} by ${s.artist} (${s.listens} plays)`)
+                }} 
+             />
         </div>
 
         {/* LISTENING ACTIVITY */}

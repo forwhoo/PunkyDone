@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardHeader, CardTitle, Badge } from './UIComponents';
-import { Play, TrendingUp, TrendingDown, Minus, Clock, Calendar, GitBranch } from 'lucide-react';
+import { Play, TrendingUp, TrendingDown, Minus, Clock, Calendar, GitBranch, Share2 } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
+import { fetchArtistNetwork } from '../services/dbService';
 
 interface TopChartsProps {
   title: string;
@@ -14,30 +15,36 @@ interface TopChartsProps {
 }
 
 // Graph Node Component for the new Graph View
-const GraphNode = ({ item, size, x, y, onClick, isCenter }: any) => (
+const GraphNode = ({ item, size, x, y, onClick, isCenter, connectionStrength }: any) => (
     <div 
-        className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group transition-all duration-300 hover:scale-110 hover:z-50 ${isCenter ? 'z-40' : 'z-10'}`}
+        className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group transition-all duration-700 ease-out hover:scale-110 hover:z-50 ${isCenter ? 'z-40' : 'z-10'}`}
         style={{ left: `${x}%`, top: `${y}%` }}
         onClick={onClick}
     >
-        <div className={`rounded-full overflow-hidden border-2 ${isCenter ? 'border-[#FA2D48] shadow-lg shadow-[#FA2D48]/30' : 'border-white/20'} bg-[#2C2C2E]`}
+        <div className={`rounded-full overflow-hidden border-2 transition-all duration-500 ${isCenter ? 'border-[#FA2D48] shadow-[0_0_30px_rgba(250,45,72,0.4)]' : connectionStrength > 0 ? 'border-white/60 shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'border-white/10 opacity-60'} bg-[#2C2C2E]`}
              style={{ width: size, height: size }}>
-            <img src={item.image || item.cover} alt={item.name || item.title} className="w-full h-full object-cover" />
+            <img src={item.image || item.cover} alt={item.name || item.title} className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 transition-all" />
         </div>
-        <div className={`absolute left-1/2 -translate-x-1/2 mt-2 text-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}>
-            <div className="bg-black/90 rounded-lg px-2 py-1 whitespace-nowrap">
-                <p className="text-white text-xs font-bold">{item.name || item.title}</p>
-                <p className="text-[#8E8E93] text-[10px]">{item.totalListens || item.listens} plays</p>
+        
+        {/* Connection Strength Badge */}
+        {!isCenter && connectionStrength > 0 && (
+            <div className="absolute -top-2 -right-2 bg-white text-black text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg">
+                {connectionStrength}
+            </div>
+        )}
+
+        <div className={`absolute left-1/2 -translate-x-1/2 mt-3 text-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50`}>
+            <div className="bg-black/95 border border-white/10 rounded-lg px-3 py-1.5 whitespace-nowrap shadow-2xl">
+                <p className="text-white text-[11px] font-bold tracking-tight">{item.name || item.title}</p>
+                <p className="text-[#8E8E93] text-[9px] uppercase tracking-widest font-bold">
+                    {connectionStrength > 0 ? `${connectionStrength} Shared Sessions` : `${item.totalListens || item.listens} plays`}
+                </p>
             </div>
         </div>
-        {/* Connection Lines */}
+
+        {/* Pulsing Aura for center */}
         {isCenter && (
-            <div className="absolute inset-0 pointer-events-none">
-                {[45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
-                    <div key={i} className="absolute left-1/2 top-1/2 w-20 h-px bg-gradient-to-r from-white/20 to-transparent origin-left"
-                         style={{ transform: `rotate(${angle}deg)` }} />
-                ))}
-            </div>
+            <div className="absolute inset-0 rounded-full border border-[#FA2D48]/30 animate-ping opacity-20 pointer-events-none" />
         )}
     </div>
 );
@@ -57,6 +64,47 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs
   const [activeTab, setActiveTab] = useState<'Songs' | 'Albums' | 'Artists'>('Artists');
   const [hoverData, setHoverData] = useState<any>(null);
   const [selectedNode, setSelectedNode] = useState<any>(null);
+
+  // Network Graph Data
+  const [network, setNetwork] = useState<{ artistInfo: any, pairs: any }>({ artistInfo: {}, pairs: {} });
+  const [centerArtist, setCenterArtist] = useState<string | null>(null);
+  const [loadingGraph, setLoadingGraph] = useState(false);
+
+  useEffect(() => {
+    if (viewMode === 'Graph' && Object.keys(network.artistInfo).length === 0) {
+        loadNetwork();
+    }
+  }, [viewMode]);
+
+  const loadNetwork = async () => {
+    setLoadingGraph(true);
+    const data = await fetchArtistNetwork(2000); // Analyze more plays for better graph
+    setNetwork(data);
+    
+    // Default center to top artist if not set
+    if (Object.keys(data.artistInfo).length > 0) {
+        const top = Object.values(data.artistInfo).sort((a: any, b: any) => b.count - a.count)[0] as any;
+        setCenterArtist(top.name);
+    }
+    setLoadingGraph(false);
+  };
+
+  // Get Orbiting Artists for Center
+  const getOrbitData = () => {
+      if (!centerArtist || !network.pairs[centerArtist]) return [];
+      
+      const related = network.pairs[centerArtist];
+      return Object.entries(related)
+        .map(([name, strength]) => ({
+            ...network.artistInfo[name],
+            strength: strength as number
+        }))
+        .sort((a, b) => b.strength - a.strength)
+        .slice(0, 8); // Show top 8 related
+  };
+
+  const orbitArtists = getOrbitData();
+  const centerInfo = centerArtist ? network.artistInfo[centerArtist] : null;
 
   // Helper to get today's date
   const todayDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
@@ -227,92 +275,128 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs
                </div>
            </div>
          ) : viewMode === 'Graph' ? (
-           /* GRAPH VIEW - Node Visualization */
-           <div className="h-[400px] relative bg-[#0D0D0D] overflow-hidden">
-              {/* Background Pattern */}
-              <div className="absolute inset-0 opacity-10">
-                  <div className="absolute inset-0" style={{ 
-                      backgroundImage: 'radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)',
-                      backgroundSize: '40px 40px'
-                  }}></div>
-              </div>
+           /* GRAPH VIEW - Dynamic Network Visualization */
+           <div className="h-[420px] relative bg-[#0D0D0D] overflow-hidden group/graph">
+              {/* Background Glow */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-[#FA2D48]/5 rounded-full blur-[120px] pointer-events-none" />
               
-              {/* Center Node - #1 */}
-              {listData[0] && (
-                  <GraphNode 
-                      item={listData[0]} 
-                      size={100} 
-                      x={50} 
-                      y={50} 
-                      isCenter={true}
-                      onClick={() => setSelectedNode(listData[0])}
-                  />
+              {loadingGraph ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-50">
+                      <div className="w-8 h-8 border-2 border-[#FA2D48] border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-[#8E8E93] text-[10px] font-bold uppercase tracking-widest">Mapping Connections...</p>
+                  </div>
+              ) : !centerInfo ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center px-12">
+                      <Share2 className="w-12 h-12 text-[#2C2C2E]" />
+                      <p className="text-[#8E8E93] text-sm">Not enough data to map your network yet. Keep listening!</p>
+                  </div>
+              ) : (
+                  <>
+                    {/* Header Info */}
+                    <div className="absolute top-4 left-4 z-30 flex items-center gap-3">
+                        <div className="bg-[#FA2D48]/10 text-[#FA2D48] p-2 rounded-lg">
+                            <GitBranch className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <p className="text-white text-xs font-bold leading-none mb-1">Artist Affinity</p>
+                            <p className="text-[#8E8E93] text-[10px]">Showing artists you listen to together</p>
+                        </div>
+                    </div>
+
+                    {/* Reset Button */}
+                    <button 
+                         onClick={loadNetwork}
+                         className="absolute top-4 right-4 z-30 bg-[#2C2C2E]/80 hover:bg-[#3A3A3C] text-white p-2 rounded-lg transition-colors border border-white/5"
+                    >
+                        <RefreshCcw className="w-4 h-4" />
+                    </button>
+
+                    {/* SVG Connections (Lines) */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 5 }}>
+                        {orbitArtists.map((item, index) => {
+                            const angle = (index * (360 / orbitArtists.length) - 90) * (Math.PI / 180);
+                            const radiusX = 35; // % of width
+                            const radiusY = 32; // % of height
+                            const x2 = 50 + radiusX * Math.cos(angle);
+                            const y2 = 50 + radiusY * Math.sin(angle);
+                            
+                            // Opacity based on strength
+                            const opacity = Math.min(0.1 + (item.strength / 10), 0.5);
+                            
+                            return (
+                                <line 
+                                    key={item.id}
+                                    x1="50%" y1="50%" 
+                                    x2={`${x2}%`} y2={`${y2}%`}
+                                    stroke={`rgba(250, 45, 72, ${opacity})`}
+                                    strokeWidth={1 + item.strength/5}
+                                    strokeDasharray={item.strength > 2 ? "" : "4 4"}
+                                    className="transition-all duration-1000"
+                                />
+                            );
+                        })}
+                    </svg>
+                    
+                    {/* Center Node */}
+                    <GraphNode 
+                        item={centerInfo} 
+                        size={110} 
+                        x={50} 
+                        y={50} 
+                        isCenter={true}
+                        onClick={() => setSelectedNode(centerInfo)}
+                    />
+                    
+                    {/* Orbiting Nodes */}
+                    {orbitArtists.map((item, index) => {
+                        const angle = (index * (360 / orbitArtists.length) - 90) * (Math.PI / 180);
+                        const radiusX = 35;
+                        const radiusY = 32;
+                        const x = 50 + radiusX * Math.cos(angle);
+                        const y = 50 + radiusY * Math.sin(angle);
+                        
+                        // Size based on strength or count
+                        const size = 65 + Math.min(item.strength * 2, 20);
+                        
+                        return (
+                            <GraphNode 
+                                key={item.id}
+                                item={item} 
+                                size={size} 
+                                x={x} 
+                                y={y} 
+                                isCenter={false}
+                                connectionStrength={item.strength}
+                                onClick={() => {
+                                    setCenterArtist(item.name);
+                                    setSelectedNode(item);
+                                }}
+                            />
+                        );
+                    })}
+                  </>
               )}
               
-              {/* Orbiting Nodes */}
-              {listData.slice(1, 7).map((item, index) => {
-                  const angle = (index * 60) * (Math.PI / 180);
-                  const radius = 35;
-                  const x = 50 + radius * Math.cos(angle);
-                  const y = 50 + radius * Math.sin(angle);
-                  const size = 60 - (index * 5);
-                  
-                  return (
-                      <GraphNode 
-                          key={item.id}
-                          item={item} 
-                          size={size} 
-                          x={x} 
-                          y={y} 
-                          isCenter={false}
-                          onClick={() => setSelectedNode(item)}
-                      />
-                  );
-              })}
-              
-              {/* Connection Lines from Center */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 5 }}>
-                  {listData.slice(1, 7).map((_, index) => {
-                      const angle = (index * 60) * (Math.PI / 180);
-                      const radius = 35;
-                      const x2 = 50 + radius * Math.cos(angle);
-                      const y2 = 50 + radius * Math.sin(angle);
-                      
-                      return (
-                          <line 
-                              key={index}
-                              x1="50%" y1="50%" 
-                              x2={`${x2}%`} y2={`${y2}%`}
-                              stroke="rgba(255,255,255,0.1)"
-                              strokeWidth="1"
-                              strokeDasharray="4 4"
-                          />
-                      );
-                  })}
-              </svg>
-              
-              {/* Selected Node Detail */}
+              {/* Selected Node Detail Overlay */}
               {selectedNode && (
-                  <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-md rounded-xl p-4 border border-white/10 animate-in slide-in-from-bottom-4 z-50">
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/90 backdrop-blur-xl rounded-2xl p-4 border border-white/10 animate-in slide-in-from-bottom-4 z-[60] shadow-2xl">
                       <div className="flex items-center gap-4">
-                          <img src={selectedNode.image || selectedNode.cover} alt="" className="w-16 h-16 rounded-lg object-cover" />
+                          <img src={selectedNode.image || selectedNode.cover} alt="" className="w-14 h-14 rounded-xl object-cover border border-white/10" />
                           <div className="flex-1 min-w-0">
-                              <h4 className="text-white font-bold text-lg truncate">{selectedNode.name || selectedNode.title}</h4>
-                              <p className="text-[#8E8E93] text-sm">{selectedNode.artist || 'Artist'}</p>
+                              <h4 className="text-white font-bold text-base truncate">{selectedNode.name || selectedNode.title}</h4>
+                              <p className="text-[#8E8E93] text-xs uppercase tracking-widest font-bold">
+                                  {selectedNode.count || selectedNode.listens} Plays In History
+                              </p>
                           </div>
-                          <div className="text-right">
-                              <div className="text-2xl font-black text-[#FA2D48]">{selectedNode.totalListens || selectedNode.listens}</div>
-                              <div className="text-[10px] text-[#8E8E93] uppercase tracking-widest">plays</div>
-                          </div>
+                          <button 
+                            onClick={() => setSelectedNode(null)}
+                            className="text-[#8E8E93] hover:text-white p-2"
+                          >
+                             <Minus className="w-5 h-5" />
+                          </button>
                       </div>
                   </div>
               )}
-              
-              {/* Legend */}
-              <div className="absolute top-4 left-4 flex items-center gap-2 text-[10px] text-[#8E8E93] uppercase tracking-widest">
-                  <GitBranch className="w-3 h-3" />
-                  <span>Connection Graph • Click nodes for details</span>
-              </div>
            </div>
          ) : (
            /* LIST VIEW */

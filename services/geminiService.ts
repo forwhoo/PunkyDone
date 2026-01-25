@@ -74,7 +74,7 @@ export const generateDynamicCategoryQuery = async (context: {
     artists: string[], 
     albums: string[], 
     songs: string[] 
-}): Promise<AIFilterResult> => {
+}, userPrompt?: string): Promise<AIFilterResult> => {
     try {
         const client = getAiClient();
         if (!client) throw new Error("Missing VITE_GROQ_API_KEY");
@@ -87,13 +87,14 @@ export const generateDynamicCategoryQuery = async (context: {
         const shuffledAlbums = [...context.albums].sort(() => 0.5 - Math.random());
         const shuffledSongs = [...context.songs].sort(() => 0.5 - Math.random());
 
-        const prompt = `
+        const systemInstructions = `
 You are the DJ Algorithm for a premium music dashboard.
 Your job: Create ONE unique, creative listening category from the user's REAL library.
 
 ## USER'S LIBRARY:
-- Top Artists: [${shuffledArtists.slice(0, 25).join(', ')}]
-- Top Albums: [${shuffledAlbums.slice(0, 15).join(', ')}]
+- Top Artists: [${shuffledArtists.slice(0, 30).join(', ')}]
+- Top Albums: [${shuffledAlbums.slice(0, 20).join(', ')}]
+- Top Songs: [${shuffledSongs.slice(0, 20).join(', ')}]
 - Current Time: ${hour}:00 (${timeOfDay})
 
 ## FILTER PARAMETERS (all optional, combine as needed):
@@ -115,18 +116,8 @@ Your job: Create ONE unique, creative listening category from the user's REAL li
 ## CREATIVE GUIDELINES:
 - FORBIDDEN titles: "Morning Playlist", "Top Tracks", "Best Of", "Daily Mix"
 - GOOD titles: "The Marathon", "Quick Hits", "Weekend Warriors", "Deep Cuts", "Repeat Offenders", "Fresh Finds"
-- For broad categories (time-based, duration-based), use general filters NOT specific artists
-- For artist spotlights, use exact artist name from the list
-
-## EXAMPLE FILTERS:
-1. Weekend vibes: { "dayOfWeek": "weekend", "sortBy": "plays", "sortOrder": "highest" }
-2. Epic tracks: { "minDurationMs": 300000, "sortBy": "plays", "sortOrder": "highest" }
-3. Quick hits: { "maxDurationMs": 180000, "sortBy": "plays", "sortOrder": "highest" }
-4. Fresh this week: { "recentDays": 7, "sortBy": "recency", "sortOrder": "highest" }
-5. Hidden gems: { "sortBy": "plays", "sortOrder": "lowest", "minPlays": 2 }
-6. Artist deep dive: { "field": "artist_name", "value": "Drake", "sortBy": "minutes", "sortOrder": "highest" }
-7. Love songs: { "contains": "love", "sortBy": "plays", "sortOrder": "highest" }
-8. Late night sessions: { "timeOfDay": "latenight", "sortBy": "minutes", "sortOrder": "highest" }
+- If the user provides a prompt, strictly follow it. If not, be creative.
+- If user asks for "Harry Styles", use { "field": "artist_name", "value": "Harry Styles", "sortBy": "plays" }.
 
 ## OUTPUT (JSON only):
 {
@@ -136,14 +127,19 @@ Your job: Create ONE unique, creative listening category from the user's REAL li
 }
 `;
 
+        const userMessage = userPrompt 
+            ? `USER REQUEST: "${userPrompt}". Generate a matching category using the library context.`
+            : `Generate a random creative category based on the user's library and current time.`;
+
         const response = await client.chat.completions.create({
             model: "llama-3.3-70b-versatile",
             messages: [
                 { role: "system", content: "You are a JSON-only API. Return raw JSON. No markdown, no explanation." },
-                { role: "user", content: prompt }
+                { role: "system", content: systemInstructions },
+                { role: "user", content: userMessage }
             ],
             response_format: { type: "json_object" },
-            temperature: 0.95 
+            temperature: 0.8
         });
 
         const text = response.choices[0]?.message?.content || "{}";

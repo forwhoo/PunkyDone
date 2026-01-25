@@ -465,5 +465,61 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
     }
 };
 
+/**
+ * FETCH ARTIST NETWORK (For Graph View)
+ * Calculates co-occurrence of artists in the same listening session (within 5 mins)
+ */
+export const fetchArtistNetwork = async (limit = 1000) => {
+    const { data, error } = await supabase
+        .from('listening_history')
+        .select('artist_name, played_at, album_cover')
+        .order('played_at', { ascending: false })
+        .limit(limit);
+    
+    if (error || !data) return { artistInfo: {}, pairs: {} };
+
+    const pairs: Record<string, Record<string, number>> = {};
+    const artistInfo: Record<string, { id: string, name: string, image: string, count: number }> = {};
+
+    // First pass: gather info
+    data.forEach(item => {
+        if (!artistInfo[item.artist_name]) {
+            artistInfo[item.artist_name] = { 
+                id: item.artist_name,
+                name: item.artist_name, 
+                image: item.album_cover, 
+                count: 0 
+            };
+        }
+        artistInfo[item.artist_name].count++;
+    });
+
+    // Second pass: find pairs (simple sliding window)
+    for (let i = 0; i < data.length - 1; i++) {
+        const itemA = data[i];
+        const timeA = new Date(itemA.played_at).getTime();
+
+        // Check next few items for proximity
+        for (let j = i + 1; j < Math.min(i + 15, data.length); j++) {
+            const itemB = data[j];
+            const timeB = new Date(itemB.played_at).getTime();
+
+            // Played within 10 mins of each other?
+            if (Math.abs(timeA - timeB) < 10 * 60 * 1000 && itemA.artist_name !== itemB.artist_name) {
+                const a = itemA.artist_name;
+                const b = itemB.artist_name;
+                
+                if (!pairs[a]) pairs[a] = {};
+                pairs[a][b] = (pairs[a][b] || 0) + 1;
+                
+                if (!pairs[b]) pairs[b] = {};
+                pairs[b][a] = (pairs[b][a] || 0) + 1;
+            }
+        }
+    }
+
+    return { artistInfo, pairs };
+};
+
 
 
