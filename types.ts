@@ -6,6 +6,10 @@ export interface Artist {
   image: string;
   totalListens: number;
   trend: number; // Percentage growth
+  rank?: number;
+  peak?: number;
+  prev?: number;
+  streak?: number;
 }
 
 export interface Album {
@@ -15,6 +19,11 @@ export interface Album {
   cover: string;
   year: number;
   totalListens: number;
+  rank?: number;
+  peak?: number;
+  prev?: number;
+  streak?: number;
+  trend?: number;
 }
 
 export interface Song {
@@ -26,6 +35,11 @@ export interface Song {
   duration: string;
   listens: number;
   dailyChange: number;
+  rank?: number;
+  peak?: number;
+  prev?: number;
+  streak?: number;
+  trend?: number;
 }
 
 export interface ChartDataPoint {

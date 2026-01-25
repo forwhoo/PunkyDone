@@ -1,26 +1,26 @@
 import { Artist, Album, Song, ChartDataPoint } from '../types';
 
 export const MOCK_ARTISTS: Artist[] = [
-  { id: '1', name: 'The Weeknd', image: 'https://picsum.photos/400/400?random=1', totalListens: 84500000, trend: 12 },
-  { id: '2', name: 'Taylor Swift', image: 'https://picsum.photos/400/400?random=2', totalListens: 102300000, trend: 5 },
-  { id: '3', name: 'Bad Bunny', image: 'https://picsum.photos/400/400?random=3', totalListens: 67200000, trend: -2 },
-  { id: '4', name: 'Drake', image: 'https://picsum.photos/400/400?random=4', totalListens: 55100000, trend: 1 },
-  { id: '5', name: 'SZA', image: 'https://picsum.photos/400/400?random=5', totalListens: 42000000, trend: 15 },
+  { id: '1', name: 'The Weeknd', image: 'https://picsum.photos/400/400?random=1', totalListens: 84500000, trend: 12, rank: 1, peak: 1, prev: 2, streak: 24 },
+  { id: '2', name: 'Taylor Swift', image: 'https://picsum.photos/400/400?random=2', totalListens: 102300000, trend: 5, rank: 2, peak: 1, prev: 1, streak: 52 },
+  { id: '3', name: 'Bad Bunny', image: 'https://picsum.photos/400/400?random=3', totalListens: 67200000, trend: -2, rank: 3, peak: 2, prev: 3, streak: 15 },
+  { id: '4', name: 'Drake', image: 'https://picsum.photos/400/400?random=4', totalListens: 55100000, trend: 1, rank: 4, peak: 3, prev: 4, streak: 12 },
+  { id: '5', name: 'SZA', image: 'https://picsum.photos/400/400?random=5', totalListens: 42000000, trend: 15, rank: 5, peak: 5, prev: 6, streak: 8 },
 ];
 
 export const MOCK_ALBUMS: Album[] = [
-  { id: '1', title: 'Midnights', artist: 'Taylor Swift', cover: 'https://picsum.photos/400/400?random=6', year: 2022, totalListens: 45000000 },
-  { id: '2', title: 'SOS', artist: 'SZA', cover: 'https://picsum.photos/400/400?random=7', year: 2022, totalListens: 38000000 },
-  { id: '3', title: 'Un Verano Sin Ti', artist: 'Bad Bunny', cover: 'https://picsum.photos/400/400?random=8', year: 2022, totalListens: 62000000 },
-  { id: '4', title: 'Starboy', artist: 'The Weeknd', cover: 'https://picsum.photos/400/400?random=9', year: 2016, totalListens: 29000000 },
+  { id: '1', title: 'Midnights', artist: 'Taylor Swift', cover: 'https://picsum.photos/400/400?random=6', year: 2022, totalListens: 45000000, rank: 1, peak: 1, prev: 1, streak: 20, trend: 5 },
+  { id: '2', title: 'SOS', artist: 'SZA', cover: 'https://picsum.photos/400/400?random=7', year: 2022, totalListens: 38000000, rank: 2, peak: 2, prev: 3, streak: 10, trend: 12 },
+  { id: '3', title: 'Un Verano Sin Ti', artist: 'Bad Bunny', cover: 'https://picsum.photos/400/400?random=8', year: 2022, totalListens: 62000000, rank: 3, peak: 1, prev: 2, streak: 45, trend: -3 },
+  { id: '4', title: 'Starboy', artist: 'The Weeknd', cover: 'https://picsum.photos/400/400?random=9', year: 2016, totalListens: 29000000, rank: 4, peak: 3, prev: 5, streak: 5, trend: 8 },
 ];
 
 export const MOCK_SONGS: Song[] = [
-  { id: '1', title: 'Anti-Hero', artist: 'Taylor Swift', album: 'Midnights', cover: 'https://picsum.photos/400/400?random=6', duration: '3:20', listens: 12500000, dailyChange: 24000 },
-  { id: '2', title: 'Kill Bill', artist: 'SZA', album: 'SOS', cover: 'https://picsum.photos/400/400?random=7', duration: '2:33', listens: 11200000, dailyChange: 18500 },
-  { id: '3', title: 'As It Was', artist: 'Harry Styles', album: 'Harry\'s House', cover: 'https://picsum.photos/400/400?random=10', duration: '2:47', listens: 9800000, dailyChange: 12000 },
-  { id: '4', title: 'Creepin\'', artist: 'Metro Boomin', album: 'Heroes & Villains', cover: 'https://picsum.photos/400/400?random=11', duration: '3:41', listens: 8400000, dailyChange: 32000 },
-  { id: '5', title: 'Die For You', artist: 'The Weeknd', album: 'Starboy', cover: 'https://picsum.photos/400/400?random=9', duration: '3:50', listens: 15600000, dailyChange: 5000 },
+  { id: '1', title: 'Anti-Hero', artist: 'Taylor Swift', album: 'Midnights', cover: 'https://picsum.photos/400/400?random=6', duration: '3:20', listens: 12500000, dailyChange: 24000, rank: 1, peak: 1, prev: 2, streak: 12, trend: 10 },
+  { id: '2', title: 'Kill Bill', artist: 'SZA', album: 'SOS', cover: 'https://picsum.photos/400/400?random=7', duration: '2:33', listens: 11200000, dailyChange: 18500, rank: 2, peak: 2, prev: 1, streak: 8, trend: -5 },
+  { id: '3', title: 'As It Was', artist: 'Harry Styles', album: 'Harry\'s House', cover: 'https://picsum.photos/400/400?random=10', duration: '2:47', listens: 9800000, dailyChange: 12000, rank: 3, peak: 1, prev: 3, streak: 40, trend: 2 },
+  { id: '4', title: 'Creepin\'', artist: 'Metro Boomin', album: 'Heroes & Villains', cover: 'https://picsum.photos/400/400?random=11', duration: '3:41', listens: 8400000, dailyChange: 32000, rank: 4, peak: 4, prev: 6, streak: 4, trend: 15 },
+  { id: '5', title: 'Die For You', artist: 'The Weeknd', album: 'Starboy', cover: 'https://picsum.photos/400/400?random=9', duration: '3:50', listens: 15600000, dailyChange: 5000, rank: 5, peak: 5, prev: 4, streak: 25, trend: -1 },
 ];
 
 export const MOCK_CHART_DATA: ChartDataPoint[] = [

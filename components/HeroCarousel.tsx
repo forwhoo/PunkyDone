@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Clock, Music, Headphones, Sparkles, Send } from 'lucide-react';
+import { Clock, Music, Headphones, Sparkles, Send, Zap } from 'lucide-react';
 import { Button } from './UIComponents';
 
 // --- Typewriter Component ---
@@ -81,8 +81,24 @@ interface HeroCarouselProps {
   onGenerateInsight: (query?: string) => void;
 }
 
+const SUGGESTIONS = [
+    { label: "Analyze my top genres", icon: Music, color: "from-pink-500 to-rose-500" },
+    { label: "Predict my next favorite", icon: Sparkles, color: "from-purple-500 to-indigo-500" },
+    { label: "Morning drive vibe", icon: Headphones, color: "from-orange-400 to-amber-400" },
+    { label: "Workout energy check", icon: Clock, color: "from-emerald-500 to-teal-500" },
+];
+
 export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight }: HeroCarouselProps) => {
   const [inputValue, setInputValue] = useState('');
+  const [activeSuggestion, setActiveSuggestion] = useState<number>(0);
+
+  // Auto-rotate suggestions for visual effect (optional)
+  useEffect(() => {
+      const interval = setInterval(() => {
+          setActiveSuggestion(prev => (prev + 1) % SUGGESTIONS.length);
+      }, 5000);
+      return () => clearInterval(interval);
+  }, []);
   
   const handleSend = () => {
       if (!inputValue.trim()) return;
@@ -98,100 +114,98 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight }: Her
 
   return (
     <div className="w-full mb-12">
-      <h2 className="text-[32px] font-bold text-white mb-6 tracking-tight">For You</h2>
-      <div className="flex gap-4 overflow-x-auto pb-8 -mx-6 px-6 md:mx-0 md:px-0 no-scrollbar snap-x scroll-smooth">
+        <h2 className="text-[22px] font-bold text-white tracking-tight mb-6 px-1">AI Music Intelligence</h2>
         
-        {/* Card 1: AI Insight (Music Intelligence) */}
-        <div className="relative flex-shrink-0 w-[85vw] md:w-[480px] h-[220px] rounded-2xl overflow-hidden snap-start border border-white/5 bg-[#1C1C1E] flex flex-col group">
-            {/* Dark elegant background with subtle spotlight */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#2C2C2E] to-[#141414]"></div>
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 blur-[80px] rounded-full pointer-events-none group-hover:bg-white/10 transition-colors duration-500"></div>
+        <div className="relative rounded-3xl overflow-hidden bg-[#1C1C1E] border border-white/5 min-h-[320px] flex flex-col md:flex-row shadow-2xl">
+            {/* Dynamic Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1C1C1E] via-[#2C2C2E] to-black z-0"></div>
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FA2D48] opacity-5 blur-[120px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-600 opacity-5 blur-[100px] rounded-full pointer-events-none translate-y-1/2 -translate-x-1/2"></div>
             
-            <div className="relative z-10 p-6 flex flex-col h-full justify-between">
+            {/* Left Content */}
+            <div className="relative z-10 flex-1 p-8 flex flex-col justify-between">
                 <div>
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-gray-400" />
-                            <span className="text-[11px] uppercase tracking-widest text-shine">Music Intelligence</span>
-                        </div>
-                        {loadingInsight && <WaveLoading />}
-                    </div>
-                    
-                    <div className="min-h-[60px]">
-                        {loadingInsight ? (
-                            <span className="text-white/50 text-sm animate-pulse">Thinking...</span>
-                        ) : insight ? (
-                            <Typewriter text={insight} />
-                        ) : (
-                             <div className="max-w-[85%]">
-                                 <h3 className="text-2xl font-bold text-white mb-2">Your Daily Recap</h3>
-                                 <p className="text-[#9CA3AF] text-sm leading-relaxed">Unlock deep insights about your listening habits.</p>
-                             </div>
-                        )}
-                    </div>
+                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-6 shadow-inner">
+                        <Sparkles className="w-3.5 h-3.5 text-[#FA2D48]" />
+                        <span className="text-[11px] font-bold uppercase tracking-widest text-white/80">Powered by Gemini</span>
+                     </div>
+                     
+                     <div className="mb-6 min-h-[80px]">
+                         {loadingInsight ? (
+                            <div className="flex items-center gap-3 text-white/50 h-full">
+                                <WaveLoading />
+                                <span className="text-lg font-medium animate-pulse ml-2">Analyzing your taste profile...</span>
+                            </div>
+                         ) : (
+                             <Typewriter text={insight || "Ask me anything about your music taste, or choose a suggestion to get started."} />
+                         )}
+                     </div>
                 </div>
-                
-                <div className="w-full mt-auto">
-                  {!insight && !loadingInsight ? (
-                     <Button 
-                         onClick={() => onGenerateInsight()} 
-                         className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/10 rounded-full px-5 h-9 text-xs font-semibold transition-all"
-                     >
-                         Generate Insight
-                     </Button>
-                  ) : (
-                    // Chat Input Box
-                    <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full px-4 py-2 border border-white/10 animate-fade-in-up w-full mt-2">
-                        <input 
-                          type="text" 
-                          value={inputValue}
-                          onChange={(e) => setInputValue(e.target.value)}
-                          onKeyDown={handleKeyDown}
-                          placeholder="Ask about your history..." 
-                          className="bg-transparent border-none outline-none text-[13px] text-white placeholder-white/40 flex-1 min-w-0"
-                          autoFocus
+
+                <div className="relative mt-4 group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#FA2D48]/20 to-purple-600/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="relative flex items-center bg-black/40 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-md transition-all focus-within:bg-black/60 focus-within:border-white/20">
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Ask about your listening habits..."
+                            className="w-full bg-transparent pl-5 pr-14 py-4 text-white placeholder:text-white/30 focus:outline-none font-medium h-full"
                         />
                         <button 
                             onClick={handleSend}
-                            disabled={!inputValue.trim() || loadingInsight}
-                            className="text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+                            disabled={!inputValue.trim()}
+                            className="absolute right-2 p-2 bg-[#FA2D48] hover:bg-[#d4253d] disabled:bg-white/5 disabled:text-white/20 text-white rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center p-2.5 m-1"
                         >
-                            <Send className="w-3.5 h-3.5" />
+                            <Send className="w-4 h-4" />
                         </button>
                     </div>
-                  )}
                 </div>
             </div>
+
+            {/* Right Side - Suggestions Carousel/Grid */}
+            <div className="relative z-10 w-full md:w-[340px] border-l border-white/5 bg-black/20 backdrop-blur-sm p-6 flex flex-col justify-center">
+                 <div className="flex items-center justify-between mb-4">
+                     <div className="text-xs font-bold uppercase tracking-widest text-[#8E8E93]">Quick Actions</div>
+                     <Zap className="w-3 h-3 text-[#FA2D48]" />
+                 </div>
+                 
+                 <div className="space-y-3">
+                     {SUGGESTIONS.map((s, i) => (
+                         <button 
+                            key={i}
+                            onClick={() => onGenerateInsight(s.label)}
+                            className={`group w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left relative overflow-hidden ${
+                                i === activeSuggestion 
+                                ? 'bg-white/10 border-white/10 shadow-lg' 
+                                : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/5'
+                            }`}
+                         >
+                             {/* Hover Gradient Effect */}
+                             <div className={`absolute inset-0 bg-gradient-to-r ${s.color} opacity-0 group-hover:opacity-10 transition-opacity`}></div>
+
+                             <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                                 <s.icon className="w-5 h-5 text-white" />
+                             </div>
+                             <div className="flex-1 z-10">
+                                 <div className="text-[13px] font-bold text-white group-hover:text-white transition-colors">{s.label}</div>
+                                 <div className="text-[10px] text-white/50 group-hover:text-white/70">Tap to generate</div>
+                             </div>
+                         </button>
+                     ))}
+                 </div>
+                 
+                 <div className="mt-6 flex items-center justify-center gap-2">
+                     {SUGGESTIONS.map((_, i) => (
+                         <div 
+                            key={i} 
+                            className={`h-1 rounded-full transition-all duration-300 ${i === activeSuggestion ? 'w-6 bg-[#FA2D48]' : 'w-1 bg-white/10'}`}
+                         ></div>
+                     ))}
+                 </div>
+            </div>
         </div>
-
-        {/* Card 2: Weekly Time */}
-        <HeroCard 
-            title="21h 14m" 
-            subtitle="Weekly Time" 
-            meta="+2h vs last week"
-            gradientClass="bg-[conic-gradient(at_bottom_right,_var(--tw-gradient-stops))] from-orange-500 via-rose-500 to-transparent blur-2xl"
-            icon={Clock}
-        />
-
-        {/* Card 3: Top Genre */}
-        <HeroCard 
-            title="Pop" 
-            subtitle="Top Genre" 
-            meta="45% of total plays"
-            gradientClass="bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-500 via-teal-500 to-transparent blur-2xl"
-            icon={Music}
-        />
-
-        {/* Card 4: New Discoveries */}
-        <HeroCard 
-            title="24 Tracks" 
-            subtitle="New Music" 
-            meta="Added to library"
-            gradientClass="bg-[conic-gradient(at_top_left,_var(--tw-gradient-stops))] from-indigo-500 via-purple-500 to-transparent blur-2xl"
-            icon={Headphones}
-        />
-
-      </div>
     </div>
   );
 };

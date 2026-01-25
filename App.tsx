@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
-import { AnalyticsChart } from './components/AnalyticsChart';
+import { TopCharts } from './components/TopCharts';
 import { HeroCarousel } from './components/HeroCarousel';
-import { ChevronRight, Play, Music } from 'lucide-react';
+import { ChevronRight, Play, Music, BarChart2 } from 'lucide-react';
 import { Artist, Album, Song } from './types';
 import { getAuthUrl, getTokenFromUrl, fetchSpotifyData, redirectToAuthCodeFlow, getAccessToken } from './services/spotifyService';
 
@@ -23,11 +23,16 @@ const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
             {rank}
         </span>
         <div className="relative z-10 ml-10 md:ml-12">
-            <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2">
-                <img src={album.cover} alt={album.title} className="w-full h-full object-cover" />
+            <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
+                <img src={album.cover} alt={album.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
+                     <span className="text-white font-bold text-2xl drop-shadow-md">{(album.totalListens / 1000000).toFixed(1)}M</span>
+                     <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Listens</span>
+                </div>
             </div>
-            <div className="mt-3">
-                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight">{album.title}</h3>
+            <div className="mt-3 relative z-20">
+                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{album.title}</h3>
                 <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5">{album.artist}</p>
             </div>
         </div>
@@ -43,7 +48,10 @@ const RankedArtist = ({ artist, rank }: { artist: Artist, rank: number }) => (
                 {rank}
             </span>
             <div className="relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-transform duration-300 shadow-xl">
-                <img src={artist.image} alt={artist.name} className="w-full h-full object-cover" />
+                <img src={artist.image} alt={artist.name} className="w-full h-full object-cover group-hover:blur-[2px] transition-all" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <BarChart2 className="w-8 h-8 text-white drop-shadow-md" />
+                </div>
             </div>
         </div>
         <div className="text-center mt-3 px-1">
@@ -61,15 +69,19 @@ const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
                 {rank}
             </span>
             <div className="relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-[#2C2C2E]">
-                <img src={song.cover} alt={song.title} className="w-full h-full object-cover" />
+                <img src={song.cover} alt={song.title} className="w-full h-full object-cover group-hover:blur-[1px] transition-all" />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                      <Play className="w-6 h-6 text-white fill-white" />
                 </div>
             </div>
             <div className="flex-1 min-w-0">
-                <h3 className="text-[14px] font-bold text-white truncate leading-tight">{song.title}</h3>
+                <h3 className="text-[14px] font-bold text-white truncate leading-tight group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
                 <p className="text-[12px] text-[#8E8E93] truncate mt-0.5">{song.artist}</p>
-                <p className="text-[10px] text-[#FA2D48] font-medium mt-1 uppercase tracking-wide">Popular</p>
+                <div className="flex items-center gap-2 mt-1">
+                   <p className="text-[10px] text-[#FA2D48] font-medium uppercase tracking-wide">Popular</p>
+                   <span className="text-[10px] text-white/40">•</span>
+                   <p className="text-[10px] text-white/60">{song.duration}</p>
+                </div>
             </div>
         </div>
     </div>
@@ -232,8 +244,7 @@ function App() {
 
         {/* LISTENING ACTIVITY */}
         <div className="mb-8">
-            <SectionHeader title="Listening Trend" />
-            <AnalyticsChart title="Activity (Last 24h)" />
+            <TopCharts title="Listening Trends" />
         </div>
     </Layout>
   );
