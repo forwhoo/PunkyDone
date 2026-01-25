@@ -29,6 +29,17 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title }) => {
 
   const listData = getListData();
 
+  // Helper for safe image loading
+  const getImageSrc = (item: any) => {
+       const url = item.image || item.cover;
+       return url;
+  };
+  
+  // Fallback if image fails
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+      e.currentTarget.src = "https://ui-avatars.com/api/?background=2C2C2E&color=fff&size=128&bold=true";
+  };
+
   const renderTrendIcon = (trend: number) => {
     if (trend > 0) return <Badge className="bg-green-500/20 text-green-500 hover:bg-green-500/30 flex gap-1 items-center px-2"><TrendingUp size={12}/> {Math.abs(trend)}</Badge>;
     if (trend < 0) return <Badge className="bg-red-500/20 text-red-500 hover:bg-red-500/30 flex gap-1 items-center px-2"><TrendingDown size={12} /> {Math.abs(trend)}</Badge>;
@@ -145,7 +156,11 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title }) => {
                         
                         {hoverData.song && (
                             <div className="bg-[#2C2C2E] rounded-xl p-3 flex items-center gap-3 border border-white/5">
-                                <img src={hoverData.song.cover} className="w-10 h-10 rounded-md object-cover" />
+                                <img 
+                                    src={getImageSrc(hoverData.song)} 
+                                    onError={handleImageError} 
+                                    className="w-10 h-10 rounded-md object-cover" 
+                                />
                                 <div className="min-w-0">
                                     <div className="text-xs font-medium text-[#8E8E93] mb-0.5">Top Song</div>
                                     <div className="text-sm font-bold text-white truncate">{hoverData.song.title}</div>
@@ -178,8 +193,12 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title }) => {
                                {renderTrendIcon(item.trend || 0)}
                            </div>
                            <div className="flex items-center gap-4">
-                               <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#2C2C2E] relative group-hover:shadow-lg transition-all">
-                                   <img src={item.image || item.cover} className="w-full h-full object-cover" />
+                               <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#2C2C2E] relative group-hover:shadow-lg transition-all shrink-0">
+                                   <img 
+                                      src={getImageSrc(item)} 
+                                      className="w-full h-full object-cover" 
+                                      onError={handleImageError}
+                                   />
                                    {activeTab === 'Songs' && (
                                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                          <Play className="w-5 h-5 text-white fill-white" />
