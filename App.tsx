@@ -49,8 +49,9 @@ const RankedArtist = ({ artist, rank }: { artist: Artist, rank: number }) => (
             </span>
             <div className="relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-transform duration-300 shadow-xl">
                 <img src={artist.image} alt={artist.name} className="w-full h-full object-cover group-hover:blur-[2px] transition-all" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <BarChart2 className="w-8 h-8 text-white drop-shadow-md" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+                    <span className="text-white font-bold text-lg">{(artist.totalListens / 1000000).toFixed(1)}M</span>
+                    <span className="text-white/80 text-[10px] uppercase font-bold tracking-widest">Listens</span>
                 </div>
             </div>
         </div>
@@ -244,7 +245,13 @@ function App() {
 
         {/* LISTENING ACTIVITY */}
         <div className="mb-8">
-            <TopCharts title="Listening Trends" />
+            <TopCharts 
+                title="Listening Trends"
+                artists={data.artists}
+                songs={data.songs}
+                albums={data.albums}
+                hourlyActivity={data.hourly}
+            />
         </div>
     </Layout>
   );

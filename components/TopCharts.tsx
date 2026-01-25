@@ -1,15 +1,19 @@
 
 import React, { useState } from 'react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { MOCK_HOURLY_ACTIVITY, MOCK_ARTISTS, MOCK_SONGS, MOCK_ALBUMS } from '../services/mockData';
 import { Card, CardHeader, CardTitle, Badge } from './UIComponents';
 import { Play, TrendingUp, TrendingDown, Minus, Clock, Calendar } from 'lucide-react';
+import { Artist, Album, Song } from '../types';
 
 interface TopChartsProps {
   title: string;
+  artists?: Artist[];
+  songs?: Song[];
+  albums?: Album[];
+  hourlyActivity?: any[];
 }
 
-export const TopCharts: React.FC<TopChartsProps> = ({ title }) => {
+export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs = [], albums = [], hourlyActivity = [] }) => {
   const [viewMode, setViewMode] = useState<'Chart' | 'List'>('List');
   const [activeTab, setActiveTab] = useState<'Songs' | 'Albums' | 'Artists'>('Artists');
   const [hoverData, setHoverData] = useState<any>(null);
@@ -20,9 +24,9 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title }) => {
   // Get data based on active tab
   const getListData = () => {
     switch (activeTab) {
-      case 'Artists': return MOCK_ARTISTS;
-      case 'Albums': return MOCK_ALBUMS;
-      case 'Songs': return MOCK_SONGS;
+      case 'Artists': return artists;
+      case 'Albums': return albums;
+      case 'Songs': return songs;
       default: return [];
     }
   };
@@ -105,7 +109,7 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title }) => {
 
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart 
-                    data={MOCK_HOURLY_ACTIVITY} 
+                    data={hourlyActivity} 
                     margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
                     onMouseMove={(e: any) => {
                         if (e.activePayload && e.activePayload[0]) {
@@ -152,21 +156,8 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title }) => {
                   {hoverData ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
                         <div className="text-sm text-[#8E8E93] mb-1">{hoverData.time}</div>
-                        <div className="text-4xl font-black text-white mb-6">{hoverData.value} <span className="text-lg font-medium text-[#8E8E93]">listens</span></div>
-                        
-                        {hoverData.song && (
-                            <div className="bg-[#2C2C2E] rounded-xl p-3 flex items-center gap-3 border border-white/5">
-                                <img 
-                                    src={getImageSrc(hoverData.song)} 
-                                    onError={handleImageError} 
-                                    className="w-10 h-10 rounded-md object-cover" 
-                                />
-                                <div className="min-w-0">
-                                    <div className="text-xs font-medium text-[#8E8E93] mb-0.5">Top Song</div>
-                                    <div className="text-sm font-bold text-white truncate">{hoverData.song.title}</div>
-                                </div>
-                            </div>
-                        )}
+                        <div className="text-4xl font-black text-white mb-2">{hoverData.value} <span className="text-lg font-medium text-[#8E8E93]">listens</span></div>
+                        <div className="text-sm text-white/40 font-medium">Activity Level</div>
                     </div>
                   ) : (
                     <div className="text-[#636366]">Hover over the chart to see hourly details.</div>
