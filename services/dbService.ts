@@ -296,13 +296,6 @@ export const fetchDashboardStats = async () => {
     };
 };
 
-    return {
-        artists: topArtists,
-        songs: topSongs,
-        albums: topAlbums
-    };
-};
-
 const msToTime = (duration: number) => {
   const minutes = Math.floor(duration / 60000);
   const seconds = ((duration % 60000) / 1000).toFixed(0);
