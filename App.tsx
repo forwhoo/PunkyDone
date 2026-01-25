@@ -50,22 +50,28 @@ const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
 const RankedArtist = ({ artist, rank }: { artist: Artist, rank: number }) => (
     <div className="flex-shrink-0 relative flex flex-col items-center snap-start group cursor-pointer w-[140px] md:w-[160px] mr-2">
         <div className="relative">
-            {/* Number positioned top-left of circle */}
-            <span className="text-[80px] leading-none font-black text-outline absolute -left-4 -top-8 z-0 select-none pointer-events-none italic opacity-60">
-                {rank}
-            </span>
+            {/* Number removed as per request ("remove that i") */}
+            {/* <span className="text-[80px] leading-none font-black text-outline absolute -left-4 -top-8 z-0 ...">{rank}</span> */}
+            
             <div className="relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-transform duration-300 shadow-xl">
-                {/* Fallback image if blank from DB */}
-                <img src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=random`} alt={artist.name} className="w-full h-full object-cover group-hover:blur-[2px] transition-all" />
+                {/* Use album cover as fallback for artist image if artist image is missing, then avatar */}
+                <img 
+                    src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
+                    alt={artist.name} 
+                    className="w-full h-full object-cover group-hover:blur-[2px] transition-all" 
+                />
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
                     <span className="text-white font-bold text-lg">{artist.totalListens}</span>
                     <span className="text-white/80 text-[10px] uppercase font-bold tracking-widest">Plays</span>
                 </div>
             </div>
+            {/* Small Rank Badge instead */}
+            <div className="absolute top-0 right-0 bg-[#FA2D48] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md z-20">
+                #{rank}
+            </div>
         </div>
         <div className="text-center mt-3 px-1">
              <h3 className="text-[15px] font-medium text-white truncate w-full group-hover:text-primary transition-colors">{artist.name}</h3>
-             <p className="text-[12px] text-[#8E8E93] font-medium">Rank #{rank}</p>
         </div>
     </div>
 );
@@ -106,6 +112,12 @@ function App() {
 
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
+
+  // --- Real-time Tracking State ---
+  const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
+  const [sessionTrack, setSessionTrack] = useState<any>(null);
+  const [listenedMs, setListenedMs] = useState<number>(0);
+  const [lastCheckTime, setLastCheckTime] = useState<number>(Date.now());
 
   // Function to refresh DB view
   const refreshDbStats = async () => {
@@ -155,23 +167,75 @@ function App() {
   }, [data]);
 
 
-  // Polling Effect - Refresh every 3 minutes
+  // Polling Effect - Refresh every 1.5 seconds
   useEffect(() => {
     if (!token) return;
 
     const loadData = async () => {
-        // Don't set loading true on background refreshes to avoid full screen spinner
+        const now = Date.now();
         const spotifyData = await fetchSpotifyData(token);
+        
         if (spotifyData) {
             setData(spotifyData);
+            
+            // --- Custom Tracking Logic ---
+            const { playbackState } = spotifyData;
+            
+            // Calculate time passed since last check
+            const delta = now - lastCheckTime;
+            setLastCheckTime(now);
+
+            // Cap delta to avoid huge jumps if tab was suspended (max 10 seconds per poll of 1.5s)
+            const validDelta = Math.min(delta, 10000);
+
+            // If playing, accumulate time
+            if (playbackState.is_playing && playbackState.item) {
+                 // Check if track changed
+                 if (playbackState.item.id !== currentTrackId) {
+                     // It's a new song!
+                     // 1. Log the PREVIOUS song if it existed
+                     // Log if > 3s listened
+                     if (currentTrackId && sessionTrack && listenedMs > 3000) { 
+                         // Ensure we don't log more than the song's actual duration
+                         const finalMs = Math.min(listenedMs, sessionTrack.duration_ms || Infinity);
+                         // console.log("Track changed. Logging:", sessionTrack.name, finalMs);
+                         await logSinglePlay(sessionTrack, finalMs);
+                     }
+
+                     // 2. Reset for NEW song
+                     setCurrentTrackId(playbackState.item.id);
+                     setSessionTrack(playbackState.item);
+                     setListenedMs(0); 
+                 } else {
+                     // Same song, just playing. Add delta to listenedMs
+                     setListenedMs(prev => {
+                         // Don't exceed track duration
+                         const maxDuration = playbackState.item.duration_ms || Infinity;
+                         return Math.min(prev + validDelta, maxDuration);
+                     });
+                 }
+            } else {
+                // Not playing (paused or stopped)
+                if (!playbackState.item && currentTrackId && sessionTrack) {
+                    // Player stopped/closed
+                     if (listenedMs > 3000) {
+                         const finalMs = Math.min(listenedMs, sessionTrack.duration_ms || Infinity);
+                         await logSinglePlay(sessionTrack, finalMs);
+                     }
+                     setCurrentTrackId(null);
+                     setSessionTrack(null);
+                     setListenedMs(0);
+                }
+            }
+
         } else {
-             // If token expired or error
              if (!data) setLoading(false);
         }
     };
 
     // Initial load
     setLoading(true);
+    setLastCheckTime(Date.now()); // Init time
     loadData().then(() => setLoading(false));
 
     // Set interval for 1.5 seconds (1500 ms) for near-instant updates
@@ -180,7 +244,7 @@ function App() {
     }, 1500);
 
     return () => clearInterval(intervalId);
-  }, [token]);
+  }, [token, currentTrackId, sessionTrack]); // Add dependencies for tracking state
 
   useEffect(() => {
     const handleAuth = async () => {

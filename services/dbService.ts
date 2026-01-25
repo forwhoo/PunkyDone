@@ -12,7 +12,11 @@ export interface HistoryItem {
 }
 
 export const logSinglePlay = async (track: any, listenedMs: number) => {
-    if (!track || listenedMs < 5000) return; // Ignore plays less than 5 seconds
+    if (!track || listenedMs < 3000) return; // Ignore plays less than 3 seconds (was 5)
+
+    // Ensure we don't log crazy duration (cap at track length + small buffer, or just track length)
+    // If track.duration_ms is available, use it to cap.
+    const duration = track.duration_ms ? Math.min(listenedMs, track.duration_ms) : listenedMs;
 
     const historyItem: HistoryItem = {
         spotify_id: track.id,
@@ -142,8 +146,18 @@ export const fetchDashboardStats = async () => {
     
     // Client-side aggregation for Top Artists
     const artistCounts: Record<string, number> = {};
+    const artistImages: Record<string, string> = {}; // Helper to find an image
+
     artistsData?.forEach((item: any) => {
         artistCounts[item.artist_name] = (artistCounts[item.artist_name] || 0) + 1;
+    });
+
+    // Also scan albums to find matching images for artists (Hack since we don't have artist_image)
+    const { data: albumCovers } = await supabase.from('listening_history').select('artist_name, album_cover');
+    albumCovers?.forEach((item:any) => {
+        if (!artistImages[item.artist_name] && item.album_cover) {
+            artistImages[item.artist_name] = item.album_cover;
+        }
     });
     
     // Sort and map
@@ -153,7 +167,7 @@ export const fetchDashboardStats = async () => {
         .map(([name, count], index) => ({
             id: `artist-${index}`,
             name,
-            image: '', // We might need to fetch image from spotify separate or store it? DB doesn't have artist image.
+            image: artistImages[name] || '', // Use found album cover as artist image proxy
             totalListens: count,
             trend: 0
         }));
