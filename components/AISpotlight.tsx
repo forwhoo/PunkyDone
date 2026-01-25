@@ -205,15 +205,15 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
             )}
 
             {/* Results - Top Albums Style Carousel */}
-            <div className="relative min-h-[240px]">
+            <div className="relative">
                 {loading && (
-                    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl">
+                    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl min-h-[240px]">
                          <div className="w-10 h-10 border-2 border-[#FA2D48] border-t-transparent rounded-full animate-spin mb-4"></div>
                          <p className="text-[#8E8E93] text-sm animate-pulse">Analyzing your music...</p>
                     </div>
                 )}
                 
-                {results.length > 0 ? (
+                {results.length > 0 && (
                     <div className="flex items-end overflow-x-auto pb-10 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
                         {results.map((item, index) => (
                             <div key={item.id || index} className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
@@ -235,14 +235,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                                 </div>
                             </div>
                         ))}
-                    </div>
-                ) : !loading && mode === 'discover' && (
-                    <div className="w-full h-[200px] border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-4 bg-[#1C1C1E]/50 mx-1">
-                        <Sparkles className="w-8 h-8 text-white/20" />
-                        <div className="text-center">
-                            <p className="text-white font-medium">Ready to discover</p>
-                            <p className="text-[#8E8E93] text-xs mt-1">Ask a question or request a playlist above</p>
-                        </div>
                     </div>
                 )}
             </div>

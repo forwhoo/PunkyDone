@@ -48,7 +48,6 @@ const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
                      <span className="text-white font-bold text-xl drop-shadow-md">{album.timeStr}</span>
-                     <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Listened</span>
                 </div>
             </div>
             <div className="mt-3 relative z-20">
@@ -81,7 +80,6 @@ const RankedArtist = ({ artist, rank }: { artist: Artist, rank: number }) => (
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
                      <span className="text-white font-bold text-xl drop-shadow-md">{artist.timeStr}</span>
-                     <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Listened</span>
                 </div>
             </div>
             <div className="mt-3 relative z-20">
@@ -112,9 +110,9 @@ const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
                     <h3 className="text-[14px] font-bold text-white truncate leading-tight group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
                     <p className="text-[12px] text-[#8E8E93] truncate mt-0.5">{song.artist}</p>
                     <div className="flex items-center gap-2 mt-1">
-                    <p className="text-[10px] text-[#FA2D48] font-bold uppercase tracking-wide">{song.timeStr} Listened</p>
+                    <p className="text-[10px] text-[#FA2D48] font-bold uppercase tracking-wide">{song.timeStr}</p>
                     <span className="text-[10px] text-white/20">•</span>
-                    <p className="text-[10px] text-white/60 font-medium">Len: {song.duration}</p>
+                    <p className="text-[10px] text-white/60 font-medium">{song.duration}</p>
                     </div>
                 </div>
             </div>
