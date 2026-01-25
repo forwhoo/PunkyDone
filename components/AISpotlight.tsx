@@ -102,7 +102,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                 
                 {/* Chat Display Area */}
                 {(displayedText || mode === 'chat' || loading) && (
-                    <div className="w-full max-w-2xl text-left mb-10 min-h-[60px] max-h-[300px] overflow-y-auto p-4 rounded-xl bg-white/5 border border-white/10 scrollbar-thin scrollbar-thumb-[#FA2D48] scrollbar-track-transparent">
+                    <div className="w-full text-left mb-10 min-h-[60px] max-h-[400px] overflow-y-auto px-1 scrollbar-thin scrollbar-thumb-[#FA2D48] scrollbar-track-transparent">
                          {loading ? (
                             <div className="flex items-center gap-2 text-[#FA2D48] font-mono text-sm animate-pulse">
                                 <span className="w-2 h-2 bg-[#FA2D48] rounded-full"></span>
@@ -110,27 +110,16 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                             </div>
                          ) : (
                             <div className="text-white text-lg font-medium leading-relaxed font-mono whitespace-pre-wrap markdown-container">
-                                {typing ? (
-                                    <span>
-                                        {displayedText}
-                                        <span className="inline-block w-[3px] h-6 ml-1 bg-[#FA2D48] align-middle animate-pulse"></span>
-                                    </span>
-                                ) : (
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {chatResponse || ""}
-                                    </ReactMarkdown>
-                                )}
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {typing ? displayedText : (chatResponse || "")}
+                                </ReactMarkdown>
+                                {typing && <span className="inline-block w-[3px] h-6 ml-1 bg-[#FA2D48] align-middle animate-pulse"></span>}
                             </div>
                          )}
 
                          {/* AI Suggestion Button - More prominent */}
                          {mode === 'chat' && !typing && !loading && !category && (
-                            <div className="mt-8 p-4 rounded-2xl bg-[#FA2D48]/5 border border-[#FA2D48]/20 flex flex-col items-center text-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                                <Sparkles className="w-6 h-6 text-[#FA2D48] animate-pulse" />
-                                <div>
-                                    <p className="text-white font-bold text-sm">Visualize this collection?</p>
-                                    <p className="text-[#8E8E93] text-[11px] mt-1">I can build a high-fidelity category from this context.</p>
-                                </div>
+                            <div className="mt-8 flex flex-col items-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
                                 <button 
                                     onClick={async () => {
                                         setLoading(true);
@@ -143,10 +132,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                                         }
                                         setLoading(false);
                                     }}
-                                    className="px-6 py-2.5 rounded-full bg-[#FA2D48] text-white text-[12px] font-bold uppercase tracking-wider hover:bg-[#d4253d] transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(250,45,72,0.3)] active:scale-95"
+                                    className="px-6 py-3 rounded-xl bg-[#FA2D48] text-white text-[13px] font-bold uppercase tracking-wider hover:bg-[#d4253d] transition-all flex items-center gap-2 shadow-[0_0_30px_rgba(250,45,72,0.2)] active:scale-95 group"
                                 >
-                                    Build Category ⚡
+                                    <Sparkles className="w-4 h-4 text-white group-hover:rotate-12 transition-transform" />
+                                    Visualize Collection
                                 </button>
+                                <p className="text-[#8E8E93] text-[11px] ml-1">Create a high-fidelity visual category from this result.</p>
                             </div>
                          )}
                     </div>
