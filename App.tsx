@@ -128,7 +128,7 @@ function App() {
         const artistsToFetch = new Set<string>();
         
         // 1. Get names from Top Artists
-        const topArtists = dbUnifiedData?.artists || data.artists || [];
+        const topArtists = dbUnifiedData?.artists || data?.artists || [];
         topArtists.slice(0, 15).forEach((a: Artist) => artistsToFetch.add(a.name));
 
         // 2. Get names from Recent to help Trending
@@ -149,7 +149,8 @@ function App() {
         }
     };
     
-    if (dbUnifiedData || data.artists.length > 0) {
+    // De-bounce slightly or just run when data settles
+    if (dbUnifiedData || (data && data.artists && data.artists.length > 0)) {
         loadImages();
     }
   }, [dbUnifiedData, data, token]);

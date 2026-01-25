@@ -43,7 +43,13 @@ export const answerMusicQuestion = async (question: string, context: {
   artists: string[], 
   albums: string[], 
   songs: string[],
-  globalStats?: { weeklyTime: string, weeklyTrend: string, totalTracks: number, totalMinutes?: number }
+  globalStats?: { 
+    weeklyTime: string, 
+    weeklyTrend: string, 
+    totalTracks: number, 
+    totalMinutes?: number,
+    extraStats?: { longestGapHours: string, longestSessionHours: string }
+  }
 }): Promise<string> => {
   try {
     const client = getAiClient();
@@ -54,6 +60,8 @@ export const answerMusicQuestion = async (question: string, context: {
 - Weekly Trend: ${context.globalStats.weeklyTrend}
 - Total History Tracks: ${context.globalStats.totalTracks}
 - Total Minutes Listened (Overall): ${context.globalStats.totalMinutes || 'Unknown'} min
+- Longest Gap Between Tracks (Last 14 days): ${context.globalStats.extraStats?.longestGapHours || '?'} hours
+- Longest Continuous Session (Last 14 days): ${context.globalStats.extraStats?.longestSessionHours || '?'} hours
     ` : '';
 
     const prompt = `

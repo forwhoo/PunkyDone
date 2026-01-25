@@ -123,6 +123,41 @@ export const fetchListeningStats = async () => {
     }
   });
 
+  // Calculate detailed stats for AI (Longest Gap, etc.)
+  // Sort by time
+  data.sort((a, b) => new Date(a.played_at).getTime() - new Date(b.played_at).getTime());
+  
+  let longestGapMs = 0;
+  let maxSessionMs = 0;
+  let currentSessionMs = 0;
+  let lastEndTime = 0;
+
+  if (data.length > 0) {
+      lastEndTime = new Date(data[0].played_at).getTime() + (data[0].duration_ms || 0);
+      currentSessionMs = (data[0].duration_ms || 0);
+      
+      for (let i = 1; i < data.length; i++) {
+          const start = new Date(data[i].played_at).getTime();
+          const gap = start - lastEndTime;
+          
+          if (gap > longestGapMs) longestGapMs = gap;
+          
+          // Define session: breaks < 30 mins
+          if (gap < 30 * 60 * 1000) {
+             currentSessionMs += (data[i].duration_ms || 0);
+          } else {
+             if (currentSessionMs > maxSessionMs) maxSessionMs = currentSessionMs;
+             currentSessionMs = (data[i].duration_ms || 0);
+          }
+          
+          lastEndTime = start + (data[i].duration_ms || 0);
+      }
+      if (currentSessionMs > maxSessionMs) maxSessionMs = currentSessionMs;
+  }
+  
+  const longestGapHours = (longestGapMs / (1000 * 60 * 60)).toFixed(1);
+  const longestSessionHours = (maxSessionMs / (1000 * 60 * 60)).toFixed(1);
+
   const currentHours = Math.floor(currentWeekMs / (1000 * 60 * 60));
   const currentMins = Math.floor((currentWeekMs % (1000 * 60 * 60)) / (1000 * 60));
   
@@ -141,7 +176,11 @@ export const fetchListeningStats = async () => {
     weeklyTime: `${currentHours}h ${currentMins}m`,
     weeklyTrend: trendString,
     totalTracks: count || 0,
-    totalMinutes
+    totalMinutes,
+    extraStats: {
+        longestGapHours,
+        longestSessionHours
+    }
   };
 };
 
