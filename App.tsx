@@ -4,7 +4,7 @@ import { AnalyticsChart } from './components/AnalyticsChart';
 import { HeroCarousel } from './components/HeroCarousel';
 import { ChevronRight, Play, Music } from 'lucide-react';
 import { Artist, Album, Song } from './types';
-import { getAuthUrl, getTokenFromUrl, fetchSpotifyData } from './services/spotifyService';
+import { getAuthUrl, getTokenFromUrl, fetchSpotifyData, redirectToAuthCodeFlow, getAccessToken } from './services/spotifyService';
 
 const SectionHeader = ({ title }: { title: string }) => (
     <div className="flex justify-between items-end mb-6 px-1 mx-1">
@@ -84,13 +84,35 @@ function App() {
   const [loadingInsight, setLoadingInsight] = useState(false);
 
   useEffect(() => {
-    // Check URL for token
-    const urlToken = getTokenFromUrl();
-    if (urlToken) {
-        setToken(urlToken);
-        localStorage.setItem('spotify_token', urlToken);
-        window.location.hash = '';
-    }
+    const handleAuth = async () => {
+      // Check for Auth Code (PKCE - New Standard)
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+      
+      if (code) {
+          try {
+            const accessToken = await getAccessToken(code);
+            if (accessToken) {
+                setToken(accessToken);
+                localStorage.setItem('spotify_token', accessToken);
+                // Clean URL
+                window.history.replaceState({}, document.title, "/");
+            }
+          } catch (e) {
+            console.error(e);
+          }
+          return;
+      }
+
+      // Check URL for token (Implicit Grant - Legacy Backup)
+      const urlToken = getTokenFromUrl();
+      if (urlToken) {
+          setToken(urlToken);
+          localStorage.setItem('spotify_token', urlToken);
+          window.location.hash = '';
+      }
+    };
+    handleAuth();
   }, []);
 
   useEffect(() => {
@@ -113,8 +135,8 @@ function App() {
     setLoading(false);
   };
 
-  const handleConnect = () => {
-    window.location.href = getAuthUrl();
+  const handleConnect = async () => {
+    await redirectToAuthCodeFlow();
   };
 
   const handleGetInsight = async (query?: string) => {

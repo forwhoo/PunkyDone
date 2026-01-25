@@ -6,7 +6,74 @@ const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 
 const SCOPES = "user-top-read user-read-recently-played user-read-private";
 
+function generateRandomString(length: number) {
+  let text = '';
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+  for (let i = 0; i < length; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+}
+
+async function generateCodeChallenge(codeVerifier: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(codeVerifier);
+  const digest = await window.crypto.subtle.digest('SHA-256', data);
+  
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+export const redirectToAuthCodeFlow = async () => {
+  if (!CLIENT_ID) {
+    console.warn("Missing Spotify Client ID");
+    return;
+  }
+
+  const verifier = generateRandomString(128);
+  const challenge = await generateCodeChallenge(verifier);
+
+  localStorage.setItem("verifier", verifier);
+
+  const params = new URLSearchParams();
+  params.append("client_id", CLIENT_ID);
+  params.append("response_type", "code");
+  params.append("redirect_uri", REDIRECT_URI);
+  params.append("scope", SCOPES);
+  params.append("code_challenge_method", "S256");
+  params.append("code_challenge", challenge);
+
+  document.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
+}
+
+
+export const getAccessToken = async (code: string) => {
+  if (!CLIENT_ID) return null;
+  const verifier = localStorage.getItem("verifier");
+
+  const params = new URLSearchParams();
+  params.append("client_id", CLIENT_ID);
+  params.append("grant_type", "authorization_code");
+  params.append("code", code);
+  params.append("redirect_uri", REDIRECT_URI);
+  params.append("code_verifier", verifier!);
+
+  const result = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params
+  });
+
+  const { access_token } = await result.json();
+  return access_token;
+}
+
 export const getAuthUrl = () => {
+  // Deprecated: Legacy Implicit Grant URL 
+  // Kept for signature compatibility if needed, but redirectToAuthCodeFlow is preferred.
   if (!CLIENT_ID) {
     console.warn("Missing Spotify Client ID");
     return "#";
