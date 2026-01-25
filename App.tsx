@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { TopCharts } from './components/TopCharts';
 import { HeroCarousel } from './components/HeroCarousel';
-import { ChevronRight, Play, Music, BarChart2 } from 'lucide-react';
+import { RankingWidget } from './components/RankingWidget';
+import { AIChartWidget } from './components/AIChartWidget';
+import { WrappedModal } from './components/WrappedModal';
+import { rankingMockData } from './mockData';
+import { ChevronRight, Play, Music, BarChart2, Mic2, Disc, Trophy} from 'lucide-react';
 import { Artist, Album, Song } from './types';
 import { 
     getAuthUrl, 
@@ -380,6 +384,38 @@ function App() {
             weeklyStats={dbStats}
             topGenre={data?.artists?.[0]?.genres?.[0] ? data.artists[0].genres[0].charAt(0).toUpperCase() + data.artists[0].genres[0].slice(1) : "Pop"}
             longestSession={dbUnifiedData?.songs?.[0]}
+        />
+
+        {/* NEW WIDGETS GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 px-1">
+             <RankingWidget 
+                title="Top Genres" 
+                items={rankingMockData.topGenre} 
+                icon={<Disc className="w-5 h-5" />}
+                color="#FA2D48"
+                onExpand={() => { setCurrentWrappedPeriod("Week"); setWrappedOpen(true); }}
+             />
+             <RankingWidget 
+                title="Most Played" 
+                items={rankingMockData.mostPlayed} 
+                icon={<Trophy className="w-5 h-5" />}
+                color="#FF9F0A"
+             />
+              <RankingWidget 
+                title="Rap World" 
+                items={rankingMockData.rapStars} 
+                icon={<Mic2 className="w-5 h-5" />}
+                color="#BF5AF2"
+             />
+             <div className="md:col-span-2 lg:col-span-3">
+                 <AIChartWidget />
+             </div>
+        </div>
+
+        <WrappedModal 
+            isOpen={wrappedOpen} 
+            onClose={() => setWrappedOpen(false)} 
+            period={currentWrappedPeriod}
         />
 
         {/* TOP ALBUMS - Horizontal Scroll */}

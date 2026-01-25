@@ -5,6 +5,8 @@ import { Card, CardHeader, CardTitle, Badge } from './UIComponents';
 import { Play, TrendingUp, TrendingDown, Minus, Clock, Calendar } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
 
+import { HeatMapWidget } from './HeatMapWidget';
+
 interface TopChartsProps {
   title: string;
   artists?: Artist[];
@@ -24,7 +26,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs = [], albums = [], hourlyActivity = [] }) => {
-  const [viewMode, setViewMode] = useState<'Chart' | 'List'>('List');
+  const [viewMode, setViewMode] = useState<'Chart' | 'List' | 'Heatmap'>('List');
   const [activeTab, setActiveTab] = useState<'Songs' | 'Albums' | 'Artists'>('Artists');
   const [hoverData, setHoverData] = useState<any>(null);
 
@@ -42,6 +44,7 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs
   };
 
   const listData = getListData();
+
 
   // Helper for safe image loading
   const getImageSrc = (item: any) => {
@@ -86,6 +89,12 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs
              >
                Trends
              </button>
+             <button
+               onClick={() => setViewMode('Heatmap')}
+               className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide rounded-[6px] transition-all ${viewMode === 'Heatmap' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+             >
+               Heatmap
+             </button>
            </div>
 
             {/* Category Toggle */}
@@ -108,7 +117,11 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, artists = [], songs
       </CardHeader>
 
       <div className="flex-1 p-0">
-         {viewMode === 'Chart' ? (
+         {viewMode === 'Heatmap' ? (
+              <div className="w-full p-6 h-[350px] flex items-center justify-center">
+                  <HeatMapWidget data={hourlyActivity || []} />
+              </div>
+         ) : viewMode === 'Chart' ? (
            <div className="flex flex-col lg:flex-row h-[350px]">
               {/* Main Chart Area */}
               <div className="flex-1 pt-8 px-4 relative">
