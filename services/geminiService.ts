@@ -1,17 +1,22 @@
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 
-// Initialize Gemini lazily to prevent crashes if API key is missing
+// Initialize Groq (via OpenAI SDK) lazily
 const getAiClient = () => {
     // @ts-ignore
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY || '';
     if (!apiKey) return null;
-    return new GoogleGenAI({ apiKey });
+
+    return new OpenAI({
+        apiKey: apiKey,
+        baseURL: "https://api.groq.com/openai/v1",
+        dangerouslyAllowBrowser: true // Required for client-side usage
+    });
 };
 
 export const generateMusicInsights = async (contextData: string): Promise<string> => {
   try {
-    const ai = getAiClient();
-    if (!ai) return "Configure VITE_GEMINI_API_KEY to see insights.";
+    const client = getAiClient();
+    if (!client) return "Configure VITE_GROQ_API_KEY to see insights.";
 
     const prompt = `
       You are a music analytics expert. Analyze the following data summary and provide a concise, 
@@ -21,22 +26,23 @@ export const generateMusicInsights = async (contextData: string): Promise<string
       Data: ${contextData}
     `;
 
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp',
-        contents: prompt
+    const response = await client.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7
     });
     
-    return response.text() || "No insights available at this moment.";
+    return response.choices[0]?.message?.content || "No insights available via Groq.";
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "Unable to generate insights right now. Please try again later.";
+    console.error("Groq API Error:", error);
+    return "Unable to generate insights right now.";
   }
 };
 
 export const generateRandomCategory = async (): Promise<any> => {
     try {
-        const ai = getAiClient();
-        if (!ai) throw new Error("No API Key");
+        const client = getAiClient();
+        if (!client) throw new Error("No API Key");
 
         const prompt = `
             Generate a creative, random music ranking category (e.g., "Songs for a Rainy Tuesday", "High Energy Workouts", "Underrated Gems").
@@ -51,20 +57,19 @@ export const generateRandomCategory = async (): Promise<any> => {
                 ]
             }
         `;
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash-exp',
-            contents: prompt
+
+        const response = await client.chat.completions.create({
+            model: "llama-3.3-70b-versatile",
+            messages: [{ role: "user", content: prompt }],
+            response_format: { type: "json_object" },
+            temperature: 0.8
         });
 
-        const text = response.text() || "{}";
-        const jsonBlock = text.match(/```json\n([\s\S]*?)\n```/);
-        if (jsonBlock) {
-             return JSON.parse(jsonBlock[1]);
-        }
+        const text = response.choices[0]?.message?.content || "{}";
         return JSON.parse(text);
 
     } catch (error) {
-        console.warn("Gemini Category Error (using fallback):", error);
+        console.warn("Groq Category Error (using fallback):", error);
          // Fallback
         return {
             title: "Weekend Vibe",
@@ -82,8 +87,8 @@ export const generateRandomCategory = async (): Promise<any> => {
 
 export const generateWrappedStory = async (period: string): Promise<any> => {
      try {
-        const ai = getAiClient();
-        if (!ai) throw new Error("No API Key");
+        const client = getAiClient();
+        if (!client) throw new Error("No API Key");
 
         const prompt = `
             Write a short, engaging, "Spotify Wrapped" style story text for a user's listening history for the ${period}.
@@ -96,19 +101,19 @@ export const generateWrappedStory = async (period: string): Promise<any> => {
                 "listeningMinutes": 12050
             }
         `;
-         const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash-exp',
-            contents: prompt
+         
+        const response = await client.chat.completions.create({
+            model: "llama-3.3-70b-versatile",
+            messages: [{ role: "user", content: prompt }],
+            response_format: { type: "json_object" },
+            temperature: 0.7
         });
         
-        const text = response.text() || "{}";
-        const jsonBlock = text.match(/```json\n([\s\S]*?)\n```/);
-        if (jsonBlock) {
-             return JSON.parse(jsonBlock[1]);
-        }
+        const text = response.choices[0]?.message?.content || "{}";
         return JSON.parse(text);
 
      } catch (e) {
+         console.error("Groq Wrapped Error:", e);
          return {
              storyTitle: `Your ${period} Recap`,
              storyText: "You listened to some great music!",
