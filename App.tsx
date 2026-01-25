@@ -11,7 +11,7 @@ import {
     redirectToAuthCodeFlow, 
     getAccessToken 
 } from './services/spotifyService';
-import { syncRecentPlays, fetchListeningStats } from './services/dbService';
+import { syncRecentPlays, fetchListeningStats, fetchDashboardStats } from './services/dbService';
 
 const SectionHeader = ({ title }: { title: string }) => (
     <div className="flex justify-between items-end mb-6 px-1 mx-1">
@@ -34,8 +34,8 @@ const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
                 <img src={album.cover} alt={album.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
-                     <span className="text-white font-bold text-2xl drop-shadow-md">{(album.totalListens / 1000000).toFixed(1)}M</span>
-                     <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Listens</span>
+                     <span className="text-white font-bold text-2xl drop-shadow-md">{album.totalListens}m</span>
+                     <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Listened</span>
                 </div>
             </div>
             <div className="mt-3 relative z-20">
@@ -55,10 +55,11 @@ const RankedArtist = ({ artist, rank }: { artist: Artist, rank: number }) => (
                 {rank}
             </span>
             <div className="relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-transform duration-300 shadow-xl">
-                <img src={artist.image} alt={artist.name} className="w-full h-full object-cover group-hover:blur-[2px] transition-all" />
+                {/* Fallback image if blank from DB */}
+                <img src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=random`} alt={artist.name} className="w-full h-full object-cover group-hover:blur-[2px] transition-all" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-                    <span className="text-white font-bold text-lg">{(artist.totalListens / 1000000).toFixed(1)}M</span>
-                    <span className="text-white/80 text-[10px] uppercase font-bold tracking-widest">Listens</span>
+                    <span className="text-white font-bold text-lg">{artist.totalListens}</span>
+                    <span className="text-white/80 text-[10px] uppercase font-bold tracking-widest">Plays</span>
                 </div>
             </div>
         </div>
@@ -78,17 +79,14 @@ const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
             </span>
             <div className="relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-[#2C2C2E]">
                 <img src={song.cover} alt={song.title} className="w-full h-full object-cover group-hover:blur-[1px] transition-all" />
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                     <Play className="w-6 h-6 text-white fill-white" />
-                </div>
             </div>
             <div className="flex-1 min-w-0">
                 <h3 className="text-[14px] font-bold text-white truncate leading-tight group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
                 <p className="text-[12px] text-[#8E8E93] truncate mt-0.5">{song.artist}</p>
                 <div className="flex items-center gap-2 mt-1">
-                   <p className="text-[10px] text-[#FA2D48] font-medium uppercase tracking-wide">Popular</p>
+                   <p className="text-[10px] text-[#FA2D48] font-medium uppercase tracking-wide">{song.listens} Plays</p>
                    <span className="text-[10px] text-white/40">•</span>
-                   <p className="text-[10px] text-white/60">{song.duration}</p>
+                   <p className="text-[10px] text-white/60">{song.duration}m</p>
                 </div>
             </div>
         </div>
@@ -100,7 +98,8 @@ function App() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [dbStats, setDbStats] = useState<any>(null);
-  
+  const [dbUnifiedData, setDbUnifiedData] = useState<any>(null);
+
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
 
@@ -111,6 +110,10 @@ function App() {
             await syncRecentPlays(data.recentRaw);
             const stats = await fetchListeningStats();
             setDbStats(stats);
+            
+            // Fetch DB dashboard data
+            const dashboardStuff = await fetchDashboardStats();
+            setDbUnifiedData(dashboardStuff);
         }
       };
       syncAndFetchStats();
@@ -305,7 +308,7 @@ function App() {
         <div className="mb-12">
              <SectionHeader title="Top Albums" />
              <div className="flex items-end overflow-x-auto pb-10 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
-                {data.albums.map((album: Album, index: number) => (
+                {(dbUnifiedData?.albums || data.albums).map((album: Album, index: number) => (
                     <RankedAlbum key={album.id} album={album} rank={index + 1} />
                 ))}
              </div>
@@ -315,7 +318,7 @@ function App() {
         <div className="mb-12">
              <SectionHeader title="Top Songs" />
              <div className="flex items-center overflow-x-auto pb-6 no-scrollbar snap-x pl-1 scroll-smooth">
-                {data.songs.map((song: Song, index: number) => (
+                {(dbUnifiedData?.songs || data.songs).map((song: Song, index: number) => (
                     <RankedSong key={song.id} song={song} rank={index + 1} />
                 ))}
              </div>
@@ -325,7 +328,7 @@ function App() {
         <div className="mb-16">
              <SectionHeader title="Top Artists" />
              <div className="flex items-start overflow-x-auto pb-8 pt-6 no-scrollbar snap-x pl-4 scroll-smooth">
-                {data.artists.map((artist: Artist, index: number) => (
+                {(dbUnifiedData?.artists || data.artists).map((artist: Artist, index: number) => (
                     <RankedArtist key={artist.id} artist={artist} rank={index + 1} />
                 ))}
              </div>
