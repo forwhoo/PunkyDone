@@ -70,7 +70,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
                 gaps.push(times[i] - times[i - 1]);
             }
             const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-            const avgTimeReturnHours = avgGap / (1000 * 60 * 60);
+            const avgTimeReturnMs = avgGap;
 
             // TREND SCORE ALGORITHM
             // Higher score = trending up
@@ -81,6 +81,9 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
             
             const avgPlaysPerDay = stats.plays.length / (spreadTimeHours / 24 || 1);
             const velocity = recentPlays24h / (avgPlaysPerDay || 1);
+            
+            // Calculate return frequency in hours for trend score
+            const avgTimeReturnHours = avgTimeReturnMs / (1000 * 60 * 60);
             
             const trendScore = 
                 (recentPlays24h * 10) + // Recent activity weight
@@ -93,7 +96,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
                 trendScore,
                 recentPlays: recentPlays24h,
                 spreadTime: Math.round(spreadTimeHours),
-                avgTimeReturn: Math.round(avgTimeReturnHours * 10) / 10
+                avgTimeReturn: avgTimeReturnMs // Store in MS for accurate display
             });
         });
 
@@ -158,7 +161,11 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
                             <h3 className="text-[14px] font-medium text-white truncate w-full group-hover:text-[#FA2D48] transition-colors">{artist.name}</h3>
                             <div className="flex items-center justify-center gap-1 mt-1 text-[10px] text-[#8E8E93]">
                                 <Clock className="w-3 h-3" />
-                                <span>{artist.avgTimeReturn}h avg return</span>
+                                <span>
+                                    {artist.avgTimeReturn < 3600000 
+                                        ? `${Math.round(artist.avgTimeReturn / 60000)}m` 
+                                        : `${(artist.avgTimeReturn / 3600000).toFixed(1)}h`} avg return
+                                </span>
                             </div>
                         </div>
                     </div>

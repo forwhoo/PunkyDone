@@ -60,7 +60,7 @@ If you need SQL data to answer precisely, suggest they try a discovery query ins
     `;
 
     const response = await client.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
         max_tokens: 300
@@ -150,8 +150,10 @@ Your job: Create ONE unique, creative listening category from the user's REAL li
 ## CREATIVE GUIDELINES:
 - FORBIDDEN titles: "Morning Playlist", "Top Tracks", "Best Of", "Daily Mix"
 - GOOD titles: "The Marathon", "Quick Hits", "Weekend Warriors", "Deep Cuts", "Repeat Offenders", "Fresh Finds"
-- If the user provides a prompt, strictly follow it. If not, be creative.
-- If user asks for "Harry Styles", use { "field": "artist_name", "value": "Harry Styles", "sortBy": "plays" }.
+- STRICTLY FOLLOW USER PROMPTS: If user asks for "Harry Styles", use { "field": "artist_name", "value": "Harry Styles", "sortBy": "plays", "sortOrder": "highest" }
+- If user asks for "top albums", use { "sortBy": "plays", "sortOrder": "highest" } or similar to show all top content
+- If user asks for specific artist/album/song, use exact "value" match. For broader queries, use "contains" or skip field entirely.
+- Always return valid filters that will produce results.
 
 ## OUTPUT (JSON only):
 {
@@ -166,7 +168,7 @@ Your job: Create ONE unique, creative listening category from the user's REAL li
             : `Generate a random creative category based on the user's library and current time.`;
 
         const response = await client.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+            model: "openai/gpt-oss-120b",
             messages: [
                 { role: "system", content: "You are a JSON-only API. Return raw JSON. No markdown, no explanation." },
                 { role: "system", content: systemInstructions },

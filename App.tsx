@@ -59,32 +59,28 @@ const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
     </div>
 );
 
-// RANKED COMPONENT: Top Artist (Circle with Number)
+// RANKED COMPONENT: Top Artist (Number style like Top Albums)
 const RankedArtist = ({ artist, rank }: { artist: Artist, rank: number }) => (
-    <div className="flex-shrink-0 relative flex flex-col items-center snap-start group cursor-pointer w-[140px] md:w-[160px] mr-2">
-        <div className="relative">
-            {/* Number removed as per request ("remove that i") */}
-            {/* <span className="text-[80px] leading-none font-black text-outline absolute -left-4 -top-8 z-0 ...">{rank}</span> */}
-            
-            <div className="relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-transform duration-300 shadow-xl">
-                {/* Use album cover as fallback for artist image if artist image is missing, then avatar */}
+    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
+        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40">
+            {rank}
+        </span>
+        <div className="relative z-10 ml-10 md:ml-12">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
                 <img 
                     src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
                     alt={artist.name} 
-                    className="w-full h-full object-cover group-hover:blur-[2px] transition-all" 
+                    className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" 
                 />
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-                    <span className="text-white font-bold text-lg">{artist.timeStr}</span>
-                    <span className="text-white/80 text-[10px] uppercase font-bold tracking-widest">Listened</span>
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
+                     <span className="text-white font-bold text-xl drop-shadow-md">{artist.timeStr}</span>
+                     <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Listened</span>
                 </div>
             </div>
-            {/* Small Rank Badge instead */}
-            <div className="absolute top-0 right-0 bg-[#FA2D48] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md z-20">
-                #{rank}
+            <div className="mt-3 relative z-20">
+                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{artist.name}</h3>
             </div>
-        </div>
-        <div className="text-center mt-3 px-1">
-             <h3 className="text-[15px] font-medium text-white truncate w-full group-hover:text-primary transition-colors">{artist.name}</h3>
         </div>
     </div>
 );
@@ -401,6 +397,8 @@ function App() {
             weeklyStats={dbStats}
             topGenre={(dbUnifiedData?.artists?.[0] || data?.artists?.[0])?.genres?.[0] ? (dbUnifiedData?.artists?.[0] || data.artists[0]).genres[0].charAt(0).toUpperCase() + (dbUnifiedData?.artists?.[0] || data.artists[0]).genres[0].slice(1) : "Pop"}
             longestSession={dbUnifiedData?.songs?.[0] || data.songs[0]}
+            recentPlays={dbUnifiedData?.recentPlays || []}
+            topSongs={dbUnifiedData?.songs || data.songs}
         />
 
         {/* WrappedModal removed */}
@@ -466,9 +464,21 @@ function App() {
         <div className="mb-16 px-1">
              <AISpotlight 
                 contextData={{
-                    artists: (dbUnifiedData?.artists || data.artists).map((a: Artist) => `${a.name} (${a.timeStr || a.totalListens})`),
-                    albums: (dbUnifiedData?.albums || data.albums).map((a: Album) => `${a.title} by ${a.artist} (${a.timeStr || a.totalListens})`),
-                    songs: (dbUnifiedData?.songs || data.songs).map((s: Song) => `${s.title} by ${s.artist} (${s.timeStr || s.listens})`)
+                    artists: (dbUnifiedData?.artists || data.artists).map((a: Artist) => {
+                        const time = a.timeStr || '';
+                        const mins = time.replace('m', '');
+                        return `${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
+                    }),
+                    albums: (dbUnifiedData?.albums || data.albums).map((a: Album) => {
+                        const time = a.timeStr || '';
+                        const mins = time.replace('m', '');
+                        return `${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
+                    }),
+                    songs: (dbUnifiedData?.songs || data.songs).map((s: Song) => {
+                        const time = s.timeStr || '';
+                        const mins = time.replace('m', '');
+                        return `${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
+                    })
                 }} 
              />
         </div>
@@ -477,6 +487,7 @@ function App() {
         <div className="mb-8">
             <TopCharts 
                 title="Listening Trends"
+                username={data?.user?.name || 'Your'}
                 artists={dbUnifiedData?.artists || data.artists}
                 songs={dbUnifiedData?.songs || data.songs}
                 albums={dbUnifiedData?.albums || data.albums}

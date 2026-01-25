@@ -45,7 +45,7 @@ ${JSON.stringify(context, null, 2)}
 
     try {
         const response = await client.chat.completions.create({
-            model: "llama-3.3-70b-versatile", // Using a solid model on Groq
+            model: "openai/gpt-oss-120b", // Using a solid model on Groq
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: query }

@@ -94,7 +94,9 @@ interface HeroCarouselProps {
   topAlbumImage?: string;
   weeklyStats?: { weeklyTime: string; weeklyTrend: string; totalTracks: number };
   topGenre?: string;
-  longestSession?: { title: string; artist: string; cover: string; duration: string };
+  longestSession?: { title: string; artist: string; cover: string; duration: string; timeStr?: string };
+  recentPlays?: any[];
+  topSongs?: any[];
 }
 
 const SUGGESTIONS = [
@@ -104,9 +106,32 @@ const SUGGESTIONS = [
     { label: "Workout energy check", icon: Clock, color: "from-emerald-500 to-teal-500" },
 ];
 
-export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topArtistImage, topAlbumImage, weeklyStats, topGenre, longestSession }: HeroCarouselProps) => {
+export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topArtistImage, topAlbumImage, weeklyStats, topGenre, longestSession, recentPlays = [], topSongs = [] }: HeroCarouselProps) => {
   const [showInput, setShowInput] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  
+  // Calculate stats from real data
+  const todayPlays = recentPlays.filter((play: any) => {
+    const playDate = new Date(play.played_at);
+    const today = new Date();
+    return playDate.toDateString() === today.toDateString();
+  });
+  
+  const mostPlayedToday = todayPlays.length > 0 ? todayPlays.reduce((acc: any, curr: any) => {
+    const existing = acc.find((item: any) => item.track_name === curr.track_name);
+    if (existing) existing.count++;
+    else acc.push({ ...curr, count: 1 });
+    return acc;
+  }, []).sort((a: any, b: any) => b.count - a.count)[0] : null;
+  
+  // Calculate peak listening hour
+  const hourCounts: Record<number, number> = {};
+  todayPlays.forEach((play: any) => {
+    const hour = new Date(play.played_at).getHours();
+    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+  });
+  const peakHour = Object.entries(hourCounts).sort(([,a], [,b]) => b - a)[0];
+  const peakHourFormatted = peakHour ? `${peakHour[0] % 12 || 12}${parseInt(peakHour[0]) >= 12 ? 'PM' : 'AM'}` : 'N/A';
   
   const handleGenerate = () => {
     // Reveal input or generate default
@@ -130,64 +155,26 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
       
       <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x scroll-smooth -mx-1 px-1">
         
-        {/* CARD 1: MUSIC INTELLIGENCE (Interactive) */}
-        <div className="relative flex-shrink-0 w-[300px] md:w-[480px] h-[220px] rounded-xl overflow-hidden snap-start border border-white/5 bg-[#1C1C1E] flex flex-col group">
-             {/* Subdued Dark Background */}
-             <div className="absolute inset-0 bg-[#1C1C1E]"></div>
-             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 blur-[80px] rounded-full pointer-events-none group-hover:bg-white/10 transition-colors"></div>
-
+        {/* CARD 1: TOP ARTIST HIGHLIGHT */}
+        <div className="relative flex-shrink-0 w-[300px] md:w-[480px] h-[220px] rounded-xl overflow-hidden snap-start border border-white/5 bg-gradient-to-br from-[#FA2D48]/10 to-[#1C1C1E]">
+             <div className="absolute inset-0 opacity-10">
+                <img src={topArtistImage} alt="Top Artist" className="w-full h-full object-cover blur-xl" />
+             </div>
              <div className="relative z-10 p-6 flex flex-col h-full justify-between">
                 <div>
                     <div className="flex items-center gap-2 mb-3">
-                         <Sparkles className="w-4 h-4 text-white/60" />
-                         <span className="text-[11px] font-bold uppercase tracking-widest text-white/60">Music Intelligence</span>
+                         <Mic2 className="w-4 h-4 text-white/60" />
+                         <span className="text-[11px] font-bold uppercase tracking-widest text-white/60">Top Artist</span>
                     </div>
-
-                    <div className="h-[100px] overflow-y-auto no-scrollbar pr-2 mb-2">
-                        {loadingInsight ? (
-                            <div className="flex items-center gap-2 mt-4">
-                                <WaveLoading />
-                                <span className="text-white/50 text-sm animate-pulse">Thinking...</span>
-                            </div>
-                        ) : insight ? (
-                            <div className="text-white/90 text-[14px] leading-relaxed">
-                                <Typewriter text={insight} />
-                            </div>
-                        ) : (
-                            <div className="mt-2">
-                                <h3 className="text-2xl font-bold text-white mb-2">Your Daily Recap</h3>
-                                <p className="text-[#9CA3AF] text-sm leading-relaxed">Unlock deep insights about your listening habits.</p>
-                            </div>
-                        )}
-                    </div>
+                    <h3 className="text-3xl font-black text-white mb-2">On Repeat</h3>
+                    <p className="text-white/70 text-sm">Your most played artist this week</p>
                 </div>
-
-                <div className="mt-auto">
-                    {showInput ? (
-                        <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 border border-white/10">
-                             <input 
-                                autoFocus
-                                className="bg-transparent w-full text-sm text-white placeholder:text-white/30 focus:outline-none"
-                                placeholder="Ask about your music..."
-                                value={inputValue}
-                                onChange={e => setInputValue(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                             />
-                             <div 
-                                onClick={handleGenerate}
-                                className="bg-[#FA2D48] p-1.5 rounded-md cursor-pointer hover:bg-red-600"
-                             >
-                                <Send className="w-3 h-3 text-white" />
-                             </div>
-                        </div>
-                    ) : (
-                        <Button 
-                            onClick={handleGenerate}
-                            className="bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-lg px-4 h-10 text-sm font-semibold transition-all w-fit"
-                        >
-                            Generate Insight
-                        </Button>
-                    )}
+                <div className="flex items-center gap-3">
+                    <img src={topArtistImage} alt="Top" className="w-12 h-12 rounded-full border-2 border-white/20" />
+                    <div>
+                        <p className="text-white font-bold text-sm">{topGenre}</p>
+                        <p className="text-white/50 text-xs">Trending in your library</p>
+                    </div>
                 </div>
              </div>
         </div>
@@ -247,6 +234,49 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
             )}
            </HeroCard>
         )}
+        
+        {/* CARD 5: MOST PLAYED TODAY */}
+        {mostPlayedToday && (
+          <HeroCard
+              title={mostPlayedToday.track_name}
+              subtitle="On Repeat Today"
+              meta={`${mostPlayedToday.count} ${mostPlayedToday.count === 1 ? 'play' : 'plays'}`}
+              gradientClass="bg-gradient-to-r from-pink-500/30 via-purple-500/20 to-transparent"
+              icon={Music}
+          >
+              <div className="absolute right-4 bottom-4 w-16 h-16 rounded-lg overflow-hidden shadow-2xl border border-white/10 group-hover:scale-110 transition-transform -rotate-6">
+                  <img src={mostPlayedToday.album_cover || mostPlayedToday.cover} alt="" className="w-full h-full object-cover" />
+              </div>
+          </HeroCard>
+        )}
+        
+        {/* CARD 6: PEAK LISTENING TIME */}
+        {peakHour && (
+          <HeroCard
+              title={peakHourFormatted}
+              subtitle="Peak Listening"
+              meta={`${peakHour[1]} ${peakHour[1] === 1 ? 'song' : 'songs'} played`}
+              gradientClass="bg-gradient-to-br from-yellow-500/30 via-amber-500/20 to-transparent"
+              icon={Clock}
+          >
+              <div className="absolute top-6 right-6 text-6xl opacity-20 group-hover:opacity-30 transition-opacity">🎧</div>
+          </HeroCard>
+        )}
+        
+        {/* CARD 7: LISTENING ACTIVITY */}
+        <HeroCard
+            title={`${todayPlays.length} Songs`}
+            subtitle="Today's Activity"
+            meta={todayPlays.length > 0 ? "You're on fire!" : "Start listening"}
+            gradientClass="bg-gradient-to-r from-green-500/30 via-emerald-500/20 to-transparent"
+            icon={Headphones}
+        >
+            <div className="absolute bottom-4 right-4 flex gap-1">
+                {Array.from({length: Math.min(5, Math.ceil(todayPlays.length / 5))}).map((_, i) => (
+                    <div key={i} className="w-1 bg-green-400 rounded-full animate-pulse" style={{height: `${20 + i * 8}px`, animationDelay: `${i * 100}ms`}}></div>
+                ))}
+            </div>
+        </HeroCard>
 
       </div>
     </div>
