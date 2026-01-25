@@ -36,11 +36,45 @@ export const syncRecentPlays = async (recentItems: any[]) => {
 };
 
 export const fetchListeningStats = async () => {
-  // Example: Get total count
-  const { count, error } = await supabase
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+  // Fetch data for the last 14 days to calculate current week vs last week
+  const { data, error } = await supabase
     .from('listening_history')
-    .select('*', { count: 'exact', head: true });
-    
-  if (error) return null;
-  return count;
+    .select('duration_ms, played_at')
+    .gte('played_at', fourteenDaysAgo.toISOString());
+
+  if (error || !data) return null;
+
+  let currentWeekMs = 0;
+  let lastWeekMs = 0;
+
+  data.forEach(item => {
+    const playTime = new Date(item.played_at);
+    if (playTime >= sevenDaysAgo) {
+      currentWeekMs += item.duration_ms;
+    } else {
+      lastWeekMs += item.duration_ms;
+    }
+  });
+
+  const currentHours = Math.floor(currentWeekMs / (1000 * 60 * 60));
+  const currentMins = Math.floor((currentWeekMs % (1000 * 60 * 60)) / (1000 * 60));
+  
+  const lastHours = Math.floor(lastWeekMs / (1000 * 60 * 60));
+  
+  // Calculate trend
+  const hoursDiff = currentHours - (lastHours || 0);
+  const trendString = hoursDiff >= 0 ? `+${hoursDiff}h vs last week` : `${hoursDiff}h vs last week`;
+
+  // Get total tracks count for "New Discoveries" proxy or just total db count
+  const { count } = await supabase.from('listening_history').select('*', { count: 'exact', head: true });
+
+  return {
+    weeklyTime: `${currentHours}h ${currentMins}m`,
+    weeklyTrend: trendString,
+    totalTracks: count || 0
+  };
 };

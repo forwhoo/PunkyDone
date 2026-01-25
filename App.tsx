@@ -99,16 +99,50 @@ function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('spotify_token'));
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [dbStats, setDbStats] = useState<any>(null);
   
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
 
   // Sync Data to Supabase when data is loaded
   useEffect(() => {
-      if (data && data.recentRaw) {
-          syncRecentPlays(data.recentRaw);
-      }
+      const syncAndFetchStats = async () => {
+        if (data && data.recentRaw) {
+            await syncRecentPlays(data.recentRaw);
+            const stats = await fetchListeningStats();
+            setDbStats(stats);
+        }
+      };
+      syncAndFetchStats();
   }, [data]);
+
+  // Polling Effect - Refresh every 3 minutes
+  useEffect(() => {
+    if (!token) return;
+
+    const loadData = async () => {
+        // Don't set loading true on background refreshes to avoid full screen spinner
+        const spotifyData = await fetchSpotifyData(token);
+        if (spotifyData) {
+            setData(spotifyData);
+        } else {
+             // If token expired or error
+             if (!data) setLoading(false);
+        }
+    };
+
+    // Initial load
+    setLoading(true);
+    loadData().then(() => setLoading(false));
+
+    // Set interval for 6 seconds (6000 ms) for near-realtime updates
+    const intervalId = setInterval(() => {
+        console.log("Refreshing data...");
+        loadData();
+    }, 6000);
+
+    return () => clearInterval(intervalId);
+  }, [token]);
 
   useEffect(() => {
     const handleAuth = async () => {
@@ -264,6 +298,7 @@ function App() {
             onGenerateInsight={handleGetInsight} 
             topArtistImage={data.artists[0]?.image}
             topAlbumImage={data.albums[0]?.cover}
+            weeklyStats={dbStats}
         />
 
         {/* TOP ALBUMS - Horizontal Scroll */}

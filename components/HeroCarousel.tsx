@@ -81,6 +81,7 @@ interface HeroCarouselProps {
   onGenerateInsight: (query?: string) => void;
   topArtistImage?: string;
   topAlbumImage?: string;
+  weeklyStats?: { weeklyTime: string; weeklyTrend: string; totalTracks: number };
 }
 
 const SUGGESTIONS = [
@@ -90,7 +91,7 @@ const SUGGESTIONS = [
     { label: "Workout energy check", icon: Clock, color: "from-emerald-500 to-teal-500" },
 ];
 
-export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topArtistImage, topAlbumImage }: HeroCarouselProps) => {
+export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topArtistImage, topAlbumImage, weeklyStats }: HeroCarouselProps) => {
   const [showInput, setShowInput] = useState(false);
   const [inputValue, setInputValue] = useState('');
   
@@ -180,9 +181,9 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
 
         {/* CARD 2: WEEKLY TIME */}
         <HeroCard 
-            title="21h 14m" 
+            title={weeklyStats?.weeklyTime || "0h 0m"}
             subtitle="Weekly Time" 
-            meta="+2h vs last week"
+            meta={weeklyStats?.weeklyTrend || "vs last week"}
             gradientClass="bg-gradient-to-br from-orange-500/20 via-rose-500/10 to-transparent"
             icon={Clock}
         />
@@ -200,11 +201,11 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
             )}
         </HeroCard>
         
-        {/* CARD 4: NEW DISCOVERIES */}
+        {/* CARD 4: NEW DISCOVERIES / TOTAL TRACKS */}
         <HeroCard 
-            title="24 Tracks" 
-            subtitle="New Music" 
-            meta="Added to library"
+            title={weeklyStats ? `${weeklyStats.totalTracks} Tracks` : "Loading..."}
+            subtitle="Total History" 
+            meta="Stored in Punky DB"
             gradientClass="bg-gradient-to-br from-purple-500/80 via-indigo-500/50 to-transparent mix-blend-overlay"
             icon={Headphones}
         >
