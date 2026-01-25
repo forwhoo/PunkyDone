@@ -1,15 +1,20 @@
 import OpenAI from "openai";
 
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-
-const client = new OpenAI({
-    apiKey: GROQ_API_KEY,
-    baseURL: "https://api.groq.com/openai/v1",
-    dangerouslyAllowBrowser: true // Required for client-side usage
-});
+const getClient = () => {
+    // @ts-ignore
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+    if (!apiKey) return null;
+    
+    return new OpenAI({
+        apiKey: apiKey,
+        baseURL: "https://api.groq.com/openai/v1",
+        dangerouslyAllowBrowser: true 
+    });
+}
 
 export const generateMusicInsight = async (query: string, stats: any) => {
-    if (!GROQ_API_KEY) {
+    const client = getClient();
+    if (!client) {
         return "Please set VITE_GROQ_API_KEY in your environment to use the AI features.";
     }
 
