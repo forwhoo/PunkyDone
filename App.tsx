@@ -117,9 +117,9 @@ const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
                 <h3 className="text-[14px] font-bold text-white truncate leading-tight group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
                 <p className="text-[12px] text-[#8E8E93] truncate mt-0.5">{song.artist}</p>
                 <div className="flex items-center gap-2 mt-1">
-                   <p className="text-[10px] text-[#FA2D48] font-medium uppercase tracking-wide">{song.timeStr} Listened</p>
-                   <span className="text-[10px] text-white/40">•</span>
-                   <p className="text-[10px] text-white/60">{song.duration}</p>
+                   <p className="text-[10px] text-[#FA2D48] font-bold uppercase tracking-wide">{song.timeStr} Listened</p>
+                   <span className="text-[10px] text-white/20">•</span>
+                   <p className="text-[10px] text-white/60 font-medium">Len: {song.duration}</p>
                 </div>
             </div>
         </div>
@@ -422,11 +422,11 @@ function App() {
             insight={insight}  
             loadingInsight={loadingInsight} 
             onGenerateInsight={handleGetInsight} 
-            topArtistImage={data.artists[0]?.image}
-            topAlbumImage={data.albums[0]?.cover}
+            topArtistImage={(dbUnifiedData?.artists?.[0] || data.artists[0])?.image}
+            topAlbumImage={(dbUnifiedData?.albums?.[0] || data.albums[0])?.cover}
             weeklyStats={dbStats}
-            topGenre={data?.artists?.[0]?.genres?.[0] ? data.artists[0].genres[0].charAt(0).toUpperCase() + data.artists[0].genres[0].slice(1) : "Pop"}
-            longestSession={dbUnifiedData?.songs?.[0]}
+            topGenre={(dbUnifiedData?.artists?.[0] || data?.artists?.[0])?.genres?.[0] ? (dbUnifiedData?.artists?.[0] || data.artists[0]).genres[0].charAt(0).toUpperCase() + (dbUnifiedData?.artists?.[0] || data.artists[0]).genres[0].slice(1) : "Pop"}
+            longestSession={dbUnifiedData?.songs?.[0] || data.songs[0]}
         />
 
         {/* WrappedModal removed */}
@@ -490,9 +490,9 @@ function App() {
         <div className="mb-16 px-1">
              <AISpotlight 
                 contextData={{
-                    artists: (dbUnifiedData?.artists || data.artists).map((a: Artist) => `${a.name} (${a.totalListens} plays)`),
-                    albums: (dbUnifiedData?.albums || data.albums).map((a: Album) => `${a.title} by ${a.artist} (${a.totalListens} plays)`),
-                    songs: (dbUnifiedData?.songs || data.songs).map((s: Song) => `${s.title} by ${s.artist} (${s.listens} plays)`)
+                    artists: (dbUnifiedData?.artists || data.artists).map((a: Artist) => `${a.name} (${a.timeStr || a.totalListens})`),
+                    albums: (dbUnifiedData?.albums || data.albums).map((a: Album) => `${a.title} by ${a.artist} (${a.timeStr || a.totalListens})`),
+                    songs: (dbUnifiedData?.songs || data.songs).map((s: Song) => `${s.title} by ${s.artist} (${s.timeStr || s.listens})`)
                 }} 
              />
         </div>

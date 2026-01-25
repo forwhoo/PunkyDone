@@ -82,9 +82,18 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                     
                      {/* Added Reason / Filter Tag */}
                      {category && !loading && (
-                         <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FA2D48]/10 border border-[#FA2D48]/20 text-[#FA2D48] text-xs font-semibold tracking-wide animate-fade-in">
-                            <Sparkles className="w-3 h-3" />
-                            <span>Generated for: {category.filter?.value || category.filter?.contains || "Your Mix"}</span>
+                         <div className="mt-4 flex flex-col gap-1 items-start animate-fade-in px-1">
+                            <p className="text-[#8E8E93] text-[13px] italic font-medium">
+                                {category.title.toLowerCase().includes(category.filter?.value?.toLowerCase()) 
+                                    ? `Your most played ${category.filter?.field === 'artist_name' ? 'artist\'s' : 'collection\'s'} top tracks`
+                                    : category.description}
+                            </p>
+                            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FA2D48]/10 border border-[#FA2D48]/20 text-[#FA2D48] text-[11px] font-bold tracking-wide">
+                                <Sparkles className="w-3 h-3" />
+                                <span>
+                                    {category.filter?.value || "Your Mix"} due to total time of {results.reduce((acc, curr) => acc + (parseInt(curr.timeStr) || 0), 0) || '40'} mins!
+                                </span>
+                            </div>
                          </div>
                      )}
                 </div>
@@ -121,18 +130,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                 </div>
             </div>
 
-            {/* Jump Button (Shown when user asks something) */}
-            {category && results.length > 0 && (
-                <div className="mb-4 mx-1 animate-in fade-in slide-in-from-left-4 duration-500">
-                    <button 
-                        onClick={scrollToSpotlight}
-                        className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#FA2D48] hover:opacity-80 transition-opacity"
-                    >
-                        <span>Jump to Section</span>
-                        <ChevronRight className="w-3 h-3" />
-                    </button>
-                </div>
-            )}
+            {/* Jump Button Removed */}
 
             {/* Debug/Error stuff remains... */}
             {errorMsg && (
@@ -162,7 +160,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                                     <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
                                         <img src={item.cover} alt={item.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                                         <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
-                                            <span className="text-white font-bold text-2xl drop-shadow-md">{item.listens}</span>
+                                            <span className="text-white font-bold text-2xl drop-shadow-md">{item.timeStr || item.listens}</span>
                                             <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Plays</span>
                                         </div>
                                     </div>

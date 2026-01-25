@@ -226,7 +226,7 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
           <HeroCard
               title={longestSession.title}
               subtitle="Longest Listening"
-              meta={`${longestSession.duration} Total Time`}
+              meta={`${longestSession.timeStr || longestSession.duration} Total Time`}
               gradientClass="bg-gradient-to-r from-blue-600/30 via-indigo-600/20 to-transparent"
               icon={Zap}
           >

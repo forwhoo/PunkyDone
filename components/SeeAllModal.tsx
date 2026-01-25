@@ -34,9 +34,10 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-700 hover:scrollbar-thumb-gray-500">
-                    
-                    {/* Artists Grid */}
-                    {type === 'Artists' && (
+                    <div className="origin-top transform scale-[0.7] w-[142.8%] h-[142.8%]">
+                        
+                        {/* Artists Grid */}
+                        {type === 'Artists' && (
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-10">
                             {data.map((artist, idx) => (
                                 <div key={idx} className="flex flex-col items-center group cursor-pointer">
@@ -87,9 +88,15 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
                                     <div className="flex-1 min-w-0">
                                         <h3 className="text-[15px] font-medium text-white truncate group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
                                         <p className="text-[13px] text-[#8E8E93] truncate">{song.artist}</p>
+                                        {/* Mobile visible info */}
+                                        <div className="md:hidden flex items-center gap-2 mt-0.5">
+                                            <span className="text-[11px] text-[#FA2D48] font-bold">{song.timeStr} TOTAL</span>
+                                            <span className="text-[11px] text-white/20">•</span>
+                                            <span className="text-[11px] text-white/50">{song.duration}</span>
+                                        </div>
                                     </div>
                                     <div className="hidden md:flex items-center gap-6 pr-4">
-                                        <div className="text-sm text-[#FA2D48] w-24 text-right">{song.timeStr} Listened</div>
+                                        <div className="text-sm text-[#FA2D48] font-bold w-28 text-right uppercase tracking-tighter">{song.timeStr} TOTAL</div>
                                         <div className="text-sm text-[#8E8E93] w-16 text-right font-mono">{song.duration}</div>
                                     </div>
                                 </div>
@@ -128,6 +135,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
                              )}
                         </div>
                     )}
+                    </div>
 
                 </div>
             </div>
