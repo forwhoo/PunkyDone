@@ -142,11 +142,30 @@ export const fetchListeningStats = async () => {
   };
 };
 
-export const fetchDashboardStats = async () => {
+export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Monthly' = 'Weekly') => {
+    // Calculate date range based on timeRange selection
+    const now = new Date();
+    let startDate: Date;
+    
+    if (timeRange === 'Daily') {
+        // Get data from today (12:00 AM to now)
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    } else if (timeRange === 'Weekly') {
+        // Get data from last Monday 12:00 AM
+        const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const daysToMonday = (dayOfWeek + 6) % 7; // Days since last Monday
+        startDate = new Date(now.getTime() - daysToMonday * 24 * 60 * 60 * 1000);
+        startDate.setHours(0, 0, 0, 0);
+    } else {
+        // Monthly - get data from first day of current month
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+    }
+    
     // 1. Top Artists (count by artist_name)
     const { data: artistsData } = await supabase
        .from('listening_history')
-       .select('artist_name, duration_ms');
+       .select('artist_name, duration_ms')
+       .gte('played_at', startDate.toISOString());
     
     const artistCounts: Record<string, { count: number, time: number }> = {};
     const artistImages: Record<string, string> = {}; // Helper to find an image
@@ -180,7 +199,8 @@ export const fetchDashboardStats = async () => {
     // 2. Top Songs
     const { data: songsData } = await supabase
         .from('listening_history')
-        .select('track_name, artist_name, album_cover, duration_ms');
+        .select('track_name, artist_name, album_cover, duration_ms')
+        .gte('played_at', startDate.toISOString());
         
     const songCounts: Record<string, { count: number, artist: string, cover: string, duration: number, totalTime: number }> = {};
     songsData?.forEach((item: any) => {
@@ -209,7 +229,8 @@ export const fetchDashboardStats = async () => {
     // 3. Top Albums
     const { data: albumsData } = await supabase
         .from('listening_history')
-        .select('album_name, artist_name, album_cover, duration_ms');
+        .select('album_name, artist_name, album_cover, duration_ms')
+        .gte('played_at', startDate.toISOString());
 
     const albumStats: Record<string, { count: number, duration: number, artist: string, cover: string }> = {};
     albumsData?.forEach((item: any) => {
@@ -469,7 +490,8 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
             album: item.album,
             cover: item.cover,
             listens: item.plays,
-            minutes: Math.round(item.totalMs / 60000)
+            timeStr: `${Math.round(item.totalMs / 60000)}m`,
+            totalMinutes: Math.round(item.totalMs / 60000)
         }));
 
     } catch (e) {

@@ -19,8 +19,8 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
     }, []);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in px-4 py-6 md:p-8">
-            <div className="bg-[#1C1C1E] w-full max-w-6xl max-h-full md:max-h-[90vh] h-auto flex flex-col rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in p-4 overflow-y-auto">
+            <div className="bg-[#1C1C1E] w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl border border-white/10 shadow-2xl relative my-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-white/5 bg-[#1C1C1E] z-10 shrink-0">
                     <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
@@ -34,7 +34,6 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-700 hover:scrollbar-thumb-gray-500">
-                    <div className="origin-top transform scale-[0.7] w-[142.8%] h-[142.8%]">
                         
                         {/* Artists Grid */}
                         {type === 'Artists' && (
@@ -135,7 +134,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
                              )}
                         </div>
                     )}
-                    </div>
+
 
                 </div>
             </div>

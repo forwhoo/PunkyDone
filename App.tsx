@@ -136,6 +136,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [dbStats, setDbStats] = useState<any>(null);
   const [dbUnifiedData, setDbUnifiedData] = useState<any>(null);
+  const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly'>('Weekly');
   
   // Wrapped Modal State
   const [wrappedOpen, setWrappedOpen] = useState(false);
@@ -157,7 +158,7 @@ function App() {
   const refreshDbStats = async () => {
       const stats = await fetchListeningStats();
       setDbStats(stats);
-      const dashboardStuff = await fetchDashboardStats();
+      const dashboardStuff = await fetchDashboardStats(timeRange);
       setDbUnifiedData(dashboardStuff);
   };
 
@@ -197,6 +198,11 @@ function App() {
       };
       if (token && data) syncAndFetchStats();
   }, [data]);
+
+  // Refresh data when timeRange changes
+  useEffect(() => {
+      if (token) refreshDbStats();
+  }, [timeRange]);
 
 
   // Polling Effect - Refresh every 10 seconds (as requested by user)
@@ -505,6 +511,12 @@ function App() {
                 songs={dbUnifiedData?.songs || data.songs}
                 albums={dbUnifiedData?.albums || data.albums}
                 hourlyActivity={dbUnifiedData?.hourlyActivity || data.hourly}
+                timeRange={timeRange}
+                onTimeRangeChange={(range) => {
+                    setTimeRange(range);
+                    // Refresh data with new time range
+                    fetchDashboardStats(range).then(setDbUnifiedData);
+                }}
             />
         </div>
     </Layout>

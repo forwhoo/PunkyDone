@@ -73,11 +73,11 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                     <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="w-6 h-6 text-[#FA2D48]" />
                         <h2 className="text-[26px] font-bold text-white tracking-tight">
-                            {category ? category.title : "AI Spotlight"}
+                            {category ? category.title : "Music Intelligence"}
                         </h2>
                     </div>
                      <p className="text-[#8E8E93] text-[15px] leading-relaxed max-w-2xl">
-                        {category ? category.description : "Ask a question, create a category, or find your next favorite song. Combine all tools into one powerful search."}
+                        {category ? category.description : "Unlock deep insights about your listening habits. Create intelligent playlists using advanced filters, time analysis, and contextual understanding."}
                     </p>
                     
                      {/* Added Reason / Filter Tag */}
@@ -91,41 +91,36 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                             <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FA2D48]/10 border border-[#FA2D48]/20 text-[#FA2D48] text-[11px] font-bold tracking-wide">
                                 <Sparkles className="w-3 h-3" />
                                 <span>
-                                    {category.filter?.value || "Your Mix"} due to total time of {results.reduce((acc, curr) => acc + (parseInt(curr.timeStr) || 0), 0) || '40'} mins!
+                                    {category.filter?.value || "Your Mix"} · {Math.round(results.reduce((acc, curr) => acc + (curr.totalMinutes || 0), 0))} total minutes
                                 </span>
                             </div>
                          </div>
                      )}
                 </div>
                 
-                {/* Search / Ask Box - Updated to match screenshot with nicer input */}
-                <div className="relative group w-full md:w-[480px]">
-                    <div className="bg-[#1C1C1E] border border-white/10 rounded-2xl p-4 focus-within:border-[#FA2D48]/50 focus-within:ring-1 focus-within:ring-[#FA2D48]/20 transition-all shadow-xl relative min-h-[110px] flex flex-col justify-between">
-                        <div className="flex items-start gap-3 w-full">
-                             <MessageSquare className="w-5 h-5 text-[#555] mt-1 flex-shrink-0" />
-                             <textarea 
-                                value={userPrompt}
-                                onChange={(e) => setUserPrompt(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if(e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleGenerate();
-                                    }
-                                }}
-                                placeholder="Ask for anything... (e.g. 'Make a playlist for a rainy day with 90s rock')"
-                                className="w-full bg-transparent text-[15px] text-white focus:outline-none resize-none placeholder:text-[#555] min-h-[60px]"
-                            />
-                        </div>
-                        <div className="flex justify-end mt-2">
-                             <button 
-                                onClick={() => handleGenerate()}
-                                disabled={loading || !userPrompt}
-                                className="bg-[#FA2D48] text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-[#D41E36] transition-colors disabled:opacity-50 flex items-center gap-2 shadow-lg"
-                            >
-                                {loading ? 'Thinking...' : 'Generate'}
-                                {!loading && <ArrowRight className="w-3 h-3" />}
-                            </button>
-                        </div>
+                {/* Centered Search Input - Redesigned to be nicer and smaller */}
+                <div className="w-full max-w-md mx-auto">
+                    <div className="relative group">
+                        <input 
+                            type="text"
+                            value={userPrompt}
+                            onChange={(e) => setUserPrompt(e.target.value)}
+                            onKeyDown={(e) => {
+                                if(e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleGenerate();
+                                }
+                            }}
+                            placeholder="Create a smart playlist..."
+                            className="w-full bg-[#1C1C1E] border border-white/10 rounded-full px-5 py-3 text-[14px] text-white focus:outline-none focus:border-[#FA2D48]/50 focus:ring-2 focus:ring-[#FA2D48]/20 transition-all placeholder:text-[#555]"
+                        />
+                        <button 
+                            onClick={() => handleGenerate()}
+                            disabled={loading || !userPrompt}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#FA2D48] text-white px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wide hover:bg-[#D41E36] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? '...' : 'Go'}
+                        </button>
                     </div>
                 </div>
             </div>
