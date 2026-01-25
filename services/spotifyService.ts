@@ -1,11 +1,17 @@
 import { Artist, Album, Song } from '../types';
 
 // The Redirect URI provided by the user
-const REDIRECT_URI = "https://aistudio.google.com/app/apps/drive/1t9HI0WYdAB-RQpHFRtiQopXv-ftWJhsJ?showAssistant=true&resourceKey=&showPreview=true&fullscreenApplet=true";
+const REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI || "http://localhost:3000/";
+const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+
 const SCOPES = "user-top-read user-read-recently-played user-read-private";
 
-export const getAuthUrl = (clientId: string) => {
-  return `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}&response_type=token&show_dialog=true`;
+export const getAuthUrl = () => {
+  if (!CLIENT_ID) {
+    console.warn("Missing Spotify Client ID");
+    return "#";
+  }
+  return `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}&response_type=token&show_dialog=true`;
 };
 
 export const getTokenFromUrl = () => {

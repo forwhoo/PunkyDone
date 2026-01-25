@@ -80,10 +80,6 @@ function App() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   
-  // Settings for Client ID
-  const [clientId, setClientId] = useState(localStorage.getItem('spotify_client_id') || '');
-  const [showConfig, setShowConfig] = useState(!localStorage.getItem('spotify_client_id'));
-
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
 
@@ -118,12 +114,7 @@ function App() {
   };
 
   const handleConnect = () => {
-    if (!clientId) {
-        alert("Please enter a Client ID first");
-        return;
-    }
-    localStorage.setItem('spotify_client_id', clientId);
-    window.location.href = getAuthUrl(clientId);
+    window.location.href = getAuthUrl();
   };
 
   const handleGetInsight = async (query?: string) => {
@@ -148,17 +139,10 @@ function App() {
               </div>
               <h1 className="text-4xl font-bold text-white mb-4 tracking-tight">Connect to Spotify</h1>
               <p className="text-[#8E8E93] max-w-md mb-8 text-lg">
-                  Enter your Spotify Client ID to unlock your personalized dashboard with real-time stats and AI insights.
+                  Connect your account to unlock your personalized dashboard with real-time stats and AI insights.
               </p>
               
               <div className="w-full max-w-sm space-y-4">
-                  <input 
-                    type="text" 
-                    placeholder="Spotify Client ID"
-                    value={clientId}
-                    onChange={(e) => setClientId(e.target.value)}
-                    className="w-full bg-[#1C1C1E] border border-[#2C2C2E] rounded-xl px-4 py-3 text-white placeholder-[#555] focus:outline-none focus:border-[#FA2D48] transition-colors"
-                  />
                   <button 
                     onClick={handleConnect}
                     className="w-full bg-[#FA2D48] hover:bg-[#d4253d] text-white font-semibold py-3 rounded-xl transition-all active:scale-95"
@@ -166,7 +150,7 @@ function App() {
                     Connect Account
                   </button>
                   <p className="text-xs text-[#555] mt-4">
-                      Don't have a Client ID? Create an app in the Spotify Developer Dashboard and add the redirect URI.
+                      By connecting, you agree to allow us to view your top artists and tracks.
                   </p>
               </div>
           </div>
