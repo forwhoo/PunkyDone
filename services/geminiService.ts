@@ -186,11 +186,12 @@ export interface AIFilterResult {
     isError?: boolean;
 }
 
+
 export const generateDynamicCategoryQuery = async (context: { 
     artists: string[], 
     albums: string[], 
     songs: string[] 
-}, userPrompt?: string): Promise<AIFilterResult> => {
+}, userPrompt?: string): Promise<AIFilterResult[]> => {
     try {
         const client = getAiClient();
         if (!client) throw new Error("Missing VITE_GROQ_API_KEY");
@@ -205,7 +206,7 @@ export const generateDynamicCategoryQuery = async (context: {
 
         const systemInstructions = `
 You are the DJ Algorithm for a premium music dashboard.
-Your job: Create ONE unique, creative listening category from the user's REAL library.
+Your job: Create **ONE OR MORE** unique, creative listening categories from the user's REAL library based on their request.
 
 ## USER'S LIBRARY:
 - Top Artists: [${shuffledArtists.slice(0, 30).join(', ')}]
@@ -228,25 +229,32 @@ Your job: Create ONE unique, creative listening category from the user's REAL li
 | sortBy         | "plays" | "minutes" | "recency"            | How to rank results                            |
 | sortOrder      | "highest" | "lowest"                      | Top or Bottom                                  |
 | minPlays       | number                                      | Minimum play count (ensures variety)           |
+| limit          | number                                      | MAX results (Default 20, Max 50)               |
+
+## COMPLEX QUERY LOGIC:
+- If the user asks for **MULTIPLE things** (e.g., "Top 5 artists AND top 5 songs"), generate **TWO separate categories**.
+- If the user specifies a **NUMBER** (e.g., "Top 5"), YOU MUST set the "limit" parameter to that number.
+- If the user asks for "least favorite" or "bottom", use "sortOrder": "lowest".
 
 ## CREATIVE GUIDELINES:
-- FORBIDDEN titles: "Morning Playlist", "Top Tracks", "Best Of", "Daily Mix"
-- GOOD titles: "The Marathon", "Quick Hits", "Weekend Warriors", "Deep Cuts", "Repeat Offenders", "Fresh Finds"
-- STRICTLY FOLLOW USER PROMPTS: If user asks for "Harry Styles", use { "field": "artist_name", "value": "Harry Styles", "sortBy": "plays", "sortOrder": "highest" }
-- If user asks for "top albums", use { "sortBy": "plays", "sortOrder": "highest" } or similar to show all top content
-- If user asks for specific artist/album/song, use exact "value" match. For broader queries, use "contains" or skip field entirely.
-- Always return valid filters that will produce results.
+- **Title Creativity**: Avoid "Top Tracks". Use "The Marathon", "Deep Cuts", "Heavy Rotation".
+- **Context Awareness**: Use the user's data to check if an artist exists before creating a filter.
+- **Accuracy**: If user wants "Top 5 Kanye", use { field: "artist_name", value: "Kanye West", limit: 5 }.
 
 ## OUTPUT (JSON only):
-{
-    "title": "Creative Title",
+Return an ARRAY of objects:
+[
+  {
+    "title": "Creative Title 1",
     "description": "Fun 1-liner",
     "filter": { ...your filter params... }
-}
+  },
+  ...
+]
 `;
 
         const userMessage = userPrompt 
-            ? `USER REQUEST: "${userPrompt}". Generate a matching category using the library context.`
+            ? `USER REQUEST: "${userPrompt}". Generate matching categories using the library context.`
             : `Generate a random creative category based on the user's library and current time.`;
 
         const response = await client.chat.completions.create({
@@ -263,19 +271,34 @@ Your job: Create ONE unique, creative listening category from the user's REAL li
         const text = response.choices[0]?.message?.content || "{}";
         const parsed = JSON.parse(text);
         
-        // Validate
-        if (!parsed.filter) throw new Error("AI did not return a filter object");
+        // Handle both single object and array return types from AI (just in case)
+        let results = [];
+        if (Array.isArray(parsed)) {
+            results = parsed;
+        } else if (parsed.categories && Array.isArray(parsed.categories)) {
+            results = parsed.categories; // Some models wrap in a root key
+        } else if (parsed.title && parsed.filter) {
+            results = [parsed];
+        } else {
+             // Try to find array in object keys if model wrapped it weirdly
+             const firstKeyArray = Object.values(parsed).find(v => Array.isArray(v));
+             if (firstKeyArray) {
+                 results = firstKeyArray as any[];
+             }
+        }
         
-        return parsed as AIFilterResult;
+        if (results.length === 0) throw new Error("AI did not return any valid categories");
+        
+        return results as AIFilterResult[];
 
     } catch (e: any) {
         console.error("AI Category Gen Error:", e);
-        return {
+        return [{
             title: "Your Heavy Rotation",
             description: `Most played tracks overall`,
-            filter: { sortBy: 'plays', sortOrder: 'highest', minPlays: 2 },
+            filter: { sortBy: 'plays', sortOrder: 'highest', minPlays: 2, limit: 20 },
             isError: true
-        };
+        }];
     }
 }
 
