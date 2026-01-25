@@ -188,6 +188,10 @@ export interface AIFilterArgs {
     // Result control
     minPlays?: number; // Ensure at least X plays
     limit?: number; // How many results (default 20)
+
+    // External Discovery
+    useSpotify?: boolean; // If true, search Spotify instead of DB
+    spotifyQuery?: string; // The search term for Spotify (e.g., "Kanye West", "80s Pop", "Sad Songs")
 }
 
 export interface AIFilterResult {
@@ -242,9 +246,17 @@ Your job: Create **ONE OR MORE** unique, creative listening categories from the 
 | sortOrder      | "highest" | "lowest"                      | Top or Bottom                                  |
 | minPlays       | number                                      | Minimum play count (ensures variety)           |
 | limit          | number                                      | MAX results (Default 20, Max 50)               |
+| useSpotify     | boolean                                     | Set TRUE for "suggest", "find new", "search"   |
+| spotifyQuery   | string                                      | Search term (e.g. "Similar to Kanye", "80s Hits")|
 
 ## SPECIAL MODES:
-1. **"WRAPPED" / "RECAP"**: If user asks for "Wrapped", "Daily Recap", or similar:
+1. **"DISCOVER" / "SUGGEST" / "SEARCH"**:
+   - If user asks to "find new songs", "search for Drake songs", "suggest music like X":
+   - Set `useSpotify: true`.
+   - Set `spotifyQuery` to the relevant search term (Artist Name, Genre, or Vibe).
+   - `type` should usually be "song".
+
+2. **"WRAPPED" / "RECAP"**: If user asks for "Wrapped", "Daily Recap", or similar:
    - Generate 3-5 distinct categories that tell a story.
    - Example 1: "Top Artists" (type: "artist", recentDays: 30)
    - Example 2: "Morning Routine" (timeOfDay: "morning")

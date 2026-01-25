@@ -3,7 +3,7 @@ import { Card } from './UIComponents';
 import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion } from '../services/geminiService';
 import { fetchSmartPlaylist } from '../services/dbService';
-import { fetchArtistImages } from '../services/spotifyService';
+import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -37,6 +37,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
     const [userPrompt, setUserPrompt] = useState("");
     const [mode, setMode] = useState<'discover' | 'chat'>('discover');
     const [typing, setTyping] = useState(false);
+    const [discoveryMode, setDiscoveryMode] = useState(false);
     const sectionRef = useRef<HTMLDivElement>(null);
 
     // Typing effect logic
@@ -79,23 +80,47 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
             const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover', 'top', 'best', 'most', 'rank', 'chart', 'favorite', 'least', 'wrapped', 'gems', 'rewind', 'vibes', 'mix'];
             const isAnalysisQuery = analysisKeywords.some(k => promptToUse.toLowerCase().includes(k));
             
-            if (isAnalysisQuery) {
+            if (isAnalysisQuery || discoveryMode) {
                 // SQL Analysis Mode
                 setMode('discover');
-                const concepts = await generateDynamicCategoryQuery(contextData, promptToUse);
+                // Pass discovery hint if enabled
+                const fullPrompt = discoveryMode 
+                    ? `${promptToUse} (Mode: FIND NEW SUGGESTIONS/DISCOVERY ON SPOTIFY)` 
+                    : promptToUse;
+
+                const concepts = await generateDynamicCategoryQuery(contextData, fullPrompt);
                 
                 const newResults: CategoryResult[] = [];
                 
                 // Process all returned categories (Promise.all for speed)
                 await Promise.all(concepts.map(async (concept, idx) => {
                     if (concept && concept.filter) {
-                        const data = await fetchSmartPlaylist(concept);
+                        let data = [];
+                        
+                        // Check if AI requested Spotify Discovery OR if we forced discovery mode but AI returned generic filter
+                        if ((concept.filter.useSpotify || discoveryMode) && token) {
+                           // Use Spotify API
+                           if (concept.filter.spotifyQuery) {
+                               data = await searchSpotifyTracks(token, concept.filter.spotifyQuery);
+                           } else {
+                               // Fallback: Recommend based on top artist if no query
+                               const seeds = {
+                                   seed_artists: contextData.artists.slice(0, 2).map(a => a.split(' (')[0]), // Extract name
+                                   seed_genres: [] 
+                               };
+                               data = await fetchSpotifyRecommendations(token, seeds);
+                           }
+                        } else {
+                           // Use Local DB
+                           data = await fetchSmartPlaylist(concept);
+                        }
+
                         if (data.length > 0) {
                             newResults.push({
                                 id: `cat-${Date.now()}-${idx}`,
                                 title: concept.title,
                                 description: concept.description,
-                                stats: `${data.length} items · ${Math.round(data.reduce((acc: number, curr: any) => acc + (curr.totalMinutes || 0), 0))} mins`,
+                                stats: `${data.length} items`,
                                 tracks: data
                             });
                         }
@@ -267,7 +292,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                                     handleQuery();
                                 }
                             }}
-                            placeholder="Ask me anything..."
+                            placeholder={discoveryMode ? "Search Spotify via AI..." : "Ask me anything..."}
                             className="w-full bg-transparent px-0 py-4 text-[22px] font-light text-white focus:outline-none placeholder:text-[#333]"
                         />
                         <button 
@@ -278,6 +303,16 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                             {loading ? <RefreshCcw className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
                         </button>
                     </div>
+                </div>
+                
+                {/* Discovery Toggle */}
+                <div className="flex justify-center mt-3">
+                    <button 
+                        onClick={() => setDiscoveryMode(!discoveryMode)}
+                        className={`text-[11px] font-bold tracking-widest uppercase py-1 px-3 rounded-md transition-all border ${discoveryMode ? 'bg-[#FA2D48]/20 border-[#FA2D48] text-[#FA2D48] shadow-[0_0_15px_rgba(250,45,72,0.3)]' : 'border-transparent text-[#555] hover:text-white'}`}
+                    >
+                        {discoveryMode ? "⚡ Discovery Mode: ON" : "Discovery Mode: OFF"}
+                    </button>
                 </div>
 
                 {/* Quick Feature Suggestions */}
@@ -329,15 +364,21 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                                             {index + 1}
                                         </span>
                                         <div className="relative z-10 ml-10 md:ml-12">
-                                            <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
+                                            <div className={`w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl transition-all duration-300 group-hover:-translate-y-2 relative ${item.isSuggestion ? 'border-2 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.3)]' : 'border border-white/5 group-hover:border-white/20'}`}>
                                                 <img src={item.cover} alt={item.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                                                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
-                                                    <span className="text-white font-bold text-2xl drop-shadow-md">{item.timeStr || item.listens}</span>
-                                                    <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Plays</span>
+                                                    {item.isSuggestion ? (
+                                                        <span className="text-cyan-400 font-bold text-sm uppercase tracking-widest border border-cyan-400 px-2 py-1 rounded-md">New Find</span>
+                                                    ) : (
+                                                        <>
+                                                            <span className="text-white font-bold text-2xl drop-shadow-md">{item.timeStr || item.listens}</span>
+                                                            <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Plays</span>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="mt-3 relative z-20">
-                                                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{item.title}</h3>
+                                                <h3 className={`text-[15px] font-semibold truncate w-32 md:w-40 leading-tight transition-colors ${item.isSuggestion ? 'text-cyan-400' : 'text-white group-hover:text-[#FA2D48]'}`}>{item.title}</h3>
                                                 <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5">
                                                     {(item.type === 'artist' || item.title === item.artist) ? 'Artist' : item.artist}
                                                 </p>

@@ -333,3 +333,80 @@ export const fetchArtistImages = async (token: string, artistNames: string[]) =>
     await Promise.all(promises);
     return imageMap;
 };
+
+export const fetchSpotifyRecommendations = async (token: string, seeds: { seed_artists?: string[], seed_tracks?: string[], seed_genres?: string[] }, limit = 20) => {
+    if (!token) return [];
+    
+    // Helper to resolve names to IDs
+    const resolveArtistIds = async (names: string[]) => {
+        const ids: string[] = [];
+        await Promise.all(names.map(async (name) => {
+            try {
+                // If it looks like an ID (22 chars alphanumeric), allow it, else search
+                // But simplified: just search to be safe if unsure, or assume names are passed
+                const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(name)}&type=artist&limit=1`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const d = await res.json();
+                if (d.artists?.items[0]?.id) ids.push(d.artists.items[0].id);
+            } catch (e) { console.error(e); }
+        }));
+        return ids;
+    };
+
+    const params = new URLSearchParams();
+    
+    // Resolve Artists
+    if (seeds.seed_artists?.length) {
+        const realIds = await resolveArtistIds(seeds.seed_artists.slice(0, 3)); // Limit to 3 seeds
+        if (realIds.length) params.append('seed_artists', realIds.join(','));
+    }
+    
+    // Tracks are usually IDs? If names, similar logic needed. Assuming IDs or we skip
+    if (seeds.seed_tracks?.length) params.append('seed_tracks', seeds.seed_tracks.slice(0, 3).join(','));
+    
+    if (seeds.seed_genres?.length) params.append('seed_genres', seeds.seed_genres.slice(0, 3).join(','));
+    
+    params.append('limit', limit.toString());
+
+    try {
+        const res = await fetch(`https://api.spotify.com/v1/recommendations?${params.toString()}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        return (data.tracks || []).map((t: any) => ({
+             id: t.id,
+             title: t.name,
+             artist: t.artists[0].name,
+             album: t.album.name,
+             cover: t.album.images[0]?.url,
+             uri: t.uri,
+             isSuggestion: true // Marker for UI
+        }));
+    } catch (e) {
+        console.error("Recs Error", e);
+        return [];
+    }
+};
+
+export const searchSpotifyTracks = async (token: string, query: string, limit = 20) => {
+    if (!token || !query) return [];
+    try {
+        const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        return (data.tracks?.items || []).map((t: any) => ({
+             id: t.id,
+             title: t.name,
+             artist: t.artists[0].name,
+             album: t.album.name,
+             cover: t.album.images[0]?.url,
+             uri: t.uri,
+             isSuggestion: true
+        }));
+    } catch (e) {
+        console.error("Search Error", e);
+        return [];
+    }
+};
