@@ -190,8 +190,9 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight }: Her
             title="Pop" 
             subtitle="Top Genre" 
             meta="45% of total plays"
-            gradientClass="bg-gradient-to-tl from-emerald-500/20 via-teal-500/10 to-transparent"
+            gradientClass="bg-gradient-to-tl from-emerald-500/80 via-teal-500/50 to-transparent mix-blend-overlay"
             icon={Music}
+            image={topArtistImage}
         />
         
         {/* CARD 4: NEW DISCOVERIES */}
@@ -199,8 +200,9 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight }: Her
             title="24 Tracks" 
             subtitle="New Music" 
             meta="Added to library"
-            gradientClass="bg-gradient-to-br from-purple-500/20 via-indigo-500/10 to-transparent"
+            gradientClass="bg-gradient-to-br from-purple-500/80 via-indigo-500/50 to-transparent mix-blend-overlay"
             icon={Headphones}
+            image={topAlbumImage}
         />
 
       </div>

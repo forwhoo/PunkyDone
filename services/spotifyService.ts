@@ -92,21 +92,33 @@ export const fetchSpotifyData = async (token: string) => {
   const headers = { Authorization: `Bearer ${token}` };
 
   try {
-    const [artistsRes, tracksRes, recentRes] = await Promise.all([
+    const [artistsRes, tracksRes, recentRes, userRes] = await Promise.all([
       fetch('https://api.spotify.com/v1/me/top/artists?limit=10&time_range=short_term', { headers }),
       fetch('https://api.spotify.com/v1/me/top/tracks?limit=20&time_range=short_term', { headers }),
-      fetch('https://api.spotify.com/v1/me/player/recently-played?limit=50', { headers })
+      fetch('https://api.spotify.com/v1/me/player/recently-played?limit=50', { headers }),
+      fetch('https://api.spotify.com/v1/me', { headers })
     ]);
 
-    if (!artistsRes.ok || !tracksRes.ok || !recentRes.ok) {
+    if (!artistsRes.ok || !tracksRes.ok || !recentRes.ok || !userRes.ok) {
         throw new Error("Failed to fetch data from Spotify");
     }
 
     const artistsData = await artistsRes.json();
     const tracksData = await tracksRes.json();
     const recentData = await recentRes.json();
+    const userData = await userRes.json();
 
     return {
+      user: {
+          name: userData.display_name,
+          image: userData.images?.[0]?.url || "",
+          product: userData.product
+      },
+      currentTrack: recentData.items[0] ? {
+          title: recentData.items[0].track.name,
+          artist: recentData.items[0].track.artists[0].name,
+          cover: recentData.items[0].track.album.images[0]?.url,
+      } : null,
       artists: mapArtists(artistsData.items),
       songs: mapSongs(tracksData.items),
       albums: mapAlbumsFromTracks(tracksData.items),

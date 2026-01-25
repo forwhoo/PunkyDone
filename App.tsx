@@ -148,6 +148,24 @@ function App() {
     setLoading(false);
   };
 
+  // Ensure favicon is updated based on top album if available
+  useEffect(() => {
+    if (data && data.albums && data.albums.length > 0) {
+        const randomAlbum = data.albums[Math.floor(Math.random() * Math.min(data.albums.length, 5))];
+        const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+        // @ts-ignore
+        link.type = 'image/jpeg';
+        // @ts-ignore
+        link.rel = 'icon';
+        // @ts-ignore
+        link.href = randomAlbum.cover;
+        document.getElementsByTagName('head')[0].appendChild(link);
+        
+        // Also update title incase it wasn't
+        document.title = "Punky | Your Music DNA";
+    }
+  }, [data]);
+
   const handleConnect = async () => {
     await redirectToAuthCodeFlow();
   };
@@ -194,7 +212,7 @@ function App() {
 
   if (loading || !data) {
       return (
-          <Layout>
+          <Layout user={null} currentTrack={null}>
               <div className="flex h-[60vh] items-center justify-center">
                   <div className="flex flex-col items-center gap-4">
                       <div className="w-8 h-8 border-2 border-[#FA2D48] border-t-transparent rounded-full animate-spin"></div>
@@ -206,11 +224,13 @@ function App() {
   }
 
   return (
-    <Layout>
+    <Layout user={data.user} currentTrack={data.currentTrack}>
         <HeroCarousel 
             insight={insight} 
             loadingInsight={loadingInsight} 
             onGenerateInsight={handleGetInsight} 
+            topArtistImage={data.artists[0]?.image}
+            topAlbumImage={data.albums[0]?.cover}
         />
 
         {/* TOP ALBUMS - Horizontal Scroll */}
