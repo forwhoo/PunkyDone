@@ -39,6 +39,40 @@ export const generateMusicInsights = async (contextData: string): Promise<string
   }
 };
 
+export const answerMusicQuestion = async (question: string, context: { artists: string[], albums: string[], songs: string[] }): Promise<string> => {
+  try {
+    const client = getAiClient();
+    if (!client) return "Configure VITE_GROQ_API_KEY to use chat features.";
+
+    const prompt = `
+You are a music analytics assistant with deep knowledge of the user's listening history.
+
+USER'S LIBRARY CONTEXT:
+- Top Artists: ${context.artists.slice(0, 20).join(', ')}
+- Top Albums: ${context.albums.slice(0, 15).join(', ')}
+- Top Songs: ${context.songs.slice(0, 15).join(', ')}
+
+USER QUESTION: "${question}"
+
+Provide a helpful, insightful, and conversational answer based on their listening data. 
+Be specific, reference their actual music when relevant, and keep it friendly and engaging.
+If you need SQL data to answer precisely, suggest they try a discovery query instead.
+    `;
+
+    const response = await client.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 300
+    });
+    
+    return response.choices[0]?.message?.content || "I couldn't process that question. Try rephrasing!";
+  } catch (error) {
+    console.error("Chat Error:", error);
+    return "Unable to answer right now. Try again!";
+  }
+};
+
 export interface AIFilterArgs {
     // Field matching
     field?: 'artist_name' | 'album_name' | 'track_name';

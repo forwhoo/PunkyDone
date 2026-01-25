@@ -3,12 +3,11 @@ import { Layout } from './components/Layout';
 import { TopCharts } from './components/TopCharts';
 import { HeroCarousel } from './components/HeroCarousel';
 import { RankingWidget } from './components/RankingWidget';
-// Removed legacy AIChartWidget
 import { AISpotlight } from './components/AISpotlight';
-import { SeeAllModal } from './components/SeeAllModal';
+import { TrendingArtists } from './components/TrendingArtists';
 import { WrappedModal } from './components/WrappedModal';
 import { rankingMockData } from './mockData';
-import { ChevronRight, Play, Music, BarChart2, Mic2, Disc, Trophy, Clock} from 'lucide-react';
+import { Play, Music, BarChart2, Mic2, Disc, Trophy, Clock, TrendingUp } from 'lucide-react';
 import { Artist, Album, Song } from './types';
 import { 
     getAuthUrl, 
@@ -20,19 +19,6 @@ import {
 } from './services/spotifyService';
 import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay } from './services/dbService';
 import { generateMusicInsight } from './services/groqService';
-
-const SectionHeader = ({ title, onClick }: { title: string, onClick?: () => void }) => (
-    <div className="flex justify-between items-end mb-6 px-1 mx-1">
-        <h2 className="text-[22px] font-bold text-white tracking-tight">{title}</h2>
-        <div 
-            className="flex items-center gap-1 text-[#FA2D48] cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={onClick}
-        >
-            <span className="text-[13px] font-medium">See All</span>
-            <ChevronRight className="w-4 h-4" />
-        </div>
-    </div>
-);
 
 // HISTORY COMPONENT: Simple Card
 const HistoryCard = ({ item }: { item: any }) => (
@@ -142,15 +128,6 @@ function App() {
   const [wrappedOpen, setWrappedOpen] = useState(false);
   const [currentWrappedPeriod, setCurrentWrappedPeriod] = useState("Week");
   
-  // See All Modal State
-  const [modalConfig, setModalConfig] = useState<{isOpen: boolean, type: 'Artists' | 'Songs' | 'Albums' | 'History', title: string, data: any[]}>({
-      isOpen: false, type: 'Artists', title: '', data: []
-  });
-
-  const openModal = (type: 'Artists' | 'Songs' | 'Albums' | 'History', title: string, data: any[]) => {
-      setModalConfig({ isOpen: true, type, title, data });
-  };
-
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
 
@@ -415,15 +392,6 @@ function App() {
 
   return (
     <Layout user={data.user} currentTrack={data.currentTrack}>
-        {modalConfig.isOpen && (
-            <SeeAllModal 
-                type={modalConfig.type} 
-                title={modalConfig.title} 
-                data={modalConfig.data} 
-                onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} 
-            />
-        )}
-
         <HeroCarousel 
             insight={insight}  
             loadingInsight={loadingInsight} 
@@ -439,10 +407,9 @@ function App() {
 
         {/* TOP ALBUMS - Horizontal Scroll */}
         <div className="mb-12">
-             <SectionHeader 
-                title="Top Albums" 
-                onClick={() => openModal('Albums', 'Top Albums', dbUnifiedData?.albums || data.albums)} 
-             />
+             <div className="flex justify-between items-end mb-6 px-1 mx-1">
+                <h2 className="text-[22px] font-bold text-white tracking-tight">Top Albums</h2>
+             </div>
              <div className="flex items-end overflow-x-auto pb-10 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
                 {(dbUnifiedData?.albums || data.albums).slice(0, 10).map((album: Album, index: number) => (
                     <RankedAlbum key={album.id} album={album} rank={index + 1} />
@@ -452,10 +419,9 @@ function App() {
 
         {/* TOP SONGS - Horizontal Scroll Cards */}
         <div className="mb-12">
-             <SectionHeader 
-                title="Top Songs" 
-                onClick={() => openModal('Songs', 'Top Songs', dbUnifiedData?.songs || data.songs)} 
-             />
+             <div className="flex justify-between items-end mb-6 px-1 mx-1">
+                <h2 className="text-[22px] font-bold text-white tracking-tight">Top Songs</h2>
+             </div>
              <div className="flex items-center overflow-x-auto pb-6 no-scrollbar snap-x pl-1 scroll-smooth">
                 {(dbUnifiedData?.songs || data.songs).slice(0, 20).map((song: Song, index: number) => (
                     <RankedSong key={song.id} song={song} rank={index + 1} />
@@ -465,10 +431,9 @@ function App() {
 
         {/* TOP ARTISTS - Horizontal Scroll Circles */}
         <div className="mb-12">
-             <SectionHeader 
-                title="Top Artists" 
-                onClick={() => openModal('Artists', 'Top Artists', dbUnifiedData?.artists || data.artists)} 
-             />
+             <div className="flex justify-between items-end mb-6 px-1 mx-1">
+                <h2 className="text-[22px] font-bold text-white tracking-tight">Top Artists</h2>
+             </div>
              <div className="flex items-start overflow-x-auto pb-8 pt-6 no-scrollbar snap-x pl-4 scroll-smooth">
                 {(dbUnifiedData?.artists || data.artists).slice(0, 10).map((artist: Artist, index: number) => (
                     <RankedArtist key={artist.id} artist={artist} rank={index + 1} />
@@ -476,12 +441,17 @@ function App() {
              </div>
         </div>
 
+        {/* TRENDING ARTISTS - Live updating */}
+        <TrendingArtists 
+            artists={dbUnifiedData?.artists || data.artists}
+            recentPlays={dbUnifiedData?.recentPlays || []}
+        />
+
         {/* RECENTLY PLAYED - New Section */}
         <div className="mb-16">
-             <SectionHeader 
-                title="Recently Played" 
-                onClick={() => openModal('History', 'Listening History', dbUnifiedData?.recentPlays || [])} 
-             />
+             <div className="flex justify-between items-end mb-6 px-1 mx-1">
+                <h2 className="text-[22px] font-bold text-white tracking-tight">Recently Played</h2>
+             </div>
              <div className="flex items-start overflow-x-auto pb-4 pt-2 no-scrollbar snap-x pl-4 scroll-smooth">
                 {(dbUnifiedData?.recentPlays || []).slice(0, 15).map((item: any, index: number) => (
                     <HistoryCard key={index} item={item} />

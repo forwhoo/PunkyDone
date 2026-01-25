@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from './UIComponents';
-import { Sparkles, RefreshCcw, AlertTriangle, Play, Search, ArrowRight, MessageSquare } from 'lucide-react';
-import { generateDynamicCategoryQuery } from '../services/geminiService';
+import { Sparkles, RefreshCcw, AlertTriangle, Database, MessageSquare, Brain } from 'lucide-react';
+import { generateDynamicCategoryQuery, answerMusicQuestion } from '../services/geminiService';
 import { fetchSmartPlaylist } from '../services/dbService';
-import { ChevronRight } from 'lucide-react';
 
 interface TopAIProps {
     contextData: { artists: string[], albums: string[], songs: string[] };
@@ -14,92 +13,73 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
     const [category, setCategory] = useState<any>(null);
     const [results, setResults] = useState<any[]>([]);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [debugInfo, setDebugInfo] = useState<string | null>(null);
+    const [chatResponse, setChatResponse] = useState<string | null>(null);
     const [userPrompt, setUserPrompt] = useState("");
+    const [mode, setMode] = useState<'discover' | 'chat'>('discover');
     const sectionRef = useRef<HTMLDivElement>(null);
 
-    const handleGenerate = async (explicitPrompt?: string) => {
+    const handleQuery = async () => {
+        if (!userPrompt.trim()) return;
+        
         setLoading(true);
         setErrorMsg(null);
-        setDebugInfo(null);
+        setChatResponse(null);
+        setResults([]);
+        setCategory(null);
         
         try {
-            const concept = await generateDynamicCategoryQuery(contextData, explicitPrompt || userPrompt);
-            setCategory(concept);
+            // Determine if user wants SQL analysis or just a chat response
+            const isAnalysisQuery = userPrompt.toLowerCase().match(/(playlist|tracks?|songs?|artist|album|find|show|filter|when|how many|what|analyze)/);
             
-            if (concept.filter) {
-                setDebugInfo(JSON.stringify(concept.filter, null, 0));
-            }
-            
-            if (concept.isError) {
-                setErrorMsg(concept.description);
-            }
-
-            if (concept && concept.filter) {
-                const data = await fetchSmartPlaylist(concept);
-                setResults(data);
+            if (isAnalysisQuery) {
+                // SQL Analysis Mode
+                setMode('discover');
+                const concept = await generateDynamicCategoryQuery(contextData, userPrompt);
+                setCategory(concept);
                 
-                if (data.length === 0 && !concept.isError) {
-                    const filterDesc = concept.filter.value || concept.filter.contains || concept.filter.timeOfDay || 'filter';
-                    setErrorMsg(`No results for: ${filterDesc}. Try again for a different mix.`);
+                if (concept && concept.filter) {
+                    const data = await fetchSmartPlaylist(concept);
+                    setResults(data);
+                    
+                    if (data.length === 0) {
+                        setErrorMsg(`No results found for "${userPrompt}". Try a different query.`);
+                    }
+                } else {
+                    setErrorMsg("Could not generate query. Try rephrasing.");
                 }
             } else {
-                 setErrorMsg("AI returned invalid structure. Try again.");
+                // Chat Mode - Answer questions about music
+                setMode('chat');
+                const answer = await answerMusicQuestion(userPrompt, contextData);
+                setChatResponse(answer);
             }
         } catch (err: any) {
             setErrorMsg(`Error: ${err.message || 'Unknown'}`);
         }
         
         setLoading(false);
-        setUserPrompt(""); // Clear after use
-    };
-
-    // Auto-generate on first load
-    useEffect(() => {
-        if (results.length === 0 && !loading && !category) {
-            handleGenerate();
-        }
-    }, []);
-    
-    const scrollToSpotlight = () => {
-        sectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+        setUserPrompt("");
     };
 
     return (
         <div className="mb-12 scroll-mt-24" id="ai-spotlight" ref={sectionRef}>
             {/* Section Header */}
-            <div className="flex flex-col md:flex-row md:items-start justify-between mb-8 px-1 mx-1 gap-6">
-                <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-6 h-6 text-[#FA2D48]" />
-                        <h2 className="text-[26px] font-bold text-white tracking-tight">
-                            {category ? category.title : "Music Intelligence"}
+            <div className="flex flex-col items-center justify-center mb-8 px-1 mx-1 gap-4 text-center">
+                <div>
+                    <div className="flex items-center justify-center gap-2 mb-3">
+                        <Database className="w-7 h-7 text-[#FA2D48]" />
+                        <h2 className="text-[28px] font-bold text-white tracking-tight">
+                            The Discovery
                         </h2>
+                        <Brain className="w-7 h-7 text-[#FA2D48]" />
                     </div>
-                     <p className="text-[#8E8E93] text-[15px] leading-relaxed max-w-2xl">
-                        {category ? category.description : "Unlock deep insights about your listening habits. Create intelligent playlists using advanced filters, time analysis, and contextual understanding."}
+                     <p className="text-[#8E8E93] text-[14px] leading-relaxed max-w-2xl mx-auto">
+                        Advanced SQL music analyzer. Ask questions, create playlists, or explore your listening patterns with intelligent data analysis.
                     </p>
-                    
-                     {/* Added Reason / Filter Tag */}
-                     {category && !loading && (
-                         <div className="mt-4 flex flex-col gap-1 items-start animate-fade-in px-1">
-                            <p className="text-[#8E8E93] text-[13px] italic font-medium">
-                                {category.title.toLowerCase().includes(category.filter?.value?.toLowerCase()) 
-                                    ? `Your most played ${category.filter?.field === 'artist_name' ? 'artist\'s' : 'collection\'s'} top tracks`
-                                    : category.description}
-                            </p>
-                            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FA2D48]/10 border border-[#FA2D48]/20 text-[#FA2D48] text-[11px] font-bold tracking-wide">
-                                <Sparkles className="w-3 h-3" />
-                                <span>
-                                    {category.filter?.value || "Your Mix"} · {Math.round(results.reduce((acc, curr) => acc + (curr.totalMinutes || 0), 0))} total minutes
-                                </span>
-                            </div>
-                         </div>
-                     )}
                 </div>
                 
-                {/* Centered Search Input - Redesigned to be nicer and smaller */}
-                <div className="w-full max-w-md mx-auto">
+                {/* Centered Search Input */}
+                <div className="w-full max-w-2xl mx-auto">
                     <div className="relative group">
                         <input 
                             type="text"
@@ -108,30 +88,58 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                             onKeyDown={(e) => {
                                 if(e.key === 'Enter') {
                                     e.preventDefault();
-                                    handleGenerate();
+                                    handleQuery();
                                 }
                             }}
-                            placeholder="Create a smart playlist..."
-                            className="w-full bg-[#1C1C1E] border border-white/10 rounded-full px-5 py-3 text-[14px] text-white focus:outline-none focus:border-[#FA2D48]/50 focus:ring-2 focus:ring-[#FA2D48]/20 transition-all placeholder:text-[#555]"
+                            placeholder="Ask about your music..."
+                            className="w-full bg-[#1C1C1E] border border-white/10 rounded-full px-6 py-4 text-[15px] text-white focus:outline-none focus:border-[#FA2D48]/50 focus:ring-2 focus:ring-[#FA2D48]/20 transition-all placeholder:text-[#555]"
                         />
                         <button 
-                            onClick={() => handleGenerate()}
-                            disabled={loading || !userPrompt}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#FA2D48] text-white px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wide hover:bg-[#D41E36] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={handleQuery}
+                            disabled={loading || !userPrompt.trim()}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#FA2D48] text-white px-6 py-2 rounded-full text-[12px] font-bold uppercase tracking-wide hover:bg-[#D41E36] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
-                            {loading ? '...' : 'Go'}
+                            {loading ? <RefreshCcw className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                            {loading ? 'Analyzing...' : 'Discover'}
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Jump Button Removed */}
-
-            {/* Debug/Error stuff remains... */}
+            {/* Error Messages */}
             {errorMsg && (
                 <div className="mb-4 mx-1 bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-xs font-mono flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                     {errorMsg}
+                </div>
+            )}
+
+            {/* Chat Response */}
+            {mode === 'chat' && chatResponse && (
+                <div className="mb-6 mx-1 bg-[#1C1C1E] border border-[#FA2D48]/20 rounded-xl p-6">
+                    <div className="flex items-start gap-3 mb-3">
+                        <MessageSquare className="w-5 h-5 text-[#FA2D48] flex-shrink-0 mt-1" />
+                        <div className="flex-1">
+                            <p className="text-white text-[15px] leading-relaxed whitespace-pre-wrap">{chatResponse}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Discovery Results */}
+            {mode === 'discover' && category && (
+                <div className="mb-4 mx-1">
+                    <div className="flex items-center gap-3 mb-3">
+                        <Sparkles className="w-5 h-5 text-[#FA2D48]" />
+                        <h3 className="text-[20px] font-bold text-white">{category.title}</h3>
+                    </div>
+                    <p className="text-[#8E8E93] text-[14px] mb-2">{category.description}</p>
+                    {results.length > 0 && (
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FA2D48]/10 border border-[#FA2D48]/20 text-[#FA2D48] text-[11px] font-bold">
+                            <Database className="w-3 h-3" />
+                            {results.length} tracks · {Math.round(results.reduce((acc, curr) => acc + (curr.totalMinutes || 0), 0))} total minutes
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -167,12 +175,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                             </div>
                         ))}
                     </div>
-                ) : !loading && (
+                ) : !loading && mode === 'discover' && (
                     <div className="w-full h-[200px] border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-4 bg-[#1C1C1E]/50 mx-1">
-                        <Sparkles className="w-8 h-8 text-white/20" />
+                        <Database className="w-8 h-8 text-white/20" />
                         <div className="text-center">
-                            <p className="text-white font-medium">Something went wrong</p>
-                            <p className="text-[#8E8E93] text-xs mt-1">Try a different prompt or remix.</p>
+                            <p className="text-white font-medium">Ready to discover</p>
+                            <p className="text-[#8E8E93] text-xs mt-1">Ask a question or request a playlist above</p>
                         </div>
                     </div>
                 )}
