@@ -173,7 +173,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
     artistsData?.forEach((item: any) => {
         if (!artistCounts[item.artist_name]) artistCounts[item.artist_name] = { count: 0, time: 0 };
         artistCounts[item.artist_name].count += 1;
-        artistCounts[item.artist_name].time += item.duration_ms;
+        artistCounts[item.artist_name].time += (item.duration_ms || 0);
     });
 
     // Also scan albums to find matching images for artists
@@ -204,20 +204,20 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         
     const songCounts: Record<string, { count: number, artist: string, cover: string, duration: number, totalTime: number }> = {};
     songsData?.forEach((item: any) => {
-        const key = item.track_name; 
+        const key = `${item.track_name}||${item.artist_name}`; 
         if (!songCounts[key]) {
             songCounts[key] = { count: 0, artist: item.artist_name, cover: item.album_cover, duration: item.duration_ms, totalTime: 0 };
         }
         songCounts[key].count++;
-        songCounts[key].totalTime += item.duration_ms;
+        songCounts[key].totalTime += (item.duration_ms || 0);
     });
 
     const topSongs = Object.entries(songCounts)
         .sort(([, a], [, b]) => b.totalTime - a.totalTime)
         .slice(0, 100)
-        .map(([title, info], index) => ({
+        .map(([key, info], index) => ({
             id: `song-${index}`,
-            title,
+            title: key.split('||')[0],
             artist: info.artist,
             album: '', 
             cover: info.cover,
@@ -234,20 +234,20 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
 
     const albumStats: Record<string, { count: number, duration: number, artist: string, cover: string }> = {};
     albumsData?.forEach((item: any) => {
-        const key = item.album_name;
+        const key = `${item.album_name}||${item.artist_name}`;
         if (!albumStats[key]) {
              albumStats[key] = { count: 0, duration: 0, artist: item.artist_name, cover: item.album_cover };
         }
         albumStats[key].count++;
-        albumStats[key].duration += item.duration_ms;
+        albumStats[key].duration += (item.duration_ms || 0);
     });
 
     const topAlbums = Object.entries(albumStats)
         .sort(([, a], [, b]) => b.duration - a.duration)
         .slice(0, 100)
-        .map(([title, info], index) => ({
+        .map(([key, info], index) => ({
             id: `album-${index}`,
-            title,
+            title: key.split('||')[0],
             artist: info.artist,
             cover: info.cover,
             year: 2024,

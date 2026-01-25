@@ -53,7 +53,7 @@ const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
             </div>
             <div className="mt-3 relative z-20">
                 <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{album.title}</h3>
-                <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5">{album.artist}</p>
+                <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">{album.artist} • <span className="text-[#FA2D48]">{album.timeStr}</span></p>
             </div>
         </div>
     </div>

@@ -151,7 +151,6 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
 
   return (
     <div className="w-full mb-10">
-      <h2 className="text-[22px] font-bold text-white tracking-tight mb-6 px-1">For You</h2>
       
       <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x scroll-smooth -mx-1 px-1">
         
@@ -178,105 +177,6 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
                 </div>
              </div>
         </div>
-
-        {/* CARD 2: WEEKLY TIME */}
-        <HeroCard 
-            title={weeklyStats?.weeklyTime || "0h 0m"}
-            subtitle="Weekly Time" 
-            meta={weeklyStats?.weeklyTrend || "vs last week"}
-            gradientClass="bg-gradient-to-br from-orange-500/20 via-rose-500/10 to-transparent"
-            icon={Clock}
-        >
-             {/* Simple Firework CSS effect */}
-             <div className="absolute top-4 right-4 grid grid-cols-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="w-1 h-1 bg-yellow-400 rounded-full animate-ping"></span>
-                <span className="w-1 h-1 bg-orange-500 rounded-full animate-ping delay-75"></span>
-             </div>
-        </HeroCard>
-
-        {/* CARD 3: TOP GENRE */}
-        <HeroCard 
-            title={topGenre || "Pop"} 
-            subtitle="Top Genre" 
-            meta="Most Played"
-            gradientClass="bg-gradient-to-tl from-emerald-500/80 via-teal-500/50 to-transparent mix-blend-overlay"
-            icon={Music}
-        >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
-            {topArtistImage && (
-                 <div className="absolute right-0 bottom-0 w-32 h-32 opacity-20 -mr-4 -mb-4 rotate-12 bg-cover bg-center rounded-full blur-[1px] group-hover:scale-110 transition-transform duration-500" style={{ backgroundImage: `url(${topArtistImage})` }}></div>
-            )}
-        </HeroCard>
-        
-        {/* CARD 4: TOP TIME PLAYING (Longest Session / Most Played Song) */}
-        {longestSession ? (
-          <HeroCard
-              title={longestSession.title}
-              subtitle="Longest Listening"
-              meta={`${longestSession.timeStr || longestSession.duration} Total Time`}
-              gradientClass="bg-gradient-to-r from-blue-600/30 via-indigo-600/20 to-transparent"
-              icon={Zap}
-          >
-              <div className="absolute right-4 bottom-4 w-20 h-20 rounded-lg overflow-hidden shadow-2xl border border-white/10 group-hover:scale-105 transition-transform rotate-3">
-                  <img src={longestSession.cover} alt="" className="w-full h-full object-cover" />
-              </div>
-          </HeroCard>
-        ) : (
-           <HeroCard 
-            title={weeklyStats ? `${weeklyStats.totalTracks} Tracks` : "Loading..."}
-            subtitle="Total History" 
-            meta="Stored in Punky DB"
-            gradientClass="bg-gradient-to-br from-purple-500/80 via-indigo-500/50 to-transparent mix-blend-overlay"
-            icon={Headphones}
-           >
-             {topAlbumImage && (
-                 <div className="absolute right-0 bottom-0 w-full h-full opacity-10 bg-cover bg-center rounded-2xl" style={{ backgroundImage: `url(${topAlbumImage})` }}></div>
-            )}
-           </HeroCard>
-        )}
-        
-        {/* CARD 5: MOST PLAYED TODAY */}
-        {mostPlayedToday && (
-          <HeroCard
-              title={mostPlayedToday.track_name}
-              subtitle="On Repeat Today"
-              meta={`${mostPlayedToday.count} ${mostPlayedToday.count === 1 ? 'play' : 'plays'}`}
-              gradientClass="bg-gradient-to-r from-pink-500/30 via-purple-500/20 to-transparent"
-              icon={Music}
-          >
-              <div className="absolute right-4 bottom-4 w-16 h-16 rounded-lg overflow-hidden shadow-2xl border border-white/10 group-hover:scale-110 transition-transform -rotate-6">
-                  <img src={mostPlayedToday.album_cover || mostPlayedToday.cover} alt="" className="w-full h-full object-cover" />
-              </div>
-          </HeroCard>
-        )}
-        
-        {/* CARD 6: PEAK LISTENING TIME */}
-        {peakHour && (
-          <HeroCard
-              title={peakHourFormatted}
-              subtitle="Peak Listening"
-              meta={`${peakHour[1]} ${peakHour[1] === 1 ? 'song' : 'songs'} played`}
-              gradientClass="bg-gradient-to-br from-yellow-500/30 via-amber-500/20 to-transparent"
-              icon={Clock}
-          >
-              <div className="absolute top-6 right-6 text-6xl opacity-20 group-hover:opacity-30 transition-opacity">🎧</div>
-          </HeroCard>
-        )}
-        
-        {/* CARD 7: LISTENING ACTIVITY */}
-        <HeroCard
-            title={`${todayPlays.length} Songs`}
-            subtitle="Today's Activity"
-            meta={todayPlays.length > 0 ? "You're on fire!" : "Start listening"}
-            gradientClass="bg-gradient-to-r from-green-500/30 via-emerald-500/20 to-transparent"
-            icon={Headphones}
-        >
-            <div className="absolute bottom-4 right-4 flex gap-1">
-                {Array.from({length: Math.min(5, Math.ceil(todayPlays.length / 5))}).map((_, i) => (
-                    <div key={i} className="w-1 bg-green-400 rounded-full animate-pulse" style={{height: `${20 + i * 8}px`, animationDelay: `${i * 100}ms`}}></div>
-                ))}
-            </div>
-        </HeroCard>
 
       </div>
     </div>

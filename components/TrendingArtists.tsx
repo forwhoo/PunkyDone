@@ -86,9 +86,9 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
             const avgTimeReturnHours = avgTimeReturnMs / (1000 * 60 * 60);
             
             const trendScore = 
-                (recentPlays24h * 10) + // Recent activity weight
-                (velocity * 20) + // Acceleration weight
-                (1 / (avgTimeReturnHours + 1)) * 30; // Return frequency weight (inverse)
+                (recentPlays24h * 15) + // Recent activity weight
+                (velocity * 15) +       // Velocity
+                Math.min(70, (100 / (avgTimeReturnHours + 0.1))); // Return frequency weight (inverse) - heavier impact for repeats
 
             trending.push({
                 name,

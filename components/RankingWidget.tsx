@@ -57,16 +57,14 @@ export const RankingWidget: React.FC<RankingWidgetProps> = ({
         {items.slice(0, 5).map((item, index) => (
             <div 
                 key={index} 
-                className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors group/item cursor-pointer"
+                className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors group/item cursor-pointer relative"
             >
-                <span className={`
-                    w-6 text-center font-black text-lg italic
-                    ${index === 0 ? 'text-[#FFD700]' : index === 1 ? 'text-[#C0C0C0]' : index === 2 ? 'text-[#CD7F32]' : 'text-white/20'}
-                `}>
+                {/* Background Large Number */}
+                <div className="absolute left-1 top-0 text-[40px] font-black italic select-none pointer-events-none opacity-[0.03] group-hover/item:opacity-[0.07] transition-opacity">
                     {item.rank}
-                </span>
+                </div>
 
-                <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 shadow-lg">
+                <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 shadow-lg ml-2">
                     <img 
                         src={item.image || `https://ui-avatars.com/api/?name=${item.title}&background=random`} 
                         alt={item.title} 
