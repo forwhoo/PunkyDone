@@ -1,0 +1,5 @@
+{
+  "name": "MuseAnalytics",
+  "description": "Your daily music listening stats. Track top songs, artists, and albums in a sleek Apple-style interface.",
+  "requestFramePermissions": []
+}
