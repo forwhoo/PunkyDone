@@ -22,44 +22,12 @@ const Navbar = ({ user, currentTrack }: { user: any, currentTrack: any }) => (
          </div>
          <span className="text-xl font-black tracking-tighter text-white uppercase italic">Punky</span>
       </div>
-
-      <nav className="hidden md:flex items-center gap-6 ml-4 border-l border-white/10 pl-6 h-6">
-          <a href="#" className="text-sm font-bold text-white hover:text-[#FA2D48] transition-colors">Dashboard</a>
-          <a href="#" className="text-sm font-bold text-[#8E8E93] hover:text-white transition-colors">Discover</a>
-      </nav>
     </div>
-
-    {/* Center - Now Playing / Previous */}
-    {currentTrack ? (
-        <div className="hidden lg:flex items-center gap-4 absolute left-1/2 -translate-x-1/2">
-            <button className="flex items-center gap-2 text-[#8E8E93] hover:text-white transition-colors group">
-                <SkipBack className="w-4 h-4" />
-                <span className="text-xs font-medium uppercase tracking-wide">Previous</span>
-            </button>
-            <div className="flex items-center gap-3 bg-[#1C1C1E] border border-white/10 rounded-full py-1 pl-1 pr-4">
-                 <img src={currentTrack.cover} className="w-8 h-8 rounded-full border border-white/10 animate-[spin_10s_linear_infinite]" />
-                 <div className="flex flex-col">
-                     <span className="text-[10px] font-bold text-white uppercase tracking-wider leading-none truncate max-w-[120px]">{currentTrack.title}</span>
-                     <span className="text-[9px] font-medium text-[#FA2D48] leading-none mt-0.5">Now Listening</span>
-                 </div>
-            </div>
-        </div>
-    ) : (
-        <div className="hidden lg:flex items-center gap-4 absolute left-1/2 -translate-x-1/2 opacity-50">
-            <div className="flex items-center gap-2 text-[#8E8E93]">
-                 <span className="text-xs font-medium uppercase tracking-wide">Not Playing</span>
-            </div>
-        </div>
-    )}
+    
+    {/* Removed Dashboard/Discover/Search/NowPlaying as requested */}
 
     <div className="flex items-center gap-4">
-      {/* Search Input */}
-      <div className="hidden md:flex items-center bg-[#1C1C1E] rounded-full border border-[#2C2C2E] px-4 h-9 w-48 transition-colors hover:border-[#3A3A3C] focus-within:border-white/30">
-         <Search className="w-3.5 h-3.5 text-[#8E8E93]" />
-         <input className="bg-transparent border-none outline-none text-xs text-white ml-2 w-full placeholder-[#636366]" placeholder="Search history..." />
-      </div>
-      
-      {/* User Profile removed as requested */}
+      {/* Empty right side or user actions if needed later */}
     </div>
   </header>
 );

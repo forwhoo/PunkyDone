@@ -13,6 +13,7 @@ import {
     refreshAccessToken
 } from './services/spotifyService';
 import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay } from './services/dbService';
+import { generateMusicInsight } from './services/groqService';
 
 const SectionHeader = ({ title }: { title: string }) => (
     <div className="flex justify-between items-end mb-6 px-1 mx-1">
@@ -295,14 +296,19 @@ function App() {
     setLoadingInsight(true);
     setInsight(null);
     
-    setTimeout(() => {
-        if (query) {
-             setInsight(`Based on "${query}", your data shows high activity in the ${data?.songs[0]?.artist || "Pop"} genre recently.`);
-        } else {
-             setInsight(`You've been listening to a lot of ${data?.artists[0]?.name || "music"} lately. Your evening activity is peaking.`);
-        }
-        setLoadingInsight(false);
-    }, 2000);
+    // Combine data sources for AI context
+    const statsContext = {
+        ...dbUnifiedData,
+        weeklyStats: dbStats
+    };
+
+    try {
+        const aiResponse = await generateMusicInsight(query || "Give me a daily recap", statsContext);
+        setInsight(aiResponse);
+    } catch (e) {
+        setInsight("I had a glitch connecting to the music brain. Try again!");
+    }
+    setLoadingInsight(false);
   };
 
   if (!token) {

@@ -4,28 +4,39 @@ import { Button } from './UIComponents';
 
 // --- Typewriter Component ---
 const Typewriter = ({ text }: { text: string }) => {
+  // Simple markdown image parser: ![Alt](Url)
+  const imageMatch = text.match(/!\[(.*?)\]\((.*?)\)/);
+  const cleanText = text.replace(/!\[(.*?)\]\((.*?)\)/, '').trim();
+
   const [displayedText, setDisplayedText] = useState('');
   
   useEffect(() => {
     setDisplayedText('');
     let i = 0;
     const timer = setInterval(() => {
-      if (i < text.length) {
-        setDisplayedText(prev => prev + text.charAt(i));
+      if (i < cleanText.length) {
+        setDisplayedText(prev => prev + cleanText.charAt(i));
         i++;
       } else {
         clearInterval(timer);
       }
-    }, 20); // Typing speed
+    }, 20); 
     return () => clearInterval(timer);
-  }, [text]);
+  }, [text]); // Reset on full text change
 
   return (
-    <span className="text-lg md:text-xl font-medium text-white leading-relaxed">
-      {displayedText}
-      {/* Changed cursor color to #FA2D48 (red) */}
-      <span className="inline-block w-[2px] h-5 ml-1 bg-[#FA2D48] align-middle animate-pulse"></span>
-    </span>
+    <div className='flex flex-col gap-2'>
+        <span className="text-lg md:text-xl font-medium text-white leading-relaxed">
+        {displayedText}
+        <span className="inline-block w-[2px] h-5 ml-1 bg-[#FA2D48] align-middle animate-pulse"></span>
+        </span>
+        {imageMatch && (
+            <div className="mt-2 rounded-lg overflow-hidden border border-white/10 w-fit max-w-[200px] animate-in fade-in slide-in-from-bottom-2 duration-500 delay-500">
+                <img src={imageMatch[2]} alt={imageMatch[1]} className="w-full object-cover" />
+                <div className="bg-black/50 p-1 text-[10px] text-white/70 text-center">{imageMatch[1]}</div>
+            </div>
+        )}
+    </div>
   );
 };
 
@@ -188,7 +199,13 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
             meta={weeklyStats?.weeklyTrend || "vs last week"}
             gradientClass="bg-gradient-to-br from-orange-500/20 via-rose-500/10 to-transparent"
             icon={Clock}
-        />
+        >
+             {/* Simple Firework CSS effect */}
+             <div className="absolute top-4 right-4 grid grid-cols-2 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="w-1 h-1 bg-yellow-400 rounded-full animate-ping"></span>
+                <span className="w-1 h-1 bg-orange-500 rounded-full animate-ping delay-75"></span>
+             </div>
+        </HeroCard>
 
         {/* CARD 3: TOP GENRE */}
         <HeroCard 
@@ -198,8 +215,9 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
             gradientClass="bg-gradient-to-tl from-emerald-500/80 via-teal-500/50 to-transparent mix-blend-overlay"
             icon={Music}
         >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
             {topArtistImage && (
-                 <div className="absolute right-0 bottom-0 w-32 h-32 opacity-20 -mr-4 -mb-4 rotate-12 bg-cover bg-center rounded-full blur-[1px]" style={{ backgroundImage: `url(${topArtistImage})` }}></div>
+                 <div className="absolute right-0 bottom-0 w-32 h-32 opacity-20 -mr-4 -mb-4 rotate-12 bg-cover bg-center rounded-full blur-[1px] group-hover:scale-110 transition-transform duration-500" style={{ backgroundImage: `url(${topArtistImage})` }}></div>
             )}
         </HeroCard>
         
