@@ -10,6 +10,7 @@ export interface Artist {
   peak?: number;
   prev?: number;
   streak?: number;
+  genres?: string[];
 }
 
 export interface Album {

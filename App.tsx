@@ -189,15 +189,15 @@ function App() {
     setLoading(true);
     loadData().then(() => setLoading(false));
 
-    // Polling for Spotify Data & Recently Played (10s)
+    // Polling for Spotify Data & Recently Played (30s)
     const spotifyInterval = setInterval(() => {
         loadData();
-    }, 10000);
+    }, 30000);
 
     // Also refresh DB stats regularly to keep UI in sync with potential remote changes
     const dbInterval = setInterval(() => {
         if (token) refreshDbStats();
-    }, 10000);
+    }, 30000);
 
     return () => {
         clearInterval(spotifyInterval);
@@ -372,6 +372,8 @@ function App() {
             topArtistImage={data.artists[0]?.image}
             topAlbumImage={data.albums[0]?.cover}
             weeklyStats={dbStats}
+            topGenre={data?.artists?.[0]?.genres?.[0] ? data.artists[0].genres[0].charAt(0).toUpperCase() + data.artists[0].genres[0].slice(1) : "Pop"}
+            longestSession={dbUnifiedData?.songs?.[0]}
         />
 
         {/* TOP ALBUMS - Horizontal Scroll */}

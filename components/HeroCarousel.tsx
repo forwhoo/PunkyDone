@@ -82,6 +82,8 @@ interface HeroCarouselProps {
   topArtistImage?: string;
   topAlbumImage?: string;
   weeklyStats?: { weeklyTime: string; weeklyTrend: string; totalTracks: number };
+  topGenre?: string;
+  longestSession?: { title: string; artist: string; cover: string; duration: string };
 }
 
 const SUGGESTIONS = [
@@ -91,7 +93,7 @@ const SUGGESTIONS = [
     { label: "Workout energy check", icon: Clock, color: "from-emerald-500 to-teal-500" },
 ];
 
-export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topArtistImage, topAlbumImage, weeklyStats }: HeroCarouselProps) => {
+export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topArtistImage, topAlbumImage, weeklyStats, topGenre, longestSession }: HeroCarouselProps) => {
   const [showInput, setShowInput] = useState(false);
   const [inputValue, setInputValue] = useState('');
   
@@ -190,9 +192,9 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
 
         {/* CARD 3: TOP GENRE */}
         <HeroCard 
-            title="Pop" 
+            title={topGenre || "Pop"} 
             subtitle="Top Genre" 
-            meta="45% of total plays"
+            meta="Most Played"
             gradientClass="bg-gradient-to-tl from-emerald-500/80 via-teal-500/50 to-transparent mix-blend-overlay"
             icon={Music}
         >
@@ -201,18 +203,32 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
             )}
         </HeroCard>
         
-        {/* CARD 4: NEW DISCOVERIES / TOTAL TRACKS */}
-        <HeroCard 
+        {/* CARD 4: TOP TIME PLAYING (Longest Session / Most Played Song) */}
+        {longestSession ? (
+          <HeroCard
+              title={longestSession.title}
+              subtitle="Longest Listening"
+              meta={`${longestSession.duration} Total Time`}
+              gradientClass="bg-gradient-to-r from-blue-600/30 via-indigo-600/20 to-transparent"
+              icon={Zap}
+          >
+              <div className="absolute right-4 bottom-4 w-20 h-20 rounded-lg overflow-hidden shadow-2xl border border-white/10 group-hover:scale-105 transition-transform rotate-3">
+                  <img src={longestSession.cover} alt="" className="w-full h-full object-cover" />
+              </div>
+          </HeroCard>
+        ) : (
+           <HeroCard 
             title={weeklyStats ? `${weeklyStats.totalTracks} Tracks` : "Loading..."}
             subtitle="Total History" 
             meta="Stored in Punky DB"
             gradientClass="bg-gradient-to-br from-purple-500/80 via-indigo-500/50 to-transparent mix-blend-overlay"
             icon={Headphones}
-        >
+           >
              {topAlbumImage && (
                  <div className="absolute right-0 bottom-0 w-full h-full opacity-10 bg-cover bg-center rounded-2xl" style={{ backgroundImage: `url(${topAlbumImage})` }}></div>
             )}
-        </HeroCard>
+           </HeroCard>
+        )}
 
       </div>
     </div>

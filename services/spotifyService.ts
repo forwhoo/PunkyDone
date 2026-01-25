@@ -196,6 +196,7 @@ const mapArtists = (items: any[]): Artist[] => {
     id: item.id,
     name: item.name,
     image: item.images[0]?.url || '',
+    genres: item.genres,
     totalListens: 0, // Will be populated by DB stats
     trend: 0
   }));

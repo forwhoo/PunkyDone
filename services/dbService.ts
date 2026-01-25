@@ -274,7 +274,7 @@ export const fetchDashboardStats = async () => {
         return {
             time: formatTo12Hour(hour),
             hourNum: hour,
-            value: Math.round(data.min) || (Math.random() > 0.8 ? Math.floor(Math.random() * 5) : 0), // Small estimate for "cool feature" if 0
+            value: Math.round(data.min), 
             count: data.count,
             song: topSong?.track_name || 'No activity',
             artist: topSong?.artist_name || '---',
