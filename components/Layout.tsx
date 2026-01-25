@@ -11,9 +11,15 @@ interface LayoutProps {
 const Navbar = ({ user, currentTrack }: { user: any, currentTrack: any }) => (
   <header className="fixed top-0 left-0 right-0 h-16 glass z-50 flex items-center justify-between px-6 md:px-12 border-b border-[#2C2C2E] bg-black/80 backdrop-blur-md">
     <div className="flex items-center gap-6">
-      <div className="flex items-center gap-2">
-         {/* Simple color dot logo or we could use an icon */}
-         <div className="w-3 h-3 rounded-full bg-[#FA2D48]"></div>
+      <div className="flex items-center gap-3">
+         {/* User Icon instead of Red Dot */}
+         <div className="w-8 h-8 rounded-full bg-[#2C2C2E] border border-white/10 overflow-hidden">
+             {user?.image ? (
+                 <img src={user.image} className="w-full h-full object-cover" />
+             ) : (
+                 <User className="w-4 h-4 text-white m-auto h-full" />
+             )}
+         </div>
          <span className="text-xl font-black tracking-tighter text-white uppercase italic">Punky</span>
       </div>
 
@@ -53,20 +59,7 @@ const Navbar = ({ user, currentTrack }: { user: any, currentTrack: any }) => (
          <input className="bg-transparent border-none outline-none text-xs text-white ml-2 w-full placeholder-[#636366]" placeholder="Search history..." />
       </div>
       
-      {/* User Profile */}
-      <div className="flex items-center gap-3 pl-4 border-l border-white/10">
-         <div className="text-right hidden md:block">
-             <div className="text-[12px] font-bold text-white leading-none mb-1">{user?.name || "Guest"}</div>
-             <div className="text-[10px] font-medium text-[#FA2D48] uppercase tracking-wider leading-none">{user?.product === 'premium' ? 'Premium' : 'Free'}</div>
-         </div>
-         <div className="w-9 h-9 rounded-full bg-[#2C2C2E] border border-white/10 overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#FA2D48] transition-all">
-             {user?.image ? (
-                 <img src={user.image} className="w-full h-full object-cover" />
-             ) : (
-                 <User className="w-4 h-4 text-white m-auto h-full" />
-             )}
-         </div>
-      </div>
+      {/* User Profile removed as requested */}
     </div>
   </header>
 );

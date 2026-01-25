@@ -113,7 +113,8 @@ export const fetchSpotifyData = async (token: string) => {
     let currentTrack = null;
     if (nowPlayingRes.status === 200) {
         const nowPlayingData = await nowPlayingRes.json();
-        if (nowPlayingData.item) {
+        // Check if actually playing (isPlaying is true)
+        if (nowPlayingData.is_playing && nowPlayingData.item) {
              currentTrack = {
                  title: nowPlayingData.item.name,
                  artist: nowPlayingData.item.artists[0].name,
@@ -121,14 +122,6 @@ export const fetchSpotifyData = async (token: string) => {
              };
         }
     } 
-    // Fallback to recent if not playing
-    if (!currentTrack && recentData.items[0]) {
-         currentTrack = {
-          title: recentData.items[0].track.name,
-          artist: recentData.items[0].track.artists[0].name,
-          cover: recentData.items[0].track.album.images[0]?.url,
-      } 
-    }
 
     return {
       user: {
@@ -141,7 +134,8 @@ export const fetchSpotifyData = async (token: string) => {
       songs: mapSongs(tracksData.items),
       albums: mapAlbumsFromTracks(tracksData.items),
       hourly: mapRecentToHourly(recentData.items),
-      chart: mapRecentToDaily(recentData.items)
+      chart: mapRecentToDaily(recentData.items),
+      recentRaw: recentData.items // RAW DATA FOR DB SYNC
     };
   } catch (error) {
     console.error("Spotify Data Fetch Error", error);

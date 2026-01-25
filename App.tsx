@@ -4,7 +4,14 @@ import { TopCharts } from './components/TopCharts';
 import { HeroCarousel } from './components/HeroCarousel';
 import { ChevronRight, Play, Music, BarChart2 } from 'lucide-react';
 import { Artist, Album, Song } from './types';
-import { getAuthUrl, getTokenFromUrl, fetchSpotifyData, redirectToAuthCodeFlow, getAccessToken } from './services/spotifyService';
+import { 
+    getAuthUrl, 
+    getTokenFromUrl, 
+    fetchSpotifyData, 
+    redirectToAuthCodeFlow, 
+    getAccessToken 
+} from './services/spotifyService';
+import { syncRecentPlays, fetchListeningStats } from './services/dbService';
 
 const SectionHeader = ({ title }: { title: string }) => (
     <div className="flex justify-between items-end mb-6 px-1 mx-1">
@@ -95,6 +102,13 @@ function App() {
   
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
+
+  // Sync Data to Supabase when data is loaded
+  useEffect(() => {
+      if (data && data.recentRaw) {
+          syncRecentPlays(data.recentRaw);
+      }
+  }, [data]);
 
   useEffect(() => {
     const handleAuth = async () => {
