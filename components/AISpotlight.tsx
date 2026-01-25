@@ -1,30 +1,49 @@
 import React, { useState } from 'react';
 import { Card } from './UIComponents';
-import { Sparkles, RefreshCcw, Filter, Music2 } from 'lucide-react';
+import { Sparkles, RefreshCcw, Filter, Music2, AlertTriangle } from 'lucide-react';
 import { generateDynamicCategoryQuery } from '../services/geminiService';
 import { fetchSmartPlaylist } from '../services/dbService';
 import { Album } from '../types';
 
 interface TopAIProps {
-    genres: string[];
+    contextData: { artists: string[], albums: string[] };
 }
 
-export const AISpotlight: React.FC<TopAIProps> = ({ genres }) => {
+export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
     const [loading, setLoading] = useState(false);
     const [category, setCategory] = useState<any>(null);
     const [results, setResults] = useState<any[]>([]);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     const handleGenerate = async () => {
         setLoading(true);
-        // 1. Ask AI for a concept
-        const concept = await generateDynamicCategoryQuery(genres);
-        setCategory(concept);
+        setErrorMsg(null);
+        setResults([]);
         
-        // 2. Fetch real data based on concept
-        if (concept && concept.filterType) {
-            const data = await fetchSmartPlaylist(concept);
-            setResults(data);
+        try {
+            // 1. Ask AI for a concept
+            const concept = await generateDynamicCategoryQuery(contextData);
+            setCategory(concept);
+            
+            if (concept.isError) {
+                setErrorMsg(concept.description);
+            }
+
+            // 2. Fetch real data based on concept
+            if (concept && concept.tool) {
+                const data = await fetchSmartPlaylist(concept);
+                setResults(data);
+                
+                if (data.length === 0 && !concept.isError) {
+                    setErrorMsg(`The formula "${concept.tool}" returned 0 matches for "${concept.args.artistName || concept.args.keyword || 'Time Range'}". Try again.`);
+                }
+            } else {
+                 setErrorMsg("AI returned invalid structure. Try again.");
+            }
+        } catch (err) {
+            setErrorMsg("Critical Failure in AI Dispatch.");
         }
+        
         setLoading(false);
     };
     
@@ -58,6 +77,13 @@ export const AISpotlight: React.FC<TopAIProps> = ({ genres }) => {
             </div>
 
             {/* Content Area */}
+            {errorMsg && (
+                <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-xs font-mono flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    {errorMsg}
+                </div>
+            )}
+
             {results.length > 0 ? (
                 <div className="flex items-end overflow-x-auto pb-10 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
                     {/* Render Results matching Top Album Style */}

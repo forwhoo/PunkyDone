@@ -39,43 +39,52 @@ export const generateMusicInsights = async (contextData: string): Promise<string
   }
 };
 
-export const generateDynamicCategoryQuery = async (availableGenres: string[]): Promise<any> => {
+export const generateDynamicCategoryQuery = async (context: { artists: string[], albums: string[] }): Promise<any> => {
     try {
         const client = getAiClient();
-        if (!client) throw new Error("No API Key");
+        if (!client) throw new Error("Missing VITE_GROQ_API_KEY");
 
         const hour = new Date().getHours();
-        const timeOfDay = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'night';
+        const timeOfDay = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'late night';
+        
+        // Randomize the subset of artists sent to context to keep prompt size low but variations high
+        const artistSample = context.artists.slice(0, 50).join(", "); 
+        // const albumSample = context.albums.slice(0, 20).join(", ");
 
         const prompt = `
-            You are an advanced music analytics engine.
-            Your task: specific specific formula-based categorization of a user's listening history.
+            You are the "Algorithm" for a high-end music dashboard.
+            Your Goal: Create a distinct, personalized listening "Vibe" or "Collection" based on the user's actual library.
+
+            CURRENT CONTEXT:
+            - User's Local Time: ${hour}:00 (${timeOfDay})
+            - User's Top Artists: [${artistSample}]
+            - Database Schema: "listening_history" (track_name, artist_name, album_name, played_at, duration_ms)
+            - NO Genre Column.
+
+            TASK:
+            1. Analyze the Time of Day + Available Artists.
+            2. Invent a creative Title & Description. (AVOID generic names like "Morning Playlist". Be cool. e.g. "Doja Cat & Friends", "3AM in Toronto", "The Weeknd Loop").
+            3. Select the best TOOL from the list below to build this playlist from the DB.
             
-            Context:
-            - User's Time: ${timeOfDay} (Hour: ${hour})
-            - Database Schema: "listening_history" table.
-            - Available Columns: [track_name, artist_name, album_name, played_at, duration_ms]
-            - NO 'genre' column exists. Do NOT try to filter by genre.
+            TOOLS (Choose ONE):
             
-            Instructions:
-            1. Invent a creative category Title & Description fitting the current time/vibe.
-            2. Construct a "Tool Call" formula to filter the tracks from the database.
+            A. { "tool": "filterByArtist", "args": { "artistName": "EXACT_NAME_FROM_LIST" } }
+               - Use this to create an Artist Spotlight.
+               - CRITICAL: "artistName" MUST actully exist in the "User's Top Artists" list above. Do not hallucinate an artist.
             
-            Verified Tools (Use exactly one):
-            - A: Filter by Artist -> { "tool": "filterByArtist", "args": { "artistName": "Exact Artist Name" } }
-            - B: Filter by Time Range (Hour 0-23) -> { "tool": "filterByTime", "args": { "startHour": int, "endHour": int } }
-            - C: Keyword Match (in Track/Album) -> { "tool": "filterByKeyword", "args": { "keyword": "partial string" } }
+            B. { "tool": "filterByTime", "args": { "startHour": 0-23, "endHour": 0-23 } }
+               - Use this for time-based vibes (e.g. "Late Night Drive").
+               - Set hours correctly for the context (Night = 22-04, Morning = 05-10).
             
-            Rules:
-            - Be creative with the Title (e.g., "The Weeknd Marathon", "Late Night Lo-Fi", "Morning Motivation").
-            - If choosing a specific artist, pick a popular one (e.g., Harry Styles, Drake, Taylor Swift) or one that fits the vibe.
-            - If choosing a time, make sure it matches the current context (${timeOfDay}) or adjacent hours.
-            
-            Return ONLY validated JSON:
+            C. { "tool": "filterByKeyword", "args": { "keyword": "AnyString" } }
+               - Use this to match words in Track Title or Album.
+               - Examples: "Love", "Remix", "Live", "Acoustic".
+
+            OUTPUT JSON ONLY:
             {
-                "title": "...",
-                "description": "...",
-                "tool": "filterBy..." (one of the above),
+                "title": "Creative Title",
+                "description": "Edgy/Fun description.",
+                "tool": "...",
                 "args": { ... }
             }
         `;
@@ -83,24 +92,30 @@ export const generateDynamicCategoryQuery = async (availableGenres: string[]): P
         const response = await client.chat.completions.create({
             model: "llama-3.3-70b-versatile",
             messages: [
-                { role: "system", content: "You are a JSON-only API. Output raw JSON." },
+                { role: "system", content: "You are a JSON-only API. Output raw JSON. No markdown." },
                 { role: "user", content: prompt }
             ],
             response_format: { type: "json_object" },
-            temperature: 0.8 
+            temperature: 0.9 
         });
 
         const text = response.choices[0]?.message?.content || "{}";
-        return JSON.parse(text);
+        const parsed = JSON.parse(text);
+        
+        // Simple client-side validation
+        if (!parsed.tool || !parsed.args) throw new Error("AI returned invalid protocol");
+        
+        return parsed;
 
-    } catch (e) {
+    } catch (e: any) {
         console.error("AI Category Gen Error:", e);
-        // Fallback that is safe
+        // Return the error so UI can show it if needed, or a fallback with error flag
         return {
-            title: "Morning Coffee",
-            description: "Start your day right",
+            title: "Simulated Fallback",
+            description: `AI Error: ${e.message || 'Unknown'}. Showing Morning flow.`,
             tool: "filterByTime", 
-            args: { startHour: 6, endHour: 11 } 
+            args: { startHour: 6, endHour: 11 },
+            isError: true
         };
     }
 }

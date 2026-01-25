@@ -394,7 +394,12 @@ function App() {
         {/* NEW WIDGETS GRID */}
         <div className="grid grid-cols-1 mb-12 px-1">
              <div className="w-full">
-                 <AISpotlight genres={[]} />
+                 <AISpotlight 
+                    contextData={{
+                        artists: (dbUnifiedData?.artists || data.artists).map(a => a.name),
+                        albums: (dbUnifiedData?.albums || data.albums).map(a => a.title)
+                    }} 
+                 />
              </div>
         </div>
 
