@@ -11,7 +11,7 @@ import {
     redirectToAuthCodeFlow, 
     getAccessToken 
 } from './services/spotifyService';
-import { syncRecentPlays, fetchListeningStats, fetchDashboardStats } from './services/dbService';
+import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay } from './services/dbService';
 
 const SectionHeader = ({ title }: { title: string }) => (
     <div className="flex justify-between items-end mb-6 px-1 mx-1">
@@ -142,12 +142,16 @@ function App() {
   useEffect(() => {
       const syncAndFetchStats = async () => {
         if (data && data.recentRaw) {
-            await syncRecentPlays(data.recentRaw);
-            // Initial fetch
-            refreshDbStats();
+             // We still sync recent plays as a BACKUP for missed polls
+             // But our realtime tracker is the primary source for "skips"
+             // await syncRecentPlays(data.recentRaw); 
+             
+             // Initial fetch
+             refreshDbStats();
         }
       };
-      syncAndFetchStats();
+      // Only run initial fetch on mount or major data change, not every poll
+      if (!dbStats) syncAndFetchStats();
   }, [data]);
 
 

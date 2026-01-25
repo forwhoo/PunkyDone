@@ -111,14 +111,24 @@ export const fetchSpotifyData = async (token: string) => {
     
     // Check Now Playing
     let currentTrack = null;
+    let progress_ms = 0;
+    let is_playing = false;
+    let item = null;
+
     if (nowPlayingRes.status === 200) {
         const nowPlayingData = await nowPlayingRes.json();
         // Check if actually playing (isPlaying is true)
-        if (nowPlayingData.is_playing && nowPlayingData.item) {
+        item = nowPlayingData.item;
+        is_playing = nowPlayingData.is_playing;
+        progress_ms = nowPlayingData.progress_ms;
+
+        if (is_playing && item) {
              currentTrack = {
-                 title: nowPlayingData.item.name,
-                 artist: nowPlayingData.item.artists[0].name,
-                 cover: nowPlayingData.item.album.images[0]?.url || '',
+                 id: item.id,
+                 title: item.name,
+                 artist: item.artists[0].name,
+                 cover: item.album.images[0]?.url || '',
+                 duration: item.duration_ms
              };
         }
     } 
@@ -130,6 +140,11 @@ export const fetchSpotifyData = async (token: string) => {
           product: userData.product
       },
       currentTrack,
+      playbackState: {
+          item,
+          is_playing,
+          progress_ms
+      },
       artists: mapArtists(artistsData.items),
       songs: mapSongs(tracksData.items),
       albums: mapAlbumsFromTracks(tracksData.items),

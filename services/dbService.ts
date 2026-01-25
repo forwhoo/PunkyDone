@@ -11,6 +11,30 @@ export interface HistoryItem {
   duration_ms: number;
 }
 
+export const logSinglePlay = async (track: any, listenedMs: number) => {
+    if (!track || listenedMs < 5000) return; // Ignore plays less than 5 seconds
+
+    const historyItem: HistoryItem = {
+        spotify_id: track.id,
+        played_at: new Date().toISOString(),
+        track_name: track.name,
+        artist_name: track.artists[0].name,
+        album_name: track.album.name,
+        album_cover: track.album.images[0]?.url || '',
+        duration_ms: listenedMs // Recording ACTUAL time listened, not track length
+    };
+
+    const { error } = await supabase
+        .from('listening_history')
+        .insert(historyItem);
+
+    if (error) {
+        console.error("Failed to log play:", error);
+    } else {
+        // console.log("Logged play:", track.name, listenedMs);
+    }
+};
+
 let lastSyncedTime: string | null = null;
 
 export const syncRecentPlays = async (recentItems: any[]) => {
