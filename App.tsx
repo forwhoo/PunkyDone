@@ -478,7 +478,8 @@ function App() {
                         const time = s.timeStr || '';
                         const mins = time.replace('m', '');
                         return `${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
-                    })
+                    }),
+                    globalStats: dbStats
                 }} 
              />
         </div>

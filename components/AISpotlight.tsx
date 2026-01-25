@@ -3,9 +3,16 @@ import { Card } from './UIComponents';
 import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion } from '../services/geminiService';
 import { fetchSmartPlaylist } from '../services/dbService';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface TopAIProps {
-    contextData: { artists: string[], albums: string[], songs: string[] };
+    contextData: { 
+        artists: string[], 
+        albums: string[], 
+        songs: string[],
+        globalStats?: { weeklyTime: string, weeklyTrend: string, totalTracks: number, totalMinutes?: number }
+    };
 }
 
 export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
@@ -102,12 +109,18 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                                 Analyzing your library...
                             </div>
                          ) : (
-                            <p className="text-white text-lg font-medium leading-relaxed font-mono">
-                                {displayedText}
-                                {(typing || displayedText) && (
-                                    <span className="inline-block w-[3px] h-6 ml-1 bg-[#FA2D48] align-middle animate-pulse"></span>
+                            <div className="text-white text-lg font-medium leading-relaxed font-mono whitespace-pre-wrap markdown-container">
+                                {typing ? (
+                                    <span>
+                                        {displayedText}
+                                        <span className="inline-block w-[3px] h-6 ml-1 bg-[#FA2D48] align-middle animate-pulse"></span>
+                                    </span>
+                                ) : (
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {chatResponse || ""}
+                                    </ReactMarkdown>
                                 )}
-                            </p>
+                            </div>
                          )}
 
                          {/* AI Suggestion Button */}

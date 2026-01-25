@@ -6,4 +6,46 @@ body {
   margin: 0;
   background-color: #000;
   color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* AI Markdown Styling */
+.markdown-container table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+
+.markdown-container th {
+  text-align: left;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  color: #FA2D48;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.markdown-container td {
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.markdown-container strong {
+  color: #FA2D48;
+}
+
+.markdown-container p {
+  margin-bottom: 1rem;
+}
+
+.markdown-container ul {
+  list-style: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-container li {
+  margin-bottom: 0.5rem;
 }

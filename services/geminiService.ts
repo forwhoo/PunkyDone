@@ -39,31 +39,48 @@ export const generateMusicInsights = async (contextData: string): Promise<string
   }
 };
 
-export const answerMusicQuestion = async (question: string, context: { artists: string[], albums: string[], songs: string[] }): Promise<string> => {
+export const answerMusicQuestion = async (question: string, context: { 
+  artists: string[], 
+  albums: string[], 
+  songs: string[],
+  globalStats?: { weeklyTime: string, weeklyTrend: string, totalTracks: number, totalMinutes?: number }
+}): Promise<string> => {
   try {
     const client = getAiClient();
     if (!client) return "Configure VITE_GROQ_API_KEY to use chat features.";
+
+    const statsInfo = context.globalStats ? `
+- This Week's Listening Time: ${context.globalStats.weeklyTime}
+- Weekly Trend: ${context.globalStats.weeklyTrend}
+- Total History Tracks: ${context.globalStats.totalTracks}
+- Total Minutes Listened (Overall): ${context.globalStats.totalMinutes || 'Unknown'} min
+    ` : '';
 
     const prompt = `
 You are a music analytics assistant with deep knowledge of the user's listening history.
 
 USER'S LIBRARY CONTEXT:
-- Top Artists: ${context.artists.slice(0, 20).join(', ')}
-- Top Albums: ${context.albums.slice(0, 15).join(', ')}
-- Top Songs: ${context.songs.slice(0, 15).join(', ')}
+${statsInfo}
+- Top Artists: [${context.artists.slice(0, 30).join(' | ')}]
+- Top Albums: [${context.albums.slice(0, 15).join(' | ')}]
+- Top Songs: [${context.songs.slice(0, 15).join(' | ')}]
 
 USER QUESTION: "${question}"
 
-Provide a helpful, insightful, and conversational answer based on their listening data. 
-Be specific, reference their actual music when relevant, and keep it friendly and engaging.
-If you need SQL data to answer precisely, suggest they try a discovery query instead.
+## GUIDELINES:
+1. Provide a helpful, insightful, and conversational answer based on their listening data. 
+2. Be specific, reference their actual music and stats when relevant.
+3. If they ask about totals (minutes, plays), use the provided stats.
+4. FORMATTING: You CAN use Markdown tables for lists/rankings. Use bolding and clean lists.
+5. If the user asks for patterns or "why", give your best strategic interpretation of their mood.
+6. Keep it friendly and terminal-chic.
     `;
 
     const response = await client.chat.completions.create({
         model: "openai/gpt-oss-120b",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
-        max_tokens: 300
+        max_tokens: 600
     });
     
     return response.choices[0]?.message?.content || "I couldn't process that question. Try rephrasing!";

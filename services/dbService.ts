@@ -132,13 +132,16 @@ export const fetchListeningStats = async () => {
   const hoursDiff = currentHours - (lastHours || 0);
   const trendString = hoursDiff >= 0 ? `+${hoursDiff}h vs last week` : `${hoursDiff}h vs last week`;
 
-  // Get total tracks count for "New Discoveries" proxy or just total db count
-  const { count } = await supabase.from('listening_history').select('*', { count: 'exact', head: true });
+  // Get total stats (overall history)
+  const { data: allData, count } = await supabase.from('listening_history').select('duration_ms', { count: 'exact' });
+  const totalMs = allData?.reduce((acc, item) => acc + (item.duration_ms || 0), 0) || 0;
+  const totalMinutes = Math.floor(totalMs / 60000);
 
   return {
     weeklyTime: `${currentHours}h ${currentMins}m`,
     weeklyTrend: trendString,
-    totalTracks: count || 0
+    totalTracks: count || 0,
+    totalMinutes
   };
 };
 

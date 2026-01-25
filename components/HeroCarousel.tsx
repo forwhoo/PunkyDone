@@ -154,29 +154,7 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
       
       <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x scroll-smooth -mx-1 px-1">
         
-        {/* CARD 1: TOP ARTIST HIGHLIGHT */}
-        <div className="relative flex-shrink-0 w-[300px] md:w-[480px] h-[220px] rounded-xl overflow-hidden snap-start border border-white/5 bg-gradient-to-br from-[#FA2D48]/10 to-[#1C1C1E]">
-             <div className="absolute inset-0 opacity-10">
-                <img src={topArtistImage} alt="Top Artist" className="w-full h-full object-cover blur-xl" />
-             </div>
-             <div className="relative z-10 p-6 flex flex-col h-full justify-between">
-                <div>
-                    <div className="flex items-center gap-2 mb-3">
-                         <Mic2 className="w-4 h-4 text-white/60" />
-                         <span className="text-[11px] font-bold uppercase tracking-widest text-white/60">Top Artist</span>
-                    </div>
-                    <h3 className="text-3xl font-black text-white mb-2">On Repeat</h3>
-                    <p className="text-white/70 text-sm">Your most played artist this week</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <img src={topArtistImage} alt="Top" className="w-12 h-12 rounded-full border-2 border-white/20" />
-                    <div>
-                        <p className="text-white font-bold text-sm">{topGenre}</p>
-                        <p className="text-white/50 text-xs">Trending in your library</p>
-                    </div>
-                </div>
-             </div>
-        </div>
+        {/* WIDGETS REMOVED */}
 
       </div>
     </div>
