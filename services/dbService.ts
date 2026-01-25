@@ -283,11 +283,24 @@ export const fetchDashboardStats = async () => {
         };
     });
 
+    // 5. Recent Plays (Last 50)
+    const { data: recentHistory } = await supabase
+        .from('listening_history')
+        .select('*')
+        .order('played_at', { ascending: false })
+        .limit(50);
+        
+    const recentPlays = recentHistory?.map((item: any) => ({
+        ...item,
+        cover: item.album_cover 
+    })) || [];
+
     return {
         artists: topArtists,
         songs: topSongs,
         albums: topAlbums,
-        hourlyActivity
+        hourlyActivity,
+        recentPlays
     };
 };
 

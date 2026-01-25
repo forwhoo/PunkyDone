@@ -11,7 +11,7 @@ interface TopAIProps {
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from './UIComponents';
-import { Sparkles, RefreshCcw, AlertTriangle, Play, Search, ArrowRight } from 'lucide-react';
+import { Sparkles, RefreshCcw, AlertTriangle, Play, Search, ArrowRight, MessageSquare } from 'lucide-react';
 import { generateDynamicCategoryQuery } from '../services/geminiService';
 import { fetchSmartPlaylist } from '../services/dbService';
 import { ChevronRight } from 'lucide-react';
@@ -79,45 +79,48 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
     return (
         <div className="mb-12 scroll-mt-24" id="ai-spotlight" ref={sectionRef}>
             {/* Section Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 px-1 mx-1 gap-4">
+            <div className="flex flex-col md:flex-row md:items-start justify-between mb-6 px-1 mx-1 gap-6">
                 <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Sparkles className="w-5 h-5 text-[#FA2D48]" />
-                        <h2 className="text-[22px] font-bold text-white tracking-tight">
-                            {category ? category.title : "Music Intelligence"}
+                    <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-6 h-6 text-[#FA2D48]" />
+                        <h2 className="text-[26px] font-bold text-white tracking-tight">
+                            {category ? category.title : "AI Spotlight"}
                         </h2>
                     </div>
-                    {category && <p className="text-[#8E8E93] text-[13px] leading-relaxed max-w-xl">{category.description}</p>}
+                     <p className="text-[#8E8E93] text-[15px] leading-relaxed max-w-2xl">
+                        {category ? category.description : "Ask a question, create a category, or find your next favorite song. Combine all tools into one powerful search."}
+                    </p>
                 </div>
                 
-                {/* Search / Ask Box */}
-                <div className="relative group min-w-[300px]">
-                    <input 
-                        type="text" 
-                        value={userPrompt}
-                        onChange={(e) => setUserPrompt(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                        placeholder="Ask for anything... (e.g. 'Only Harry Styles')"
-                        className="w-full bg-[#1C1C1E] border border-white/10 rounded-full py-2.5 pl-10 pr-12 text-sm text-white focus:outline-none focus:border-[#FA2D48]/50 focus:ring-1 focus:ring-[#FA2D48]/20 transition-all placeholder:text-[#444]"
-                    />
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8E8E93]" />
-                    <button 
-                        onClick={() => handleGenerate()}
-                        disabled={loading || !userPrompt}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-[#FA2D48] text-white p-1.5 rounded-full hover:scale-110 transition-transform disabled:opacity-0"
-                    >
-                        <ArrowRight className="w-4 h-4" />
-                    </button>
-                    
-                    {!userPrompt && (
-                        <button 
-                            onClick={() => handleGenerate()}
-                            disabled={loading}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-[#8E8E93] hover:text-[#FA2D48] transition-colors p-1"
-                        >
-                            <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                        </button>
-                    )}
+                {/* Search / Ask Box - Bigger Window */}
+                <div className="relative group w-full md:w-[450px]">
+                    <div className="bg-[#1C1C1E] border border-white/10 rounded-2xl p-4 focus-within:border-[#FA2D48]/50 focus-within:ring-1 focus-within:ring-[#FA2D48]/20 transition-all shadow-xl">
+                        <div className="flex items-start gap-3">
+                             <MessageSquare className="w-5 h-5 text-[#8E8E93] mt-1" />
+                             <textarea 
+                                value={userPrompt}
+                                onChange={(e) => setUserPrompt(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if(e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleGenerate();
+                                    }
+                                }}
+                                placeholder="Ask for anything... (e.g. 'Make a playlist for a rainy day with 90s rock')"
+                                className="w-full bg-transparent text-[15px] text-white focus:outline-none resize-none placeholder:text-[#444] min-h-[60px]"
+                            />
+                        </div>
+                        <div className="flex justify-end mt-2">
+                             <button 
+                                onClick={() => handleGenerate()}
+                                disabled={loading || !userPrompt}
+                                className="bg-[#FA2D48] text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-[#D41E36] transition-colors disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {loading ? 'Thinking...' : 'Generate'}
+                                {!loading && <ArrowRight className="w-3 h-3" />}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
