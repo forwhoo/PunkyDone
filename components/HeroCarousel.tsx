@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Clock, Music, Headphones, Sparkles, Send, Zap } from 'lucide-react';
+import { Clock, Music, Headphones, Sparkles, Send, Zap, Mic2 } from 'lucide-react';
 import { Button } from './UIComponents';
 
 // --- Typewriter Component ---
