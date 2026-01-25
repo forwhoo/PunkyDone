@@ -61,8 +61,8 @@ const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
                 <img src={album.cover} alt={album.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
-                     <span className="text-white font-bold text-2xl drop-shadow-md">{album.totalListens}</span>
-                     <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Plays</span>
+                     <span className="text-white font-bold text-xl drop-shadow-md">{album.timeStr}</span>
+                     <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Listened</span>
                 </div>
             </div>
             <div className="mt-3 relative z-20">
@@ -88,8 +88,8 @@ const RankedArtist = ({ artist, rank }: { artist: Artist, rank: number }) => (
                     className="w-full h-full object-cover group-hover:blur-[2px] transition-all" 
                 />
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-                    <span className="text-white font-bold text-lg">{artist.totalListens}</span>
-                    <span className="text-white/80 text-[10px] uppercase font-bold tracking-widest">Plays</span>
+                    <span className="text-white font-bold text-lg">{artist.timeStr}</span>
+                    <span className="text-white/80 text-[10px] uppercase font-bold tracking-widest">Listened</span>
                 </div>
             </div>
             {/* Small Rank Badge instead */}
@@ -117,7 +117,7 @@ const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
                 <h3 className="text-[14px] font-bold text-white truncate leading-tight group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
                 <p className="text-[12px] text-[#8E8E93] truncate mt-0.5">{song.artist}</p>
                 <div className="flex items-center gap-2 mt-1">
-                   <p className="text-[10px] text-[#FA2D48] font-medium uppercase tracking-wide">{song.listens} Plays</p>
+                   <p className="text-[10px] text-[#FA2D48] font-medium uppercase tracking-wide">{song.timeStr} Listened</p>
                    <span className="text-[10px] text-white/40">•</span>
                    <p className="text-[10px] text-white/60">{song.duration}</p>
                 </div>
@@ -438,7 +438,7 @@ function App() {
                 onClick={() => openModal('Albums', 'Top Albums', dbUnifiedData?.albums || data.albums)} 
              />
              <div className="flex items-end overflow-x-auto pb-10 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
-                {(dbUnifiedData?.albums || data.albums).map((album: Album, index: number) => (
+                {(dbUnifiedData?.albums || data.albums).slice(0, 10).map((album: Album, index: number) => (
                     <RankedAlbum key={album.id} album={album} rank={index + 1} />
                 ))}
              </div>
@@ -451,7 +451,7 @@ function App() {
                 onClick={() => openModal('Songs', 'Top Songs', dbUnifiedData?.songs || data.songs)} 
              />
              <div className="flex items-center overflow-x-auto pb-6 no-scrollbar snap-x pl-1 scroll-smooth">
-                {(dbUnifiedData?.songs || data.songs).map((song: Song, index: number) => (
+                {(dbUnifiedData?.songs || data.songs).slice(0, 20).map((song: Song, index: number) => (
                     <RankedSong key={song.id} song={song} rank={index + 1} />
                 ))}
              </div>
@@ -464,7 +464,7 @@ function App() {
                 onClick={() => openModal('Artists', 'Top Artists', dbUnifiedData?.artists || data.artists)} 
              />
              <div className="flex items-start overflow-x-auto pb-8 pt-6 no-scrollbar snap-x pl-4 scroll-smooth">
-                {(dbUnifiedData?.artists || data.artists).map((artist: Artist, index: number) => (
+                {(dbUnifiedData?.artists || data.artists).slice(0, 10).map((artist: Artist, index: number) => (
                     <RankedArtist key={artist.id} artist={artist} rank={index + 1} />
                 ))}
              </div>

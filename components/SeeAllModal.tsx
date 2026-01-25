@@ -19,10 +19,10 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
     }, []);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in p-4 md:p-8">
-            <div className="bg-[#1C1C1E] w-full max-w-6xl h-full md:h-[90vh] rounded-2xl border border-white/10 shadow-2xl flex flex-col relative overflow-hidden">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in px-4 py-6 md:p-8">
+            <div className="bg-[#1C1C1E] w-full max-w-6xl max-h-full md:max-h-[90vh] h-auto flex flex-col rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-white/5 bg-[#1C1C1E] z-10">
+                <div className="flex items-center justify-between p-6 border-b border-white/5 bg-[#1C1C1E] z-10 shrink-0">
                     <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
                     <button 
                         onClick={onClose}
@@ -33,22 +33,22 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-700 hover:scrollbar-thumb-gray-500">
                     
                     {/* Artists Grid */}
                     {type === 'Artists' && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-10">
                             {data.map((artist, idx) => (
                                 <div key={idx} className="flex flex-col items-center group cursor-pointer">
-                                    <div className="w-32 h-32 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-transform duration-300 shadow-xl mb-3 relative">
+                                    <div className="w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-transform duration-300 shadow-xl mb-4 relative">
                                         <img 
                                             src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
                                             alt={artist.name} 
                                             className="w-full h-full object-cover group-hover:blur-[2px] transition-all" 
                                         />
                                         <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-                                            <span className="text-white font-bold text-lg">{artist.totalListens}</span>
-                                            <span className="text-white/80 text-[10px] uppercase font-bold tracking-widest">Plays</span>
+                                            <span className="text-white font-bold text-lg">{artist.timeStr || artist.totalListens}</span>
+                                            <span className="text-white/80 text-[10px] uppercase font-bold tracking-widest">Listened</span>
                                         </div>
                                     </div>
                                     <h3 className="text-[15px] font-medium text-white text-center truncate w-full px-2 group-hover:text-[#FA2D48] transition-colors">{artist.name}</h3>
@@ -64,7 +64,9 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
                                 <div key={idx} className="group cursor-pointer">
                                     <div className="aspect-square rounded-xl overflow-hidden bg-[#2C2C2E] border border-white/5 shadow-xl mb-3 relative group-hover:-translate-y-1 transition-transform">
                                         <img src={album.cover} alt={album.title} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="text-white font-bold">{album.timeStr}</span>
+                                        </div>
                                     </div>
                                     <h3 className="text-[15px] font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">{album.title}</h3>
                                     <p className="text-[13px] text-[#8E8E93] truncate">{album.artist}</p>
@@ -87,7 +89,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onC
                                         <p className="text-[13px] text-[#8E8E93] truncate">{song.artist}</p>
                                     </div>
                                     <div className="hidden md:flex items-center gap-6 pr-4">
-                                        <div className="text-sm text-[#8E8E93] w-20 text-right">{song.listens} plays</div>
+                                        <div className="text-sm text-[#FA2D48] w-24 text-right">{song.timeStr} Listened</div>
                                         <div className="text-sm text-[#8E8E93] w-16 text-right font-mono">{song.duration}</div>
                                     </div>
                                 </div>

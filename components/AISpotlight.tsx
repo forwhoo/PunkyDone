@@ -1,14 +1,3 @@
-import React, { useState } from 'react';
-import { Card } from './UIComponents';
-import { Sparkles, RefreshCcw, AlertTriangle, Play } from 'lucide-react';
-import { generateDynamicCategoryQuery } from '../services/geminiService';
-import { fetchSmartPlaylist } from '../services/dbService';
-import { ChevronRight } from 'lucide-react';
-
-interface TopAIProps {
-    contextData: { artists: string[], albums: string[], songs: string[] };
-}
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from './UIComponents';
 import { Sparkles, RefreshCcw, AlertTriangle, Play, Search, ArrowRight, MessageSquare } from 'lucide-react';
@@ -79,7 +68,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
     return (
         <div className="mb-12 scroll-mt-24" id="ai-spotlight" ref={sectionRef}>
             {/* Section Header */}
-            <div className="flex flex-col md:flex-row md:items-start justify-between mb-6 px-1 mx-1 gap-6">
+            <div className="flex flex-col md:flex-row md:items-start justify-between mb-8 px-1 mx-1 gap-6">
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="w-6 h-6 text-[#FA2D48]" />
@@ -90,13 +79,21 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                      <p className="text-[#8E8E93] text-[15px] leading-relaxed max-w-2xl">
                         {category ? category.description : "Ask a question, create a category, or find your next favorite song. Combine all tools into one powerful search."}
                     </p>
+                    
+                     {/* Added Reason / Filter Tag */}
+                     {category && !loading && (
+                         <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FA2D48]/10 border border-[#FA2D48]/20 text-[#FA2D48] text-xs font-semibold tracking-wide animate-fade-in">
+                            <Sparkles className="w-3 h-3" />
+                            <span>Generated for: {category.filter?.value || category.filter?.contains || "Your Mix"}</span>
+                         </div>
+                     )}
                 </div>
                 
-                {/* Search / Ask Box - Bigger Window */}
-                <div className="relative group w-full md:w-[450px]">
-                    <div className="bg-[#1C1C1E] border border-white/10 rounded-2xl p-4 focus-within:border-[#FA2D48]/50 focus-within:ring-1 focus-within:ring-[#FA2D48]/20 transition-all shadow-xl">
-                        <div className="flex items-start gap-3">
-                             <MessageSquare className="w-5 h-5 text-[#8E8E93] mt-1" />
+                {/* Search / Ask Box - Updated to match screenshot with nicer input */}
+                <div className="relative group w-full md:w-[480px]">
+                    <div className="bg-[#1C1C1E] border border-white/10 rounded-2xl p-4 focus-within:border-[#FA2D48]/50 focus-within:ring-1 focus-within:ring-[#FA2D48]/20 transition-all shadow-xl relative min-h-[110px] flex flex-col justify-between">
+                        <div className="flex items-start gap-3 w-full">
+                             <MessageSquare className="w-5 h-5 text-[#555] mt-1 flex-shrink-0" />
                              <textarea 
                                 value={userPrompt}
                                 onChange={(e) => setUserPrompt(e.target.value)}
@@ -107,14 +104,14 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                                     }
                                 }}
                                 placeholder="Ask for anything... (e.g. 'Make a playlist for a rainy day with 90s rock')"
-                                className="w-full bg-transparent text-[15px] text-white focus:outline-none resize-none placeholder:text-[#444] min-h-[60px]"
+                                className="w-full bg-transparent text-[15px] text-white focus:outline-none resize-none placeholder:text-[#555] min-h-[60px]"
                             />
                         </div>
                         <div className="flex justify-end mt-2">
                              <button 
                                 onClick={() => handleGenerate()}
                                 disabled={loading || !userPrompt}
-                                className="bg-[#FA2D48] text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-[#D41E36] transition-colors disabled:opacity-50 flex items-center gap-2"
+                                className="bg-[#FA2D48] text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-[#D41E36] transition-colors disabled:opacity-50 flex items-center gap-2 shadow-lg"
                             >
                                 {loading ? 'Thinking...' : 'Generate'}
                                 {!loading && <ArrowRight className="w-3 h-3" />}

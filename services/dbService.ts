@@ -167,7 +167,7 @@ export const fetchDashboardStats = async () => {
     
     const topArtists = Object.entries(artistCounts)
         .sort(([, a], [, b]) => b.time - a.time) // Sort by TIME listened, not just adds
-        .slice(0, 10)
+        .slice(0, 100)
         .map(([name, info], index) => ({
             id: `artist-${index}`,
             name,
@@ -194,7 +194,7 @@ export const fetchDashboardStats = async () => {
 
     const topSongs = Object.entries(songCounts)
         .sort(([, a], [, b]) => b.totalTime - a.totalTime)
-        .slice(0, 20)
+        .slice(0, 100)
         .map(([title, info], index) => ({
             id: `song-${index}`,
             title,
@@ -223,7 +223,7 @@ export const fetchDashboardStats = async () => {
 
     const topAlbums = Object.entries(albumStats)
         .sort(([, a], [, b]) => b.duration - a.duration)
-        .slice(0, 10)
+        .slice(0, 100)
         .map(([title, info], index) => ({
             id: `album-${index}`,
             title,
@@ -288,7 +288,7 @@ export const fetchDashboardStats = async () => {
         .from('listening_history')
         .select('*')
         .order('played_at', { ascending: false })
-        .limit(50);
+        .limit(100);
         
     const recentPlays = recentHistory?.map((item: any) => ({
         ...item,
