@@ -397,7 +397,8 @@ function App() {
                  <AISpotlight 
                     contextData={{
                         artists: (dbUnifiedData?.artists || data.artists).map(a => a.name),
-                        albums: (dbUnifiedData?.albums || data.albums).map(a => a.title)
+                        albums: (dbUnifiedData?.albums || data.albums).map(a => a.title),
+                        songs: (dbUnifiedData?.songs || data.songs).map(s => s.title)
                     }} 
                  />
              </div>

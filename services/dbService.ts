@@ -303,70 +303,107 @@ const getDayOfWeek = (i: number) => {
     return days[i % 7];
 };
 
-export const fetchSmartPlaylist = async (concept: any) => {
-    // concept = { tool: '...', args: {...} }
-    try {
-        let query = supabase.from('listening_history').select('*').order('played_at', { ascending: false }).limit(2000); // Fetch ample history to filter
+interface AIFilter {
+    field?: 'artist_name' | 'album_name' | 'track_name';
+    value?: string;
+    timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | 'latenight';
+    sortBy?: 'plays' | 'minutes';
+    sortOrder?: 'highest' | 'lowest';
+}
 
-        // Basic Filtering at DB level where possible
-        if (concept.tool === 'filterByArtist' && concept.args?.artistName) {
-            query = query.ilike('artist_name', `%${concept.args.artistName}%`);
-        }
-        else if (concept.tool === 'filterByKeyword' && concept.args?.keyword) {
-             query = query.or(`track_name.ilike.%${concept.args.keyword}%,album_name.ilike.%${concept.args.keyword}%`);
+const TIME_RANGES: Record<string, [number, number]> = {
+    morning: [5, 11],
+    afternoon: [12, 16],
+    evening: [17, 20],
+    night: [21, 23],
+    latenight: [0, 4]
+};
+
+export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
+    try {
+        const filter = concept.filter;
+        
+        // Start with base query
+        let query = supabase
+            .from('listening_history')
+            .select('*')
+            .order('played_at', { ascending: false })
+            .limit(3000);
+
+        // Apply field filter at DB level if possible
+        if (filter.field && filter.value) {
+            query = query.ilike(filter.field, `%${filter.value}%`);
         }
 
         const { data, error } = await query;
-        if (error || !data) {
+        if (error || !data || data.length === 0) {
             console.error("Smart Playlist Fetch Error:", error);
             return [];
         }
 
-        // Advanced Logic / Memory Filtering (Crucial for Time, or complex AI logic)
         let filtered = data;
 
-        if (concept.tool === 'filterByTime' && concept.args) {
-            const { startHour, endHour } = concept.args;
-            filtered = data.filter(item => {
+        // Apply time filter (client-side for timezone accuracy)
+        if (filter.timeOfDay && TIME_RANGES[filter.timeOfDay]) {
+            const [start, end] = TIME_RANGES[filter.timeOfDay];
+            filtered = filtered.filter(item => {
                 const h = new Date(item.played_at).getHours();
-                // Handle wrap around (e.g. 22 to 04)
-                if (startHour <= endHour) {
-                    return h >= startHour && h <= endHour;
+                if (start <= end) {
+                    return h >= start && h <= end;
                 } else {
-                    return h >= startHour || h <= endHour;
+                    // Handle wrap (e.g., latenight 0-4 doesn't wrap, but night 21-23 + latenight does if combined)
+                    return h >= start || h <= end;
                 }
             });
-        }        else if (concept.tool === 'filterByDiscovery' && concept.args) {
-            // Find songs played LESS than X times or simple "long tail"
-            // For now, simple random shuffle of history to simulate "rediscovery"
-            filtered = data.sort(() => 0.5 - Math.random()).slice(0, 50);
         }
-        else if (concept.tool === 'filterByLongest' && concept.args) {
-             // Filter for songs > 4 minutes (240000ms)
-             filtered = data.filter(item => item.duration_ms > 240000);
-        }
-        // Now Aggregation: Group by Song to simulate "Top Charts" for this category
-        const stats: Record<string, any> = {};
+
+        // Aggregate by unique song
+        const stats: Record<string, {
+            id: string;
+            title: string;
+            artist: string;
+            album: string;
+            cover: string;
+            plays: number;
+            totalMs: number;
+        }> = {};
+
         filtered.forEach((item: any) => {
-             // Unique key: Artist + Track
-             const key = `${item.track_name}-${item.artist_name}`;
-             if (!stats[key]) {
-                 stats[key] = {
-                     id: item.spotify_id,
-                     title: item.track_name,
-                     artist: item.artist_name,
-                     cover: item.album_cover,
-                     listens: 0,
-                     duration: 0
-                 };
-             }
-             stats[key].listens += 1;
+            const key = `${item.track_name}|||${item.artist_name}`;
+            if (!stats[key]) {
+                stats[key] = {
+                    id: item.spotify_id,
+                    title: item.track_name,
+                    artist: item.artist_name,
+                    album: item.album_name,
+                    cover: item.album_cover,
+                    plays: 0,
+                    totalMs: 0
+                };
+            }
+            stats[key].plays += 1;
+            stats[key].totalMs += item.duration_ms || 0;
         });
 
-        // Convert to Array and Sort by Listens
-        return Object.values(stats)
-            .sort((a: any, b: any) => b.listens - a.listens)
-            .slice(0, 20); // Top 20 for the spotlight
+        // Convert to array
+        let results = Object.values(stats);
+
+        // Sort by plays or minutes
+        const sortField = filter.sortBy === 'minutes' ? 'totalMs' : 'plays';
+        const ascending = filter.sortOrder === 'lowest';
+
+        results.sort((a, b) => ascending ? a[sortField] - b[sortField] : b[sortField] - a[sortField]);
+
+        // Map to output format
+        return results.slice(0, 20).map(item => ({
+            id: item.id,
+            title: item.title,
+            artist: item.artist,
+            album: item.album,
+            cover: item.cover,
+            listens: item.plays,
+            minutes: Math.round(item.totalMs / 60000)
+        }));
 
     } catch (e) {
         console.error("Smart Fetch Exception:", e);

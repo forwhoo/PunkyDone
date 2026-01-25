@@ -6,7 +6,7 @@ import { fetchSmartPlaylist } from '../services/dbService';
 import { Album } from '../types';
 
 interface TopAIProps {
-    contextData: { artists: string[], albums: string[] };
+    contextData: { artists: string[], albums: string[], songs: string[] };
 }
 
 export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
@@ -14,10 +14,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
     const [category, setCategory] = useState<any>(null);
     const [results, setResults] = useState<any[]>([]);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
     const handleGenerate = async () => {
         setLoading(true);
         setErrorMsg(null);
+        setDebugInfo(null);
         setResults([]);
         
         try {
@@ -25,23 +27,29 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
             const concept = await generateDynamicCategoryQuery(contextData);
             setCategory(concept);
             
+            // Debug: Show what filter was generated
+            if (concept.filter) {
+                setDebugInfo(JSON.stringify(concept.filter, null, 0));
+            }
+            
             if (concept.isError) {
                 setErrorMsg(concept.description);
             }
 
-            // 2. Fetch real data based on concept
-            if (concept && concept.tool) {
+            // 2. Fetch real data based on concept's filter
+            if (concept && concept.filter) {
                 const data = await fetchSmartPlaylist(concept);
                 setResults(data);
                 
                 if (data.length === 0 && !concept.isError) {
-                    setErrorMsg(`The formula "${concept.tool}" returned 0 matches for "${concept.args.artistName || concept.args.keyword || 'Time Range'}". Try again.`);
+                    const filterDesc = concept.filter.value || concept.filter.timeOfDay || 'All';
+                    setErrorMsg(`No results for filter: ${filterDesc}. Try again.`);
                 }
             } else {
-                 setErrorMsg("AI returned invalid structure. Try again.");
+                 setErrorMsg("AI returned invalid structure (missing filter). Try again.");
             }
-        } catch (err) {
-            setErrorMsg("Critical Failure in AI Dispatch.");
+        } catch (err: any) {
+            setErrorMsg(`Critical Error: ${err.message || 'Unknown'}`);
         }
         
         setLoading(false);
@@ -77,6 +85,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
             </div>
 
             {/* Content Area */}
+            {debugInfo && (
+                <div className="mb-2 bg-white/5 border border-white/10 text-[#8E8E93] p-2 rounded-lg text-[10px] font-mono overflow-x-auto">
+                    <span className="text-white/40">Filter:</span> {debugInfo}
+                </div>
+            )}
+            
             {errorMsg && (
                 <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-xs font-mono flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4" />

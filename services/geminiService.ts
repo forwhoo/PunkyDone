@@ -39,92 +39,115 @@ export const generateMusicInsights = async (contextData: string): Promise<string
   }
 };
 
-export const generateDynamicCategoryQuery = async (context: { artists: string[], albums: string[] }): Promise<any> => {
+export interface AIFilterArgs {
+    field?: 'artist_name' | 'album_name' | 'track_name'; // What column to filter
+    value?: string; // The value to match
+    timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | 'latenight'; // Time filter
+    sortBy?: 'plays' | 'minutes'; // What to rank by
+    sortOrder?: 'highest' | 'lowest'; // Top or Bottom
+}
+
+export interface AIFilterResult {
+    title: string;
+    description: string;
+    filter: AIFilterArgs;
+    isError?: boolean;
+}
+
+export const generateDynamicCategoryQuery = async (context: { 
+    artists: string[], 
+    albums: string[], 
+    songs: string[] 
+}): Promise<AIFilterResult> => {
     try {
         const client = getAiClient();
         if (!client) throw new Error("Missing VITE_GROQ_API_KEY");
 
         const hour = new Date().getHours();
-        const timeOfDay = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'late night';
+        const timeOfDay = hour < 6 ? 'latenight' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : hour < 21 ? 'evening' : 'night';
         
-        // Randomize the subset of artists sent to context to keep prompt size low but variations high
-        const artistSample = context.artists.slice(0, 50).join(", "); 
-        // const albumSample = context.albums.slice(0, 20).join(", ");
+        // Shuffle and sample to keep prompt fresh
+        const shuffledArtists = [...context.artists].sort(() => 0.5 - Math.random());
+        const shuffledAlbums = [...context.albums].sort(() => 0.5 - Math.random());
+        const shuffledSongs = [...context.songs].sort(() => 0.5 - Math.random());
 
         const prompt = `
-            You are the "Algorithm" for a high-end music dashboard.
-            Your Goal: Create a distinct, personalized listening "Vibe" or "Collection" based on the user's actual library.
+You are the DJ Algorithm for a premium music dashboard.
+Your job: Create ONE unique, creative listening category from the user's REAL library.
 
-            CURRENT CONTEXT:
-            - User's Local Time: ${hour}:00 (${timeOfDay})
-            - User's Top Artists: [${artistSample}]
-            - Database Schema: "listening_history" (track_name, artist_name, album_name, played_at, duration_ms)
-            - NO Genre Column.
+## USER'S LIBRARY (What you can use):
+- Artists: [${shuffledArtists.slice(0, 30).join(', ')}]
+- Albums: [${shuffledAlbums.slice(0, 20).join(', ')}]
+- Songs: [${shuffledSongs.slice(0, 15).join(', ')}]
+- Current Time: ${hour}:00 (${timeOfDay})
 
-            TASK:
-            1. Analyze the Time of Day + Available Artists.
-            2. Invent a creative, specific Title & Description.
-               - FORBIDDEN: "Morning Playlist", "Daytime Vibes", "Sunrise Serenade".
-               - REQUIRED: Use cool/abstract names like "Coffee & 808s", "Late Registration", "Toronto 3AM", "Focus Flow", "Gems Only", "High Fidelity".
-            3. Select the best TOOL from the list below to build this playlist from the DB.
-            
-            TOOLS (Choose ONE):
-            
-            A. { "tool": "filterByArtist", "args": { "artistName": "EXACT_NAME_FROM_LIST" } }
-               - Use this to create an Artist Spotlight.
-               - CRITICAL: "artistName" MUST actully exist in the "User's Top Artists" list above. Do not hallucinate an artist.
-            
-            B. { "tool": "filterByTime", "args": { "startHour": 0-23, "endHour": 0-23 } }
-               - Use this for time-based vibes (e.g. "After Hours" or "Breakfast Club").
-               - Set hours correctly for the context (Night = 22-04, Morning = 05-10).
-            
-            C. { "tool": "filterByKeyword", "args": { "keyword": "AnyString" } }
-               - Use this to match words in Track Title or Album.
-               - Examples: "Love", "Remix", "Live", "Acoustic", "Feat", "Interlude".
+## DATABASE SCHEMA:
+Table: listening_history
+Columns: track_name, artist_name, album_name, played_at (timestamp), duration_ms
 
-            D. { "tool": "filterByDiscovery", "args": {} }
-               - Use this if you want to surface "Hidden Gems" or random shuffles.
-               - Title ideas: "Buried Treasure", "Shuffle Play", "Forgotten Favorites".
+## YOUR SINGLE TOOL: "filter"
+You must output ONE filter object. Parameters:
 
-            E. { "tool": "filterByLongest", "args": {} }
-               - Use this for "Deep Cuts" or extended plays.
-               - Title ideas: "Extended Versions", "The Long Game", "Progressive Journey".
+| Parameter   | Type                                                    | Description                                      |
+|-------------|---------------------------------------------------------|--------------------------------------------------|
+| field       | "artist_name" \| "album_name" \| "track_name"          | Which column to match (OPTIONAL)                 |
+| value       | string                                                  | EXACT value from the library lists above         |
+| timeOfDay   | "morning" \| "afternoon" \| "evening" \| "night" \| "latenight" | Filter by when songs were played (OPTIONAL)     |
+| sortBy      | "plays" \| "minutes"                                    | Rank by total play count or total listening time |
+| sortOrder   | "highest" \| "lowest"                                   | Top (most) or Bottom (least)                     |
 
-            OUTPUT JSON ONLY:
-            {
-                "title": "Creative Title",
-                "description": "Edgy/Fun description.",
-                "tool": "...",
-                "args": { ... }
-            }
-        `;
+## RULES:
+1. "value" MUST be an EXACT match from the Artists/Albums/Songs lists. Do NOT invent names.
+2. You can combine filters (e.g., Artist + Morning + Most Played).
+3. Be CREATIVE with titles. FORBIDDEN: "Morning Playlist", "Top Tracks", "Best Of".
+   GOOD: "Drake Season", "3AM Thoughts", "Hidden Gems", "The Long Game", "Album Deep Dive".
+4. If you pick "lowest" for sortOrder, make the title reflect discovery (e.g., "Buried Treasure").
+
+## OUTPUT (JSON only, no markdown):
+{
+    "title": "Creative Title Here",
+    "description": "Short fun description",
+    "filter": {
+        "field": "artist_name",
+        "value": "Drake",
+        "timeOfDay": "night",
+        "sortBy": "plays",
+        "sortOrder": "highest"
+    }
+}
+
+NOTE: All filter fields are optional. You can use just one, or combine them.
+Examples:
+- Artist spotlight: { "field": "artist_name", "value": "The Weeknd", "sortBy": "plays", "sortOrder": "highest" }
+- Morning vibes: { "timeOfDay": "morning", "sortBy": "plays", "sortOrder": "highest" }
+- Hidden gems: { "sortBy": "plays", "sortOrder": "lowest" }
+- Album deep dive: { "field": "album_name", "value": "Graduation", "sortBy": "minutes", "sortOrder": "highest" }
+`;
 
         const response = await client.chat.completions.create({
             model: "llama-3.3-70b-versatile",
             messages: [
-                { role: "system", content: "You are a JSON-only API. Output raw JSON. No markdown." },
+                { role: "system", content: "You are a JSON-only API. Return raw JSON. No markdown, no explanation." },
                 { role: "user", content: prompt }
             ],
             response_format: { type: "json_object" },
-            temperature: 0.9 
+            temperature: 0.95 
         });
 
         const text = response.choices[0]?.message?.content || "{}";
         const parsed = JSON.parse(text);
         
-        // Simple client-side validation
-        if (!parsed.tool || !parsed.args) throw new Error("AI returned invalid protocol");
+        // Validate
+        if (!parsed.filter) throw new Error("AI did not return a filter object");
         
-        return parsed;
+        return parsed as AIFilterResult;
 
     } catch (e: any) {
         console.error("AI Category Gen Error:", e);
-        // Return the error so UI can show it if needed, or a fallback with error flag
         return {
-            title: "Simulated Fallback",
-            description: `AI Error: ${e.message || 'Unknown'}. Showing Morning flow.`,
-            tool: "filterByTime", 
-            args: { startHour: 6, endHour: 11 },
+            title: "Fallback Mix",
+            description: `Error: ${e.message || 'Unknown'}`,
+            filter: { sortBy: 'plays', sortOrder: 'highest' },
             isError: true
         };
     }
