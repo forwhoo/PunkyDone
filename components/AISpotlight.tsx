@@ -123,25 +123,31 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                             </div>
                          )}
 
-                         {/* AI Suggestion Button */}
+                         {/* AI Suggestion Button - More prominent */}
                          {mode === 'chat' && !typing && !loading && !category && (
-                            <button 
-                                onClick={async () => {
-                                    setLoading(true);
-                                    const concept = await generateDynamicCategoryQuery(contextData, "Create a discovery category based on our conversation");
-                                    setCategory(concept);
-                                    if (concept.filter) {
-                                        const data = await fetchSmartPlaylist(concept);
-                                        setResults(data);
-                                        setMode('discover');
-                                    }
-                                    setLoading(false);
-                                }}
-                                className="mt-6 px-4 py-2 rounded-full border border-[#FA2D48]/30 bg-[#FA2D48]/5 text-[#FA2D48] text-[11px] font-bold uppercase tracking-wider hover:bg-[#FA2D48]/10 transition-all flex items-center gap-2"
-                            >
-                                <Sparkles className="w-3 h-3" />
-                                Visualize as a Category
-                            </button>
+                            <div className="mt-8 p-4 rounded-2xl bg-[#FA2D48]/5 border border-[#FA2D48]/20 flex flex-col items-center text-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                <Sparkles className="w-6 h-6 text-[#FA2D48] animate-pulse" />
+                                <div>
+                                    <p className="text-white font-bold text-sm">Visualize this collection?</p>
+                                    <p className="text-[#8E8E93] text-[11px] mt-1">I can build a high-fidelity category from this context.</p>
+                                </div>
+                                <button 
+                                    onClick={async () => {
+                                        setLoading(true);
+                                        const concept = await generateDynamicCategoryQuery(contextData, `Create a discovery category based on the discussion: ${chatResponse}`);
+                                        setCategory(concept);
+                                        if (concept.filter) {
+                                            const data = await fetchSmartPlaylist(concept);
+                                            setResults(data);
+                                            setMode('discover');
+                                        }
+                                        setLoading(false);
+                                    }}
+                                    className="px-6 py-2.5 rounded-full bg-[#FA2D48] text-white text-[12px] font-bold uppercase tracking-wider hover:bg-[#d4253d] transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(250,45,72,0.3)] active:scale-95"
+                                >
+                                    Build Category ⚡
+                                </button>
+                            </div>
                          )}
                     </div>
                 )}

@@ -71,9 +71,9 @@ USER QUESTION: "${question}"
 1. Provide a helpful, insightful, and conversational answer based on their listening data. 
 2. Be specific, reference their actual music and stats when relevant.
 3. If they ask about totals (minutes, plays), use the provided stats.
-4. FORMATTING: You CAN use Markdown tables for lists/rankings. Use bolding and clean lists.
-5. If the user asks for patterns or "why", give your best strategic interpretation of their mood.
-6. Keep it friendly and terminal-chic.
+4. **AVOID TABLES**: Do not use markdown tables unless absolutely necessary. Instead, provide a bulleted list or a paragraph and ENCOURAGE the user to "Visualize as a Category" for any collection of songs.
+5. If the user asks for a ranking or list of songs, strictly suggest clicking the "Visualize as a Category" button which will appear below your response.
+6. FORMATTING: Use bolding and clean lists. Keep it friendly and terminal-chic.
     `;
 
     const response = await client.chat.completions.create({
@@ -89,6 +89,70 @@ USER QUESTION: "${question}"
     return "Unable to answer right now. Try again!";
   }
 };
+
+export const generateMusicInsight = async (query: string, stats: any): Promise<string> => {
+    try {
+        const client = getAiClient();
+        if (!client) return "Configure VITE_GROQ_API_KEY.";
+
+        const context = {
+            topArtist: stats?.artists?.[0] || null,
+            topSong: stats?.songs?.[0] || null,
+            topGenre: stats?.artists?.[0]?.genres?.[0] || "Unknown",
+            totalListeningTime: stats?.weeklyTime || "Unknown",
+            recentTracks: stats?.songs?.slice(0, 5).map((s: any) => s.title) || [],
+            allArtists: stats?.artists?.slice(0, 5).map((a: any) => ({ name: a.name, image: a.image })) || []
+        };
+
+        const systemPrompt = `
+You are Punky, a music analytics assistant.
+Answer questions about listening habits using this data:
+${JSON.stringify(context)}
+
+RULES:
+- Display images using Markdown: ![Alt](url)
+- Be extremely concise (Max 2 sentences).
+- If answer isn't in data, say so.
+        `;
+
+        const response = await client.chat.completions.create({
+            model: "openai/gpt-oss-120b",
+            messages: [{ role: "system", content: systemPrompt }, { role: "user", content: query }],
+            temperature: 0.7,
+            max_tokens: 300
+        });
+
+        return response.choices[0]?.message?.content || "";
+    } catch (e) {
+        return "Insight error.";
+    }
+};
+
+export const generateRankingInsights = async (items: string[]): Promise<Record<string, string>> => {
+    try {
+        const client = getAiClient();
+        if (!client) return {};
+
+        const prompt = `
+            You are a music critic. For each item in the list below, write ONE very short, witty, and punchy insight (max 8 words) why this is a top-tier choice or what it says about the listener.
+            Return ONLY a JSON object where keys are item names and values are the insights.
+
+            ITEMS:
+            ${items.join('\n')}
+        `;
+
+        const response = await client.chat.completions.create({
+            model: "openai/gpt-oss-20b",
+            messages: [{ role: "user", content: prompt }],
+            response_format: { type: "json_object" },
+            temperature: 0.8
+        });
+
+        return JSON.parse(response.choices[0]?.message?.content || "{}");
+    } catch (e) {
+        return {};
+    }
+}
 
 export interface AIFilterArgs {
     // Field matching

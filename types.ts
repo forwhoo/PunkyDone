@@ -5,7 +5,9 @@ export interface Artist {
   name: string;
   image: string;
   totalListens: number;
-  trend: number; // Percentage growth
+  trend: number; 
+  timeStr?: string;
+  museInsight?: string;
   rank?: number;
   peak?: number;
   prev?: number;
@@ -20,6 +22,8 @@ export interface Album {
   cover: string;
   year: number;
   totalListens: number;
+  timeStr?: string;
+  museInsight?: string;
   rank?: number;
   peak?: number;
   prev?: number;
@@ -36,6 +40,8 @@ export interface Song {
   duration: string;
   listens: number;
   dailyChange: number;
+  timeStr?: string;
+  museInsight?: string;
   rank?: number;
   peak?: number;
   prev?: number;
