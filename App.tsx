@@ -9,7 +9,8 @@ import {
     getTokenFromUrl, 
     fetchSpotifyData, 
     redirectToAuthCodeFlow, 
-    getAccessToken 
+    getAccessToken,
+    refreshAccessToken
 } from './services/spotifyService';
 import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay } from './services/dbService';
 
@@ -164,8 +165,18 @@ function App() {
     if (!token) return;
 
     const loadData = async () => {
-        const spotifyData = await fetchSpotifyData(token);
+        if (!token) return;
+        let spotifyData = await fetchSpotifyData(token);
         
+        if (!spotifyData) {
+            // Attempt auto-refresh in background loop
+            const newToken = await refreshAccessToken();
+            if (newToken) {
+                setToken(newToken);
+                spotifyData = await fetchSpotifyData(newToken);
+            }
+        }
+
         if (spotifyData) {
             setData(spotifyData);
             // syncRecentPlays is called in the useEffect above when data changes
@@ -235,13 +246,25 @@ function App() {
   const fetchData = async () => {
     if (!token) return;
     setLoading(true);
-    const result = await fetchSpotifyData(token);
+    let result = await fetchSpotifyData(token);
+    
+    if (!result) {
+        // Token might be expired, try to refresh
+        console.log("Token expired, attempting refresh...");
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+            setToken(newToken);
+            result = await fetchSpotifyData(newToken);
+        }
+    }
+
     if (result) {
         setData(result);
     } else {
-        // Token might be expired
+        // Token and refresh failed
         setToken(null);
         localStorage.removeItem('spotify_token');
+        localStorage.removeItem('spotify_refresh_token');
     }
     setLoading(false);
   };

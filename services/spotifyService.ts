@@ -67,8 +67,41 @@ export const getAccessToken = async (code: string) => {
       body: params
   });
 
-  const { access_token } = await result.json();
-  return access_token;
+  const body = await result.json();
+  if (body.refresh_token) {
+      localStorage.setItem('spotify_refresh_token', body.refresh_token);
+  }
+  return body.access_token;
+}
+
+export const refreshAccessToken = async () => {
+    const refreshToken = localStorage.getItem('spotify_refresh_token');
+    if (!refreshToken || !CLIENT_ID) return null;
+
+    const params = new URLSearchParams();
+    params.append("client_id", CLIENT_ID);
+    params.append("grant_type", "refresh_token");
+    params.append("refresh_token", refreshToken);
+
+    try {
+        const result = await fetch("https://accounts.spotify.com/api/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params
+        });
+
+        const body = await result.json();
+        if (body.access_token) {
+            localStorage.setItem('spotify_token', body.access_token);
+            if (body.refresh_token) {
+                localStorage.setItem('spotify_refresh_token', body.refresh_token);
+            }
+            return body.access_token;
+        }
+    } catch (e) {
+        console.error("Token refresh failed", e);
+    }
+    return null;
 }
 
 export const getAuthUrl = () => {
@@ -226,8 +259,20 @@ const mapRecentToHourly = (items: any[]) => {
     }
   });
   
-  // Smooth out the graph visually
-  return hours.map(h => ({ ...h, value: h.value * 10 + Math.floor(Math.random() * 5) })); 
+  // Smooth out the graph visually and ensure structure matches DB aggregation
+  return hours.map((h, i) => {
+    const hour = i % 12 === 0 ? 12 : i % 12;
+    const ampm = i < 12 ? 'AM' : 'PM';
+    
+    return {
+        ...h,
+        time: `${hour} ${ampm}`,
+        value: h.value * 10 + Math.floor(Math.random() * 5),
+        song: h.song?.title || 'No activity',
+        artist: h.song?.artist || '---',
+        cover: h.song?.cover || 'https://ui-avatars.com/api/?background=2C2C2E&color=8E8E93&name=?'
+    };
+  }); 
 };
 
 const mapRecentToDaily = (items: any[]) => {
