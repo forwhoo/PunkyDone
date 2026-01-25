@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Flame, Clock } from 'lucide-react';
+import { TrendingUp, Clock } from 'lucide-react';
 
 interface TrendingArtist {
     name: string;
@@ -123,10 +123,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
         <div className="mb-12">
             <div className="flex justify-between items-end mb-6 px-1 mx-1">
                 <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <Flame className="w-5 h-5 text-[#FF6B35]" />
-                        <h2 className="text-[22px] font-bold text-white tracking-tight">Trending Artists</h2>
-                    </div>
+                    <h2 className="text-[22px] font-bold text-white tracking-tight">Trending Artists</h2>
                     <p className="text-[#8E8E93] text-[13px]">Artists you're coming back to most • Live updates</p>
                 </div>
                 <div className="flex items-center gap-2 text-[#555] text-[10px]">
@@ -139,27 +136,26 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
                 {trendingArtists.map((artist, index) => (
                     <div key={artist.name} className="flex-shrink-0 relative flex flex-col items-center snap-start group cursor-pointer w-[140px] md:w-[160px] mr-3">
                         <div className="relative">
-                            <div className="relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border-2 border-[#FF6B35]/50 group-hover:border-[#FF6B35] group-hover:scale-105 transition-all duration-300 shadow-xl shadow-[#FF6B35]/20">
+                            <div className="relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-all duration-300 shadow-xl">
                                 <img 
-                                    src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=FF6B35&color=fff`} 
+                                    src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
                                     alt={artist.name} 
                                     className="w-full h-full object-cover" 
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                                 <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-1">
-                                    <TrendingUp className="w-3 h-3 text-[#FF6B35]" />
+                                    <TrendingUp className="w-3 h-3 text-[#FA2D48]" />
                                     <span className="text-white text-[10px] font-bold">{Math.round(artist.trendScore)}</span>
                                 </div>
                             </div>
                             {index === 0 && (
-                                <div className="absolute -top-2 -right-2 bg-[#FF6B35] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg z-20 flex items-center gap-1">
-                                    <Flame className="w-3 h-3" />
+                                <div className="absolute -top-2 -right-2 bg-[#FA2D48] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg z-20">
                                     #1
                                 </div>
                             )}
                         </div>
                         <div className="text-center mt-3 px-1 w-full">
-                            <h3 className="text-[14px] font-medium text-white truncate w-full group-hover:text-[#FF6B35] transition-colors">{artist.name}</h3>
+                            <h3 className="text-[14px] font-medium text-white truncate w-full group-hover:text-[#FA2D48] transition-colors">{artist.name}</h3>
                             <div className="flex items-center justify-center gap-1 mt-1 text-[10px] text-[#8E8E93]">
                                 <Clock className="w-3 h-3" />
                                 <span>{artist.avgTimeReturn}h avg return</span>

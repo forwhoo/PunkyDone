@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from './UIComponents';
-import { Sparkles, RefreshCcw, AlertTriangle, Database, MessageSquare, Brain } from 'lucide-react';
+import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion } from '../services/geminiService';
 import { fetchSmartPlaylist } from '../services/dbService';
 
@@ -63,19 +63,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
 
     return (
         <div className="mb-12 scroll-mt-24" id="ai-spotlight" ref={sectionRef}>
-            {/* Section Header */}
+            {/* Section Header - Simplified */}
             <div className="flex flex-col items-center justify-center mb-8 px-1 mx-1 gap-4 text-center">
                 <div>
-                    <div className="flex items-center justify-center gap-2 mb-3">
-                        <Database className="w-7 h-7 text-[#FA2D48]" />
-                        <h2 className="text-[28px] font-bold text-white tracking-tight">
-                            The Discovery
-                        </h2>
-                        <Brain className="w-7 h-7 text-[#FA2D48]" />
-                    </div>
-                     <p className="text-[#8E8E93] text-[14px] leading-relaxed max-w-2xl mx-auto">
-                        Advanced SQL music analyzer. Ask questions, create playlists, or explore your listening patterns with intelligent data analysis.
-                    </p>
+                    <h2 className="text-[28px] font-bold text-white tracking-tight mb-3">
+                        The Discovery
+                    </h2>
                 </div>
                 
                 {/* Centered Search Input */}
@@ -136,7 +129,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                     <p className="text-[#8E8E93] text-[14px] mb-2">{category.description}</p>
                     {results.length > 0 && (
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FA2D48]/10 border border-[#FA2D48]/20 text-[#FA2D48] text-[11px] font-bold">
-                            <Database className="w-3 h-3" />
+                            <Sparkles className="w-3 h-3" />
                             {results.length} tracks · {Math.round(results.reduce((acc, curr) => acc + (curr.totalMinutes || 0), 0))} total minutes
                         </div>
                     )}
@@ -148,7 +141,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                 {loading && (
                     <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl">
                          <div className="w-10 h-10 border-2 border-[#FA2D48] border-t-transparent rounded-full animate-spin mb-4"></div>
-                         <p className="text-[#8E8E93] text-sm animate-pulse">Consulting your music DNA...</p>
+                         <p className="text-[#8E8E93] text-sm animate-pulse">Analyzing your music...</p>
                     </div>
                 )}
                 
@@ -177,7 +170,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData }) => {
                     </div>
                 ) : !loading && mode === 'discover' && (
                     <div className="w-full h-[200px] border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-4 bg-[#1C1C1E]/50 mx-1">
-                        <Database className="w-8 h-8 text-white/20" />
+                        <Sparkles className="w-8 h-8 text-white/20" />
                         <div className="text-center">
                             <p className="text-white font-medium">Ready to discover</p>
                             <p className="text-[#8E8E93] text-xs mt-1">Ask a question or request a playlist above</p>
