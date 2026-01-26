@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from './UIComponents';
-import { ActivityHeatmap } from './ActivityHeatmap';
-import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieChart as PieIcon, Trophy, Music2 } from 'lucide-react';
+// import { ActivityHeatmap } from './ActivityHeatmap';
+import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2 } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory } from '../services/geminiService';
 import { fetchSmartPlaylist } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
@@ -212,9 +212,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
     return (
         <div className="scroll-mt-24" id="ai-spotlight" ref={sectionRef}>
-            {/* Heatmap Section */}
-            <ActivityHeatmap history={history} />
-
             {/* Clean Centered Search Interface */}
             <div className="flex flex-col items-center justify-center mb-8 px-4 text-center">
                 
@@ -350,17 +347,17 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 {/* Quick Feature Suggestions */}
                 {(!loading && !typing) && (
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-8 max-w-2xl mx-auto">
-                        {['Weekly Insight', 'Top Artists', 'Morning Vibes', 'Hidden Gems', '80s Rewind', 'Chill Mix'].map((suggestion) => (
+                        {['Underrated Gems', 'Your 2024 Vibe', 'Least Played', 'Genre Mix', 'New Releases', 'Party Mode'].map((suggestion) => (
                             <button
                                 key={suggestion}
                                 onClick={() => handleQuery(suggestion)}
                                 className={`px-4 py-2 rounded-full border text-sm transition-all active:scale-95 relative overflow-hidden group/sug ${
-                                    suggestion === 'Weekly Insight' 
+                                    suggestion === 'Your 2024 Vibe' 
                                     ? 'bg-transparent border-[#FA2D48] text-[#FA2D48] font-bold shadow-[0_0_20px_rgba(250,45,72,0.1)] hover:bg-[#FA2D48] hover:text-white' 
                                     : 'bg-white/5 border-white/10 text-[#8E8E93] hover:bg-white/10 hover:text-white hover:border-white/20'
                                 }`}
                             >
-                                {suggestion === 'Weekly Insight' && (
+                                {suggestion === 'Your 2024 Vibe' && (
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#FA2D48]/20 to-transparent -translate-x-full group-hover/sug:animate-[shine_1.5s_infinite] pointer-events-none" />
                                 )}
                                 {suggestion}
@@ -604,44 +601,11 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             0% { opacity: 0; transform: translateY(30px) scale(0.95); }
                             100% { opacity: 1; transform: translateY(0) scale(1); }
                         }
-                        @keyframes sparkle-burst {
-                            0% { transform: scale(0) rotate(0deg); opacity: 1; }
-                            50% { opacity: 1; }
-                            100% { transform: scale(2) rotate(180deg); opacity: 0; }
-                        }
-                        @keyframes glow-pulse {
-                            0%, 100% { box-shadow: 0 0 20px rgba(250, 45, 72, 0.3); }
-                            50% { box-shadow: 0 0 40px rgba(250, 45, 72, 0.6), 0 0 60px rgba(250, 45, 72, 0.3); }
-                        }
                         .category-card {
                             animation: category-reveal 0.8s ease-out forwards;
                         }
                         .category-card:nth-child(2) { animation-delay: 0.15s; }
                         .category-card:nth-child(3) { animation-delay: 0.3s; }
-                        .animate-shine {
-                            position: relative;
-                            overflow: hidden;
-                        }
-                        .animate-shine::after {
-                            content: '';
-                            position: absolute;
-                            top: 0;
-                            left: 0;
-                            width: 100%;
-                            height: 100%;
-                            background: linear-gradient(
-                                90deg,
-                                transparent 20%,
-                                rgba(255, 255, 255, 0.4) 45%,
-                                rgba(255, 255, 255, 0.6) 50%,
-                                rgba(255, 255, 255, 0.4) 55%,
-                                transparent 80%
-                            );
-                            animation: shine-red 2.5s infinite;
-                        }
-                        .glow-effect {
-                            animation: glow-pulse 2s ease-in-out infinite;
-                        }
                         `}
                     </style>
                     {categoryResults.map((category, categoryIndex) => (
@@ -650,68 +614,27 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             className="relative category-card opacity-0"
                             style={{ animationDelay: `${categoryIndex * 0.15}s` }}
                         >
-                            {/* Category Header with Sparkle Effect */}
-                            <div className="mb-6 mx-1 relative">
-                                <div className="absolute -top-4 -left-4 w-8 h-8 opacity-0 animate-[sparkle-burst_0.6s_ease-out_0.5s_forwards]">
-                                    <Sparkles className="w-full h-full text-[#FA2D48]" />
-                                </div>
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FA2D48] to-[#FF6B6B] flex items-center justify-center glow-effect">
-                                        <Sparkles className="w-5 h-5 text-white" />
-                                    </div>
+                            {/* Category Header */}
+                            <div className="flex items-end gap-4 mb-4">
+                                <span className="text-[60px] leading-none font-black text-outline select-none opacity-40 italic">
+                                    {categoryIndex + 1}
+                                </span>
+                                <div className="mb-2">
                                     <h3 className="text-2xl font-bold text-white tracking-tight">{category.title}</h3>
-                                </div>
-                                <p className="text-[#8E8E93] text-sm mb-4 max-w-xl leading-relaxed">{category.description}</p>
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FA2D48]/10 border border-[#FA2D48]/20 text-[#FA2D48] text-[11px] font-bold font-mono">
-                                    <span className="w-1.5 h-1.5 bg-[#FA2D48] rounded-full animate-pulse"></span>
-                                    {category.stats}
+                                    <p className="text-[#8E8E93] text-sm">{category.description}</p>
                                 </div>
                             </div>
-                            
-                            {/* Tracks Carousel - Cleaner Design */}
-                            <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-2 scroll-smooth gap-4">
-                                {category.tracks.map((item, index) => (
-                                    <div 
-                                        key={`${category.id}-${item.id || index}`} 
-                                        className="flex-shrink-0 relative snap-start group cursor-pointer w-[140px] md:w-[160px]"
-                                        style={{ animationDelay: `${(categoryIndex * 0.15) + (index * 0.05)}s` }}
-                                    >
-                                        <div className="relative">
-                                            <div className={`w-32 h-32 md:w-36 md:h-36 overflow-hidden rounded-2xl bg-[#2C2C2E] shadow-xl transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative ${
-                                                (item.isSuggestion || category.title.toLowerCase().includes('insight') || category.title.toLowerCase().includes('weekly') || category.title.toLowerCase().includes('wrapped'))
-                                                    ? 'border-2 border-[#FA2D48] glow-effect animate-shine' 
-                                                    : 'border border-white/10 group-hover:border-[#FA2D48]/50'
-                                            }`}>
-                                                <img src={item.cover} alt={item.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110" />
-                                                
-                                                {/* Rank Badge */}
-                                                <div className="absolute top-2 left-2 w-6 h-6 bg-black/80 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/10">
-                                                    <span className="text-white font-black text-xs">{index + 1}</span>
-                                                </div>
-                                                
-                                                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/60 backdrop-blur-sm">
-                                                    {(item.isSuggestion || category.title.toLowerCase().includes('insight') || category.title.toLowerCase().includes('weekly') || category.title.toLowerCase().includes('wrapped')) ? (
-                                                        <span className="text-[#FA2D48] font-bold text-xs uppercase tracking-widest border border-[#FA2D48] px-2 py-1 rounded-md bg-black/40">
-                                                            {category.title.toLowerCase().includes('insight') ? 'Insight' : item.isSuggestion ? 'New Find' : 'Top Pick'}
-                                                        </span>
-                                                    ) : (
-                                                        <>
-                                                            <span className="text-white font-bold text-xl drop-shadow-md">{item.timeStr || item.listens}</span>
-                                                            <span className="text-white/80 text-[10px] uppercase tracking-widest font-bold">Plays</span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="mt-3 px-1">
-                                                <h3 className={`text-[13px] font-semibold truncate w-32 md:w-36 leading-tight transition-colors ${
-                                                    (item.isSuggestion || category.title.toLowerCase().includes('insight') || category.title.toLowerCase().includes('weekly') || category.title.toLowerCase().includes('wrapped'))
-                                                        ? 'text-[#FA2D48]' 
-                                                        : 'text-white group-hover:text-[#FA2D48]'
-                                                }`}>{item.title}</h3>
-                                                <p className="text-[11px] text-[#8E8E93] truncate w-32 md:w-36 mt-0.5">
-                                                    {(item.type === 'artist' || item.title === item.artist) ? 'Artist' : item.artist}
-                                                </p>
-                                            </div>
+
+                            {/* Horizontal Scroll List */}
+                            <div className="flex items-start overflow-x-auto pb-4 pt-2 no-scrollbar snap-x pl-2 scroll-smooth gap-4">
+                                {category.tracks.map((track, trackIndex) => (
+                                    <div key={trackIndex} className="flex-shrink-0 relative flex flex-col items-center gap-2 group cursor-pointer w-[140px] snap-start">
+                                        <div className="w-[140px] h-[140px] overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 relative">
+                                             <img src={track.cover || track.image} alt={track.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110" />
+                                        </div>
+                                        <div className="text-center w-full px-1">
+                                            <h4 className="text-[13px] font-semibold text-white truncate w-full">{track.name || track.title}</h4>
+                                            <p className="text-[11px] text-[#8E8E93] truncate w-full">{track.artist}</p>
                                         </div>
                                     </div>
                                 ))}

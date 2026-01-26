@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
-import { TopCharts } from './components/TopCharts';
+// import { TopCharts } from './components/TopCharts';
 import { RankingWidget } from './components/RankingWidget';
 import { AISpotlight } from './components/AISpotlight';
 import { TrendingArtists } from './components/TrendingArtists';
 import { rankingMockData } from './mockData';
-import { Play, Music, BarChart2, Mic2, Disc, Trophy, Clock, TrendingUp, Sparkles, User } from 'lucide-react';
-import { Artist, Album, Song } from './types';
+import { ActivityHeatmap } from './components/ActivityHeatmap';
+
+// RANKED COMPONENT: Top Album (Standard)
 import { 
     getAuthUrl, 
     getTokenFromUrl, 
@@ -532,23 +533,13 @@ function App() {
 
             {/* RIGHT: CHARTS + ARCHIVE */}
             <div className="space-y-8">
-                {/* TopCharts - Detailed View */}
-                <div className="bg-[#1C1C1E]/60 rounded-3xl border border-white/10 p-6">
-                    <TopCharts 
-                        title="Listening DNA"
-                        username={data?.user?.name || 'Your'}
-                        artists={dbUnifiedData?.artists || data.artists}
-                        songs={dbUnifiedData?.songs || data.songs}
-                        albums={dbUnifiedData?.albums || data.albums}
-                        hourlyActivity={dbUnifiedData?.hourlyActivity || data.hourly}
-                        timeRange={timeRange}
-                        onTimeRangeChange={(range) => {
-                            setTimeRange(range);
-                            fetchDashboardStats(range).then(setDbUnifiedData);
-                        }}
-                    />
-                </div>
             </div>
+            
+        </div>
+        
+        {/* Activity Heatmap - Bottom */}
+        <div className="mb-24 px-1">
+             <ActivityHeatmap history={dbUnifiedData?.recentPlays || data?.recentRaw || []} />
         </div>
 
     </Layout>

@@ -34,7 +34,7 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
         // Target Year 2026 as requested
         const year = 2026;
         const startDate = new Date(year, 0, 1); // Jan 1
-        const endDate = new Date(year, 11, 31); // Dec 31
+        // const endDate = new Date(year, 11, 31); // Dec 31
         
         // Align to Sunday start
         const startDayOfWeek = startDate.getDay(); // 0 = Sunday
@@ -44,27 +44,21 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
         const weeksArr = [];
         let current = new Date(gridStart);
         
-        // Loop until we pass the end date
-        // Safety break at 370 days
-        let count = 0;
-        while (current <= endDate || (current.getDay() !== 0 && count < 370)) {
-            // Start a new week
-            if (current.getDay() === 0) {
-               weeksArr.push([]);
+        // Loop for 53 weeks to fill the grid
+        for(let w=0; w<53; w++) {
+            const currentWeek = [];
+            for(let d=0; d<7; d++) {
+                 const dateStr = current.toLocaleDateString('en-CA');
+                 const isTargetYear = current.getFullYear() === year;
+                 
+                 currentWeek.push({
+                    date: dateStr,
+                    count: dailyData[dateStr] || 0,
+                    inYear: isTargetYear
+                 });
+                 current.setDate(current.getDate() + 1);
             }
-            
-            const currentWeek = weeksArr[weeksArr.length - 1];
-            const dateStr = current.toLocaleDateString('en-CA');
-            const isTargetYear = current.getFullYear() === year;
-
-            currentWeek.push({
-                date: dateStr,
-                count: dailyData[dateStr] || 0,
-                inYear: isTargetYear
-            });
-
-            current.setDate(current.getDate() + 1);
-            count++;
+            weeksArr.push(currentWeek);
         }
         return weeksArr;
     }, [dailyData]);

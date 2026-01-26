@@ -140,19 +140,20 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         </p>
                     </div>
                     
+
                     {/* Custom Toggle UI */}
-                    <div className="bg-[#0A0A0A] p-1 rounded-full flex gap-1 border border-white/10">
+                    <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-1 border border-white/5">
                         <button 
                             onClick={() => setActiveTab('artist')}
-                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#FA2D48] text-white shadow-lg shadow-[#FA2D48]/20' : 'text-[#8E8E93] hover:text-white'}`}
+                            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
                         >
-                            <Mic2 size={12} /> Artists
+                             Artists
                         </button>
                         <button 
                             onClick={() => setActiveTab('album')}
-                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'album' ? 'bg-[#FA2D48] text-white shadow-lg shadow-[#FA2D48]/20' : 'text-[#8E8E93] hover:text-white'}`}
+                            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'album' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
                         >
-                            <Disc size={12} /> Albums
+                             Albums
                         </button>
                     </div>
                 </div>
@@ -173,19 +174,11 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                             onClick={() => setSelectedItem(selectedItem?.id === centerItem.id ? null : centerItem)}
                         >
                             <div className="relative w-28 h-28 md:w-36 md:h-36">
-                                {/* Animated Glow Ring */}
-                                <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-[#FA2D48] via-[#FF9F0A] to-[#FA2D48] opacity-60 blur-xl animate-pulse"></div>
-                                <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-[#FA2D48]/40 to-transparent"></div>
                                 
                                 <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-[#1C1C1E] transition-transform duration-500 group-hover:scale-105">
                                     <img src={centerItem.image} className="w-full h-full object-cover" />
                                 </div>
                                 
-                                {/* Badge */}
-                                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#FA2D48] to-[#FF6B6B] text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg z-20 flex items-center gap-1.5 whitespace-nowrap">
-                                    <Sparkles size={10} className="fill-current" />
-                                    #1 OBSESSION
-                                </div>
                             </div>
                         </div>
                     )}
@@ -259,9 +252,9 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                     </div>
 
                     {/* Orbital Lines - Enhanced */}
-                    <div className="absolute inset-0 rounded-full border border-[#FA2D48]/10 opacity-60 scale-[0.68]"></div>
-                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-40 scale-[0.96] border-dashed"></div>
-                    <div className="absolute inset-0 rounded-full border border-[#FA2D48]/5 opacity-30 scale-[0.82]"></div>
+                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-60 scale-[0.68]"></div>
+                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-40 scale-[0.96]"></div>
+                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-30 scale-[0.82]"></div>
                 </motion.div>
             </div>
 
