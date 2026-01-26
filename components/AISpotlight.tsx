@@ -77,7 +77,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
         
         try {
             // Determine query type
-            const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover', 'top', 'best', 'most', 'rank', 'chart', 'favorite', 'least', 'wrapped', 'gems', 'rewind', 'vibes', 'mix'];
+            const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover', 'top', 'best', 'most', 'rank', 'chart', 'favorite', 'least', 'wrapped', 'gems', 'rewind', 'vibes', 'mix', 'weekly', 'insight', 'stats'];
             const isAnalysisQuery = analysisKeywords.some(k => promptToUse.toLowerCase().includes(k));
             
             if (isAnalysisQuery || discoveryMode) {
@@ -325,12 +325,19 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                 {/* Quick Feature Suggestions */}
                 {mode === 'discover' && categoryResults.length === 0 && !loading && !displayedText && (
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-8 max-w-2xl mx-auto">
-                        {['Create a Wrapped', 'Top Artists', 'Morning Vibes', 'Hidden Gems', '80s Rewind', 'Chill Mix'].map((suggestion) => (
+                        {['Weekly Insight', 'Top Artists', 'Morning Vibes', 'Hidden Gems', '80s Rewind', 'Chill Mix'].map((suggestion) => (
                             <button
                                 key={suggestion}
                                 onClick={() => handleQuery(suggestion)}
-                                className="px-4 py-2 rounded-full bg-white/5 border border-white/5 text-[#8E8E93] text-sm hover:bg-white/10 hover:text-white hover:border-white/20 transition-all active:scale-95"
+                                className={`px-4 py-2 rounded-full border text-sm transition-all active:scale-95 relative overflow-hidden group/sug ${
+                                    suggestion === 'Weekly Insight' 
+                                    ? 'bg-[#FA2D48] border-[#FA2D48] text-white font-bold shadow-[0_0_20px_rgba(250,45,72,0.4)] animate-shine' 
+                                    : 'bg-white/5 border-white/5 text-[#8E8E93] hover:bg-white/10 hover:text-white hover:border-white/20'
+                                }`}
                             >
+                                {suggestion === 'Weekly Insight' && (
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover/sug:animate-[shine_1.5s_infinite] pointer-events-none" />
+                                )}
                                 {suggestion}
                             </button>
                         ))}
@@ -404,11 +411,17 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                                             {index + 1}
                                         </span>
                                         <div className="relative z-10 ml-10 md:ml-12">
-                                            <div className={`w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl transition-all duration-300 group-hover:-translate-y-2 relative ${item.isSuggestion ? 'border-2 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)] animate-shine' : 'border border-white/5 group-hover:border-white/20'}`}>
+                                            <div className={`w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl transition-all duration-300 group-hover:-translate-y-2 relative ${
+                                                (item.isSuggestion || category.title.toLowerCase().includes('insight') || category.title.toLowerCase().includes('weekly') || category.title.toLowerCase().includes('wrapped'))
+                                                    ? 'border-2 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)] animate-shine' 
+                                                    : 'border border-white/5 group-hover:border-white/20'
+                                            }`}>
                                                 <img src={item.cover} alt={item.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                                                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
-                                                    {item.isSuggestion ? (
-                                                        <span className="text-red-500 font-bold text-sm uppercase tracking-widest border border-red-500 px-2 py-1 rounded-md bg-black/40">New Find</span>
+                                                    {(item.isSuggestion || category.title.toLowerCase().includes('insight') || category.title.toLowerCase().includes('weekly') || category.title.toLowerCase().includes('wrapped')) ? (
+                                                        <span className="text-red-500 font-bold text-sm uppercase tracking-widest border border-red-500 px-2 py-1 rounded-md bg-black/40">
+                                                            {category.title.toLowerCase().includes('insight') ? 'Insight' : item.isSuggestion ? 'New Find' : 'Top Pick'}
+                                                        </span>
                                                     ) : (
                                                         <>
                                                             <span className="text-white font-bold text-2xl drop-shadow-md">{item.timeStr || item.listens}</span>
@@ -418,7 +431,11 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                                                 </div>
                                             </div>
                                             <div className="mt-3 relative z-20">
-                                                <h3 className={`text-[15px] font-semibold truncate w-32 md:w-40 leading-tight transition-colors ${item.isSuggestion ? 'text-red-500' : 'text-white group-hover:text-[#FA2D48]'}`}>{item.title}</h3>
+                                                <h3 className={`text-[15px] font-semibold truncate w-32 md:w-40 leading-tight transition-colors ${
+                                                    (item.isSuggestion || category.title.toLowerCase().includes('insight') || category.title.toLowerCase().includes('weekly') || category.title.toLowerCase().includes('wrapped'))
+                                                        ? 'text-red-500' 
+                                                        : 'text-white group-hover:text-[#FA2D48]'
+                                                }`}>{item.title}</h3>
                                                 <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5">
                                                     {(item.type === 'artist' || item.title === item.artist) ? 'Artist' : item.artist}
                                                 </p>

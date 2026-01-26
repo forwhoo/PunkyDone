@@ -205,7 +205,14 @@ export interface AIFilterResult {
 export const generateDynamicCategoryQuery = async (context: { 
     artists: string[], 
     albums: string[], 
-    songs: string[] 
+    songs: string[] ,
+    globalStats?: { 
+        weeklyTime: string, 
+        weeklyTrend: string, 
+        totalTracks: number, 
+        totalMinutes?: number,
+        extraStats?: { longestGapHours: string, longestSessionHours: string }
+    }
 }, userPrompt?: string): Promise<AIFilterResult[]> => {
     try {
         const client = getAiClient();
@@ -219,9 +226,19 @@ export const generateDynamicCategoryQuery = async (context: {
         const shuffledAlbums = [...context.albums].sort(() => 0.5 - Math.random());
         const shuffledSongs = [...context.songs].sort(() => 0.5 - Math.random());
 
+        const statsInfo = context.globalStats ? `
+## GLOBAL STATS (Use these for descriptions!):
+- Weekly Listening Time: ${context.globalStats.weeklyTime}
+- Weekly Trend: ${context.globalStats.weeklyTrend}
+- Total Minutes (All Time): ${context.globalStats.totalMinutes || '?'} min
+- Longest Session: ${context.globalStats.extraStats?.longestSessionHours || '?'} hours
+        ` : '';
+
         const systemInstructions = `
 You are the DJ Algorithm for a premium music dashboard.
 Your job: Create **ONE OR MORE** unique, creative listening categories from the user's REAL library based on their request.
+
+${statsInfo}
 
 ## USER'S LIBRARY:
 - Top Artists: [${shuffledArtists.slice(0, 30).join(', ')}]
