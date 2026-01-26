@@ -67,7 +67,12 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             }
 
             if (!stats[key]) {
-                stats[key] = { plays: [], image, subName, tracks: [] };
+                // Ensure image is valid
+                const validImage = image && image.length > 5 ? image : null;
+                stats[key] = { plays: [], image: validImage, subName, tracks: [] };
+            } else if (!stats[key].image && image && image.length > 5) {
+                // Retroactively fix image if missing
+                stats[key].image = image;
             }
             stats[key].plays.push(new Date(play.played_at).getTime());
             
@@ -93,12 +98,15 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             const recencyBoost = timeSinceLastPlay < 3 ? 20 : 0;
 
             const score = (recent24h * 15) + (data.plays.length * 2) + recencyBoost;
-
+            
+            // Use specific fallbacks for known issues or generic
+            let finalImage = data.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(key)}&background=random`;
+            
             result.push({
-                id: key,
+                id: `trend-${key.replace(/\s+/g, '-').toLowerCase()}-${activeTab}`, // Unique ID
                 name: activeTab === 'artist' ? key : data.subName ? key.split('||')[0] : key,
                 subName: data.subName,
-                image: data.image,
+                image: finalImage,
                 trendScore: Math.round(score),
                 recentPlays: recent24h,
                 type: activeTab,
@@ -177,24 +185,24 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                     {centerItem && (
                         <div 
                             className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 cursor-pointer group transition-all duration-300 ${selectedItem && selectedItem.id !== centerItem.id ? 'opacity-30 blur-sm scale-90' : 'opacity-100'}`}
-                            onClick={() => setSelectedItem(selectedItem?.id === centerItem.id ? null : centerItem)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedItem(selectedItem?.id === centerItem.id ? null : centerItem);
+                            }}
                         >
                             <div className="relative w-28 h-28 md:w-36 md:h-36">
-                                
                                 <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-[#1C1C1E] transition-transform duration-500 group-hover:scale-105">
                                     <img src={centerItem.image} className="w-full h-full object-cover" />
                                 </div>
-                                
                             </div>
                         </div>
                     )}
 
                     {/* Inner Ring Layer (Counter-Clockwise) */}
                     <div 
-                        className={`absolute inset-0 z-20 transition-all duration-500 hover:[animation-play-state:paused] ${selectedItem ? 'opacity-30' : 'opacity-100'}`}
+                        className={`absolute inset-0 z-20 transition-all duration-500 pointer-events-none ${selectedItem ? '[animation-play-state:paused] opacity-30' : 'hover:[animation-play-state:paused] opacity-100'}`}
                         style={{ animation: 'spin-slow 60s linear infinite' }}
                     >
-                         {/* Note: spin-slow needs to be defined or we use inline keyframes equivalent */}
                          <style>{`
                             @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                             @keyframes spin-reverse-slow { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
@@ -234,7 +242,8 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
 
                     {/* Outer Ring Layer (Clockwise) */}
                     <div 
-                        className={`absolute inset-0 z-10 transition-all duration-500 ${selectedItem ? 'opacity-30' : 'opacity-100'}`}
+                        className={`absolute inset-0 z-10 transition-all duration-500 pointer-events-none ${selectedItem ? '[animation-play-state:paused] opacity-30' : 'hover:[animation-play-state:paused] opacity-100'}`}
+                        style={{ animation: 'spin-reverse-slow 90s linear infinite' }}
                     >
                          <div className="w-full h-full absolute inset-0 animate-spin-reverse-slow group-hover:[animation-play-state:paused]">
                             {outerRing.map((item, i) => {
@@ -266,70 +275,80 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         </div>
                     </div>
 
-                    {/* Orbital Lines - Enhanced */}
-                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-60 scale-[0.68]"></div>
-                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-40 scale-[0.96]"></div>
-                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-30 scale-[0.82]"></div>
+                    {/* Orbital Lines */}
+                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-60 scale-[0.68] pointer-events-none"></div>
+                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-40 scale-[0.96] pointer-events-none"></div>
+                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-30 scale-[0.82] pointer-events-none"></div>
+
+                    {/* NEW: Contextual Side Modal (Desktop) */}
+                    <AnimatePresence>
+                        {selectedItem && (
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.9, x: 20 }} 
+                                animate={{ opacity: 1, scale: 1, x: 0 }} 
+                                exit={{ opacity: 0, scale: 0.9, x: 20 }}
+                                className="absolute top-[10%] -right-[60%] w-[280px] z-50 hidden lg:block"
+                            >
+                                <div className="bg-[#1C1C1E]/90 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
+                                    {/* Small 'Orbit-style' Modal Header */}
+                                    <div className="relative h-32">
+                                        <img src={selectedItem.image} className="w-full h-full object-cover opacity-50" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1E] to-transparent"></div>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setSelectedItem(null); }}
+                                            className="absolute top-2 right-2 bg-black/40 hover:bg-black/80 rounded-full p-1.5 text-white z-20 transition-colors"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                        <div className="absolute bottom-3 left-4 right-4">
+                                            <h3 className="text-lg font-bold text-white leading-tight truncate">{selectedItem.name}</h3>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-[10px] font-bold text-[#FA2D48] bg-[#FA2D48]/10 px-2 py-0.5 rounded-full border border-[#FA2D48]/20">
+                                                    #{trendingItems.findIndex(x => x.id === selectedItem.id) + 1} Trending
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Stats & Fun Facts */}
+                                    <div className="p-4 pt-2">
+                                        <div className="grid grid-cols-2 gap-2 mb-4">
+                                            <div className="bg-white/5 rounded-lg p-2 text-center border border-white/5">
+                                                <div className="text-[10px] text-[#8E8E93] uppercase tracking-wider">Score</div>
+                                                <div className="text-xl font-black text-white">{selectedItem.trendScore}</div>
+                                            </div>
+                                            <div className="bg-white/5 rounded-lg p-2 text-center border border-white/5">
+                                                <div className="text-[10px] text-[#8E8E93] uppercase tracking-wider">Plays</div>
+                                                <div className="text-xl font-black text-white">{selectedItem.recentPlays}</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <p className="text-[11px] text-[#8E8E93] uppercase font-bold mb-2 pl-1">Top Tracks</p>
+                                        <div className="space-y-1 max-h-[160px] overflow-y-auto custom-scrollbar">
+                                            {selectedItem.tracks?.slice(0, 5).map((track: any, i: number) => (
+                                                <div key={i} className="flex items-center gap-2 p-1.5 hover:bg-white/5 rounded-lg transition-colors group/track cursor-default">
+                                                     <div className="w-6 h-6 rounded bg-[#2C2C2E] overflow-hidden flex-shrink-0">
+                                                         <img src={track.album_cover || track.cover} className="w-full h-full object-cover" />
+                                                     </div>
+                                                     <div className="min-w-0 flex-1">
+                                                         <div className="text-[11px] font-semibold text-white truncate group-hover/track:text-[#FA2D48]">{track.track_name}</div>
+                                                         <div className="text-[9px] text-[#8E8E93] truncate">{track.played_at ? new Date(track.played_at).toLocaleDateString() : ''}</div>
+                                                     </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </motion.div>
             </div>
 
-            {/* SIDE PANEL DETAILS (Replaces Modal) */}
-            <AnimatePresence>
-                {selectedItem && (
-                    <motion.div 
-                        initial={{ opacity: 0, x: 50, width: 0 }} 
-                        animate={{ opacity: 1, x: 0, width: 400 }} 
-                        exit={{ opacity: 0, x: 50, width: 0 }}
-                        className="h-[600px] w-[400px] flex-shrink-0 bg-[#1C1C1E] border border-white/10 rounded-3xl overflow-hidden relative shadow-2xl z-20 hidden lg:block"
-                    >
-                        {/* Close Button */}
-                        <button 
-                            onClick={handleClose}
-                            className="absolute top-4 right-4 bg-black/40 hover:bg-black/80 rounded-full p-2 text-white z-20 transition-colors"
-                        >
-                            <X size={16} />
-                        </button>
-
-                        {/* Panel Header */}
-                        <div className="relative h-48 w-full">
-                            <img src={selectedItem.image} className="w-full h-full object-cover opacity-80" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1E] to-transparent"></div>
-                            <div className="absolute bottom-4 left-6 right-6">
-                                    <h2 className="text-2xl font-bold text-white leading-tight truncate">{selectedItem.name}</h2>
-                                    {selectedItem.subName && <p className="text-sm text-[#FA2D48] font-medium">{selectedItem.subName}</p>}
-                                    <div className="flex items-center gap-3 mt-2">
-                                        <span className="text-xs bg-white/10 backdrop-blur-md px-2 py-0.5 rounded text-white/80">
-                                            Score: {selectedItem.trendScore}
-                                        </span>
-                                        <span className="text-xs bg-white/10 backdrop-blur-md px-2 py-0.5 rounded text-white/80">
-                                            {selectedItem.recentPlays} recent plays
-                                        </span>
-                                    </div>
-                            </div>
-                        </div>
-
-                        {/* Song List */}
-                        <div className="p-4 overflow-y-auto h-[calc(100%-192px)] custom-scrollbar">
-                            <h4 className="text-xs font-bold text-[#8E8E93] uppercase tracking-widest mb-3 px-2">Track History</h4>
-                            <div className="space-y-1">
-                                {selectedItem.tracks?.map((track: any, i: number) => (
-                                    <div key={i} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-xl transition-colors group">
-                                        <div className="w-8 h-8 rounded-md overflow-hidden bg-[#2C2C2E] flex-shrink-0 relative">
-                                            <img src={track.album_cover || track.cover} className="w-full h-full object-cover" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <h5 className="text-sm font-medium text-white truncate group-hover:text-[#FA2D48] transition-colors">{track.track_name}</h5>
-                                            <p className="text-[11px] text-[#8E8E93] truncate">{track.played_at ? new Date(track.played_at).toLocaleDateString() : 'Unknown date'}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Mobile Modal Fallback */}
+            {/* Old Side Panel Removed - (Kept blank to satisfy tool structure or replaced completely logic) */}
+            {/* The tool replaces the section, so we just didn't include the old side panel here in the newString */}
+            
+            {/* Mobile Modal Fallback (Kept for mobile) */}
             <AnimatePresence>
                 {selectedItem && (
                     <div className="lg:hidden fixed inset-0 z-[100] flex items-center justify-center p-4">

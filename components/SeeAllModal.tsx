@@ -128,11 +128,6 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                             <span className="text-[9px] uppercase tracking-widest text-white/70 mb-1">Plays</span>
                                             <span className="text-xs font-bold text-[#FA2D48] bg-white/10 px-2 py-0.5 rounded-full">{item.timeStr || '0m'}</span>
                                         </div>
-                                        
-                                        {/* Ranking Badge */}
-                                        <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-[#FA2D48] flex items-center justify-center border-4 border-[#1C1C1E] z-20 shadow-md">
-                                            <span className="text-xs font-black text-white">{index + 1}</span>
-                                        </div>
                                     </div>
                                     
                                     {/* Name Below - Visual Stack */}
@@ -159,22 +154,17 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                             className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110" 
                                         />
                                         
-                                        {/* Permanent Gradient Overlay for Text Readability */}
-                                        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 to-transparent opacity-90" />
+                                        {/* Permanent Gradient Overlay for Text Readability - Stronger at bottom */}
+                                        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/60 to-transparent opacity-90" />
                                         
                                         {/* Text Inside Image */}
                                         <div className="absolute bottom-0 left-0 w-full p-3 transform transition-transform duration-300 group-hover:-translate-y-1">
-                                            <h3 className="text-[13px] md:text-[14px] font-bold text-white leading-tight line-clamp-1 drop-shadow-md">
+                                            <h3 className="text-[13px] md:text-[14px] font-bold text-white leading-tight line-clamp-2 drop-shadow-md">
                                                 {item.title || item.name}
                                             </h3>
-                                            <p className="text-[11px] text-[#CCC] font-medium truncate mt-0.5">
+                                            <p className="text-[11px] text-gray-300 font-medium truncate mt-0.5">
                                                 {item.artist}
                                             </p>
-                                        </div>
-                                        
-                                        {/* Ranking Badge */}
-                                        <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/10 z-30">
-                                            <span className="text-[10px] font-bold text-white">#{index + 1}</span>
                                         </div>
 
                                         {/* Hover Overlay Stats */}

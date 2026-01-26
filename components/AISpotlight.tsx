@@ -28,7 +28,23 @@ interface TopAIProps {
 }
 
 // Reusable Ranked Item Component (Internal)
-const AI_RankedItem = ({ item, rank }: { item: any, rank: number }) => (
+const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: number, displayMode?: 'mins' | 'plays' | 'date' }) => {
+    const getDisplayValue = () => {
+        if (displayMode === 'mins' && item.mins != null) return `${item.mins}m`;
+        if (displayMode === 'plays' && item.plays != null) return `${item.plays}p`;
+        if (displayMode === 'date' && (item.date || item.played_at)) {
+             const d = new Date(item.date || item.played_at);
+             return d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+        }
+        if (displayMode === 'date' && item.year) return item.year;
+        
+        // Smart Fallback hierarchy
+        if (item.mins) return `${item.mins}m`;
+        if (item.plays) return `${item.plays}p`;
+        return `#${rank}`;
+    };
+
+    return (
     <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
         {/* Big Number Ranking */}
         <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40">
@@ -49,10 +65,10 @@ const AI_RankedItem = ({ item, rank }: { item: any, rank: number }) => (
                     onError={(e) => e.currentTarget.style.opacity = '0'}
                 />
                 
-                {/* Hover Overlay with Stats */}
+                {/* Hover Overlay with Stats - Now Dynamic */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40 backdrop-blur-sm">
                      <span className="text-white font-bold text-xl drop-shadow-md">
-                         {item.mins ? `${item.mins}m` : (item.plays ? `${item.plays}p` : `#${rank}`)}
+                         {getDisplayValue()}
                      </span>
                 </div>
             </div>
@@ -69,6 +85,7 @@ const AI_RankedItem = ({ item, rank }: { item: any, rank: number }) => (
         </div>
     </div>
 );
+};
 
 interface CategoryResult {
     id: string;
@@ -402,24 +419,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     </div>
                 </div>
 
-                {/* Quick Feature Suggestions */}
-                {(!loading && !typing) && (
-                    <div className="flex flex-wrap items-center justify-center gap-2 mt-8 max-w-2xl mx-auto">
-                        {['Underrated Gems', 'Your 2024 Vibe', 'Least Played', 'Genre Mix', 'New Releases', 'Party Mode'].map((suggestion) => (
-                            <button
-                                key={suggestion}
-                                onClick={() => handleQuery(suggestion)}
-                                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95 border ${
-                                    suggestion === 'Your 2024 Vibe' 
-                                    ? 'bg-[#FA2D48]/10 border-[#FA2D48]/50 text-[#FA2D48] shadow-[0_0_10px_rgba(250,45,72,0.1)] hover:bg-[#FA2D48] hover:text-white' 
-                                    : 'bg-[#1C1C1E] border-white/5 text-[#8E8E93] hover:bg-[#2C2C2E] hover:text-white hover:border-white/20'
-                                }`}
-                            >
-                                {suggestion}
-                            </button>
-                        ))}
-                    </div>
-                )}
+                {/* Quick Feature Suggestions Removed via user request */}
             </div>
 
             {/* Error Messages */}
@@ -713,7 +713,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-2 scroll-smooth gap-4 min-h-[280px]">
                                 {category.tracks.map((track, trackIndex) => (
                                     viewMode === 'ranked' ? (
-                                        <AI_RankedItem key={trackIndex} item={{...track}} rank={trackIndex + 1} />
+                                        <AI_RankedItem key={trackIndex} item={{...track}} rank={trackIndex + 1} displayMode={sortMode} />
                                     ) : (
                                         <div key={trackIndex} className="flex-shrink-0 relative flex flex-col items-center gap-2 group cursor-pointer w-[140px] snap-start">
                                             <div className="w-[140px] h-[140px] overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 relative">
