@@ -150,13 +150,16 @@ function App() {
 
       // Function to refresh DB view
       const refreshDbStats = async () => {
+          // If we have manual data, don't clear it immediately to prevent flashing
           const stats = await fetchListeningStats();
           const dashboardStuff = await fetchDashboardStats(timeRange);
           // Fetch dynamic charts for AI context
           const currentCharts = await fetchCharts(timeRange.toLowerCase() as any);
           
-          setDbStats({ ...stats, charts: currentCharts });
-          setDbUnifiedData(dashboardStuff);
+          if (dashboardStuff) {
+               setDbStats({ ...stats, charts: currentCharts });
+               setDbUnifiedData(dashboardStuff);
+          }
       };
 
   // Realtime Subscription for Instant Updates
