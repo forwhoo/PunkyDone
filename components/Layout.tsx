@@ -25,23 +25,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, currentTrack }) 
         {children}
       </main>
       
-      {/* Mobile Nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#1C1C1E]/95 backdrop-blur-md border-t border-[#2C2C2E] flex justify-around py-3 z-50 pb-safe">
-        <div className="flex flex-col items-center gap-1 text-primary">
-          <div className="p-1 rounded bg-primary/10">
-             <LayoutDashboard className="w-5 h-5" />
-          </div>
-          <span className="text-[10px] font-medium mt-0.5">Dashboard</span>
-        </div>
-        <div className="flex flex-col items-center gap-1 text-[#8E8E93]">
-          <History className="w-6 h-6" />
-          <span className="text-[10px] font-medium mt-0.5">History</span>
-        </div>
-        <div className="flex flex-col items-center gap-1 text-[#8E8E93]">
-          <User className="w-6 h-6" />
-          <span className="text-[10px] font-medium mt-0.5">Profile</span>
-        </div>
-      </div>
+      {/* Mobile Nav REMOVED as requested */}
     </div>
   );
 };

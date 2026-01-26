@@ -135,8 +135,8 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
     return (
         <div className="relative z-0 flex flex-col md:flex-row gap-8 items-start mb-12">
             
-            <div className="flex-1 w-full relative">
-                <div className="flex justify-between items-end mb-16 px-2">
+            <div className="flex-1 w-full relative min-h-[400px] md:min-h-[500px]">
+                <div className="flex justify-between items-end mb-4 md:mb-16 px-2 relative z-10">
                     <div>
                         <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
                             Obsession Orbit
@@ -148,16 +148,16 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                     
 
                     {/* Custom Toggle UI */}
-                    <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-1 border border-white/5">
+                    <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-1 border border-white/5 shadow-sm">
                         <button 
                             onClick={() => setActiveTab('artist')}
-                            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                            className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
                         >
                              Artists
                         </button>
                         <button 
                             onClick={() => setActiveTab('album')}
-                            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'album' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                            className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'album' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
                         >
                              Albums
                         </button>
@@ -167,7 +167,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                 {/* MAIN ORBIT VIEW */}
                 <motion.div 
                     layout
-                    className="relative w-full max-w-[480px] mx-auto aspect-square select-none"
+                    className="relative w-full max-w-[480px] mx-auto aspect-square select-none scale-[0.65] sm:scale-75 md:scale-100 origin-center md:origin-top mt-[-40px] md:mt-0"
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}

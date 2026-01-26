@@ -10,15 +10,20 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
     const [selectedTracks, setSelectedTracks] = useState<any[]>([]);
 
     // 1. Process Data: Group by Date (YYYY-MM-DD)
-    const { dailyData, dailyTracks, maxCount } = useMemo(() => {
+    const { dailyData, dailyTracks, maxCount, totalPlays, totalMinutes } = useMemo(() => {
         const grouped: Record<string, number> = {};
         const tracks: Record<string, any[]> = {};
         let max = 0;
+        let tPlays = 0;
+        let tMins = 0;
 
-        if (!history) return { dailyData: {}, dailyTracks: {}, maxCount: 1 };
+        if (!history) return { dailyData: {}, dailyTracks: {}, maxCount: 1, totalPlays: 0, totalMinutes: 0 };
 
         history.forEach(item => {
             if (!item.played_at) return;
+            tPlays++;
+            tMins += (item.duration_ms || 0) / 60000;
+
             const date = new Date(item.played_at);
             const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD
             
@@ -38,7 +43,7 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
             if (count > max) max = count;
         });
 
-        return { dailyData: grouped, dailyTracks: tracks, maxCount: Math.max(max, 5) }; // Min max of 5 for scaling
+        return { dailyData: grouped, dailyTracks: tracks, maxCount: Math.max(max, 5), totalPlays: tPlays, totalMinutes: Math.round(tMins) };
     }, [history]);
 
     // 2. Generate Calendar Grid (Horizontal: Weeks, Vertical: Days)
@@ -109,20 +114,21 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
         setSelectedTracks(dailyTracks[dateStr]);
     };
 
-    // Lock body scroll logic
-    /* Removed: We want normal page scrolling interaction usually, but let's keep it if we do full overlay.
-       The user wants the grid to move to the side. 
-       We will implement a split layout instead of a fixed overlay.
-    */
-
     return (
         <div className="relative flex flex-col lg:flex-row gap-8 items-start transition-all duration-500">
             
             {/* LEFT: Heatmapp Container */}
             <div className={`w-full transition-all duration-500 ease-in-out ${selectedDate ? 'lg:w-[calc(100%-390px)]' : 'w-full'}`}>
                 <div className="w-full max-w-4xl mx-auto mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
-                    <div className="flex justify-between items-end mb-4 px-1">
-                        <h3 className="text-[16px] font-semibold text-white">Activity</h3>
+                    <div className="flex justify-between items-end mb-6 px-1">
+                        <div className="flex flex-col gap-0.5">
+                             <h3 className="text-xl font-bold text-white tracking-tight">{totalPlays.toLocaleString()} contributions</h3>
+                             <p className="text-[13px] text-[#8E8E93] font-medium flex items-center gap-2">
+                                <span>{totalMinutes.toLocaleString()} minutes of music</span>
+                                <span className="w-1 h-1 rounded-full bg-[#333]"></span>
+                                <span>2026</span>
+                             </p>
+                        </div>
                         <button className="flex items-center gap-1 text-[12px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors">
                             2026 <ChevronDown size={14} />
                         </button>
@@ -159,9 +165,11 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
                 </div>
             </div>
 
-            {/* RIGHT: Side Panel Details (Apple Style) */}
+            {/* RIGHT: Side Panel - Mobile gets a Modal/Fixed Overlay, Desktop gets side panel */}
             {selectedDate && (
-                 <div className="w-full lg:w-[380px] flex-shrink-0 bg-[#1C1C1E]/80 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in slide-in-from-right fade-in duration-500 h-[600px] flex flex-col relative sticky top-24">
+                 <>
+                 {/* Desktop Panel */}
+                 <div className="hidden lg:flex w-full lg:w-[380px] flex-shrink-0 bg-[#1C1C1E]/80 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in slide-in-from-right fade-in duration-500 h-[600px] flex-col relative sticky top-24">
                         
                     {/* Header: Apple Music Style Gradient/Blur */}
                     <div className="relative flex-shrink-0 p-6 border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent">
@@ -220,6 +228,46 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
                             </div>
                     </div>
                 </div>
+
+                {/* Mobile Bottom Sheet Panel (Fixed Overlay) */}
+                <div className="fixed inset-x-0 bottom-0 z-[60] lg:hidden animate-in slide-in-from-bottom-full duration-500">
+                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm -z-10 h-[100vh] top-[-100vh]" onClick={() => setSelectedDate(null)} />
+                     
+                     <div className="bg-[#1C1C1E] border-t border-white/10 rounded-t-[30px] p-6 h-[70vh] flex flex-col shadow-2xl relative">
+                        {/* Drag Handle */}
+                        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-[#3A3A3C] rounded-full" />
+                        
+                        <div className="flex justify-between items-start mt-4 mb-6">
+                            <div>
+                                <h2 className="text-2xl font-bold text-white">
+                                    {new Date(selectedDate).toLocaleString('default', { month: 'short' })} <span className="text-[#FA2D48]">{new Date(selectedDate).getDate()}</span>
+                                </h2>
+                                <p className="text-xs text-[#8E8E93] mt-1">{selectedTracks.length} tracks played</p>
+                            </div>
+                            <button 
+                                onClick={() => setSelectedDate(null)}
+                                className="bg-[#2C2C2E] p-2 rounded-full text-white"
+                            > 
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto">
+                            <div className="space-y-2">
+                                {selectedTracks.map((track, i) => (
+                                    <div key={i} className="flex items-center gap-3 p-2 rounded-xl bg-white/5">
+                                        <img src={track.cover || track.album_cover} className="w-10 h-10 rounded-md object-cover" />
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="text-sm font-bold text-white truncate">{track.track_name}</h4>
+                                            <p className="text-xs text-[#8E8E93] truncate">{track.artist_name}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                     </div>
+                </div>
+                </>
             )}
         </div>
     );

@@ -401,16 +401,31 @@ function App() {
   if (loading || !data) {
       return (
           <Layout user={null} currentTrack={null}>
-              <div className="flex h-[60vh] flex-col items-center justify-center gap-6">
-                  <div className="flex flex-col items-center gap-4">
-                      <div className="w-8 h-8 border-2 border-[#FA2D48] border-t-transparent rounded-full animate-spin"></div>
-                      <p className="text-[#8E8E93] text-sm font-medium">Syncing your library...</p>
+              <div className="flex h-[80vh] flex-col items-center justify-center gap-8 relative overflow-hidden">
+                  
+                  {/* Background Aura */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-[500px] h-[500px] bg-[#FA2D48]/10 rounded-full blur-[100px] animate-pulse"></div>
+                  </div>
+
+                  {/* Cool Card Stack Animation */}
+                  <div className="relative w-32 h-32 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-[#2C2C2E] rounded-xl rotate-12 opacity-40 scale-75 animate-bounce delay-75 border border-white/5"></div>
+                        <div className="absolute inset-0 bg-[#2C2C2E] rounded-xl -rotate-12 opacity-60 scale-90 animate-bounce delay-150 border border-white/5"></div>
+                        <div className="relative w-24 h-24 bg-[#1C1C1E] rounded-xl shadow-2xl flex items-center justify-center border border-white/10 z-10 animate-bounce">
+                            <Music className="w-10 h-10 text-[#FA2D48] drop-shadow-[0_0_15px_rgba(250,45,72,0.6)]" />
+                        </div>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-2 z-10">
+                      <h3 className="text-xl font-bold text-white tracking-tight animate-pulse">Building your collection...</h3>
+                      <p className="text-[#8E8E93] text-sm font-medium">Analyzing your listening history</p>
                   </div>
                   
                   {loading === false && !data && (
                       <button 
                         onClick={handleConnect}
-                        className="px-6 py-2 bg-[#FA2D48] text-white text-xs font-bold rounded-full hover:scale-105 transition-transform"
+                        className="mt-4 px-6 py-2 bg-[#FA2D48] text-white text-xs font-bold rounded-full hover:scale-105 transition-transform z-10 shadow-lg shadow-[#FA2D48]/20"
                       >
                         Reconnect Spotify
                       </button>
