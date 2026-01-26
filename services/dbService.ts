@@ -417,12 +417,12 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         };
     });
 
-    // 5. Recent Plays (Last 50)
+    // 5. Recent Plays (Last 2000 for Timeline Heatmap)
     const { data: recentHistory } = await supabase
         .from('listening_history')
         .select('*')
         .order('played_at', { ascending: false })
-        .limit(100);
+        .limit(2000);
         
     const recentPlays = recentHistory?.map((item: any) => ({
         ...item,
