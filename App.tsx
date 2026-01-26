@@ -429,6 +429,7 @@ function App() {
             <AISpotlight 
                 token={token}
                 history={dbUnifiedData?.recentPlays || data?.recentRaw || []}
+                user={data.user}
                 contextData={{
                     artists: (dbUnifiedData?.artists || data.artists).map((a: Artist) => {
                         const time = a.timeStr || '';
