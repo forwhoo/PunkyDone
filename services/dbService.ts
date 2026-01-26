@@ -14,46 +14,53 @@ export interface HistoryItem {
   popularity?: number; // Requires extra fetch usually, but we can store if we had it
 }
 
-export interface ChartEntry {
-  id?: string;
-  track_name: string;
-  artist_name: string;
-  album_name: string;
-  album_cover: string;
-  spotify_id: string;
-  chart_week: string; // YYYY-MM-DD
-  current_rank: number;
-  last_week_rank?: number | null;
-  plays_count: number;
-  streak_weeks: number;
-  peak_rank: number;
-  trend: 'UP' | 'DOWN' | 'STABLE' | 'NEW';
-}
+// DYNAMIC CHART GENERATION (No Stored Table)
+// Calls Supabase RPC to calc Trends, Streaks on the fly
+export const fetchCharts = async (period: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<any[]> => {
+    try {
+        const { data, error } = await supabase.rpc('get_dynamic_chart', { 
+            period_type: period, 
+            target_date: new Date().toISOString() 
+        });
 
-export const fetchWeeklyCharts = async (date?: string): Promise<ChartEntry[]> => {
-    // If no date, get latest Monday
-    const targetDate = date || getLatestMonday();
-    
-    const { data, error } = await supabase
-        .from('charts')
-        .select('*')
-        .eq('chart_week', targetDate)
-        .order('current_rank', { ascending: true });
+        if (error) {
+           console.error("RPC Chart Error:", error);
+           return [];
+        }
 
-    if (error) {
-        console.error("Error fetching charts:", error);
+        return (data || []).map((item: any) => ({
+            id: item.spotify_id,
+            title: item.track_name,
+            artist: item.artist_name,
+            cover: item.album_cover,
+            listens: item.plays_count,
+            timeStr: formatDuration(item.total_duration_ms || 0),
+            
+            // Billboard Stats
+            rank: item.rank,
+            prev: item.prev_rank || null,
+            peak: item.peak_rank || item.rank,
+            streak: item.streak_count || 1,
+            trend: item.trend_status // 'UP', 'DOWN', 'STABLE', 'NEW'
+        }));
+
+    } catch (e) {
+        console.error("Failed to fetch dynamic charts", e);
         return [];
     }
-    return data || [];
 };
 
-function getLatestMonday() {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(d.setDate(diff));
-    return monday.toISOString().split('T')[0];
+const formatDuration = (ms: number) => {
+    const min = Math.floor(ms / 60000);
+    return `${min}m`;
+};
+
+// Removed old ChartEntry interface to avoid confusion
+export interface ChartEntry {
+  // Placeholder if needed elsewhere
 }
+
+// ... (Rest of file)
 
 export const logSinglePlay = async (track: any, listenedMs: number, extraData: any = {}) => {
     // Log if at least 30 seconds (Spotify standard)
@@ -139,99 +146,7 @@ export const syncRecentPlays = async (recentItems: any[]) => {
   }
 };
 
-/**
- * GENERATE WEEKLY CHART
- * This logic calculates the top 50 songs of the week,
- * computes streaks, trends, and peaks by comparing to previous table data.
- */
-export const syncWeeklyCharts = async () => {
-    try {
-        const thisMonday = getLatestMonday();
-        const lastMonday = new Date(new Date(thisMonday).getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-        // 1. Get plays for THIS week (from thisMonday 00:00 to now)
-        const { data: plays, error: playsErr } = await supabase
-            .from('listening_history')
-            .select('spotify_id, track_name, artist_name, album_name, album_cover')
-            .gte('played_at', thisMonday);
-
-        if (playsErr || !plays) throw playsErr;
-
-        // Aggregate
-        const counts: Record<string, any> = {};
-        plays.forEach(p => {
-            if (!counts[p.spotify_id]) {
-                counts[p.spotify_id] = { ...p, count: 0 };
-            }
-            counts[p.spotify_id].count++;
-        });
-
-        const sorted = Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 50);
-
-        // 2. Fetch last week's charts to compare
-        const { data: lastWeekChart } = await supabase
-            .from('charts')
-            .select('*')
-            .eq('chart_week', lastMonday);
-
-        const lastWeekMap = new RecordMap<ChartEntry>(lastWeekChart || []);
-
-        // 3. Transform to ChartEntry
-        const chartEntries: ChartEntry[] = sorted.map((item, index) => {
-            const rank = index + 1;
-            const prevEntry = lastWeekMap[item.spotify_id];
-            
-            let trend: 'UP' | 'DOWN' | 'STABLE' | 'NEW' = 'NEW';
-            let streak = 1;
-            let peak = rank;
-
-            if (prevEntry) {
-                streak = (prevEntry.streak_weeks || 1) + 1;
-                peak = Math.min(rank, prevEntry.peak_rank || rank);
-                
-                if (rank < prevEntry.current_rank) trend = 'UP';
-                else if (rank > prevEntry.current_rank) trend = 'DOWN';
-                else trend = 'STABLE';
-            }
-
-            return {
-                track_name: item.track_name,
-                artist_name: item.artist_name,
-                album_name: item.album_name,
-                album_cover: item.album_cover,
-                spotify_id: item.spotify_id,
-                chart_week: thisMonday,
-                current_rank: rank,
-                last_week_rank: prevEntry ? prevEntry.current_rank : null,
-                plays_count: item.count,
-                streak_weeks: streak,
-                peak_rank: peak,
-                trend: trend
-            };
-        });
-
-        // 4. Upsert into database
-        const { error: upsertErr } = await supabase
-            .from('charts')
-            .upsert(chartEntries, { onConflict: 'spotify_id,chart_week' });
-
-        if (upsertErr) throw upsertErr;
-        return chartEntries;
-
-    } catch (e) {
-        console.error("Failed to sync weekly charts:", e);
-        return [];
-    }
-};
-
-class RecordMap<T> {
-    [key: string]: T;
-    constructor(items: any[]) {
-        items.forEach(i => {
-            if (i.spotify_id) this[i.spotify_id] = i;
-        });
-    }
-}
+// removed syncCharts
 
 export const fetchListeningStats = async () => {
   const now = new Date();

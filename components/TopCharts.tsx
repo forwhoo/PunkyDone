@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle } from './UIComponents';
 import { Play, Calendar, TrendingUp, TrendingDown, Minus, ArrowRight } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
+import { fetchCharts } from '../services/dbService';
 
 interface TopChartsProps {
   title: string;
@@ -16,7 +17,21 @@ interface TopChartsProps {
 
 export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', artists = [], songs = [], albums = [], hourlyActivity = [], timeRange, onTimeRangeChange }) => {
   const [activeTab, setActiveTab] = useState<'Songs' | 'Albums' | 'Artists'>('Artists');
+  const [chartData, setChartData] = useState<any[]>([]);
 
+  // Fetch dynamic chart when tab/timeRange changes
+  React.useEffect(() => {
+    if (activeTab === 'Songs') {
+       // Only fetch if "Songs" because that's what the SQL supports right now
+       const period = timeRange.toLowerCase() as 'daily' | 'weekly' | 'monthly';
+       fetchCharts(period).then(data => setChartData(data));
+    }
+  }, [timeRange, activeTab]);
+
+  // Merge dynamic chart data with passed-in songs if needed, 
+  // OR just use chartData if available and activeTab is 'Songs'.
+  // For now, let's prefer chartData for Songs tab if it has content
+  
   // Helper to get date range based on timeRange
   const getDateRangeText = () => {
     const now = new Date();
@@ -45,7 +60,7 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
     switch (activeTab) {
       case 'Artists': return artists;
       case 'Albums': return albums;
-      case 'Songs': return songs;
+      case 'Songs': return chartData.length > 0 ? chartData : songs;
       default: return [];
     }
   };
