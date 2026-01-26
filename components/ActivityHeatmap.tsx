@@ -116,10 +116,10 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
     */
 
     return (
-        <div className="relative flex flex-col xl:flex-row gap-8 items-start transition-all duration-500">
+        <div className="relative flex flex-col lg:flex-row gap-8 items-start transition-all duration-500">
             
             {/* LEFT: Heatmapp Container */}
-            <div className={`w-full transition-all duration-500 ease-in-out ${selectedDate ? 'xl:w-[calc(100%-420px)]' : 'w-full'}`}>
+            <div className={`w-full transition-all duration-500 ease-in-out ${selectedDate ? 'lg:w-[calc(100%-390px)]' : 'w-full'}`}>
                 <div className="w-full max-w-4xl mx-auto mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
                     <div className="flex justify-between items-end mb-4 px-1">
                         <h3 className="text-[16px] font-semibold text-white">Activity</h3>
@@ -162,9 +162,9 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
             {/* RIGHT: Side Panel Details (Inline, not Fixed Modal) */}
             {/* We effectively shift content to make room for this, like Obsession Orbit */}
             {selectedDate && (
-                 <div className="w-full xl:w-[400px] flex-shrink-0 bg-[#1C1C1E] border border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in slide-in-from-right fade-in duration-500 h-[600px] flex flex-col relative sticky top-24">
+                 <div className="w-full lg:w-[350px] flex-shrink-0 bg-[#1C1C1E] border border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in slide-in-from-right fade-in duration-500 h-[500px] flex flex-col relative sticky top-24">
                         {/* Header */}
-                        <div className="relative h-40 w-full bg-gradient-to-b from-[#2C2C2E] to-[#1C1C1E] p-6 flex flex-col justify-end flex-shrink-0">
+                        <div className="relative h-32 w-full bg-gradient-to-b from-[#2C2C2E] to-[#1C1C1E] p-6 flex flex-col justify-end flex-shrink-0">
                         <button 
                             onClick={() => setSelectedDate(null)}
                             className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center text-white transition-colors backdrop-blur-md"
@@ -172,8 +172,8 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
                             <X size={16} />
                         </button>
                         
-                        <h2 className="text-3xl font-bold text-white tracking-tight">{new Date(selectedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</h2>
-                        <p className="text-[#FA2D48] text-sm font-medium uppercase tracking-wider mt-1">
+                        <h2 className="text-2xl font-bold text-white tracking-tight">{new Date(selectedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</h2>
+                        <p className="text-[#FA2D48] text-xs font-medium uppercase tracking-wider mt-1">
                             {selectedTracks.length} tracks • {new Date(selectedDate).toLocaleDateString(undefined, { year: 'numeric' })}
                         </p>
                     </div>
