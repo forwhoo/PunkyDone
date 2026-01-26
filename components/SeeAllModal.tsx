@@ -67,46 +67,91 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                     <span className="w-16 text-right">Plays</span>
                 </div>
 
-                {/* Scrollable List */}
+                {/* Scrollable List OR Grid */}
                 <div className="flex-1 overflow-y-auto px-2 md:px-6 pb-6 pt-2 scrollbar-thin scrollbar-thumb-[#333] scrollbar-track-transparent">
-                    <div className="space-y-1">
-                        {items.map((item, index) => (
-                            <div 
-                                key={item.id || index}
-                                className="group flex items-center gap-4 p-3 rounded-2xl hover:bg-white/5 transition-all duration-200 cursor-default border border-transparent hover:border-white/5 active:scale-[0.99]"
-                                onClick={() => onItemClick && onItemClick(item)}
-                            >
-                                <span className="text-xl font-bold text-[#8E8E93]/40 w-12 text-center font-mono group-hover:text-white transition-colors">
-                                    {index + 1}
-                                </span>
-                                
-                                <div className="relative w-12 h-12 md:w-14 md:h-14 rounded-lg md:rounded-xl overflow-hidden flex-shrink-0 bg-[#2C2C2E] shadow-lg group-hover:shadow-2xl transition-all">
-                                    <img src={item.cover || item.image || item.art} alt={item.name || item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Play size={20} className="text-white fill-white drop-shadow-lg" />
+                    { type === 'artist' ? (
+                        /* CIRCULAR ARTIST GRID LAYOUT */
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 p-4">
+                            {items.map((item, index) => (
+                                <div key={index} className="group relative flex flex-col items-center">
+                                    <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full shadow-lg transition-transform duration-300 group-hover:scale-105 group-hover:shadow-2xl z-10 cursor-pointer border border-white/5 group-hover:border-white/20">
+                                        {/* Artist Image */}
+                                        <img 
+                                            src={item.cover || item.image || item.art || `https://ui-avatars.com/api/?name=${item.name}&background=1DB954&color=fff`} 
+                                            alt={item.name} 
+                                            className="w-full h-full object-cover rounded-full"
+                                        />
+                                        
+                                        {/* Hover Blur & Stats */}
+                                        <div className="absolute inset-0 rounded-full bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center text-center p-2">
+                                            <span className="text-2xl font-bold text-white mb-1">{item.totalListens || item.listens || 0}</span>
+                                            <span className="text-[10px] uppercase tracking-widest text-white/70 mb-2">Plays</span>
+                                            <span className="text-sm font-medium text-[#FA2D48]">{item.timeStr || '0m'}</span>
+                                        </div>
+                                        
+                                        {/* Rank Badge */}
+                                        <div className="absolute -top-1 -right-1 w-8 h-8 bg-black/80 backdrop-blur border border-white/10 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                                            #{index+1}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Name Below - Visual Stack */}
+                                    <div className="mt-[-20px] pt-8 pb-4 px-4 bg-[#2C2C2E] rounded-2xl w-full text-center border border-white/5 relative z-0 transition-transform group-hover:translate-y-1">
+                                         <h3 className="text-sm font-bold text-white truncate px-2">{item.name}</h3>
                                     </div>
                                 </div>
+                            ))}
+                        </div>
+                    ) : (
+                        /* SQUARE STACK LAYOUT (Albums/Songs) */
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 p-4">
+                            {items.map((item, index) => (
+                                <div key={index} className="group relative cursor-pointer">
+                                    {/* Fake Stack Effect */}
+                                    <div className="absolute top-2 left-2 w-full h-full bg-white/5 rounded-xl border border-white/5 z-0 transition-transform group-hover:translate-x-1 group-hover:translate-y-1"></div>
+                                    <div className="absolute top-1 left-1 w-full h-full bg-[#2C2C2E] rounded-xl border border-white/10 z-10"></div>
+                                    
+                                    {/* Main Card */}
+                                    <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-[#1C1C1E] z-20 shadow-xl border border-white/10 group-hover:-translate-y-1 transition-transform duration-300">
+                                        <img 
+                                            src={item.cover || item.image} 
+                                            alt={item.title || item.name} 
+                                            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110" 
+                                        />
+                                        
+                                        {/* Permanent Gradient Overlay for Text Readability */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80" />
+                                        
+                                        {/* Text Inside Image */}
+                                        <div className="absolute bottom-0 left-0 w-full p-4 transform transition-transform duration-300 group-hover:-translate-y-2">
+                                            <h3 className="text-sm md:text-base font-bold text-white leading-tight line-clamp-2 drop-shadow-md">
+                                                {item.title || item.name}
+                                            </h3>
+                                            <p className="text-xs text-[#AAA] font-medium truncate mt-1">
+                                                {item.artist}
+                                            </p>
+                                        </div>
+                                        
+                                        {/* Rank */}
+                                        <div className="absolute top-2 left-2 text-[40px] leading-none font-black text-white/10 italic select-none">
+                                            {index + 1}
+                                        </div>
 
-                                <div className="flex-1 min-w-0 pr-4">
-                                    <h3 className="text-base font-bold text-white truncate group-hover:text-[#FA2D48] transition-colors">
-                                        {item.name || item.title}
-                                    </h3>
-                                    <p className="text-xs text-[#8E8E93] truncate font-medium">
-                                        {type === 'artist' ? 'Artist' : item.artist}
-                                    </p>
+                                        {/* Hover Overlay Stats */}
+                                        <div className="absolute inset-0 bg-black/60 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center text-center p-4">
+                                            <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                                                <span className="block text-3xl font-black text-white mb-0">{item.listens || item.totalListens || 0}</span>
+                                                <span className="block text-[10px] uppercase tracking-widest text-[#FA2D48] mb-3">Total Plays</span>
+                                                <div className="inline-block px-3 py-1 bg-white/10 rounded-full border border-white/10">
+                                                    <span className="text-xs font-bold text-white">{item.timeStr || '0m'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-
-                                {/* Desktop Stats */}
-                                <div className="hidden md:flex flex-col items-end w-24 text-right">
-                                    <span className="text-sm font-bold text-white">{item.timeStr || "0m"}</span>
-                                </div>
-
-                                <div className="flex flex-col items-end w-16 text-right">
-                                    <span className="text-sm font-black text-white">{item.totalListens || item.plays || item.count || 0}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

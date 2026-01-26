@@ -19,9 +19,10 @@ interface TrendingArtistsProps {
     songs?: any[]; // Add songs support
     recentPlays: any[];
     artistImages?: Record<string, string>;
+    timeRange?: 'Daily' | 'Weekly' | 'Monthly'; 
 }
 
-export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, albums, songs, recentPlays, artistImages }) => {
+export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, albums, songs, recentPlays, artistImages, timeRange = 'Weekly' }) => {
     const [activeTab, setActiveTab] = useState<'artist' | 'album'>('artist');
     const [trendingItems, setTrendingItems] = useState<TrendingItem[]>([]);
     const [selectedItem, setSelectedItem] = useState<TrendingItem | null>(null);
@@ -32,10 +33,16 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
 
         const now = new Date().getTime();
         const last24Hours = now - (24 * 60 * 60 * 1000);
-        const last7Days = now - (7 * 24 * 60 * 60 * 1000);
+        
+        // Dynamically set window based on timeRange
+        let windowMs = 7 * 24 * 60 * 60 * 1000; // Default Week
+        if (timeRange === 'Daily') windowMs = 24 * 60 * 60 * 1000;
+        if (timeRange === 'Monthly') windowMs = 30 * 24 * 60 * 60 * 1000;
+        
+        const startTime = now - windowMs;
 
         // Filter recent plays window
-        const recentWindow = recentPlays.filter(play => new Date(play.played_at).getTime() > last7Days);
+        const recentWindow = recentPlays.filter(play => new Date(play.played_at).getTime() > startTime);
 
         const stats: Record<string, { plays: number[], image: string, subName?: string, tracks: any[] }> = {};
 

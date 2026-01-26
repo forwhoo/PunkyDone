@@ -159,57 +159,62 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
                 </div>
             </div>
 
-            {/* RIGHT: Side Panel Details (Inline, not Fixed Modal) */}
-            {/* We effectively shift content to make room for this, like Obsession Orbit */}
+            {/* RIGHT: Side Panel Details (Apple Style) */}
             {selectedDate && (
-                 <div className="w-full lg:w-[350px] flex-shrink-0 bg-[#1C1C1E] border border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in slide-in-from-right fade-in duration-500 h-[500px] flex flex-col relative sticky top-24">
-                        {/* Header */}
-                        <div className="relative h-32 w-full bg-gradient-to-b from-[#2C2C2E] to-[#1C1C1E] p-6 flex flex-col justify-end flex-shrink-0">
+                 <div className="w-full lg:w-[380px] flex-shrink-0 bg-[#1C1C1E]/80 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in slide-in-from-right fade-in duration-500 h-[600px] flex flex-col relative sticky top-24">
+                        
+                    {/* Header: Apple Music Style Gradient/Blur */}
+                    <div className="relative flex-shrink-0 p-6 border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent">
                         <button 
                             onClick={() => setSelectedDate(null)}
-                            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center text-white transition-colors backdrop-blur-md"
+                            className="absolute top-4 right-4 w-7 h-7 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] flex items-center justify-center text-[#8E8E93] hover:text-white transition-colors"
                         >
-                            <X size={16} />
+                            <X size={14} />
                         </button>
                         
-                        <h2 className="text-2xl font-bold text-white tracking-tight">{new Date(selectedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</h2>
-                        <p className="text-[#FA2D48] text-xs font-medium uppercase tracking-wider mt-1">
-                            {selectedTracks.length} tracks • {new Date(selectedDate).toLocaleDateString(undefined, { year: 'numeric' })}
-                        </p>
-                    </div>
-
-                    {/* Stats Summary - Fixed */}
-                    <div className="grid grid-cols-2 gap-px bg-white/5 border-b border-white/5 flex-shrink-0">
-                            <div className="bg-[#1C1C1E] p-4 text-center">
+                        <div className="flex flex-col gap-1 mt-2">
+                            <h2 className="text-3xl font-bold text-white tracking-tight">
+                                {new Date(selectedDate).toLocaleString('default', { month: 'short' })} <span className="text-[#FA2D48]">{new Date(selectedDate).getDate()}</span>
+                            </h2>
+                            <p className="text-sm font-medium text-[#8E8E93] flex items-center gap-2">
+                                <span>{selectedTracks.length} tracks</span>
+                                <span className="w-1 h-1 rounded-full bg-[#3A3A3C]" />
+                                <span>{new Date(selectedDate).getFullYear()}</span>
+                            </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3 mt-6">
+                            <div className="bg-[#2C2C2E]/50 rounded-xl p-3 border border-white/5">
                                 <span className="block text-xl font-bold text-white">{selectedTracks.length}</span>
-                                <span className="text-[10px] text-[#8E8E93] uppercase tracking-widest">Plays</span>
+                                <span className="text-[10px] font-bold text-[#8E8E93] uppercase tracking-wide">Plays</span>
                             </div>
-                            <div className="bg-[#1C1C1E] p-4 text-center">
+                            <div className="bg-[#2C2C2E]/50 rounded-xl p-3 border border-white/5">
                                 <span className="block text-xl font-bold text-white">
                                     {Math.round(selectedTracks.reduce((acc, t) => acc + (t.duration_ms || 0), 0) / 60000)}
                                 </span>
-                                <span className="text-[10px] text-[#8E8E93] uppercase tracking-widest">Minutes</span>
+                                <span className="text-[10px] font-bold text-[#8E8E93] uppercase tracking-wide">Minutes</span>
                             </div>
+                        </div>
                     </div>
 
                     {/* Scrollable List */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            <div className="p-4 space-y-1">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-0">
+                            <div className="p-2 space-y-1">
                                 {selectedTracks.map((track, i) => (
-                                    <div key={i} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors group">
-                                        <span className="text-[10px] font-mono text-[#8E8E93]/50 w-6 text-right pt-[2px]">
-                                            {new Date(track.played_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
+                                    <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group cursor-default">
                                         
-                                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-[#2C2C2E] flex-shrink-0 shadow-lg group-hover:shadow-xl transition-all">
+                                        <div className="relative w-10 h-10 rounded overflow-hidden bg-[#2C2C2E] flex-shrink-0 shadow-sm">
                                             <img src={track.cover || track.album_cover} className="w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
                                         </div>
                                         
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="text-[13px] font-bold text-white truncate group-hover:text-[#FA2D48] transition-colors">{track.track_name || track.name}</h4>
-                                            <p className="text-[12px] text-[#8E8E93] truncate">{track.artist_name || track.artist}</p>
+                                            <h4 className="text-[13px] font-medium text-white truncate group-hover:text-[#FA2D48] transition-colors">{track.track_name || track.name}</h4>
+                                            <p className="text-[11px] text-[#8E8E93] truncate">{track.artist_name || track.artist}</p>
                                         </div>
+
+                                        <span className="text-[10px] font-medium text-[#8E8E93] tabular-nums pr-2 opacity-50 group-hover:opacity-100">
+                                            {new Date(track.played_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase()}
+                                        </span>
                                     </div>
                                 ))}
                             </div>

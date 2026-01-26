@@ -420,12 +420,28 @@ function App() {
       );
   }
 
-  // Helper to prevent "poofing" chart data when DB stats are empty (e.g. daily interval with no plays)
-  // Only use dbUnifiedData if it has items, otherwise fallback to Spotify API data
-  const safeArtists = (dbUnifiedData?.artists?.length > 0) ? dbUnifiedData.artists : (data?.artists || []);
-  const safeAlbums = (dbUnifiedData?.albums?.length > 0) ? dbUnifiedData.albums : (data?.albums || []);
-  const safeSongs = (dbUnifiedData?.songs?.length > 0) ? dbUnifiedData.songs : (data?.songs || []);
-  const safeRecent = dbUnifiedData?.recentPlays || data?.recentRaw || [];
+  // ONLY fallback to Spotify data if DB is strictly empty, but we expect DB to have data now with rolling windows
+  // If user has 0 database plays, then we might show Spotify data, which is acceptable as a "seed" state.
+  // But to respect "use the database", we rely on the fact that if they have History, they have Stats.
+  // UPDATE: User requested "Start Listening" if no data. Do NOT fallback to Spotify.
+
+  const hasDbData = dbUnifiedData && 
+                    (dbUnifiedData.artists?.length > 0 || 
+                     dbUnifiedData.songs?.length > 0 || 
+                     dbUnifiedData.albums?.length > 0);
+
+  const safeArtists = dbUnifiedData?.artists || [];
+  const safeAlbums = dbUnifiedData?.albums || [];
+  const safeSongs = dbUnifiedData?.songs || [];
+  const safeRecent = dbUnifiedData?.recentPlays || data?.recentRaw || []; // Recent plays can still come from Spotify recent for immediate feedback? 
+                                                                          // Actually user said "always use the database". 
+                                                                          // But recent plays are usually synced. stick to DB for charts. 
+                                                                          // Keep recentPlays logic hybrid for responsiveness, or strict DB?
+                                                                          // User said "if it is daily and i did not lsisne song ... tell the user start listening"
+                                                                          // So we should be strict.
+  
+  // Strict DB check for charts
+  const showEmptyState = !loading && dbUnifiedData && !hasDbData;
 
   return (
     <>
@@ -486,6 +502,15 @@ function App() {
                 </div>
             </div>
             
+            {showEmptyState ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-[#1C1C1E] rounded-3xl border border-white/5 animate-in fade-in zoom-in-95 duration-500">
+                    <Music size={48} className="text-[#FA2D48] mb-4 opacity-50" />
+                    <h3 className="text-xl font-bold text-white">No data for this period</h3>
+                    <p className="text-[#8E8E93] max-w-sm text-center mt-2">
+                        Start listening to music to see your {timeRange.toLowerCase()} stats appear here!
+                    </p>
+                </div>
+            ) : (
             <div key={timeRange} className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
                 {/* TOP ARTISTS */}
                 <div>
@@ -493,6 +518,7 @@ function App() {
                         <div className="flex items-center gap-3">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Top Artists</h3>
                         </div>
+                        {safeArtists.length > 0 && (
                         <button 
                             onClick={() => setSeeAllModal({ 
                                 isOpen: true, 
@@ -504,12 +530,17 @@ function App() {
                         >
                             See All
                         </button>
+                        )}
                     </div>
-                    <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                        {safeArtists.slice(0, 8).map((artist: Artist, index: number) => (
-                            <RankedArtist key={artist.id} artist={artist} rank={index + 1} realImage={artistImages[artist.name]} />
-                        ))}
-                    </div>
+                    {safeArtists.length > 0 ? (
+                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                            {safeArtists.slice(0, 8).map((artist: Artist, index: number) => (
+                                <RankedArtist key={artist.id} artist={artist} rank={index + 1} realImage={artistImages[artist.name]} />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank artists yet.</p>
+                    )}
                 </div>
 
                 {/* TOP ALBUMS */}
@@ -518,6 +549,7 @@ function App() {
                         <div className="flex items-center gap-3">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
                         </div>
+                        {safeAlbums.length > 0 && (
                         <button 
                             onClick={() => setSeeAllModal({ 
                                 isOpen: true, 
@@ -529,12 +561,17 @@ function App() {
                         >
                             See All
                         </button>
+                        )}
                     </div>
-                    <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                        {safeAlbums.slice(0, 8).map((album: Album, index: number) => (
-                            <RankedAlbum key={album.id} album={album} rank={index + 1} />
-                        ))}
-                    </div>
+                    {safeAlbums.length > 0 ? (
+                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                            {safeAlbums.slice(0, 8).map((album: Album, index: number) => (
+                                <RankedAlbum key={album.id} album={album} rank={index + 1} />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank albums yet.</p>
+                    )}
                 </div>
 
                 {/* TOP SONGS */}
@@ -543,6 +580,7 @@ function App() {
                         <div className="flex items-center gap-3">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
                         </div>
+                        {safeSongs.length > 0 && (
                         <button 
                             onClick={() => setSeeAllModal({ 
                                 isOpen: true, 
@@ -554,14 +592,20 @@ function App() {
                         >
                             See All
                         </button>
+                        )}
                     </div>
-                    <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                        {safeSongs.slice(0, 8).map((song: Song, index: number) => (
-                            <RankedSong key={song.id} song={song} rank={index + 1} />
-                        ))}
-                    </div>
+                    {safeSongs.length > 0 ? (
+                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                            {safeSongs.slice(0, 8).map((song: Song, index: number) => (
+                                <RankedSong key={song.id} song={song} rank={index + 1} />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank songs yet.</p>
+                    )}
                 </div>
             </div>
+            )}
         </div>
 
         {/* SECTION 3: ORBIT + ANALYTICS DASHBOARD */}
@@ -575,6 +619,7 @@ function App() {
                     songs={safeSongs}
                     recentPlays={safeRecent}
                     artistImages={artistImages}
+                    timeRange={timeRange}
                 />
             </div>
 
