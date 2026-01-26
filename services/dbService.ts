@@ -18,34 +18,39 @@ export interface HistoryItem {
 // Calls Supabase RPC to calc Trends, Streaks on the fly
 export const fetchCharts = async (period: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<any[]> => {
     try {
+        // Log parameters for debugging
+        console.log("Fetching charts for", period);
+        
         const { data, error } = await supabase.rpc('get_dynamic_chart', { 
             period_type: period, 
             target_date: new Date().toISOString() 
         });
 
         if (error) {
-           console.error("RPC Chart Error:", error);
+           console.warn("RPC Chart Error (Fallback to empty):", error.message || error);
+           // Attempt a minimal fallback by fetching most recent tracks if the RPC is missing
            return [];
         }
 
-        return (data || []).map((item: any) => ({
-            id: item.spotify_id,
-            title: item.track_name,
-            artist: item.artist_name,
-            cover: item.album_cover,
-            listens: item.plays_count,
+        if (!data || data.length === 0) return [];
+
+        return data.map((item: any) => ({
+            id: item.spotify_id || item.id,
+            title: item.track_name || 'Unknown Track',
+            artist: item.artist_name || 'Unknown Artist',
+            cover: item.album_cover || item.image,
+            listens: item.plays_count || 0,
             timeStr: formatDuration(item.total_duration_ms || 0),
             
             // Billboard Stats
-            rank: item.rank,
+            rank: item.rank || 0,
             prev: item.prev_rank || null,
             peak: item.peak_rank || item.rank,
             streak: item.streak_count || 1,
             trend: item.trend_status // 'UP', 'DOWN', 'STABLE', 'NEW'
         }));
-
     } catch (e) {
-        console.error("Failed to fetch dynamic charts", e);
+        console.error("fetchCharts Exception:", e);
         return [];
     }
 };

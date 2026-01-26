@@ -68,6 +68,9 @@ export const getAccessToken = async (code: string) => {
   });
 
   const body = await result.json();
+  if (body.access_token) {
+      localStorage.setItem('spotify_token', body.access_token);
+  }
   if (body.refresh_token) {
       localStorage.setItem('spotify_refresh_token', body.refresh_token);
   }
@@ -134,7 +137,8 @@ export const fetchSpotifyData = async (token: string) => {
     ]);
 
     if (!artistsRes.ok || !tracksRes.ok || !recentRes.ok || !userRes.ok) {
-        throw new Error("Failed to fetch data from Spotify");
+        console.warn("Spotify API Error:", artistsRes.status, tracksRes.status);
+        return null; // Return null so caller can handle/refresh
     }
 
     const artistsData = await artistsRes.json();

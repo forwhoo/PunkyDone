@@ -198,22 +198,25 @@ function App() {
 
     const loadData = async () => {
         if (!token) return;
-        let spotifyData = await fetchSpotifyData(token);
-        
-        if (!spotifyData) {
-            // Attempt auto-refresh in background loop
-            const newToken = await refreshAccessToken();
-            if (newToken) {
-                setToken(newToken);
-                spotifyData = await fetchSpotifyData(newToken);
+        try {
+            let spotifyData = await fetchSpotifyData(token);
+            
+            if (!spotifyData) {
+                // Attempt auto-refresh in background loop
+                const newToken = await refreshAccessToken();
+                if (newToken) {
+                    setToken(newToken);
+                    spotifyData = await fetchSpotifyData(newToken);
+                }
             }
-        }
 
-        if (spotifyData) {
-            setData(spotifyData);
-            // syncRecentPlays is called in the useEffect above when data changes
-        } else {
-             if (!data) setLoading(false);
+            if (spotifyData) {
+                setData(spotifyData);
+            }
+        } catch (e) {
+            console.error("Critical Load Error", e);
+        } finally {
+             setLoading(false);
         }
     };
 

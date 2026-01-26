@@ -143,68 +143,102 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
 
     return (
         <div className="mb-16">
-            <div className="flex justify-between items-end mb-6 px-1 mx-1">
+            <div className="flex justify-between items-end mb-8 px-1">
                 <div>
-                    <h2 className="text-[22px] font-bold text-white tracking-tight">Trending Artists</h2>
-                    <p className="text-[#8E8E93] text-[13px]">Obsession Heatmap</p>
+                    <h2 className="text-[22px] font-bold text-white tracking-tight">Obsession Heatmap</h2>
+                    <p className="text-[#8E8E93] text-[13px]">Real-time artist velocity</p>
                 </div>
-                <div className="flex items-center gap-2 text-[#555] text-[10px]">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                    <span>Updated {lastUpdate.toLocaleTimeString()}</span>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-[#FA2D48] tracking-widest uppercase bg-[#FA2D48]/10 px-3 py-1.5 rounded-full border border-[#FA2D48]/20">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#FA2D48] animate-pulse"></div>
+                    Live Update
                 </div>
             </div>
-            
-            {/* COMPACT BENTO GRID LAYOUT */}
-            {/* Takes up about 250px height max, very efficient */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 h-[280px] md:h-[260px]">
-                 
-                 {/* #1 SPOTLIGHT (Left Large Cell) */}
-                 <div className="col-span-2 row-span-2 relative group cursor-pointer overflow-hidden rounded-2xl bg-[#CC293E] shadow-[0_10px_40px_rgba(250,45,72,0.2)] border-2 border-[#FA2D48] transition-transform hover:scale-[1.01]">
-                     <img 
-                        src={topArtist.image} 
-                        className="w-full h-full object-cover opacity-80 group-hover:opacity-60 group-hover:scale-110 transition-all duration-700" 
-                     />
-                     
-                     {/* Overlay Content */}
-                     <div className="absolute inset-0 flex flex-col justify-end p-6 bg-gradient-to-t from-black via-black/40 to-transparent">
-                         <span className="inline-flex items-center gap-2 bg-[#FA2D48] w-fit px-3 py-1 rounded-full text-white text-[10px] font-black uppercase tracking-widest mb-2 shadow-lg">
-                             <TrendingUp className="w-3 h-3" /> #1 Trending
-                         </span>
-                         <h3 className="text-3xl font-black text-white leading-none mb-1">{topArtist.name}</h3>
-                         <div className="flex items-center gap-4 text-white/80 text-xs font-mono">
-                             <span>{topArtist.trendScore} Score</span>
-                             <span>{topArtist.velocity}% Velocity</span>
-                         </div>
-                     </div>
-                 </div>
 
-                 {/* GRID OF OTHERS (Right Side) */}
-                 {otherArtists.map((artist, idx) => (
-                     <div 
-                        key={artist.name}
-                        className="col-span-1 row-span-1 relative group cursor-pointer overflow-hidden rounded-xl bg-[#2C2C2E] border border-white/5 hover:border-white/20 transition-all"
-                     >
-                         <img 
-                            src={artist.image} 
-                            className="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-110 transition-all duration-500" 
-                         />
-                         
-                         <div className="absolute inset-0 flex flex-col justify-center items-center p-2 text-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 backdrop-blur-sm z-10">
-                              <span className="text-[#FA2D48] font-bold text-xl">{artist.trendScore}</span>
-                              <span className="text-white/50 text-[10px] uppercase">Score</span>
-                         </div>
+            {/* Unique Bento Grid Heatmap */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-3 min-h-[440px]">
+                
+                {/* HERO AREA: Trending #1 (Big Block) */}
+                <div className="lg:col-span-4 lg:row-span-2 group relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#1C1C1E] to-[#0A0A0A] border border-white/5 hover:border-[#FA2D48]/30 transition-all duration-500 shadow-2xl">
+                    {/* Background Image with Heat Blur */}
+                    <div className="absolute inset-0 z-0">
+                        <img 
+                            src={topArtist.image} 
+                            style={{ filter: 'blur(2px)' }}
+                            className="w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700 group-hover:blur-0" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+                    </div>
 
-                         <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black to-transparent group-hover:opacity-0 transition-opacity">
-                             <h4 className="text-white font-bold text-sm truncate">{artist.name}</h4>
-                             <p className="text-[#FA2D48] text-[10px] font-bold">#{idx + 2}</p>
-                         </div>
-                     </div>
-                 ))}
-                 
-                 {/* Fill empty slots if less than 7 artists (optional) */}
-                 {Array.from({ length: Math.max(0, 6 - otherArtists.length) }).map((_, i) => (
-                     <div key={`empty-${i}`} className="col-span-1 row-span-1 bg-white/5 rounded-xl animate-pulse" />
-                 ))}
+                    <div className="absolute top-6 left-6 z-10">
+                        <div className="flex items-center gap-2 bg-[#FA2D48] text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                            <TrendingUp size={10} />
+                            #{1} trending
+                        </div>
+                    </div>
+
+                    <div className="absolute bottom-6 left-6 right-6 z-10">
+                        <div className="flex items-end justify-between">
+                            <div className="min-w-0">
+                                <h3 className="text-3xl font-black text-white leading-tight mb-2 truncate drop-shadow-lg">{topArtist.name}</h3>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] text-white/50 uppercase font-bold tracking-widest">Plays (24h)</span>
+                                        <span className="text-xl font-mono text-white leading-none mt-1">{topArtist.recentPlays}</span>
+                                    </div>
+                                    <div className="w-[1px] h-6 bg-white/10"></div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] text-white/50 uppercase font-bold tracking-widest">Heat Score</span>
+                                        <span className="text-xl font-mono text-[#FA2D48] leading-none mt-1">{topArtist.trendScore}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Grid of Others */}
+                <div className="lg:col-span-8 lg:row-span-2 grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {otherArtists.map((artist, i) => (
+                        <div 
+                            key={artist.name}
+                            className="relative group overflow-hidden rounded-[1.5rem] bg-[#1C1C1E]/50 border border-white/5 hover:border-white/10 hover:bg-[#1C1C1E] transition-all duration-300 flex flex-col p-4 shadow-lg hover:shadow-2xl cursor-pointer"
+                        >
+                            {/* Inner Glow based on Trend */}
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-[#FA2D48]/5 blur-3xl rounded-full group-hover:bg-[#FA2D48]/10 transition-colors"></div>
+
+                            <div className="flex items-start justify-between mb-auto">
+                                <div className="relative">
+                                    <img 
+                                        src={artist.image} 
+                                        className="w-16 h-16 rounded-2xl object-cover shadow-2xl group-hover:scale-105 transition-transform" 
+                                    />
+                                    <div className="absolute -top-1 -right-1 bg-black border border-white/10 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-full font-bold">
+                                        {i + 2}
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-[20px] font-mono text-white leading-none">
+                                        {artist.trendScore}
+                                    </div>
+                                    <div className="text-[9px] text-[#8E8E93] uppercase font-bold tracking-tighter mt-1">Heat</div>
+                                </div>
+                            </div>
+
+                            <div className="mt-4">
+                                <h4 className="text-white font-bold text-sm truncate leading-tight group-hover:text-[#FA2D48] transition-colors">{artist.name}</h4>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-gradient-to-r from-[#FA2D48] to-orange-400 rounded-full"
+                                            style={{ width: `${Math.min(100, (artist.trendScore / topArtist.trendScore) * 100)}%` }}
+                                        ></div>
+                                    </div>
+                                    <span className="text-[9px] font-mono text-[#8E8E93] whitespace-nowrap">{artist.recentPlays} plays</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
