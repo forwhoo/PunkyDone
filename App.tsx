@@ -19,6 +19,7 @@ import {
 } from './services/spotifyService';
 import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts } from './services/dbService';
 import { generateMusicInsight, generateRankingInsights } from './services/geminiService';
+import { supabase } from './services/supabaseClient';
 
 // HISTORY COMPONENT: Enhanced Glass Card
 const HistoryCard = ({ item }: { item: any }) => (
@@ -108,20 +109,6 @@ const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
          </div>
     </div>
 );
-                    <div className="flex items-center gap-2 mt-1">
-                    <p className="text-[10px] text-[#FA2D48] font-bold uppercase tracking-wide">{song.timeStr}</p>
-                    <span className="text-[10px] text-white/20">•</span>
-                    <p className="text-[10px] text-white/60 font-medium">{song.duration}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-);
-
-import { supabase } from './services/supabaseClient';
-
-// ... (previous imports)
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('spotify_token'));
