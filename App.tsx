@@ -5,6 +5,7 @@ import { HeroCarousel } from './components/HeroCarousel';
 import { RankingWidget } from './components/RankingWidget';
 import { AISpotlight } from './components/AISpotlight';
 import { TrendingArtists } from './components/TrendingArtists';
+import { HistoryTimeline } from './components/HistoryTimeline';
 import { rankingMockData } from './mockData';
 import { Play, Music, BarChart2, Mic2, Disc, Trophy, Clock, TrendingUp, Sparkles } from 'lucide-react';
 import { Artist, Album, Song } from './types';
@@ -20,27 +21,6 @@ import {
 import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts } from './services/dbService';
 import { generateMusicInsight, generateRankingInsights } from './services/geminiService';
 import { supabase } from './services/supabaseClient';
-
-// HISTORY COMPONENT: Enhanced Glass Card
-const HistoryCard = ({ item, rank }: { item: any, rank: number }) => (
-    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
-        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40">
-            {rank}
-        </span>
-        <div className="relative z-10 ml-10 md:ml-12">
-            <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
-                <img src={item.cover} alt={item.track_name} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
-                     <Play className="w-10 h-10 text-white fill-white drop-shadow-xl" />
-                </div>
-            </div>
-            <div className="mt-3 relative z-20">
-                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{item.track_name}</h3>
-                <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">{item.artist_name} • <span className="text-[#FA2D48]">{new Date(item.played_at).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'}).replace(' ', '')}</span></p>
-            </div>
-        </div>
-    </div>
-);
 
 // RANKED COMPONENT: Top Album (Standard)
 const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
@@ -512,19 +492,9 @@ function App() {
             artistImages={artistImages}
         />
 
-        {/* RECENTLY PLAYED - New Section */}
+        {/* TIMELINE HISTORY - Interactive */}
         <div className="mb-16">
-             <div className="flex justify-between items-end mb-6 px-1 mx-1">
-                <h2 className="text-[22px] font-bold text-white tracking-tight">Recently Played</h2>
-             </div>
-             <div className="flex items-end overflow-x-auto pb-10 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
-                {(dbUnifiedData?.recentPlays || []).slice(0, 15).map((item: any, index: number) => (
-                    <HistoryCard key={index} item={item} rank={index + 1} />
-                ))}
-                {(dbUnifiedData?.recentPlays || []).length === 0 && (
-                    <div className="text-[#8E8E93] text-sm pl-2">No recent history found.</div>
-                )}
-             </div>
+             <HistoryTimeline history={dbUnifiedData?.recentPlays || []} />
         </div>
 
         {/* LISTENING ACTIVITY */}

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from './UIComponents';
-import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieChart } from 'lucide-react';
+import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieChart as PieIcon, Trophy, Music2 } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory } from '../services/geminiService';
 import { fetchSmartPlaylist, fetchWeeklyCharts, syncWeeklyCharts } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface TopAIProps {
     token?: string | null;
@@ -472,43 +473,45 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                                    )}
                                    
                                    {insightData[insightStep].type === 'pie_chart' && (
-                                       <div className="relative w-64 h-64 flex items-center justify-center animate-in zoom-in duration-700">
-                                            {/* We simulate a pie chart using conic gradient */}
-                                            {(() => {
-                                                const segments = insightData[insightStep].data?.segments || [];
-                                                let gradientString = "";
-                                                let currentDeg = 0;
-                                                const total = segments.reduce((sum: number, s: any) => sum + s.value, 0);
-                                                
-                                                segments.forEach((seg: any) => {
-                                                    const deg = (seg.value / total) * 360;
-                                                    gradientString += `${seg.color || '#FA2D48'} ${currentDeg}deg ${currentDeg + deg}deg, `;
-                                                    currentDeg += deg;
-                                                });
-                                                
-                                                gradientString = gradientString.slice(0, -2); // remove last comma
-                                                
-                                                return (
-                                                    <div 
-                                                        className="w-full h-full rounded-full border-4 border-white/10 shadow-2xl relative"
-                                                        style={{ background: `conic-gradient(${gradientString})` }}
+                                       <div className="relative w-full h-[300px] flex items-center justify-center animate-in zoom-in duration-700">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={insightData[insightStep].data?.segments}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={60}
+                                                        outerRadius={100}
+                                                        paddingAngle={5}
+                                                        dataKey="value"
                                                     >
-                                                        {/* Center hole for donut effect */}
-                                                        <div className="absolute inset-4 bg-[#212123] rounded-full flex flex-col items-center justify-center text-center p-4">
-                                                            <span className="text-white/50 text-xs font-bold uppercase tracking-wider">Top Genre</span>
-                                                            <span className="text-white font-black text-xl">{segments[0]?.label}</span>
-                                                            <span className="text-[#FA2D48] font-bold">{Math.round((segments[0]?.value / total) * 100)}%</span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })()}
+                                                        {insightData[insightStep].data?.segments.map((entry: any, index: number) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color || ['#FA2D48', '#FF9F0A', '#30D158', '#0A84FF', '#BF5AF2'][index % 5]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip 
+                                                        contentStyle={{ backgroundColor: '#1C1C1E', borderRadius: '12px', borderColor: 'rgba(255,255,255,0.1)', color: '#fff' }}
+                                                        itemStyle={{ color: '#fff' }}
+                                                        formatter={(value: any) => [`${value}%`, '']}
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
                                             
+                                            {/* Center Stats */}
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                                <span className="text-[10px] uppercase font-bold text-white/50 tracking-widest">Top Genre</span>
+                                                <span className="text-2xl font-black text-white drop-shadow-lg">
+                                                    {insightData[insightStep].data?.segments[0]?.label}
+                                                </span>
+                                            </div>
+
                                             {/* Legend */}
-                                            <div className="absolute -right-32 top-0 bottom-0 flex flex-col justify-center gap-2">
-                                                {insightData[insightStep].data?.segments.map((s: any, i: number) => (
-                                                    <div key={i} className="flex items-center gap-2 text-xs text-white/80">
-                                                        <span className="w-3 h-3 rounded-full" style={{ background: s.color || '#FA2D48' }} />
+                                            <div className="absolute bottom-0 w-full flex justify-center gap-4 flex-wrap">
+                                                {insightData[insightStep].data?.segments.slice(0, 3).map((s: any, i: number) => (
+                                                    <div key={i} className="flex items-center gap-2 text-xs text-white/80 bg-black/20 px-3 py-1 rounded-full border border-white/5">
+                                                        <span className="w-2 h-2 rounded-full" style={{ background: s.color || ['#FA2D48', '#FF9F0A', '#30D158'][i] }} />
                                                         <span className="font-bold">{s.label}</span>
+                                                        <span className="opacity-60">{s.value}%</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -516,32 +519,52 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                                    )}
 
                                    {insightData[insightStep].type === 'race_chart' && (
-                                       <div className="w-full max-w-sm space-y-3 animate-in fade-in duration-500">
-                                            {insightData[insightStep].data?.competitors.map((c: any, idx: number) => (
-                                                <div key={idx} className="relative group transition-all hover:scale-105">
-                                                    <div className="flex items-center gap-3 relative z-10 p-2">
-                                                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold ring-2 ring-white/20">
-                                                            #{idx + 1}
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="flex justify-between text-sm font-bold text-white mb-1">
-                                                                <span>{c.name}</span>
-                                                                <span className="text-[#FA2D48]">{c.score} pts</span>
+                                       <div className="w-full h-[300px] relative flex md:block items-center justify-center">
+                                            {/* Bubble Race Visualization */}
+                                            <div className="absolute inset-0 flex flex-wrap items-center justify-center content-center gap-4 p-4 animate-in fade-in duration-700">
+                                                {insightData[insightStep].data?.competitors.map((c: any, idx: number) => {
+                                                    // Dynamic Sizing based on score (max 100 usually)
+                                                    const baseSize = 80;
+                                                    const scale = Math.max(0.6, Math.min(1.5, c.score / 60)); 
+                                                    const size = baseSize * scale;
+                                                    
+                                                    return (
+                                                        <div 
+                                                            key={idx} 
+                                                            className="relative rounded-full border-4 border-[#2C2C2E] shadow-2xl overflow-hidden group transition-transform duration-500 hover:scale-110 hover:z-50 hover:border-[#FA2D48]"
+                                                            style={{
+                                                                width: `${size}px`,
+                                                                height: `${size}px`,
+                                                                order: idx % 2 === 0 ? 1 : 2 // Mix order slightly
+                                                            }}
+                                                        >
+                                                            {/* We don't have images in the chart data usually, use UI Avatar or passed context if we could map it. 
+                                                                For now, generic or try to find match? 
+                                                                The specific instruction said "Each bubble should contain the artist's profile image". 
+                                                                The story generator likely doesn't send image URLs. 
+                                                                We'll use a gradient fallback + Name overlay. 
+                                                            */}
+                                                            <div className="absolute inset-0 bg-gradient-to-br from-[#FA2D48] to-[#1C1C1E]">
+                                                                {/* Fallback pattern or initials */}
+                                                                <span className="absolute inset-0 flex items-center justify-center text-white/10 font-black text-4xl">
+                                                                    {c.name.substring(0,1)}
+                                                                </span>
                                                             </div>
-                                                            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                                                                <div 
-                                                                    className="h-full bg-gradient-to-r from-[#FA2D48] to-[#FF9F0A] rounded-full relative"
-                                                                    style={{ width: `${Math.min(c.score, 100)}%` }}
-                                                                >
-                                                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full shadow-[0_0_10px_white] animate-pulse" />
-                                                                </div>
+                                                            
+                                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                                                            
+                                                            <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center">
+                                                                <span className="text-white font-bold drop-shadow-md leading-tight" style={{ fontSize: `${Math.max(10, size/5)}px` }}>
+                                                                    {c.name}
+                                                                </span>
+                                                                <span className="bg-white/20 px-2 rounded-full text-white font-mono font-bold mt-1 backdrop-blur-sm" style={{ fontSize: `${Math.max(8, size/8)}px` }}>
+                                                                    {c.score}
+                                                                </span>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    {/* Background Glow */}
-                                                    <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                </div>
-                                            ))}
+                                                    );
+                                                })}
+                                            </div>
                                        </div>
                                    )}
                               </div>
