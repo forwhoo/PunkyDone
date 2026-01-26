@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card } from './UIComponents';
 import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion } from '../services/geminiService';
-import { fetchSmartPlaylist } from '../services/dbService';
+import { fetchSmartPlaylist, fetchWeeklyCharts, syncWeeklyCharts } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
