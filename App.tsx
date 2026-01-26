@@ -17,7 +17,7 @@ import {
     refreshAccessToken,
     fetchArtistImages
 } from './services/spotifyService';
-import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay } from './services/dbService';
+import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts } from './services/dbService';
 import { generateMusicInsight, generateRankingInsights } from './services/geminiService';
 
 // HISTORY COMPONENT: Simple Card
