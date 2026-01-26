@@ -46,7 +46,7 @@ export interface Song {
   peak?: number;
   prev?: number;
   streak?: number;
-  trend?: number;
+  trend?: 'UP' | 'DOWN' | 'STABLE' | 'NEW';
 }
 
 export interface ChartDataPoint {
