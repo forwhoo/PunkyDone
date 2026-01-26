@@ -333,15 +333,15 @@ export const fetchArtistImages = async (token: string, artistNames: string[]) =>
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     // Parallel fetch with limit and delay
-    // Process in chunks of 5
-    const chunkSize = 5;
+    // Process in chunks of 2 (Much slower to avoid rate limits)
+    const chunkSize = 2;
     for (let i = 0; i < namesToFetch.length; i += chunkSize) {
         const chunk = namesToFetch.slice(i, i + chunkSize);
         
         await Promise.all(chunk.map(async (name) => {
             try {
-                // Rate limit protection - small random delay per request
-                await delay(Math.random() * 200 + 100); 
+                // Rate limit protection - Larger delay per request
+                await delay(Math.random() * 500 + 300); 
 
                 const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(name)}&type=artist&limit=1`, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -349,6 +349,8 @@ export const fetchArtistImages = async (token: string, artistNames: string[]) =>
                 
                 if (res.status === 429) {
                     console.warn(`Rate limit hit for ${name}, skipping.`);
+                    // If we hit a rate limit, pause for 2 seconds before continuing the outer loop?
+                    // We can't easily pause the other parallel promises, but we can prevent future chunks.
                     return;
                 }
 
@@ -366,8 +368,8 @@ export const fetchArtistImages = async (token: string, artistNames: string[]) =>
             }
         }));
         
-        // Wait between chunks
-        if (i + chunkSize < namesToFetch.length) await delay(500);
+        // Wait SIGNIFICANTLY longer between chunks (1.5s)
+        if (i + chunkSize < namesToFetch.length) await delay(1500);
     }
 
     return imageMap;
