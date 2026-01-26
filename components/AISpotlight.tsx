@@ -313,6 +313,17 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 if (newResults.length === 0) {
                     setErrorMsg(`No results found for "${userPrompt}". Try a different query.`);
                 } else {
+                    // Update sorting/view mode based on first concept to show relevant stats
+                    const firstConcept = concepts.find(c => c && c.filter);
+                    if (firstConcept) {
+                        setViewMode('ranked'); // Default to ranked view for discover results
+                        const sortBy = firstConcept.filter.sortBy;
+                        if (sortBy === 'minutes') setSortMode('mins');
+                        else if (sortBy === 'plays') setSortMode('plays');
+                        else if (sortBy === 'recency') setSortMode('date');
+                        else if (sortBy === 'duration') setSortMode('length');
+                    }
+                    
                     setCategoryResults(newResults);
                 }
 
