@@ -4,7 +4,7 @@ import { Artist, Album, Song } from '../types';
 const REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI || "http://localhost:3000/";
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 
-const SCOPES = "user-top-read user-read-recently-played user-read-private";
+const SCOPES = "user-top-read user-read-recently-played user-read-private user-read-currently-playing";
 
 function generateRandomString(length: number) {
   let text = '';

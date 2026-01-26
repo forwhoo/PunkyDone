@@ -7,7 +7,7 @@ import { AISpotlight } from './components/AISpotlight';
 import { TrendingArtists } from './components/TrendingArtists';
 import { WrappedModal } from './components/WrappedModal';
 import { rankingMockData } from './mockData';
-import { Play, Music, BarChart2, Mic2, Disc, Trophy, Clock, TrendingUp } from 'lucide-react';
+import { Play, Music, BarChart2, Mic2, Disc, Trophy, Clock, TrendingUp, Sparkles } from 'lucide-react';
 import { Artist, Album, Song } from './types';
 import { 
     getAuthUrl, 
@@ -413,11 +413,20 @@ function App() {
   if (loading || !data) {
       return (
           <Layout user={null} currentTrack={null}>
-              <div className="flex h-[60vh] items-center justify-center">
+              <div className="flex h-[60vh] flex-col items-center justify-center gap-6">
                   <div className="flex flex-col items-center gap-4">
                       <div className="w-8 h-8 border-2 border-[#FA2D48] border-t-transparent rounded-full animate-spin"></div>
                       <p className="text-[#8E8E93] text-sm font-medium">Syncing your library...</p>
                   </div>
+                  
+                  {loading === false && !data && (
+                      <button 
+                        onClick={handleConnect}
+                        className="px-6 py-2 bg-[#FA2D48] text-white text-xs font-bold rounded-full hover:scale-105 transition-transform"
+                      >
+                        Reconnect Spotify
+                      </button>
+                  )}
               </div>
           </Layout>
       );
@@ -429,13 +438,13 @@ function App() {
             insight={insight}  
             loadingInsight={loadingInsight} 
             onGenerateInsight={handleGetInsight} 
-            topArtistImage={(dbUnifiedData?.artists?.[0] || data.artists[0])?.image}
-            topAlbumImage={(dbUnifiedData?.albums?.[0] || data.albums[0])?.cover}
+            topArtistImage={(dbUnifiedData?.artists?.[0] || data?.artists?.[0])?.image}
+            topAlbumImage={(dbUnifiedData?.albums?.[0] || data?.albums?.[0])?.cover}
             weeklyStats={dbStats}
-            topGenre={(dbUnifiedData?.artists?.[0] || data?.artists?.[0])?.genres?.[0] ? (dbUnifiedData?.artists?.[0] || data.artists[0]).genres[0].charAt(0).toUpperCase() + (dbUnifiedData?.artists?.[0] || data.artists[0]).genres[0].slice(1) : "Pop"}
-            longestSession={dbUnifiedData?.songs?.[0] || data.songs[0]}
+            topGenre={(dbUnifiedData?.artists?.[0] || data?.artists?.[0])?.genres?.[0] ? (dbUnifiedData?.artists?.[0] || data?.artists?.[0]).genres[0].charAt(0).toUpperCase() + (dbUnifiedData?.artists?.[0] || data?.artists?.[0]).genres[0].slice(1) : "Pop"}
+            longestSession={dbUnifiedData?.songs?.[0] || data?.songs?.[0]}
             recentPlays={dbUnifiedData?.recentPlays || []}
-            topSongs={dbUnifiedData?.songs || data.songs}
+            topSongs={dbUnifiedData?.songs || data?.songs}
         />
 
         {/* THE DISCOVERY - Moved to top as requested */}
