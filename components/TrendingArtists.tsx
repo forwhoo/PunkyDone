@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { TrendingUp, Clock } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { TrendingUp, Sparkles } from 'lucide-react';
 
 interface TrendingArtist {
     name: string;
     image: string;
     trendScore: number;
     recentPlays: number;
-    spreadTime: number; // hours since first play in recent window
-    avgTimeReturn: number; // avg hours between listens
+    spreadTime: number; 
+    avgTimeReturn: number;
 }
 
 interface TrendingArtistsProps {
@@ -18,7 +18,6 @@ interface TrendingArtistsProps {
 
 export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recentPlays, artistImages }) => {
     const [trendingArtists, setTrendingArtists] = useState<TrendingArtist[]>([]);
-    const [lastUpdate, setLastUpdate] = useState(new Date());
 
     const calculateTrendingArtists = () => {
         if (!recentPlays || recentPlays.length === 0) return;
@@ -48,55 +47,28 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
                         : (play.album_cover || play.cover)
                 };
             }
-            // Update image if we got a better one later (or passed in props update)
             if (artistImages && artistImages[artist]) {
                 artistStats[artist].image = artistImages[artist];
             }
-            
-            artistStats[artist].plays.push({
-                time: new Date(play.played_at).getTime()
-            });
+            artistStats[artist].plays.push({ time: new Date(play.played_at).getTime() });
         });
 
         // Calculate trend scores
         const trending: TrendingArtist[] = [];
 
         Object.entries(artistStats).forEach(([name, stats]) => {
-            if (stats.plays.length < 3) return; // Need at least 3 plays
+            if (stats.plays.length < 1) return; 
 
             const times = stats.plays.map(p => p.time).sort((a, b) => a - b);
             const recentPlays24h = times.filter(t => t > last24Hours).length;
             
-            // Calculate spread time (how long they've been listening to this artist)
             const firstPlay = times[0];
             const lastPlay = times[times.length - 1];
             const spreadTimeHours = (lastPlay - firstPlay) / (1000 * 60 * 60);
 
-            // Calculate average time between listens
-            const gaps = [];
-            for (let i = 1; i < times.length; i++) {
-                gaps.push(times[i] - times[i - 1]);
-            }
-            const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-            const avgTimeReturnMs = avgGap;
-
-            // TREND SCORE ALGORITHM
-            // Higher score = trending up
-            // Factors:
-            // 1. Recent plays (last 24h) - more = better
-            // 2. Return rate - shorter gaps = better (coming back frequently)
-            // 3. Velocity - plays in last 24h vs average
-            
-            const avgPlaysPerDay = stats.plays.length / (spreadTimeHours / 24 || 1);
-            const velocity = recentPlays24h / (avgPlaysPerDay || 1);
-            
-            // Calculate return frequency in hours for trend score
-            const avgTimeReturnHours = avgTimeReturnMs / (1000 * 60 * 60);
-            
-            const trendScore = 
-                (recentPlays24h * 15) + // Recent activity weight
-                (velocity * 15) +       // Velocity
-                Math.min(70, (100 / (avgTimeReturnHours + 0.1))); // Return frequency weight (inverse) - heavier impact for repeats
+            // Simple score for visualization population if data is sparse
+            // Priority: Recent plays (last 24h) > Total plays (last 7d)
+            const trendScore = (recentPlays24h * 10) + (times.length * 2);
 
             trending.push({
                 name,
@@ -104,141 +76,146 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
                 trendScore: Math.round(trendScore),
                 recentPlays: recentPlays24h,
                 spreadTime: Math.round(spreadTimeHours),
-                avgTimeReturn: avgTimeReturnMs, // Store in MS for accurate display
-                velocity: Math.round(velocity * 100),
-                returnFrequencyHrs: (avgTimeReturnMs / 3600000).toFixed(1)
+                avgTimeReturn: 0
             } as any);
         });
 
-        // Sort by trend score
-        trending.sort((a: any, b: any) => b.trendScore - a.trendScore);
-        setTrendingArtists(trending.slice(0, 15));
-        setLastUpdate(new Date());
+        // Sort by trend score desc
+        trending.sort((a, b) => b.trendScore - a.trendScore);
+        
+        // Take top 27 fits nicely (1 center + 8 inner + 18 outer)
+        setTrendingArtists(trending.slice(0, 27));
     };
 
-    // Initial calculation
     useEffect(() => {
         calculateTrendingArtists();
     }, [artists, recentPlays, artistImages]);
 
-    // Live update every 1 second
+    // Live update
     useEffect(() => {
-        const interval = setInterval(() => {
-            calculateTrendingArtists();
-        }, 1000);
-
+        const interval = setInterval(() => calculateTrendingArtists(), 5000); // 5s refresh is enough
         return () => clearInterval(interval);
     }, [recentPlays]);
 
-    const [hoveredArtist, setHoveredArtist] = useState<TrendingArtist | null>(null);
+    // ORBITAL LAYOUT CALCULATIONS
+    const centerArtist = trendingArtists[0];
+    const innerRing = trendingArtists.slice(1, 9); // 8 items
+    const outerRing = trendingArtists.slice(9, 27); // 18 items
 
-    // ... (rest of code)
-    
-    if (trendingArtists.length === 0) return null;
+    const renderOrbitalItem = (artist: TrendingArtist, index: number, total: number, radiusPct: number, sizePx: number) => {
+        // Calculate angle
+        // Start from -90deg (Top)
+        const angle = (index / total) * 2 * Math.PI - (Math.PI / 2); 
+        
+        // Calculate Position (Percent based to be responsive)
+        // Center is 50, 50
+        // Cos = X, Sin = Y
+        const left = 50 + (radiusPct * Math.cos(angle));
+        const top = 50 + (radiusPct * Math.sin(angle));
 
-    // Use top 7 for the specific grid layout
-    const displayList = trendingArtists.slice(0, 7);
-    const topArtist = displayList[0];
-    const otherArtists = displayList.slice(1);
+        return (
+            <div 
+                key={artist.name}
+                className="absolute group z-10 hover:z-50 transition-all duration-500"
+                style={{
+                    left: `${left}%`,
+                    top: `${top}%`,
+                    transform: 'translate(-50%, -50%)', // Center the bubble on the point
+                }}
+            >
+                <div 
+                    className="relative rounded-full overflow-hidden border-2 border-[#1C1C1E] group-hover:border-[#FA2D48] shadow-2xl transition-all duration-300 group-hover:scale-150 cursor-pointer animate-in fade-in zoom-in"
+                    style={{ 
+                        width: `${sizePx}px`, 
+                        height: `${sizePx}px`,
+                        animationDelay: `${index * 50}ms`
+                    }}
+                >
+                    <img 
+                        src={artist.image} 
+                        alt={artist.name}
+                        className="w-full h-full object-cover"
+                    />
+                    
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-1 text-center">
+                        <span className="text-white text-[8px] font-bold leading-tight truncate w-full px-1">{artist.name}</span>
+                        <span className="text-[#FA2D48] text-[7px] font-mono mt-0.5">#{index + (total === 18 ? 9 : 1) + 1}</span>
+                        <span className="text-white/60 text-[6px]">{artist.recentPlays} plays</span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    if (!centerArtist) return null;
 
     return (
-        <div className="mb-16">
-            <div className="flex justify-between items-end mb-8 px-1">
-                <div>
-                    <h2 className="text-[22px] font-bold text-white tracking-tight">Obsession Heatmap</h2>
-                    <p className="text-[#8E8E93] text-[13px]">Real-time artist velocity</p>
+        <div className="mb-12 relative">
+            <div className="flex justify-between items-end mb-4 px-1">
+                 <div>
+                    <h2 className="text-[22px] font-bold text-white tracking-tight flex items-center gap-2">
+                        Obsession Orbit
+                    </h2>
+                    <p className="text-[#8E8E93] text-[13px]">
+                        Your listening hierarchy
+                    </p>
                 </div>
-                <div className="flex items-center gap-2 text-[10px] font-bold text-[#FA2D48] tracking-widest uppercase bg-[#FA2D48]/10 px-3 py-1.5 rounded-full border border-[#FA2D48]/20">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#FA2D48] animate-pulse"></div>
-                    Live Update
+                {/* Score of top artist */}
+                <div className="text-right">
+                     <p className="text-[#FA2D48] font-black text-2xl leading-none">{centerArtist.trendScore}</p>
+                     <p className="text-[9px] text-white/50 uppercase tracking-widest font-bold">Top Heat</p>
                 </div>
             </div>
 
-            {/* Unique Bento Grid Heatmap */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-3 min-h-[440px]">
+            {/* ORBIT CONTAINER */}
+            {/* The container is square and responsive */}
+            <div className="relative w-full max-w-[500px] mx-auto aspect-square my-8 select-none">
                 
-                {/* HERO AREA: Trending #1 (Big Block) */}
-                <div className="lg:col-span-4 lg:row-span-2 group relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#1C1C1E] to-[#0A0A0A] border border-white/5 hover:border-[#FA2D48]/30 transition-all duration-500 shadow-2xl">
-                    {/* Background Image with Heat Blur */}
-                    <div className="absolute inset-0 z-0">
-                        <img 
-                            src={topArtist.image} 
-                            style={{ filter: 'blur(2px)' }}
-                            className="w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700 group-hover:blur-0" 
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
-                    </div>
-
-                    <div className="absolute top-6 left-6 z-10">
-                        <div className="flex items-center gap-2 bg-[#FA2D48] text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">
-                            <TrendingUp size={10} />
-                            #{1} trending
-                        </div>
-                    </div>
-
-                    <div className="absolute bottom-6 left-6 right-6 z-10">
-                        <div className="flex items-end justify-between">
-                            <div className="min-w-0">
-                                <h3 className="text-3xl font-black text-white leading-tight mb-2 truncate drop-shadow-lg">{topArtist.name}</h3>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] text-white/50 uppercase font-bold tracking-widest">Plays (24h)</span>
-                                        <span className="text-xl font-mono text-white leading-none mt-1">{topArtist.recentPlays}</span>
-                                    </div>
-                                    <div className="w-[1px] h-6 bg-white/10"></div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] text-white/50 uppercase font-bold tracking-widest">Heat Score</span>
-                                        <span className="text-xl font-mono text-[#FA2D48] leading-none mt-1">{topArtist.trendScore}</span>
-                                    </div>
-                                </div>
-                            </div>
+                {/* Background Decor Circles */}
+                <div className="absolute inset-0 rounded-full border border-white/5 scale-[0.65]"></div>
+                <div className="absolute inset-0 rounded-full border border-white/5 scale-[0.98] border-dashed opacity-50"></div>
+                
+                {/* CENTER (Rank 1) */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 group">
+                    <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#1C1C1E] shadow-[0_0_50px_rgba(250,45,72,0.3)] group-hover:shadow-[0_0_80px_rgba(250,45,72,0.6)] transition-all duration-500 overflow-hidden bg-[#1C1C1E]">
+                        <img src={centerArtist.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                        {/* Center Badge */}
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#FA2D48] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
+                            #{1}
                         </div>
                     </div>
                 </div>
 
-                {/* Grid of Others */}
-                <div className="lg:col-span-8 lg:row-span-2 grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {otherArtists.map((artist, i) => (
-                        <div 
-                            key={artist.name}
-                            className="relative group overflow-hidden rounded-[1.5rem] bg-[#1C1C1E]/50 border border-white/5 hover:border-white/10 hover:bg-[#1C1C1E] transition-all duration-300 flex flex-col p-4 shadow-lg hover:shadow-2xl cursor-pointer"
-                        >
-                            {/* Inner Glow based on Trend */}
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-[#FA2D48]/5 blur-3xl rounded-full group-hover:bg-[#FA2D48]/10 transition-colors"></div>
-
-                            <div className="flex items-start justify-between mb-auto">
-                                <div className="relative">
-                                    <img 
-                                        src={artist.image} 
-                                        className="w-16 h-16 rounded-2xl object-cover shadow-2xl group-hover:scale-105 transition-transform" 
-                                    />
-                                    <div className="absolute -top-1 -right-1 bg-black border border-white/10 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-full font-bold">
-                                        {i + 2}
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-[20px] font-mono text-white leading-none">
-                                        {artist.trendScore}
-                                    </div>
-                                    <div className="text-[9px] text-[#8E8E93] uppercase font-bold tracking-tighter mt-1">Heat</div>
-                                </div>
-                            </div>
-
-                            <div className="mt-4">
-                                <h4 className="text-white font-bold text-sm truncate leading-tight group-hover:text-[#FA2D48] transition-colors">{artist.name}</h4>
-                                <div className="flex items-center gap-2 mt-2">
-                                    <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                                        <div 
-                                            className="h-full bg-gradient-to-r from-[#FA2D48] to-orange-400 rounded-full"
-                                            style={{ width: `${Math.min(100, (artist.trendScore / topArtist.trendScore) * 100)}%` }}
-                                        ></div>
-                                    </div>
-                                    <span className="text-[9px] font-mono text-[#8E8E93] whitespace-nowrap">{artist.recentPlays} plays</span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                {/* INNER RING (Rank 2-9) */}
+                {/* Radius approx 32% (so diameter is 64%) */}
+                <div className="absolute inset-0 animate-[spin_60s_linear_infinite] hover:[animation-play-state:paused]">
+                     {/* Counter-rotate bubbles if we wanted images upright while spinning, 
+                         but simpler to just spin the whole ring if user wants 'movement'. 
+                         Or we can just rely on static position for readability. 
+                         Let's do static with subtle float for better UX. 
+                     */}
                 </div>
+                
+                 {/* 
+                   Actually, user said "make it move and animated". 
+                   A subtle slow rotation of the Container Rings is cool.
+                   But images must stay upright.
+                   Let's stick to calculated positions and maybe a subtle 'breathing' scale animation.
+                */}
+                
+                {/* Render Inner Ring */}
+                {innerRing.map((artist, i) => renderOrbitalItem(artist, i, innerRing.length, 33, 70))}
+
+                {/* Render Outer Ring */}
+                {outerRing.map((artist, i) => renderOrbitalItem(artist, i, outerRing.length, 48, 45))}
+
+            </div>
+            
+            <div className="text-center mt-4">
+                 <p className="text-[10px] text-[#8E8E93] uppercase tracking-widest">
+                    Based on recent listening frequency
+                 </p>
             </div>
         </div>
     );

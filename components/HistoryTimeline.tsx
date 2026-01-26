@@ -48,30 +48,40 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ history }) => 
         return { dailyData: grouped, maxCount: Math.max(max, 1), totalPlays: total };
     }, [history]);
 
-    // 2. Generate Calendar Grid (Last 365 Days)
+    // 2. Generate Calendar Grid (Current Year Only - 2026)
     const calendarGrid = useMemo(() => {
         const today = new Date();
-        const endDate = today;
-        const startDate = new Date(today);
-        startDate.setDate(today.getDate() - 364); // Approx 1 year
+        const currentYear = today.getFullYear();
+        const startDate = new Date(currentYear, 0, 1); // Jan 1st of current year
 
-        // Align start date to previous Sunday to make grid nice
+        // Align start date to previous Sunday for proper grid alignment
         const dayOfWeek = startDate.getDay(); // 0 = Sunday
-        startDate.setDate(startDate.getDate() - dayOfWeek);
+        const gridStart = new Date(startDate);
+        gridStart.setDate(startDate.getDate() - dayOfWeek);
 
         const weeks = [];
-        let current = new Date(startDate);
+        let current = new Date(gridStart);
         
-        // Safety break to prevent infinite loops if date math fails
+        // Ensure we cover the full range until today (or end of year if you prefer full calendar)
+        // Let's go until today for now to save space, or end of year for full grid. 
+        // User asked to make it smaller/fit, so until today is usually better, 
+        // but "This year Only" implies the structure of 2026.
+        // Let's go to today + end of current week
+        const endDate = new Date(today);
+        
+        // Safety break
         let iterations = 0;
-        while (current <= endDate && iterations < 60) {
+        while (current <= endDate && iterations < 54) { // Max 53 weeks
             const week = [];
             for (let i = 0; i < 7; i++) {
                 const dateStr = current.toLocaleDateString('en-CA');
+                const isCurrentYear = current.getFullYear() === currentYear;
+                
                 week.push({
                     date: dateStr,
                     dateObj: new Date(current),
-                    count: dailyData[dateStr]?.length || 0
+                    count: dailyData[dateStr]?.length || 0,
+                    inYear: isCurrentYear
                 });
                 current.setDate(current.getDate() + 1);
             }
@@ -82,13 +92,14 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ history }) => 
     }, [dailyData]);
 
     // 3. Color Scale Helper
-    const getColor = (count: number) => {
-        if (count === 0) return 'bg-[#2C2C2E]';
+    const getColor = (count: number, inYear: boolean) => {
+        if (!inYear) return 'bg-transparent border-none pointer-events-none opacity-0'; // Hide days outside 2026
+        if (count === 0) return 'bg-[#2C2C2E]/50';
         const intensity = count / maxCount;
         if (intensity < 0.25) return 'bg-[#FA2D48]/30';
         if (intensity < 0.50) return 'bg-[#FA2D48]/60';
         if (intensity < 0.75) return 'bg-[#FA2D48]/80';
-        return 'bg-[#FA2D48]';
+        return 'bg-[#FA2D48] shadow-[0_0_8px_rgba(250,45,72,0.4)]';
     };
 
     // Selected Day Data
@@ -98,49 +109,41 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ history }) => 
     const formatDateHeader = (dateStr: string) => {
         const [y, m, d] = dateStr.split('-').map(Number);
         const date = new Date(y, m - 1, d);
-        return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        return date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
     };
 
     return (
-        <div className="mb-20 animate-in fade-in duration-700">
-            <div className="flex items-end justify-between mb-6 px-1">
+        <div className="mb-20 animate-in fade-in duration-700 select-none">
+            <div className="flex items-end justify-between mb-4 px-1">
                 <div>
                     <h2 className="text-[22px] font-bold text-white tracking-tight flex items-center gap-2">
-                        Listening Activity
+                        {new Date().getFullYear()} Rewind
                     </h2>
                     <p className="text-[#8E8E93] text-[13px] mt-1">
-                        {totalPlays} songs in the last year
+                        {totalPlays} tracks played in 2026
                     </p>
-                </div>
-                {/* Legend */}
-                <div className="flex items-center gap-2 text-[10px] text-[#8E8E93]">
-                    <span>Less</span>
-                    <div className="w-2.5 h-2.5 rounded-[2px] bg-[#2C2C2E]"></div>
-                    <div className="w-2.5 h-2.5 rounded-[2px] bg-[#FA2D48]/30"></div>
-                    <div className="w-2.5 h-2.5 rounded-[2px] bg-[#FA2D48]/60"></div>
-                    <div className="w-2.5 h-2.5 rounded-[2px] bg-[#FA2D48]"></div>
-                    <span>More</span>
                 </div>
             </div>
 
             {/* HEATMAP CONTAINER */}
-            <div className="w-full overflow-x-auto pb-4 scrollbar-hide">
-                <div className="flex gap-1 min-w-fit">
+            <div className="w-full overflow-x-auto pb-2 scrollbar-hide">
+                <div className="flex gap-1 min-w-fit p-1">
                     {calendarGrid.map((week, wIndex) => (
                         <div key={wIndex} className="flex flex-col gap-1">
                             {week.map((day, dIndex) => (
                                 <div
                                     key={day.date}
-                                    onClick={() => setSelectedDate(selectedDate === day.date ? null : day.date)}
-                                    className={`w-3 h-3 md:w-3.5 md:h-3.5 rounded-[3px] cursor-pointer transition-all duration-200 hover:scale-125 hover:z-10 relative group ${
-                                        selectedDate === day.date ? 'ring-2 ring-white z-20 scale-110 border border-black' : 'border border-transparent'
-                                    } ${getColor(day.count)}`}
+                                    onClick={() => day.inYear && setSelectedDate(selectedDate === day.date ? null : day.date)}
+                                    className={`w-3 h-3 md:w-3.5 md:h-3.5 rounded-[3px] transition-all duration-300 relative group ${
+                                        selectedDate === day.date ? 'ring-2 ring-white z-20 scale-125 bg-[#FA2D48] shadow-[0_0_10px_#FA2D48]' : 'hover:scale-125 hover:z-10'
+                                    } ${getColor(day.count, day.inYear)} ${day.inYear ? 'cursor-pointer' : ''}`}
                                 >
                                     {/* Tooltip */}
-                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 min-w-[120px] bg-[#1C1C1E] text-white text-[10px] px-2 py-1.5 rounded shadow-xl border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap text-center">
-                                        <div className="font-bold">{day.count} plays</div>
-                                        <div className="text-[#8E8E93]">{day.date}</div>
-                                    </div>
+                                    {day.inYear && (
+                                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 min-w-[max-content] bg-[#1C1C1E] text-white text-[10px] px-3 py-1.5 rounded-full shadow-xl border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap text-center font-medium">
+                                            {day.count} plays on {day.dateObj.toLocaleDateString(undefined, {month:'short', day:'numeric'})}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -148,57 +151,66 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ history }) => 
                 </div>
             </div>
 
-            {/* EXPANDED DETAILS (Selected Date) */}
-            <div className={`overflow-hidden transition-all duration-500 ease-in-out ${selectedDate ? 'max-h-[800px] opacity-100 mt-6' : 'max-h-0 opacity-0'}`}>
+            {/* EXPANDED DETAILS (Selected Date) - IMPROVED UI */}
+            <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${selectedDate ? 'max-h-[800px] opacity-100 mt-6' : 'max-h-0 opacity-0'}`}>
                 {selectedDate && (
-                    <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-6 shadow-2xl">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Calendar className="w-4 h-4 text-[#FA2D48]" />
-                                {formatDateHeader(selectedDate)}
-                            </h3>
-                            <span className="text-xs font-mono text-[#8E8E93] bg-white/5 px-2 py-1 rounded-md">
-                                {selectedDayItems.length} Tracks
-                            </span>
-                        </div>
-
-                        {selectedDayItems.length === 0 ? (
-                            <div className="text-center py-12 text-[#8E8E93]">
-                                <Clock className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                                <p>No listening history recorded for this day.</p>
+                    <div className="bg-[#1C1C1E] border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
+                         {/* Header background glow */}
+                        <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#FA2D48]/10 to-transparent pointer-events-none"></div>
+                        
+                        <div className="p-6 relative">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-[#FA2D48]/20 flex items-center justify-center text-[#FA2D48]">
+                                        <Calendar className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white leading-none">
+                                            {formatDateHeader(selectedDate)}
+                                        </h3>
+                                        <p className="text-[#8E8E93] text-xs mt-1 font-medium">Daily Mix</p>
+                                    </div>
+                                </div>
+                                <span className="text-xs font-bold text-white bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-md">
+                                    {selectedDayItems.length} Tracks
+                                </span>
                             </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                {selectedDayItems.map((item: any, i: number) => (
-                                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-black/20 hover:bg-[#2C2C2E] transition-colors group border border-transparent hover:border-white/5">
-                                        <div className="relative w-10 h-10 flex-shrink-0">
-                                            <img 
-                                                src={item.cover || item.album_cover} 
-                                                alt={item.track_name} 
-                                                className="w-full h-full object-cover rounded-md shadow-sm opacity-80 group-hover:opacity-100 transition-opacity" 
-                                            />
-                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                                <div className="bg-black/50 rounded-full p-1">
-                                                    <Play size={10} fill="white" className="text-white" />
+
+                            {selectedDayItems.length === 0 ? (
+                                <div className="text-center py-12 text-[#8E8E93]">
+                                    <Clock className="w-8 h-8 mx-auto mb-3 opacity-20" />
+                                    <p>No listening history recorded.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                    {selectedDayItems.map((item: any, i: number) => (
+                                        <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-black/40 hover:bg-white/5 transition-colors group border border-transparent hover:border-white/5 cursor-default">
+                                            <div className="relative w-12 h-12 flex-shrink-0 group-hover:scale-105 transition-transform duration-300">
+                                                <img 
+                                                    src={item.cover || item.album_cover} 
+                                                    alt={item.track_name} 
+                                                    className="w-full h-full object-cover rounded-md shadow-lg" 
+                                                />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
+                                                     <Play size={16} fill="white" className="text-white" />
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <h4 className="text-white text-sm font-medium truncate group-hover:text-[#FA2D48] transition-colors">
-                                                {item.track_name}
-                                            </h4>
-                                            <div className="flex items-center gap-2 text-[11px] text-[#8E8E93]">
-                                                <span className="truncate max-w-[100px]">{item.artist_name}</span>
-                                                <span className="text-white/10">•</span>
-                                                <span className="font-mono text-[10px]">
-                                                    {new Date(item.played_at).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'})}
+                                            <div className="min-w-0 flex-1 flex flex-col justify-center">
+                                                <h4 className="text-white text-[15px] font-semibold truncate group-hover:text-[#FA2D48] transition-colors leading-tight">
+                                                    {item.track_name}
+                                                </h4>
+                                                <p className="text-[#8E8E93] text-[13px] truncate">{item.artist_name}</p>
+                                            </div>
+                                            <div className="text-right pl-2">
+                                                 <span className="font-mono text-[11px] text-[#8E8E93] bg-white/5 px-2 py-1 rounded">
+                                                    {new Date(item.played_at).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'}).replace(' ', '')}
                                                 </span>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
