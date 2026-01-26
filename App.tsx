@@ -115,12 +115,12 @@ function App() {
         if (!token) return;
         const artistsToFetch = new Set<string>();
         
-        // 1. Get names from Top Artists
-        const topArtists = dbUnifiedData?.artists || data?.artists || [];
+        // 1. Get names from Top Artists (using robust fallback)
+        const topArtists = (dbUnifiedData?.artists?.length > 0) ? dbUnifiedData.artists : (data?.artists || []);
         topArtists.slice(0, 15).forEach((a: Artist) => artistsToFetch.add(a.name));
 
         // 2. Get names from Recent to help Trending
-        const recent = dbUnifiedData?.recentPlays || [];
+        const recent = dbUnifiedData?.recentPlays || data?.recentRaw || [];
         recent.slice(0, 50).forEach((p: any) => artistsToFetch.add(p.artist_name));
 
         if (artistsToFetch.size === 0) return;
@@ -150,15 +150,27 @@ function App() {
 
       // Function to refresh DB view
       const refreshDbStats = async () => {
-          // If we have manual data, don't clear it immediately to prevent flashing
-          const stats = await fetchListeningStats();
-          const dashboardStuff = await fetchDashboardStats(timeRange);
-          // Fetch dynamic charts for AI context
-          const currentCharts = await fetchCharts(timeRange.toLowerCase() as any);
-          
-          if (dashboardStuff) {
-               setDbStats({ ...stats, charts: currentCharts });
-               setDbUnifiedData(dashboardStuff);
+          console.log(`[App] Refreshing DB Stats for ${timeRange}...`);
+          try {
+            // If we have manual data, don't clear it immediately to prevent flashing
+            const stats = await fetchListeningStats();
+            const dashboardStuff = await fetchDashboardStats(timeRange);
+            // Fetch dynamic charts for AI context
+            const currentCharts = await fetchCharts(timeRange.toLowerCase() as any);
+            
+            console.log("[App] Dashboard Stats Fetched:", { 
+                hasStats: !!stats, 
+                artistCount: dashboardStuff?.artists?.length || 0,
+                songCount: dashboardStuff?.songs?.length || 0,
+                albumCount: dashboardStuff?.albums?.length || 0
+            });
+
+            if (dashboardStuff) {
+                setDbStats({ ...stats, charts: currentCharts });
+                setDbUnifiedData(dashboardStuff);
+            }
+          } catch (e) {
+              console.error("[App] refreshDbStats failed:", e);
           }
       };
 
@@ -408,6 +420,13 @@ function App() {
       );
   }
 
+  // Helper to prevent "poofing" chart data when DB stats are empty (e.g. daily interval with no plays)
+  // Only use dbUnifiedData if it has items, otherwise fallback to Spotify API data
+  const safeArtists = (dbUnifiedData?.artists?.length > 0) ? dbUnifiedData.artists : (data?.artists || []);
+  const safeAlbums = (dbUnifiedData?.albums?.length > 0) ? dbUnifiedData.albums : (data?.albums || []);
+  const safeSongs = (dbUnifiedData?.songs?.length > 0) ? dbUnifiedData.songs : (data?.songs || []);
+  const safeRecent = dbUnifiedData?.recentPlays || data?.recentRaw || [];
+
   return (
     <>
     <Layout user={data.user} currentTrack={data.currentTrack}>
@@ -416,21 +435,21 @@ function App() {
         <div className="mb-24 mt-8">
             <AISpotlight 
                 token={token}
-                history={dbUnifiedData?.recentPlays || data?.recentRaw || []}
+                history={safeRecent}
                 user={data.user}
                 contextData={{
-                    artists: (dbUnifiedData?.artists || data.artists).map((a: Artist, idx: number) => {
+                    artists: safeArtists.map((a: Artist, idx: number) => {
                         const time = a.timeStr || '';
                         const mins = time.replace('m', '');
                         // Include Rank for AI
                         return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
                     }),
-                    albums: (dbUnifiedData?.albums || data.albums).map((a: Album, idx: number) => {
+                    albums: safeAlbums.map((a: Album, idx: number) => {
                         const time = a.timeStr || '';
                         const mins = time.replace('m', '');
                         return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
                     }),
-                    songs: (dbUnifiedData?.songs || data.songs).map((s: Song, idx: number) => {
+                    songs: safeSongs.map((s: Song, idx: number) => {
                         const time = s.timeStr || '';
                         const mins = time.replace('m', '');
                         return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
@@ -478,7 +497,7 @@ function App() {
                             onClick={() => setSeeAllModal({ 
                                 isOpen: true, 
                                 title: 'Top Artists', 
-                                items: dbUnifiedData?.artists || data.artists,
+                                items: safeArtists,
                                 type: 'artist' 
                             })}
                             className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider"
@@ -487,7 +506,7 @@ function App() {
                         </button>
                     </div>
                     <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                        {(dbUnifiedData?.artists || data.artists).slice(0, 8).map((artist: Artist, index: number) => (
+                        {safeArtists.slice(0, 8).map((artist: Artist, index: number) => (
                             <RankedArtist key={artist.id} artist={artist} rank={index + 1} realImage={artistImages[artist.name]} />
                         ))}
                     </div>
@@ -503,7 +522,7 @@ function App() {
                             onClick={() => setSeeAllModal({ 
                                 isOpen: true, 
                                 title: 'Top Albums', 
-                                items: dbUnifiedData?.albums || data.albums,
+                                items: safeAlbums,
                                 type: 'album' 
                             })}
                             className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider"
@@ -512,7 +531,7 @@ function App() {
                         </button>
                     </div>
                     <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                        {(dbUnifiedData?.albums || data.albums).slice(0, 8).map((album: Album, index: number) => (
+                        {safeAlbums.slice(0, 8).map((album: Album, index: number) => (
                             <RankedAlbum key={album.id} album={album} rank={index + 1} />
                         ))}
                     </div>
@@ -528,7 +547,7 @@ function App() {
                             onClick={() => setSeeAllModal({ 
                                 isOpen: true, 
                                 title: 'Top Songs', 
-                                items: dbUnifiedData?.songs || data.songs,
+                                items: safeSongs,
                                 type: 'song' 
                             })}
                             className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider"
@@ -537,7 +556,7 @@ function App() {
                         </button>
                     </div>
                     <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                        {(dbUnifiedData?.songs || data.songs).slice(0, 8).map((song: Song, index: number) => (
+                        {safeSongs.slice(0, 8).map((song: Song, index: number) => (
                             <RankedSong key={song.id} song={song} rank={index + 1} />
                         ))}
                     </div>
@@ -551,10 +570,10 @@ function App() {
             <div className="rounded-3xl p-6 relative overflow-hidden min-h-[600px] border-none bg-transparent">
                 
                 <TrendingArtists 
-                    artists={dbUnifiedData?.artists || data.artists}
-                    albums={dbUnifiedData?.albums || data.albums}
-                    songs={dbUnifiedData?.songs || data.songs}
-                    recentPlays={dbUnifiedData?.recentPlays || []}
+                    artists={safeArtists}
+                    albums={safeAlbums}
+                    songs={safeSongs}
+                    recentPlays={safeRecent}
                     artistImages={artistImages}
                 />
             </div>
@@ -567,7 +586,7 @@ function App() {
         
         {/* Activity Heatmap - Bottom */}
         <div className="mb-24 px-1">
-             <ActivityHeatmap history={dbUnifiedData?.recentPlays || data?.recentRaw || []} />
+             <ActivityHeatmap history={safeRecent} />
         </div>
 
     </Layout>
