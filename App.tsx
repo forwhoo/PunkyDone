@@ -415,13 +415,21 @@ function App() {
     <Layout user={data.user} currentTrack={data.currentTrack}>
         
         {/* SECTION 1: HEADER & DISCOVERY */}
-        <div className="flex flex-col-reverse lg:flex-row justify-between items-start gap-8 mb-20 pt-4">
-            <div className="flex-1 w-full">
-                <div className="mb-8">
-                     <h1 className="text-5xl md:text-7xl font-black text-white italic tracking-tighter mb-2">PUNKY.</h1>
-                     <p className="text-[#8E8E93] font-medium">Your sonic DNA, decoded.</p>
-                </div>
-                
+        <div className="flex flex-col md:flex-row items-start gap-6 mb-16 pt-2">
+            
+            {/* User Profile - Side Widget */}
+            <div className="relative group shrink-0 hidden md:block">
+                 <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-[#2C2C2E]">
+                     {data?.user?.image ? (
+                         <img src={data.user.image} alt="User" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                     ) : (
+                         <div className="flex items-center justify-center w-full h-full text-white/20"><User /></div>
+                     )}
+                 </div>
+                 <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-[#FA2D48]/20 to-transparent blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </div>
+
+            <div className="flex-1 w-full min-w-0">
                  <AISpotlight 
                     token={token}
                     contextData={{
@@ -444,22 +452,10 @@ function App() {
                     }} 
                  />
             </div>
-
-            {/* User Profile - Side Widget */}
-            <div className="relative group shrink-0">
-                 <div className="w-20 h-20 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-[#2C2C2E]">
-                     {data?.user?.image ? (
-                         <img src={data.user.image} alt="User" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                     ) : (
-                         <div className="flex items-center justify-center w-full h-full text-white/20"><User /></div>
-                     )}
-                 </div>
-                 <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-[#FA2D48]/20 to-transparent blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            </div>
         </div>
 
         {/* SECTION 2: OBSESSION ORBIT (Interactive) */}
-        <div className="mb-24">
+        <div className="mb-20">
             <TrendingArtists 
                 artists={dbUnifiedData?.artists || data.artists}
                 albums={dbUnifiedData?.albums || data.albums}
@@ -469,32 +465,41 @@ function App() {
             />
         </div>
 
-        {/* SECTION 3: LISTENING DNA (Charts) */}
-         <div className="mb-24">
-            <TopCharts 
-                title="Rhythm & Trends"
-                username={data?.user?.name || 'Your'}
-                artists={dbUnifiedData?.artists || data.artists}
-                songs={dbUnifiedData?.songs || data.songs}
-                albums={dbUnifiedData?.albums || data.albums}
-                hourlyActivity={dbUnifiedData?.hourlyActivity || data.hourly}
-                timeRange={timeRange}
-                onTimeRangeChange={(range) => {
-                    setTimeRange(range);
-                    // Refresh data with new time range
-                    fetchDashboardStats(range).then(setDbUnifiedData);
-                }}
-            />
+        {/* SECTION 3: LISTENING DNA (Charts) & HISTORY */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-20">
+             <div>
+                <TopCharts 
+                    title="Rhythm & Trends"
+                    username={data?.user?.name || 'Your'}
+                    artists={dbUnifiedData?.artists || data.artists}
+                    songs={dbUnifiedData?.songs || data.songs}
+                    albums={dbUnifiedData?.albums || data.albums}
+                    hourlyActivity={dbUnifiedData?.hourlyActivity || data.hourly}
+                    timeRange={timeRange}
+                    onTimeRangeChange={(range) => {
+                        setTimeRange(range);
+                        // Refresh data with new time range
+                        fetchDashboardStats(range).then(setDbUnifiedData);
+                    }}
+                />
+            </div>
+            <div>
+                 <div className="mb-6 px-1 flex justify-between items-end">
+                    <h2 className="text-[22px] font-bold text-white tracking-tight">2026 Archive</h2>
+                 </div>
+                 <HistoryTimeline history={dbUnifiedData?.recentPlays || []} />
+            </div>
         </div>
 
-        {/* SECTION 4: RANKINGS (The Lists) */}
-        <div className="space-y-20 mb-24">
+        {/* SECTION 4: RANKINGS (The Lists) - Compact */}
+        <div className="space-y-12 mb-12">
              {/* TOP ALBUMS */}
              <div>
-                 <div className="flex justify-between items-end mb-6 px-1">
-                    <h2 className="text-[22px] font-bold text-white tracking-tight">Top Albums</h2>
+                 <div className="flex justify-between items-end mb-4 px-1 border-b border-white/5 pb-4">
+                    <h2 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h2>
+                    <button className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors">SEE ALL</button>
                  </div>
-                 <div className="flex items-end overflow-x-auto pb-10 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
+                 <div className="flex items-end overflow-x-auto pb-4 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
                     {(dbUnifiedData?.albums || data.albums).slice(0, 10).map((album: Album, index: number) => (
                         <RankedAlbum key={album.id} album={album} rank={index + 1} />
                     ))}
@@ -503,11 +508,12 @@ function App() {
 
              {/* TOP SONGS */}
              <div>
-                 <div className="flex justify-between items-end mb-6 px-1">
-                    <h2 className="text-[22px] font-bold text-white tracking-tight">Top Songs</h2>
+                 <div className="flex justify-between items-end mb-4 px-1 border-b border-white/5 pb-4">
+                    <h2 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h2>
+                    <button className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors">SEE ALL</button>
                  </div>
-                 <div className="flex items-end overflow-x-auto pb-10 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
-                    {(dbUnifiedData?.songs || data.songs).slice(0, 20).map((song: Song, index: number) => (
+                 <div className="flex items-end overflow-x-auto pb-4 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
+                    {(dbUnifiedData?.songs || data.songs).slice(0, 10).map((song: Song, index: number) => (
                         <RankedSong key={song.id} song={song} rank={index + 1} />
                     ))}
                  </div>
@@ -515,23 +521,16 @@ function App() {
 
              {/* TOP ARTISTS */}
              <div>
-                 <div className="flex justify-between items-end mb-6 px-1">
-                    <h2 className="text-[22px] font-bold text-white tracking-tight">Top Artists</h2>
+                 <div className="flex justify-between items-end mb-4 px-1 border-b border-white/5 pb-4">
+                    <h2 className="text-[20px] font-bold text-white tracking-tight">Top Artists</h2>
+                    <button className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors">SEE ALL</button>
                  </div>
-                 <div className="flex items-start overflow-x-auto pb-8 pt-6 no-scrollbar snap-x pl-4 scroll-smooth">
+                 <div className="flex items-start overflow-x-auto pb-6 pt-2 no-scrollbar snap-x pl-4 scroll-smooth">
                     {(dbUnifiedData?.artists || data.artists).slice(0, 10).map((artist: Artist, index: number) => (
                         <RankedArtist key={artist.id} artist={artist} rank={index + 1} realImage={artistImages[artist.name]} />
                     ))}
                  </div>
              </div>
-        </div>
-
-        {/* SECTION 5: HISTORY FOOTPRINT */}
-        <div className="mb-12">
-             <div className="mb-6 px-1">
-                <h2 className="text-[22px] font-bold text-white tracking-tight">2026 Archive</h2>
-             </div>
-             <HistoryTimeline history={dbUnifiedData?.recentPlays || []} />
         </div>
 
     </Layout>
