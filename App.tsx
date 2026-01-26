@@ -90,6 +90,8 @@ const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
     </div>
 );
 
+import { SeeAllModal } from './components/SeeAllModal';
+
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('spotify_token'));
   const [data, setData] = useState<any>(null);
@@ -97,6 +99,14 @@ function App() {
   const [dbStats, setDbStats] = useState<any>(null);
   const [dbUnifiedData, setDbUnifiedData] = useState<any>(null);
   const [artistImages, setArtistImages] = useState<Record<string, string>>({}); // Real artist images
+
+  // See All Modal State
+  const [seeAllModal, setSeeAllModal] = useState<{ isOpen: boolean; title: string; items: any[]; type: 'artist' | 'album' | 'song' }>({
+      isOpen: false,
+      title: '',
+      items: [],
+      type: 'artist'
+  });
 
   // Fetch Artist Images when data loads
   useEffect(() => {
@@ -474,7 +484,17 @@ function App() {
                         <div className="flex items-center gap-3">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Top Artists</h3>
                         </div>
-                        <button className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider">See All</button>
+                        <button 
+                            onClick={() => setSeeAllModal({ 
+                                isOpen: true, 
+                                title: 'Top Artists', 
+                                items: dbUnifiedData?.artists || data.artists,
+                                type: 'artist' 
+                            })}
+                            className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider"
+                        >
+                            See All
+                        </button>
                     </div>
                     <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
                         {(dbUnifiedData?.artists || data.artists).slice(0, 8).map((artist: Artist, index: number) => (
@@ -489,7 +509,17 @@ function App() {
                         <div className="flex items-center gap-3">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
                         </div>
-                        <button className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider">See All</button>
+                        <button 
+                            onClick={() => setSeeAllModal({ 
+                                isOpen: true, 
+                                title: 'Top Albums', 
+                                items: dbUnifiedData?.albums || data.albums,
+                                type: 'album' 
+                            })}
+                            className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider"
+                        >
+                            See All
+                        </button>
                     </div>
                     <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
                         {(dbUnifiedData?.albums || data.albums).slice(0, 8).map((album: Album, index: number) => (
@@ -504,7 +534,17 @@ function App() {
                         <div className="flex items-center gap-3">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
                         </div>
-                        <button className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider">See All</button>
+                        <button 
+                            onClick={() => setSeeAllModal({ 
+                                isOpen: true, 
+                                title: 'Top Songs', 
+                                items: dbUnifiedData?.songs || data.songs,
+                                type: 'song' 
+                            })}
+                            className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider"
+                        >
+                            See All
+                        </button>
                     </div>
                     <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
                         {(dbUnifiedData?.songs || data.songs).slice(0, 8).map((song: Song, index: number) => (
@@ -541,6 +581,15 @@ function App() {
         <div className="mb-24 px-1">
              <ActivityHeatmap history={dbUnifiedData?.recentPlays || data?.recentRaw || []} />
         </div>
+
+        {/* Global Modals */}
+        <SeeAllModal 
+            isOpen={seeAllModal.isOpen}
+            onClose={() => setSeeAllModal(prev => ({ ...prev, isOpen: false }))}
+            title={seeAllModal.title}
+            items={seeAllModal.items}
+            type={seeAllModal.type}
+        />
 
     </Layout>
   );

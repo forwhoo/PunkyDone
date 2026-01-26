@@ -126,13 +126,12 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
     // We use Framer Motion for smooth continuous rotation
     
     return (
-        <div className="relative z-0 flex flex-col md:flex-row gap-8 items-start">
+        <div className="relative z-0 flex flex-col md:flex-row gap-8 items-start mb-12">
             
             <div className="flex-1 w-full relative">
-                <div className="flex justify-between items-end mb-8 px-2">
+                <div className="flex justify-between items-end mb-16 px-2">
                     <div>
                         <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                            <Sparkles size={18} className="text-[#FA2D48]" />
                             Obsession Orbit
                         </h2>
                         <p className="text-[#8E8E93] text-sm mt-1">

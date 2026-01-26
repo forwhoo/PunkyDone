@@ -615,14 +615,16 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             style={{ animationDelay: `${categoryIndex * 0.15}s` }}
                         >
                             {/* Category Header */}
-                            <div className="flex items-end gap-4 mb-4">
-                                <span className="text-[60px] leading-none font-black text-outline select-none opacity-40 italic">
-                                    {categoryIndex + 1}
-                                </span>
+                            <div className="flex items-end justify-between gap-4 mb-4 pr-4">
                                 <div className="mb-2">
                                     <h3 className="text-2xl font-bold text-white tracking-tight">{category.title}</h3>
                                     <p className="text-[#8E8E93] text-sm">{category.description}</p>
                                 </div>
+                                {category.stats && (
+                                    <div className="bg-white/10 backdrop-blur-md border border-white/5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/90 mb-2">
+                                        {category.stats}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Horizontal Scroll List */}
@@ -630,7 +632,16 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                 {category.tracks.map((track, trackIndex) => (
                                     <div key={trackIndex} className="flex-shrink-0 relative flex flex-col items-center gap-2 group cursor-pointer w-[140px] snap-start">
                                         <div className="w-[140px] h-[140px] overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 relative">
-                                             <img src={track.cover || track.image} alt={track.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110" />
+                                             {/* Fallback Background */}
+                                             <div className="absolute inset-0 flex items-center justify-center bg-[#1C1C1E]">
+                                                 <Music2 className="text-white/20" size={48} />
+                                             </div>
+                                             <img 
+                                                 src={track.cover || track.image} 
+                                                 alt={track.title} 
+                                                 className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+                                                 onError={(e) => e.currentTarget.style.opacity = '0'}
+                                             />
                                         </div>
                                         <div className="text-center w-full px-1">
                                             <h4 className="text-[13px] font-semibold text-white truncate w-full">{track.name || track.title}</h4>

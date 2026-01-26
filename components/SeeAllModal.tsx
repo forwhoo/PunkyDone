@@ -1,141 +1,71 @@
 import React from 'react';
-import { X, Play, Clock } from 'lucide-react';
+import { X, Play, Clock, Music } from 'lucide-react';
 
 interface SeeAllModalProps {
-    title: string;
-    type: 'Artists' | 'Songs' | 'Albums' | 'History';
-    data: any[];
+    isOpen: boolean;
     onClose: () => void;
+    title: string;
+    items: any[];
+    type: 'artist' | 'album' | 'song';
+    onItemClick?: (item: any) => void;
 }
 
-export const SeeAllModal: React.FC<SeeAllModalProps> = ({ title, type, data, onClose }) => {
-    
-    // Prevent scrolling on body when modal is open
-    React.useEffect(() => {
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, []);
+export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title, items, type }) => {
+    if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in p-4">
-            <div className="bg-[#1C1C1E] w-full max-w-4xl max-h-[85vh] flex flex-col rounded-2xl border border-white/10 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop with Blur */}
+            <div 
+                className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity"
+                onClick={onClose}
+            />
+
+            {/* Modal Content */}
+            <div className="relative bg-[#1C1C1E] w-full max-w-4xl h-[80vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-white/10 animate-in zoom-in-95 duration-300">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-white/5 bg-[#1C1C1E] z-10 shrink-0">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
+                <div className="flex justify-between items-center p-6 border-b border-white/5 bg-[#1C1C1E]/50 backdrop-blur-xl absolute top-0 left-0 right-0 z-10 transition-all">
+                    <div>
+                        <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
+                        <span className="text-[#8E8E93] text-sm">Top 50 Ranking</span>
+                    </div>
                     <button 
                         onClick={onClose}
-                        className="p-2 bg-[#2C2C2E] hover:bg-[#3C3C3E] rounded-full text-white transition-colors"
+                        className="w-10 h-10 rounded-full bg-[#2C2C2E] flex items-center justify-center text-white hover:bg-[#3A3A3C] transition-colors"
                     >
-                        <X className="w-5 h-5" />
+                        <X size={20} />
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6">{/* Properly sized content */}
-                        
-                        {/* Artists Grid */}
-                        {type === 'Artists' && (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                            {data.map((artist, idx) => (
-                                <div key={idx} className="flex flex-col items-center group cursor-pointer">
-                                    <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-transform duration-300 shadow-xl mb-3 relative">
-                                        <img 
-                                            src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
-                                            alt={artist.name} 
-                                            className="w-full h-full object-cover group-hover:blur-[2px] transition-all" 
-                                        />
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-                                            <span className="text-white font-bold text-lg">{artist.timeStr || artist.totalListens}</span>
-                                            <span className="text-white/80 text-[10px] uppercase font-bold tracking-widest">Listened</span>
-                                        </div>
-                                    </div>
-                                    <h3 className="text-[14px] font-medium text-white text-center truncate w-full px-2 group-hover:text-[#FA2D48] transition-colors">{artist.name}</h3>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Albums Grid */}
-                    {type === 'Albums' && (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                            {data.map((album, idx) => (
-                                <div key={idx} className="group cursor-pointer">
-                                    <div className="aspect-square rounded-xl overflow-hidden bg-[#2C2C2E] border border-white/5 shadow-xl mb-3 relative group-hover:-translate-y-1 transition-transform">
-                                        <img src={album.cover} alt={album.title} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <span className="text-white font-bold">{album.timeStr}</span>
-                                        </div>
-                                    </div>
-                                    <h3 className="text-[15px] font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">{album.title}</h3>
-                                    <p className="text-[13px] text-[#8E8E93] truncate">{album.artist}</p>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Songs List */}
-                    {type === 'Songs' && (
-                        <div className="space-y-2">
-                             {data.map((song, idx) => (
-                                <div key={idx} className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors group cursor-pointer border border-transparent hover:border-white/5">
-                                    <div className="text-[#8E8E93] font-medium w-8 text-center">{idx + 1}</div>
-                                    <div className="w-12 h-12 rounded overflow-hidden bg-[#2C2C2E] flex-shrink-0">
-                                        <img src={song.cover} alt={song.title} className="w-full h-full object-cover" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-[15px] font-medium text-white truncate group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
-                                        <p className="text-[13px] text-[#8E8E93] truncate">{song.artist}</p>
-                                        {/* Mobile visible info */}
-                                        <div className="md:hidden flex items-center gap-2 mt-0.5">
-                                            <span className="text-[11px] text-[#FA2D48] font-bold">{song.timeStr} TOTAL</span>
-                                            <span className="text-[11px] text-white/20">•</span>
-                                            <span className="text-[11px] text-white/50">{song.duration}</span>
-                                        </div>
-                                    </div>
-                                    <div className="hidden md:flex items-center gap-6 pr-4">
-                                        <div className="text-sm text-[#FA2D48] font-bold w-28 text-right uppercase tracking-tighter">{song.timeStr} TOTAL</div>
-                                        <div className="text-sm text-[#8E8E93] w-16 text-right font-mono">{song.duration}</div>
+                {/* Scrollable List */}
+                <div className="flex-1 overflow-y-auto pt-24 pb-6 px-6 scrollbar-thin scrollbar-thumb-[#FA2D48] scrollbar-track-transparent">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {items.slice(0, 50).map((item, index) => (
+                            <div 
+                                key={item.id || index}
+                                className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors group"
+                            >
+                                <span className="text-2xl font-black text-[#8E8E93]/30 w-10 text-center font-mono italic">
+                                    {index + 1}
+                                </span>
+                                
+                                <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-[#2C2C2E]">
+                                    <img src={item.cover || item.image || item.art} alt={item.name || item.title} className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Play size={16} className="text-white fill-current" />
                                     </div>
                                 </div>
-                             ))}
-                        </div>
-                    )}
 
-                    {/* History List */}
-                    {type === 'History' && (
-                        <div className="space-y-2">
-                             {data.map((item, idx) => (
-                                <div key={idx} className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors group cursor-pointer border border-transparent hover:border-white/5">
-                                    <div className="w-12 h-12 rounded overflow-hidden bg-[#2C2C2E] flex-shrink-0 relative">
-                                        <img src={item.cover} alt={item.track_name} className="w-full h-full object-cover" />
-                                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Play className="w-5 h-5 text-white fill-current" />
-                                        </div>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-[15px] font-medium text-white truncate group-hover:text-[#FA2D48] transition-colors">{item.track_name}</h3>
-                                        <p className="text-[13px] text-[#8E8E93] truncate">{item.artist_name} • {item.album_name}</p>
-                                    </div>
-                                    <div className="hidden md:flex flex-col items-end pr-4">
-                                        <div className="flex items-center gap-1.5 text-[#8E8E93] text-xs">
-                                            <Clock className="w-3 h-3" />
-                                            <span>{new Date(item.played_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                        </div>
-                                        <div className="text-[10px] text-[#555] mt-0.5">
-                                            {new Date(item.played_at).toLocaleDateString()}
-                                        </div>
-                                    </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-base font-semibold text-white truncate">{item.name || item.title}</h3>
+                                    <p className="text-sm text-[#8E8E93] truncate">
+                                        {type === 'artist' ? 'Artist' : item.artist}
+                                        {item.timeStr && <span className="text-[#FA2D48] ml-2 font-medium">• {item.timeStr}</span>}
+                                    </p>
                                 </div>
-                             ))}
-                             {data.length === 0 && (
-                                 <div className="text-center py-20 text-[#8E8E93]">No history available</div>
-                             )}
-                        </div>
-                    )}
-
-
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
