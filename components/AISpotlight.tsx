@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from './UIComponents';
+import { ActivityHeatmap } from './ActivityHeatmap';
 import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieChart as PieIcon, Trophy, Music2 } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory } from '../services/geminiService';
 import { fetchSmartPlaylist } from '../services/dbService';
@@ -10,6 +11,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface TopAIProps {
     token?: string | null;
+    history?: any[];
     contextData: { 
         artists: string[], 
         albums: string[], 
@@ -32,7 +34,7 @@ interface CategoryResult {
     tracks: any[];
 }
 
-export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
+export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history = [] }) => {
     const [loading, setLoading] = useState(false);
     
     // Store array of category results
@@ -210,6 +212,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
 
     return (
         <div className="scroll-mt-24" id="ai-spotlight" ref={sectionRef}>
+            {/* Heatmap Section */}
+            <ActivityHeatmap history={history} />
+
             {/* Clean Centered Search Interface */}
             <div className="flex flex-col items-center justify-center mb-8 px-4 text-center">
                 

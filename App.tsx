@@ -4,7 +4,6 @@ import { TopCharts } from './components/TopCharts';
 import { RankingWidget } from './components/RankingWidget';
 import { AISpotlight } from './components/AISpotlight';
 import { TrendingArtists } from './components/TrendingArtists';
-import { HistoryTimeline } from './components/HistoryTimeline';
 import { rankingMockData } from './mockData';
 import { Play, Music, BarChart2, Mic2, Disc, Trophy, Clock, TrendingUp, Sparkles, User } from 'lucide-react';
 import { Artist, Album, Song } from './types';
@@ -418,6 +417,7 @@ function App() {
         <div className="mb-24 mt-8">
             <AISpotlight 
                 token={token}
+                history={dbUnifiedData?.recentPlays || data?.recentRaw || []}
                 contextData={{
                     artists: (dbUnifiedData?.artists || data.artists).map((a: Artist) => {
                         const time = a.timeStr || '';
@@ -547,20 +547,6 @@ function App() {
                             fetchDashboardStats(range).then(setDbUnifiedData);
                         }}
                     />
-                </div>
-                
-                {/* Archive Heatmap */}
-                <div className="bg-[#1C1C1E]/60 rounded-3xl border border-white/10 p-6">
-                    <div className="mb-6 flex justify-between items-center">
-                        <div>
-                            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                                <Clock size={18} className="text-[#FA2D48]" />
-                                2026 Archive
-                            </h2>
-                            <p className="text-[#8E8E93] text-sm mt-1">Daily listening heatmap</p>
-                        </div>
-                    </div>
-                    <HistoryTimeline history={dbUnifiedData?.recentPlays || []} />
                 </div>
             </div>
         </div>
