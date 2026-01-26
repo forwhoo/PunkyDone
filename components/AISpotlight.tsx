@@ -24,6 +24,7 @@ interface TopAIProps {
             charts?: any[] 
         }
     };
+    user?: any;
 }
 
 interface CategoryResult {
@@ -34,7 +35,7 @@ interface CategoryResult {
     tracks: any[];
 }
 
-export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history = [] }) => {
+export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history = [], user }) => {
     const [loading, setLoading] = useState(false);
     
     // Store array of category results
@@ -53,6 +54,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const [typing, setTyping] = useState(false);
     const [discoveryMode, setDiscoveryMode] = useState(false);
     const sectionRef = useRef<HTMLDivElement>(null);
+
+    // Use First Name if available
+    const userName = useMemo(() => {
+        if (!user || !user.display_name) return "there";
+        return user.display_name.split(' ')[0].toLowerCase();
+    }, [user]);
 
     // Typing effect logic
     useEffect(() => {
@@ -301,9 +308,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     </div>
                 )}
                 
+
                 {/* Minimal Search Input - Line Style */}
-                <div className="w-full max-w-2xl mx-auto border-b border-white/10 focus-within:border-[#FA2D48]/50 transition-colors">
-                    <div className="relative flex items-center">
+                <div className="w-full max-w-2xl mx-auto border border-white/10 bg-white/5 rounded-2xl p-2 focus-within:border-[#FA2D48]/50 focus-within:bg-black/40 transition-all backdrop-blur-md shadow-lg">
+                    <div className="relative flex items-center px-4">
                         <input 
                             type="text"
                             value={userPrompt}
@@ -314,34 +322,36 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                     handleQuery();
                                 }
                             }}
-                            placeholder={discoveryMode ? "Search Spotify via AI..." : "Ask me anything..."}
-                            className="w-full bg-transparent px-0 py-4 text-[22px] font-light text-white focus:outline-none placeholder:text-[#333]"
+                            placeholder={discoveryMode ? `Find something for ${userName}...` : `hey ${userName}, ask me something...`}
+                            className="w-full bg-transparent py-3 text-[16px] font-medium text-white focus:outline-none placeholder:text-white/30"
                         />
                         <button 
                             onClick={() => handleQuery()}
                             disabled={loading || !userPrompt.trim()}
-                            className="text-[#FA2D48] disabled:text-[#333] transition-colors p-2"
+                            className="text-[#FA2D48] disabled:text-white/10 transition-colors p-2 hover:scale-110 active:scale-95"
                         >
-                            {loading ? <RefreshCcw className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
+                            {loading ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                         </button>
                     </div>
                 </div>
                 
-                {/* Discovery Toggle */}
-                <div className="flex justify-center mt-4">
-                    <button 
-                        onClick={() => {
-                            setDiscoveryMode(!discoveryMode);
-                        }}
-                        className={`flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase py-2 px-4 rounded-full transition-all border ${
-                            discoveryMode 
-                                ? 'bg-[#FA2D48]/20 border-[#FA2D48] text-[#FA2D48] shadow-[0_0_20px_rgba(250,45,72,0.4)]' 
-                                : 'bg-white/5 border-white/10 text-white/30 hover:text-white/60 hover:bg-white/10'
-                        }`}
-                    >
-                        <Zap size={12} className={discoveryMode ? "fill-current" : ""} />
-                        {discoveryMode ? "Discovery Mode Active" : "Discovery Mode"}
-                    </button>
+                {/* Discovery Toggle - Switch Style */}
+                <div className="flex justify-center mt-6">
+                    <div className="flex items-center gap-3 bg-black/20 p-1.5 rounded-full border border-white/5 backdrop-blur-sm">
+                        <button 
+                            onClick={() => setDiscoveryMode(false)}
+                            className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all ${!discoveryMode ? 'bg-white text-black shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
+                        >
+                            Chat
+                        </button>
+                        <button 
+                            onClick={() => setDiscoveryMode(true)}
+                            className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 ${discoveryMode ? 'bg-[#FA2D48] text-white shadow-[0_0_15px_rgba(250,45,72,0.4)]' : 'text-[#8E8E93] hover:text-white'}`}
+                        >
+                            <Zap size={10} className={discoveryMode ? "fill-current" : ""} />
+                            Discovery
+                        </button>
+                    </div>
                 </div>
 
                 {/* Quick Feature Suggestions */}
@@ -351,15 +361,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             <button
                                 key={suggestion}
                                 onClick={() => handleQuery(suggestion)}
-                                className={`px-4 py-2 rounded-full border text-sm transition-all active:scale-95 relative overflow-hidden group/sug ${
+                                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95 border ${
                                     suggestion === 'Your 2024 Vibe' 
-                                    ? 'bg-transparent border-[#FA2D48] text-[#FA2D48] font-bold shadow-[0_0_20px_rgba(250,45,72,0.1)] hover:bg-[#FA2D48] hover:text-white' 
-                                    : 'bg-white/5 border-white/10 text-[#8E8E93] hover:bg-white/10 hover:text-white hover:border-white/20'
+                                    ? 'bg-[#FA2D48]/10 border-[#FA2D48]/50 text-[#FA2D48] shadow-[0_0_10px_rgba(250,45,72,0.1)] hover:bg-[#FA2D48] hover:text-white' 
+                                    : 'bg-[#1C1C1E] border-white/5 text-[#8E8E93] hover:bg-[#2C2C2E] hover:text-white hover:border-white/20'
                                 }`}
                             >
-                                {suggestion === 'Your 2024 Vibe' && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#FA2D48]/20 to-transparent -translate-x-full group-hover/sug:animate-[shine_1.5s_infinite] pointer-events-none" />
-                                )}
                                 {suggestion}
                             </button>
                         ))}

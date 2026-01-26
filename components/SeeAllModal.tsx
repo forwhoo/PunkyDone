@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Play, Clock, Music } from 'lucide-react';
 
 interface SeeAllModalProps {
@@ -11,6 +11,19 @@ interface SeeAllModalProps {
 }
 
 export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title, items, type }) => {
+    
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     return (
@@ -22,7 +35,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
             />
 
             {/* Modal Content */}
-            <div className="relative bg-[#1C1C1E] w-full max-w-4xl h-[80vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-white/10 animate-in zoom-in-95 duration-300">
+            <div className="relative bg-[#1C1C1E] w-full max-w-4xl max-h-[85vh] h-auto rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-white/10 animate-in zoom-in-95 duration-300">
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-white/5 bg-[#1C1C1E]/50 backdrop-blur-xl absolute top-0 left-0 right-0 z-10 transition-all">
                     <div>

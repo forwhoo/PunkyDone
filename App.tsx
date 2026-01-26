@@ -560,8 +560,6 @@ function App() {
             {/* LEFT: OBSESSION ORBIT */}
             <div className="rounded-3xl p-6 relative overflow-hidden min-h-[600px] border-none bg-transparent">
                 
-                <h3 className="absolute top-6 left-6 text-sm font-bold text-white/50 uppercase tracking-widest z-10">Live Obsession</h3>
-                
                 <TrendingArtists 
                     artists={dbUnifiedData?.artists || data.artists}
                     albums={dbUnifiedData?.albums || data.albums}

@@ -109,6 +109,18 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
         setSelectedTracks(dailyTracks[dateStr]);
     };
 
+    // Lock body scroll logic
+    React.useEffect(() => {
+        if (selectedDate) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+             document.body.style.overflow = '';
+        };
+    }, [selectedDate]);
+
     return (
         <>
             <div className="w-full max-w-4xl mx-auto mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
