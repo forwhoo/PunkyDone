@@ -133,29 +133,20 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
     const [hoveredArtist, setHoveredArtist] = useState<TrendingArtist | null>(null);
 
     // ... (rest of code)
-    // CSS to enable smooth arranging transition
-    const containerStyle: React.CSSProperties = {
-        position: 'relative',
-        height: '400px',
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '20px',
-        maxWidth: '900px',
-        margin: '0 auto'
-    };
-    
-    // Sort logic handled in calculation
     
     if (trendingArtists.length === 0) return null;
 
+    // Use top 7 for the specific grid layout
+    const displayList = trendingArtists.slice(0, 7);
+    const topArtist = displayList[0];
+    const otherArtists = displayList.slice(1);
+
     return (
         <div className="mb-16">
-            <div className="flex justify-between items-end mb-8 px-1 mx-1">
+            <div className="flex justify-between items-end mb-6 px-1 mx-1">
                 <div>
                     <h2 className="text-[22px] font-bold text-white tracking-tight">Trending Artists</h2>
-                    <p className="text-[#8E8E93] text-[13px]">Live visualization of your obsession levels</p>
+                    <p className="text-[#8E8E93] text-[13px]">Obsession Heatmap</p>
                 </div>
                 <div className="flex items-center gap-2 text-[#555] text-[10px]">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
@@ -163,51 +154,57 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
                 </div>
             </div>
             
-            {/* Concentric / Clustered Bubble Visualization */}
-            <div style={containerStyle} className="p-4">
-                 {trendingArtists.slice(0, 10).map((artist: any, index: number) => {
-                     // Calculate size based on score: 
-                     // Max score ~300 -> 220px
-                     // Min score ~50 -> 100px
-                     const maxScore = trendingArtists[0].trendScore || 100;
-                     const size = 100 + Math.floor((artist.trendScore / maxScore) * 120);
+            {/* COMPACT BENTO GRID LAYOUT */}
+            {/* Takes up about 250px height max, very efficient */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 h-[280px] md:h-[260px]">
+                 
+                 {/* #1 SPOTLIGHT (Left Large Cell) */}
+                 <div className="col-span-2 row-span-2 relative group cursor-pointer overflow-hidden rounded-2xl bg-[#CC293E] shadow-[0_10px_40px_rgba(250,45,72,0.2)] border-2 border-[#FA2D48] transition-transform hover:scale-[1.01]">
+                     <img 
+                        src={topArtist.image} 
+                        className="w-full h-full object-cover opacity-80 group-hover:opacity-60 group-hover:scale-110 transition-all duration-700" 
+                     />
                      
-                     return (
-                         <div 
-                            key={artist.name}
-                            className="relative group transition-all duration-700 ease-in-out hover:z-50"
-                            style={{
-                                width: size,
-                                height: size,
-                                borderRadius: '50%',
-                                transitionDelay: `${index * 50}ms`
-                            }}
-                         >
-                            {/* Inner Bubble */}
-                            <div className={`w-full h-full rounded-full overflow-hidden relative shadow-2xl transition-transform duration-300 group-hover:scale-110 border-4 cursor-pointer ${
-                                index === 0 ? 'border-[#FA2D48] shadow-[0_0_50px_rgba(250,45,72,0.3)]' : 'border-[#2C2C2E] group-hover:border-[#FA2D48]'
-                            }`}>
-                                <img 
-                                    src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`}
-                                    alt={artist.name}
-                                    className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
-
-                                {/* Text Overlay - Clean & Centered */}
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2 opacity-100 transition-opacity">
-                                    <h3 className="text-white font-bold drop-shadow-md leading-tight mb-1" style={{ fontSize: Math.max(12, size/10) }}>
-                                        {artist.name}
-                                    </h3>
-                                    <div className="bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 flex items-center gap-1 group-hover:bg-[#FA2D48] transition-colors">
-                                         <TrendingUp className="w-3 h-3 text-[#FA2D48] group-hover:text-white" />
-                                         <span className="text-white text-xs font-bold">{artist.trendScore}</span>
-                                    </div>
-                                </div>
-                            </div>
+                     {/* Overlay Content */}
+                     <div className="absolute inset-0 flex flex-col justify-end p-6 bg-gradient-to-t from-black via-black/40 to-transparent">
+                         <span className="inline-flex items-center gap-2 bg-[#FA2D48] w-fit px-3 py-1 rounded-full text-white text-[10px] font-black uppercase tracking-widest mb-2 shadow-lg">
+                             <TrendingUp className="w-3 h-3" /> #1 Trending
+                         </span>
+                         <h3 className="text-3xl font-black text-white leading-none mb-1">{topArtist.name}</h3>
+                         <div className="flex items-center gap-4 text-white/80 text-xs font-mono">
+                             <span>{topArtist.trendScore} Score</span>
+                             <span>{topArtist.velocity}% Velocity</span>
                          </div>
-                     )
-                 })}
+                     </div>
+                 </div>
+
+                 {/* GRID OF OTHERS (Right Side) */}
+                 {otherArtists.map((artist, idx) => (
+                     <div 
+                        key={artist.name}
+                        className="col-span-1 row-span-1 relative group cursor-pointer overflow-hidden rounded-xl bg-[#2C2C2E] border border-white/5 hover:border-white/20 transition-all"
+                     >
+                         <img 
+                            src={artist.image} 
+                            className="w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-110 transition-all duration-500" 
+                         />
+                         
+                         <div className="absolute inset-0 flex flex-col justify-center items-center p-2 text-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 backdrop-blur-sm z-10">
+                              <span className="text-[#FA2D48] font-bold text-xl">{artist.trendScore}</span>
+                              <span className="text-white/50 text-[10px] uppercase">Score</span>
+                         </div>
+
+                         <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black to-transparent group-hover:opacity-0 transition-opacity">
+                             <h4 className="text-white font-bold text-sm truncate">{artist.name}</h4>
+                             <p className="text-[#FA2D48] text-[10px] font-bold">#{idx + 2}</p>
+                         </div>
+                     </div>
+                 ))}
+                 
+                 {/* Fill empty slots if less than 7 artists (optional) */}
+                 {Array.from({ length: Math.max(0, 6 - otherArtists.length) }).map((_, i) => (
+                     <div key={`empty-${i}`} className="col-span-1 row-span-1 bg-white/5 rounded-xl animate-pulse" />
+                 ))}
             </div>
         </div>
     );
