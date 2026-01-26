@@ -379,25 +379,41 @@ function App() {
 
   if (!token) {
       return (
-          <div className="min-h-[100dvh] min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
-              <div className="w-20 h-20 bg-gradient-to-tr from-[#FA2D48] to-[#FF2D55] rounded-3xl flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(250,45,72,0.4)]">
-                  <Music className="w-10 h-10 text-white" />
+          <div className="min-h-[100dvh] min-h-screen bg-[#0B0B0C] text-white flex items-center justify-center p-6 relative overflow-hidden">
+              <div className="absolute inset-0">
+                  <div className="absolute -top-40 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-[#FA2D48]/15 blur-[120px]" />
+                  <div className="absolute bottom-[-20%] right-[-10%] h-[360px] w-[360px] rounded-full bg-[#2C2C2E]/40 blur-[140px]" />
               </div>
-              <h1 className="text-4xl font-bold text-white mb-4 tracking-tight">Connect to Spotify</h1>
-              <p className="text-[#8E8E93] max-w-md mb-8 text-lg">
-                  Connect your account to unlock your personalized dashboard with real-time stats and AI insights.
-              </p>
-              
-              <div className="w-full max-w-sm space-y-4">
-                  <button 
-                    onClick={handleConnect}
-                    className="w-full bg-[#FA2D48] hover:bg-[#d4253d] text-white font-semibold py-3 rounded-xl transition-all active:scale-95"
-                  >
-                    Connect Account
-                  </button>
-                  <p className="text-xs text-[#555] mt-4">
-                      By connecting, you agree to allow us to view your top artists and tracks.
-                  </p>
+
+              <div className="relative w-full max-w-2xl rounded-[32px] border border-white/10 bg-[#1C1C1E]/90 backdrop-blur-xl p-8 md:p-12 shadow-2xl">
+                  <div className="flex flex-col items-center text-center gap-6">
+                      <div className="w-20 h-20 bg-gradient-to-tr from-[#FA2D48] to-[#FF2D55] rounded-3xl flex items-center justify-center shadow-[0_0_50px_rgba(250,45,72,0.4)]">
+                          <Music className="w-10 h-10 text-white" />
+                      </div>
+                      <div className="space-y-3">
+                          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Authenticate with Spotify</h1>
+                          <p className="text-[#8E8E93] text-base md:text-lg max-w-xl">
+                              Link your Spotify account to unlock real-time charts, AI insights, and your personalized listening story.
+                          </p>
+                      </div>
+                  </div>
+                  
+                  <div className="mt-8 space-y-4">
+                      <button 
+                        onClick={handleConnect}
+                        className="w-full bg-[#FA2D48] hover:bg-[#d4253d] text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-[#FA2D48]/25"
+                      >
+                        Connect Spotify
+                      </button>
+                      <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-[#8E8E93]">
+                          <span className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+                              Secure OAuth • Read-only access
+                          </span>
+                          <span>
+                              We only use your listening history to build your dashboard.
+                          </span>
+                      </div>
+                  </div>
               </div>
           </div>
       );
@@ -409,30 +425,42 @@ function App() {
       return (
           <Layout user={null} currentTrack={null}>
               <div className="flex h-[80vh] flex-col items-center justify-center gap-8 relative overflow-hidden">
-                  
-                  {/* Background Aura */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-[500px] h-[500px] bg-[#FA2D48]/10 rounded-full blur-[100px] animate-pulse"></div>
+                  <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(250,45,72,0.25),_rgba(0,0,0,0))]" />
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(44,44,46,0.45),_rgba(0,0,0,0))]" />
                   </div>
 
-                  {/* Cool Card Stack Animation */}
-                  <div className="relative w-32 h-32 flex items-center justify-center">
-                        <div className="absolute inset-0 bg-[#2C2C2E] rounded-xl rotate-12 opacity-40 scale-75 animate-bounce delay-75 border border-white/5"></div>
-                        <div className="absolute inset-0 bg-[#2C2C2E] rounded-xl -rotate-12 opacity-60 scale-90 animate-bounce delay-150 border border-white/5"></div>
-                        <div className="relative w-24 h-24 bg-[#1C1C1E] rounded-xl shadow-2xl flex items-center justify-center border border-white/10 z-10 animate-bounce">
-                            <Music className="w-10 h-10 text-[#FA2D48] drop-shadow-[0_0_15px_rgba(250,45,72,0.6)]" />
-                        </div>
-                  </div>
+                  <div className="relative w-full max-w-lg rounded-[28px] border border-white/10 bg-[#1C1C1E]/90 p-8 backdrop-blur-xl shadow-2xl">
+                      <div className="flex items-center gap-5">
+                          <div className="w-14 h-14 rounded-2xl bg-[#2C2C2E] flex items-center justify-center border border-white/10">
+                              <Music className="w-7 h-7 text-[#FA2D48]" />
+                          </div>
+                          <div>
+                              <h3 className="text-xl font-bold text-white tracking-tight">Syncing your library</h3>
+                              <p className="text-[#8E8E93] text-sm">Building your charts and AI insights</p>
+                          </div>
+                      </div>
 
-                  <div className="flex flex-col items-center gap-2 z-10">
-                      <h3 className="text-xl font-bold text-white tracking-tight animate-pulse">Building your collection...</h3>
-                      <p className="text-[#8E8E93] text-sm font-medium">Analyzing your listening history</p>
+                      <div className="mt-6 space-y-4">
+                          <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden">
+                              <div className="h-full w-1/2 bg-gradient-to-r from-[#FA2D48] via-[#FF2D55] to-[#FA2D48] animate-pulse rounded-full" />
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                              {['Top artists', 'Top tracks', 'Recent plays'].map((label) => (
+                                  <div key={label} className="rounded-xl border border-white/5 bg-white/5 p-3">
+                                      <div className="h-3 w-16 bg-white/20 rounded-full mb-3 animate-pulse" />
+                                      <div className="h-6 w-full bg-[#2C2C2E] rounded-lg" />
+                                      <p className="text-[10px] text-[#8E8E93] mt-3 uppercase tracking-widest">{label}</p>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
                   </div>
                   
                   {loading === false && !data && (
                       <button 
                         onClick={handleConnect}
-                        className="mt-4 px-6 py-2 bg-[#FA2D48] text-white text-xs font-bold rounded-full hover:scale-105 transition-transform z-10 shadow-lg shadow-[#FA2D48]/20"
+                        className="mt-2 px-6 py-2.5 bg-[#FA2D48] text-white text-xs font-bold rounded-full hover:scale-105 transition-transform z-10 shadow-lg shadow-[#FA2D48]/20"
                       >
                         Reconnect Spotify
                       </button>
@@ -735,7 +763,7 @@ function App() {
                                 </div>
                                 <div className="bg-white/5 rounded-2xl p-3 border border-white/5 flex flex-col items-center justify-center text-center">
                                     <Clock size={16} className="text-[#FA2D48] mb-1" />
-                                    <span className="text-xl font-bold text-white">{selectedTopArtist.timeStr?.replace('m', '') || '0'}</span>
+                                    <span className="text-xl font-bold text-white">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
                                     <span className="text-[9px] uppercase tracking-widest text-[#8E8E93]">Minutes</span>
                                 </div>
                             </div>
