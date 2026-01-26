@@ -23,23 +23,21 @@ import { supabase } from './services/supabaseClient';
 
 // RANKED COMPONENT: Top Album (Standard)
 const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
-    <div className="flex-shrink-0 relative flex items-end snap-start group cursor-pointer w-[160px] md:w-[200px] mr-4">
-        <div className="relative z-10">
-            <div className="w-28 h-28 md:w-36 md:h-36 overflow-hidden rounded-2xl bg-[#2C2C2E] shadow-2xl border border-white/10 group-hover:border-[#FA2D48]/50 transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative">
-                <img src={album.cover} alt={album.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110" />
-                {/* Rank Badge */}
-                <div className="absolute top-2 left-2 w-7 h-7 bg-black/80 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/10">
-                    <span className="text-white font-black text-sm">{rank}</span>
-                </div>
+    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
+        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40">
+            {rank}
+        </span>
+        <div className="relative z-10 ml-10 md:ml-12">
+            <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
+                <img src={album.cover} alt={album.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                 {/* Hover Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/60 backdrop-blur-sm">
-                     <span className="text-white font-bold text-lg drop-shadow-md">{album.timeStr}</span>
-                     <span className="text-white/60 text-[10px] uppercase tracking-widest mt-1">listened</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
+                     <span className="text-white font-bold text-xl drop-shadow-md">{album.timeStr}</span>
                 </div>
             </div>
-            <div className="mt-3 px-1">
-                <h3 className="text-[14px] font-semibold text-white truncate w-28 md:w-36 leading-tight group-hover:text-[#FA2D48] transition-colors">{album.title}</h3>
-                <p className="text-[12px] text-[#8E8E93] truncate w-28 md:w-36 mt-0.5">{album.artist}</p>
+            <div className="mt-3 relative z-20">
+                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{album.title}</h3>
+                <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">{album.artist} • <span className="text-[#FA2D48]">{album.timeStr}</span></p>
             </div>
         </div>
     </div>
@@ -47,26 +45,24 @@ const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
 
 // RANKED COMPONENT: Top Artist (Number style like Top Albums)
 const RankedArtist = ({ artist, rank, realImage }: { artist: Artist, rank: number, realImage?: string }) => (
-    <div className="flex-shrink-0 relative flex items-end snap-start group cursor-pointer w-[160px] md:w-[200px] mr-4">
-        <div className="relative z-10">
-            <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden bg-[#2C2C2E] shadow-2xl border-2 border-white/10 group-hover:border-[#FA2D48]/50 transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative">
+    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
+        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40">
+            {rank}
+        </span>
+        <div className="relative z-10 ml-10 md:ml-12">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
                 <img 
                     src={realImage || artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
                     alt={artist.name} 
-                    className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110" 
+                    className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" 
                 />
-                {/* Rank Badge */}
-                <div className="absolute top-1 left-1 w-7 h-7 bg-black/80 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/10">
-                    <span className="text-white font-black text-sm">{rank}</span>
-                </div>
                 {/* Hover Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/60 backdrop-blur-sm rounded-full">
-                     <span className="text-white font-bold text-lg drop-shadow-md">{artist.timeStr}</span>
-                     <span className="text-white/60 text-[10px] uppercase tracking-widest mt-1">listened</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
+                     <span className="text-white font-bold text-xl drop-shadow-md">{artist.timeStr}</span>
                 </div>
             </div>
-            <div className="mt-3 px-1 text-center">
-                <h3 className="text-[14px] font-semibold text-white truncate w-28 md:w-36 leading-tight group-hover:text-[#FA2D48] transition-colors mx-auto">{artist.name}</h3>
+            <div className="mt-3 relative z-20">
+                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{artist.name}</h3>
             </div>
         </div>
     </div>
@@ -74,23 +70,21 @@ const RankedArtist = ({ artist, rank, realImage }: { artist: Artist, rank: numbe
 
 // RANKED COMPONENT: Top Song (Ranked Album Style)
 const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
-    <div className="flex-shrink-0 relative flex items-end snap-start group cursor-pointer w-[160px] md:w-[200px] mr-4">
-        <div className="relative z-10">
-            <div className="w-28 h-28 md:w-36 md:h-36 overflow-hidden rounded-2xl bg-[#2C2C2E] shadow-2xl border border-white/10 group-hover:border-[#FA2D48]/50 transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative">
-                <img src={song.cover} alt={song.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110" />
-                {/* Rank Badge */}
-                <div className="absolute top-2 left-2 w-7 h-7 bg-black/80 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/10">
-                    <span className="text-white font-black text-sm">{rank}</span>
-                </div>
+    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
+        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40">
+            {rank}
+        </span>
+        <div className="relative z-10 ml-10 md:ml-12">
+            <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
+                <img src={song.cover} alt={song.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                 {/* Hover Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/60 backdrop-blur-sm">
-                     <span className="text-white font-bold text-lg drop-shadow-md">{song.timeStr}</span>
-                     <span className="text-white/60 text-[10px] uppercase tracking-widest mt-1">listened</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
+                     <span className="text-white font-bold text-xl drop-shadow-md">{song.timeStr}</span>
                 </div>
             </div>
-            <div className="mt-3 px-1">
-                <h3 className="text-[14px] font-semibold text-white truncate w-28 md:w-36 leading-tight group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
-                <p className="text-[12px] text-[#8E8E93] truncate w-28 md:w-36 mt-0.5">{song.artist}</p>
+            <div className="mt-3 relative z-20">
+                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
+                <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">{song.artist} • <span className="text-[#FA2D48]">{song.timeStr}</span></p>
             </div>
         </div>
     </div>
@@ -421,7 +415,7 @@ function App() {
     <Layout user={data.user} currentTrack={data.currentTrack}>
         
         {/* SECTION 1: AI DISCOVERY - Clean Centered Design */}
-        <div className="mb-16">
+        <div className="mb-24 mt-8">
             <AISpotlight 
                 token={token}
                 contextData={{
@@ -477,14 +471,11 @@ function App() {
                 <div>
                     <div className="flex justify-between items-center mb-6 px-1">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FA2D48] to-[#FF6B6B] flex items-center justify-center">
-                                <Mic2 size={16} className="text-white" />
-                            </div>
-                            <h3 className="text-lg font-bold text-white">Top Artists</h3>
+                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Artists</h3>
                         </div>
-                        <button className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider">See All →</button>
+                        <button className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider">See All</button>
                     </div>
-                    <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-2">
+                    <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
                         {(dbUnifiedData?.artists || data.artists).slice(0, 8).map((artist: Artist, index: number) => (
                             <RankedArtist key={artist.id} artist={artist} rank={index + 1} realImage={artistImages[artist.name]} />
                         ))}
@@ -495,14 +486,11 @@ function App() {
                 <div>
                     <div className="flex justify-between items-center mb-6 px-1">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF9F0A] to-[#FFD60A] flex items-center justify-center">
-                                <Disc size={16} className="text-white" />
-                            </div>
-                            <h3 className="text-lg font-bold text-white">Top Albums</h3>
+                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
                         </div>
-                        <button className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider">See All →</button>
+                        <button className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider">See All</button>
                     </div>
-                    <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-2">
+                    <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
                         {(dbUnifiedData?.albums || data.albums).slice(0, 8).map((album: Album, index: number) => (
                             <RankedAlbum key={album.id} album={album} rank={index + 1} />
                         ))}
@@ -513,14 +501,11 @@ function App() {
                 <div>
                     <div className="flex justify-between items-center mb-6 px-1">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#30D158] to-[#34C759] flex items-center justify-center">
-                                <Music size={16} className="text-white" />
-                            </div>
-                            <h3 className="text-lg font-bold text-white">Top Songs</h3>
+                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
                         </div>
-                        <button className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider">See All →</button>
+                        <button className="text-xs font-bold text-[#FA2D48] hover:text-white transition-colors uppercase tracking-wider">See All</button>
                     </div>
-                    <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-2">
+                    <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
                         {(dbUnifiedData?.songs || data.songs).slice(0, 8).map((song: Song, index: number) => (
                             <RankedSong key={song.id} song={song} rank={index + 1} />
                         ))}
@@ -532,10 +517,9 @@ function App() {
         {/* SECTION 3: ORBIT + ANALYTICS DASHBOARD */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-20">
             {/* LEFT: OBSESSION ORBIT */}
-            <div className="bg-gradient-to-b from-[#1C1C1E]/60 to-[#0A0A0A] rounded-3xl border border-white/10 p-6 relative overflow-hidden min-h-[600px]">
-                {/* Decorative Elements */}
-                <div className="absolute top-0 right-0 w-80 h-80 bg-[#FA2D48]/5 blur-[120px] pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#FF9F0A]/5 blur-[100px] pointer-events-none"></div>
+            <div className="rounded-3xl p-6 relative overflow-hidden min-h-[600px] border-none bg-transparent">
+                
+                <h3 className="absolute top-6 left-6 text-sm font-bold text-white/50 uppercase tracking-widest z-10">Live Obsession</h3>
                 
                 <TrendingArtists 
                     artists={dbUnifiedData?.artists || data.artists}
