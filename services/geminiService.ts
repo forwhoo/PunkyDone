@@ -43,6 +43,7 @@ export const answerMusicQuestion = async (question: string, context: {
   artists: string[], 
   albums: string[], 
   songs: string[],
+  userName?: string,
   globalStats?: { 
     weeklyTime: string, 
     weeklyTrend: string, 
@@ -68,6 +69,7 @@ export const answerMusicQuestion = async (question: string, context: {
 
     const prompt = `
 You are a music analytics assistant with deep knowledge of the user's listening history.
+User name: ${context.userName || 'Unknown'}
 
 USER'S LIBRARY CONTEXT:
 ${statsInfo}
@@ -189,7 +191,7 @@ export interface AIFilterArgs {
     maxDurationMs?: number; // Songs shorter than X
     
     // Aggregation
-    sortBy?: 'plays' | 'minutes' | 'recency';
+    sortBy?: 'plays' | 'minutes' | 'recency' | 'duration';
     sortOrder?: 'highest' | 'lowest';
     
     // Result control
@@ -278,6 +280,7 @@ export const generateDynamicCategoryQuery = async (context: {
     artists: string[], 
     albums: string[], 
     songs: string[] ,
+    userName?: string,
     globalStats?: { 
         weeklyTime: string, 
         weeklyTrend: string, 
@@ -322,6 +325,7 @@ If a song has jumped significantly in rank (e.g., LW #20 -> Rank #1), mention it
 ${statsInfo}
 
 ## USER'S LIBRARY:
+- User name: ${context.userName || 'Unknown'}
 - Top Artists: [${shuffledArtists.slice(0, 30).join(', ')}]
 - Top Albums: [${shuffledAlbums.slice(0, 20).join(', ')}]
 - Top Songs: [${shuffledSongs.slice(0, 20).join(', ')}]
@@ -340,7 +344,7 @@ ${statsInfo}
 | recentDays     | number                                      | Only last N days (7=week, 30=month)            |
 | minDurationMs  | number                                      | Songs > X ms (240000 = 4min, for epics)        |
 | maxDurationMs  | number                                      | Songs < X ms (180000 = 3min, for quick hits)   |
-| sortBy         | "plays" | "minutes" | "recency"            | How to rank results                            |
+| sortBy         | "plays" | "minutes" | "recency" | "duration" | How to rank results                   |
 | sortOrder      | "highest" | "lowest"                      | Top or Bottom                                  |
 | minPlays       | number                                      | Minimum play count (ensures variety)           |
 | limit          | number                                      | MAX results (Default 20, Max 50)               |
@@ -364,6 +368,7 @@ ${statsInfo}
 2. **COMPLEX QUERY**:
    - "Top Artists": Use { type: "artist", sortBy: "plays", sortOrder: "highest" }
    - "Top Albums": Use { type: "album", sortBy: "plays", sortOrder: "highest" }
+   - "Longest Tracks": Use { type: "song", sortBy: "duration", sortOrder: "highest" }
 
 ## CREATIVE GUIDELINES:
 - **Title Creativity**: Avoid "Top Tracks". Use "The Marathon", "Quick Hits", "Heavy Rotation".

@@ -121,6 +121,14 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                             alt={item.name} 
                                             className="w-full h-full object-cover rounded-full"
                                         />
+
+                                        {/* Gradient for text readability */}
+                                        <div className="absolute inset-x-0 bottom-0 h-1/2 rounded-full bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                                        
+                                        {/* Name Inside Image */}
+                                        <div className="absolute inset-x-0 bottom-0 pb-3 px-3 text-center">
+                                            <h3 className="text-[12px] font-bold text-white drop-shadow-md truncate">{item.name}</h3>
+                                        </div>
                                         
                                         {/* Hover Blur & Stats */}
                                         <div className="absolute inset-0 rounded-full bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center text-center p-2">
@@ -133,11 +141,6 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                         <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-[#FA2D48] flex items-center justify-center border-4 border-[#1C1C1E] z-20 shadow-md">
                                             <span className="text-xs font-black text-white">{index + 1}</span>
                                         </div>
-                                    </div>
-                                    
-                                    {/* Name Below - Visual Stack */}
-                                    <div className="mt-[-20px] pt-8 pb-3 px-3 bg-[#2C2C2E] rounded-2xl w-full text-center border border-white/5 relative z-0 transition-transform group-hover:translate-y-1">
-                                         <h3 className="text-[13px] font-bold text-white truncate px-1">{item.name}</h3>
                                     </div>
                                 </div>
                             ))}

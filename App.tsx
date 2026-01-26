@@ -469,6 +469,7 @@ function App() {
                 history={safeRecent}
                 user={data.user}
                 contextData={{
+                    userName: data.user?.display_name,
                     artists: safeArtists.map((a: Artist, idx: number) => {
                         const time = a.timeStr || '';
                         const mins = time.replace('m', '');
