@@ -27,17 +27,17 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4 w-screen h-screen">
             {/* Backdrop with Blur */}
             <div 
-                className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity"
+                className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity pointer-events-auto"
                 onClick={onClose}
             />
 
-            {/* Modal Content */}
-            <div className="relative bg-[#1C1C1E] w-full max-w-4xl max-h-[85vh] h-auto rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-white/10 animate-in zoom-in-95 duration-300">
+            {/* Modal Content - Centered properly */}
+            <div className="relative bg-[#1C1C1E] w-full max-w-4xl max-h-[85vh] h-auto rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-white/10 animate-in zoom-in-95 duration-300 pointer-events-auto">
                 {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-white/5 bg-[#1C1C1E]/50 backdrop-blur-xl absolute top-0 left-0 right-0 z-10 transition-all">
+                <div className="flex justify-between items-center p-6 border-b border-white/5 bg-[#1C1C1E]/50 backdrop-blur-xl sticky top-0 left-0 right-0 z-10 transition-all">
                     <div>
                         <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
                         <span className="text-[#8E8E93] text-sm">Top 50 Ranking</span>

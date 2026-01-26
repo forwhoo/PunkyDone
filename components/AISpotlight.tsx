@@ -27,12 +27,57 @@ interface TopAIProps {
     user?: any;
 }
 
+// Reusable Ranked Item Component (Internal)
+const AI_RankedItem = ({ item, rank }: { item: any, rank: number }) => (
+    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
+        {/* Big Number Ranking */}
+        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40">
+            {rank}
+        </span>
+        
+        <div className="relative z-10 ml-10 md:ml-12">
+             {/* Image Container */}
+            <div className={`w-32 h-32 md:w-40 md:h-40 overflow-hidden bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative ${item.type === 'artist' ? 'rounded-full' : 'rounded-xl'}`}>
+                {/* Fallback & Image */}
+                <div className="absolute inset-0 flex items-center justify-center bg-[#1C1C1E]">
+                     <Music2 className="text-white/20" size={48} />
+                </div>
+                <img 
+                    src={item.cover || item.image} 
+                    alt={item.title} 
+                    className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm"
+                    onError={(e) => e.currentTarget.style.opacity = '0'}
+                />
+                
+                {/* Hover Overlay with Stats */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40 backdrop-blur-sm">
+                     <span className="text-white font-bold text-xl drop-shadow-md">
+                         {item.mins ? `${item.mins}m` : (item.plays ? `${item.plays}p` : `#${rank}`)}
+                     </span>
+                </div>
+            </div>
+            
+            {/* Text Details */}
+            <div className="mt-3 relative z-20">
+                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{item.name || item.title}</h3>
+                {(item.artist || item.desc) && (
+                    <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">
+                        {item.artist || item.desc}
+                    </p>
+                )}
+            </div>
+        </div>
+    </div>
+);
+
 interface CategoryResult {
     id: string;
     title: string;
     description: string;
     stats: string;
     tracks: any[];
+    // View preference
+    viewMode?: 'standard' | 'ranked';
 }
 
 export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history = [], user }) => {
@@ -41,7 +86,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     // Store array of category results
     const [categoryResults, setCategoryResults] = useState<CategoryResult[]>([]);
     
-    // Weekly Insight State
+    // Global View Config for newly generated results
+    const [viewMode, setViewMode] = useState<'standard' | 'ranked'>('standard');
+    const [sortMode, setSortMode] = useState<'mins' | 'plays' | 'date'>('mins');
+
     const [insightMode, setInsightMode] = useState(false);
     const [insightData, setInsightData] = useState<any[]>([]);
     const [insightStep, setInsightStep] = useState(0);
@@ -621,40 +669,71 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             className="relative category-card opacity-0"
                             style={{ animationDelay: `${categoryIndex * 0.15}s` }}
                         >
-                            {/* Category Header */}
+                            {/* Category Header with Toggles */}
                             <div className="flex items-end justify-between gap-4 mb-4 pr-4">
                                 <div className="mb-2">
                                     <h3 className="text-2xl font-bold text-white tracking-tight">{category.title}</h3>
                                     <p className="text-[#8E8E93] text-sm">{category.description}</p>
                                 </div>
-                                {category.stats && (
-                                    <div className="bg-white/10 backdrop-blur-md border border-white/5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/90 mb-2">
-                                        {category.stats}
+                                <div className="flex items-center gap-3">
+                                    {/* Sort Toggles */}
+                                    <div className="flex bg-[#1C1C1E] rounded-lg p-0.5 border border-white/5">
+                                        {(['mins', 'plays', 'date'] as const).map(m => (
+                                            <button
+                                                key={m}
+                                                onClick={() => {
+                                                    setSortMode(m);
+                                                    // Logic to actually sort tracks would go here or effect
+                                                }}
+                                                className={`px-2 py-1 text-[10px] uppercase font-bold rounded-md transition-all ${sortMode === m ? 'bg-white/10 text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                                            >
+                                                {m}
+                                            </button>
+                                        ))}
                                     </div>
-                                )}
+                                    
+                                    {/* View Mode Toggle */}
+                                    <button 
+                                        onClick={() => setViewMode(prev => prev === 'standard' ? 'ranked' : 'standard')}
+                                        className="bg-[#1C1C1E] border border-white/5 p-1.5 rounded-lg text-white/50 hover:text-white transition-colors"
+                                        title="Toggle View"
+                                    >
+                                        {viewMode === 'standard' ? <Trophy size={14} /> : <BarChart3 size={14} />}
+                                    </button>
+                                    
+                                    {category.stats && (
+                                        <div className="bg-white/10 backdrop-blur-md border border-white/5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/90 mb-2">
+                                            {category.stats}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Horizontal Scroll List */}
-                            <div className="flex items-start overflow-x-auto pb-4 pt-2 no-scrollbar snap-x pl-2 scroll-smooth gap-4">
+                            <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-2 scroll-smooth gap-4 min-h-[280px]">
                                 {category.tracks.map((track, trackIndex) => (
-                                    <div key={trackIndex} className="flex-shrink-0 relative flex flex-col items-center gap-2 group cursor-pointer w-[140px] snap-start">
-                                        <div className="w-[140px] h-[140px] overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 relative">
-                                             {/* Fallback Background */}
-                                             <div className="absolute inset-0 flex items-center justify-center bg-[#1C1C1E]">
-                                                 <Music2 className="text-white/20" size={48} />
-                                             </div>
-                                             <img 
-                                                 src={track.cover || track.image} 
-                                                 alt={track.title} 
-                                                 className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
-                                                 onError={(e) => e.currentTarget.style.opacity = '0'}
-                                             />
+                                    viewMode === 'ranked' ? (
+                                        <AI_RankedItem key={trackIndex} item={{...track}} rank={trackIndex + 1} />
+                                    ) : (
+                                        <div key={trackIndex} className="flex-shrink-0 relative flex flex-col items-center gap-2 group cursor-pointer w-[140px] snap-start">
+                                            <div className="w-[140px] h-[140px] overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 relative">
+                                                {/* Fallback Background */}
+                                                <div className="absolute inset-0 flex items-center justify-center bg-[#1C1C1E]">
+                                                    <Music2 className="text-white/20" size={48} />
+                                                </div>
+                                                <img 
+                                                    src={track.cover || track.image} 
+                                                    alt={track.title} 
+                                                    className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+                                                    onError={(e) => e.currentTarget.style.opacity = '0'}
+                                                />
+                                            </div>
+                                            <div className="text-center w-full px-1">
+                                                <h4 className="text-[13px] font-semibold text-white truncate w-full">{track.name || track.title}</h4>
+                                                <p className="text-[11px] text-[#8E8E93] truncate w-full">{track.artist}</p>
+                                            </div>
                                         </div>
-                                        <div className="text-center w-full px-1">
-                                            <h4 className="text-[13px] font-semibold text-white truncate w-full">{track.name || track.title}</h4>
-                                            <p className="text-[11px] text-[#8E8E93] truncate w-full">{track.artist}</p>
-                                        </div>
-                                    </div>
+                                    )
                                 ))}
                             </div>
                         </div>

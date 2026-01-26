@@ -422,6 +422,7 @@ function App() {
   }
 
   return (
+    <>
     <Layout user={data.user} currentTrack={data.currentTrack}>
         
         {/* SECTION 1: AI DISCOVERY - Clean Centered Design */}
@@ -478,7 +479,7 @@ function App() {
                 </div>
             </div>
             
-            <div className="space-y-12">
+            <div key={timeRange} className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
                 {/* TOP ARTISTS */}
                 <div>
                     <div className="flex justify-between items-center mb-6 px-1">
@@ -581,16 +582,17 @@ function App() {
              <ActivityHeatmap history={dbUnifiedData?.recentPlays || data?.recentRaw || []} />
         </div>
 
-        {/* Global Modals */}
-        <SeeAllModal 
-            isOpen={seeAllModal.isOpen}
-            onClose={() => setSeeAllModal(prev => ({ ...prev, isOpen: false }))}
-            title={seeAllModal.title}
-            items={seeAllModal.items}
-            type={seeAllModal.type}
-        />
-
     </Layout>
+
+    {/* Global Modals - Moved Outside Layout to fix positioning context */}
+    <SeeAllModal 
+        isOpen={seeAllModal.isOpen}
+        onClose={() => setSeeAllModal(prev => ({ ...prev, isOpen: false }))}
+        title={seeAllModal.title}
+        items={seeAllModal.items}
+        type={seeAllModal.type}
+    />
+    </>
   );
 }
 

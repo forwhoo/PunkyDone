@@ -337,6 +337,12 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                 <div className="absolute bottom-4 left-6 right-6">
                                      <h2 className="text-xl font-bold text-white leading-tight truncate">{selectedItem.name}</h2>
                                      {selectedItem.subName && <p className="text-sm text-[#FA2D48] font-medium">{selectedItem.subName}</p>}
+                                     
+                                     {/* Obsession Score Display */}
+                                     <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-[#FA2D48]/20 border border-[#FA2D48]/50 rounded-full text-[#FA2D48]">
+                                        <TrendingUp size={12} />
+                                        <span className="text-[10px] font-bold tracking-wider">+{selectedItem.trendScore} OBSESSION POINTS</span>
+                                     </div>
                                 </div>
                             </div>
                             <div className="p-4 overflow-y-auto max-h-[calc(70vh-160px)]">
