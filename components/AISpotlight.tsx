@@ -481,7 +481,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                 {/* Quick Feature Suggestions Removed via user request */}
             </div>
-            </div>
 
             {/* Error Messages */}
             {errorMsg && (
