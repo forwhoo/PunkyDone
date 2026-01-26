@@ -81,7 +81,7 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
 
   return (
     <Card className="flex flex-col bg-transparent border-none shadow-none overflow-visible relative min-h-[450px]">
-      <CardHeader className="pb-6 pl-1 pr-1 pt-6 flex flex-col xl:flex-row xl:items-center justify-between border-b border-white/5 gap-4">
+      <CardHeader className="pb-6 pl-1 pr-1 pt-0 flex flex-col xl:flex-row xl:items-center justify-between border-b border-white/5 gap-4">
         <div>
            <CardTitle className="text-white text-[22px] font-bold tracking-tight mb-1">{username}'s Chart</CardTitle>
            <div className="text-[#8E8E93] text-sm flex items-center gap-2">
