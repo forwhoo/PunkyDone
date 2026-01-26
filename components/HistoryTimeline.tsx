@@ -68,6 +68,9 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ history }) => 
         // but "This year Only" implies the structure of 2026.
         // Let's go to today + end of current week
         const endDate = new Date(today);
+        // Extend to end of current week to avoid cutoff
+        const endDayOfWeek = endDate.getDay();
+        endDate.setDate(endDate.getDate() + (6 - endDayOfWeek));
         
         // Safety break
         let iterations = 0;
@@ -155,9 +158,6 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ history }) => 
             <div className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${selectedDate ? 'max-h-[800px] opacity-100 mt-6' : 'max-h-0 opacity-0'}`}>
                 {selectedDate && (
                     <div className="bg-[#1C1C1E] border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
-                         {/* Header background glow */}
-                        <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#FA2D48]/10 to-transparent pointer-events-none"></div>
-                        
                         <div className="p-6 relative">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
