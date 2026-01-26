@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { TopCharts } from './components/TopCharts';
-import { HeroCarousel } from './components/HeroCarousel';
 import { RankingWidget } from './components/RankingWidget';
 import { AISpotlight } from './components/AISpotlight';
 import { TrendingArtists } from './components/TrendingArtists';
 import { HistoryTimeline } from './components/HistoryTimeline';
 import { rankingMockData } from './mockData';
-import { Play, Music, BarChart2, Mic2, Disc, Trophy, Clock, TrendingUp, Sparkles } from 'lucide-react';
+import { Play, Music, BarChart2, Mic2, Disc, Trophy, Clock, TrendingUp, Sparkles, User } from 'lucide-react';
 import { Artist, Album, Song } from './types';
 import { 
     getAuthUrl, 
@@ -414,99 +413,66 @@ function App() {
 
   return (
     <Layout user={data.user} currentTrack={data.currentTrack}>
-        <HeroCarousel 
-            userImage={data?.user?.image}
-            insight={insight}  
-            loadingInsight={loadingInsight} 
-            onGenerateInsight={handleGetInsight} 
-            topArtistImage={(dbUnifiedData?.artists?.[0] || data?.artists?.[0])?.image}
-            topAlbumImage={(dbUnifiedData?.albums?.[0] || data?.albums?.[0])?.cover}
-            weeklyStats={dbStats}
-            topGenre={(dbUnifiedData?.artists?.[0] || data?.artists?.[0])?.genres?.[0] ? (dbUnifiedData?.artists?.[0] || data?.artists?.[0]).genres[0].charAt(0).toUpperCase() + (dbUnifiedData?.artists?.[0] || data?.artists?.[0]).genres[0].slice(1) : "Pop"}
-            longestSession={dbUnifiedData?.songs?.[0] || data?.songs?.[0]}
-            recentPlays={dbUnifiedData?.recentPlays || []}
-            topSongs={dbUnifiedData?.songs || data?.songs}
-        />
+        
+        {/* SECTION 1: HEADER & DISCOVERY */}
+        <div className="flex flex-col-reverse lg:flex-row justify-between items-start gap-8 mb-20 pt-4">
+            <div className="flex-1 w-full">
+                <div className="mb-8">
+                     <h1 className="text-5xl md:text-7xl font-black text-white italic tracking-tighter mb-2">PUNKY.</h1>
+                     <p className="text-[#8E8E93] font-medium">Your sonic DNA, decoded.</p>
+                </div>
+                
+                 <AISpotlight 
+                    token={token}
+                    contextData={{
+                        artists: (dbUnifiedData?.artists || data.artists).map((a: Artist) => {
+                            const time = a.timeStr || '';
+                            const mins = time.replace('m', '');
+                            return `${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
+                        }),
+                        albums: (dbUnifiedData?.albums || data.albums).map((a: Album) => {
+                            const time = a.timeStr || '';
+                            const mins = time.replace('m', '');
+                            return `${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
+                        }),
+                        songs: (dbUnifiedData?.songs || data.songs).map((s: Song) => {
+                            const time = s.timeStr || '';
+                            const mins = time.replace('m', '');
+                            return `${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
+                        }),
+                        globalStats: dbStats
+                    }} 
+                 />
+            </div>
 
-        {/* THE DISCOVERY - Moved to top as requested */}
-        <div className="mb-16 px-1">
-             <AISpotlight 
-                token={token}
-                contextData={{
-                    artists: (dbUnifiedData?.artists || data.artists).map((a: Artist) => {
-                        const time = a.timeStr || '';
-                        const mins = time.replace('m', '');
-                        return `${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
-                    }),
-                    albums: (dbUnifiedData?.albums || data.albums).map((a: Album) => {
-                        const time = a.timeStr || '';
-                        const mins = time.replace('m', '');
-                        return `${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
-                    }),
-                    songs: (dbUnifiedData?.songs || data.songs).map((s: Song) => {
-                        const time = s.timeStr || '';
-                        const mins = time.replace('m', '');
-                        return `${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
-                    }),
-                    globalStats: dbStats
-                }} 
-             />
+            {/* User Profile - Side Widget */}
+            <div className="relative group shrink-0">
+                 <div className="w-20 h-20 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-[#2C2C2E]">
+                     {data?.user?.image ? (
+                         <img src={data.user.image} alt="User" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                     ) : (
+                         <div className="flex items-center justify-center w-full h-full text-white/20"><User /></div>
+                     )}
+                 </div>
+                 <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-[#FA2D48]/20 to-transparent blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </div>
         </div>
 
-        {/* TOP ALBUMS - Horizontal Scroll */}
-        <div className="mb-12">
-             <div className="flex justify-between items-end mb-6 px-1 mx-1">
-                <h2 className="text-[22px] font-bold text-white tracking-tight">Top Albums</h2>
-             </div>
-             <div className="flex items-end overflow-x-auto pb-10 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
-                {(dbUnifiedData?.albums || data.albums).slice(0, 10).map((album: Album, index: number) => (
-                    <RankedAlbum key={album.id} album={album} rank={index + 1} />
-                ))}
-             </div>
+        {/* SECTION 2: OBSESSION ORBIT (Interactive) */}
+        <div className="mb-24">
+            <TrendingArtists 
+                artists={dbUnifiedData?.artists || data.artists}
+                albums={dbUnifiedData?.albums || data.albums}
+                songs={dbUnifiedData?.songs || data.songs}
+                recentPlays={dbUnifiedData?.recentPlays || []}
+                artistImages={artistImages}
+            />
         </div>
 
-        {/* TOP SONGS - Horizontal Scroll Cards */}
-        <div className="mb-12">
-             <div className="flex justify-between items-end mb-6 px-1 mx-1">
-                <h2 className="text-[22px] font-bold text-white tracking-tight">Top Songs</h2>
-             </div>
-             <div className="flex items-end overflow-x-auto pb-10 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
-                {(dbUnifiedData?.songs || data.songs).slice(0, 20).map((song: Song, index: number) => (
-                    <RankedSong key={song.id} song={song} rank={index + 1} />
-                ))}
-             </div>
-        </div>
-
-        {/* TOP ARTISTS - Horizontal Scroll Circles */}
-        <div className="mb-12">
-             <div className="flex justify-between items-end mb-6 px-1 mx-1">
-                <h2 className="text-[22px] font-bold text-white tracking-tight">Top Artists</h2>
-             </div>
-             <div className="flex items-start overflow-x-auto pb-8 pt-6 no-scrollbar snap-x pl-4 scroll-smooth">
-                {(dbUnifiedData?.artists || data.artists).slice(0, 10).map((artist: Artist, index: number) => (
-                    <RankedArtist key={artist.id} artist={artist} rank={index + 1} realImage={artistImages[artist.name]} />
-                ))}
-             </div>
-        </div>
-
-        {/* TRENDING ARTISTS - Live updating */}
-        <TrendingArtists 
-            artists={dbUnifiedData?.artists || data.artists}
-            albums={dbUnifiedData?.albums || data.albums}
-            songs={dbUnifiedData?.songs || data.songs}
-            recentPlays={dbUnifiedData?.recentPlays || []}
-            artistImages={artistImages}
-        />
-
-        {/* TIMELINE HISTORY - Interactive */}
-        <div className="mb-16">
-             <HistoryTimeline history={dbUnifiedData?.recentPlays || []} />
-        </div>
-
-        {/* LISTENING ACTIVITY */}
-        <div className="mb-8">
+        {/* SECTION 3: LISTENING DNA (Charts) */}
+         <div className="mb-24">
             <TopCharts 
-                title="Listening Trends"
+                title="Rhythm & Trends"
                 username={data?.user?.name || 'Your'}
                 artists={dbUnifiedData?.artists || data.artists}
                 songs={dbUnifiedData?.songs || data.songs}
@@ -520,6 +486,54 @@ function App() {
                 }}
             />
         </div>
+
+        {/* SECTION 4: RANKINGS (The Lists) */}
+        <div className="space-y-20 mb-24">
+             {/* TOP ALBUMS */}
+             <div>
+                 <div className="flex justify-between items-end mb-6 px-1">
+                    <h2 className="text-[22px] font-bold text-white tracking-tight">Top Albums</h2>
+                 </div>
+                 <div className="flex items-end overflow-x-auto pb-10 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
+                    {(dbUnifiedData?.albums || data.albums).slice(0, 10).map((album: Album, index: number) => (
+                        <RankedAlbum key={album.id} album={album} rank={index + 1} />
+                    ))}
+                 </div>
+             </div>
+
+             {/* TOP SONGS */}
+             <div>
+                 <div className="flex justify-between items-end mb-6 px-1">
+                    <h2 className="text-[22px] font-bold text-white tracking-tight">Top Songs</h2>
+                 </div>
+                 <div className="flex items-end overflow-x-auto pb-10 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
+                    {(dbUnifiedData?.songs || data.songs).slice(0, 20).map((song: Song, index: number) => (
+                        <RankedSong key={song.id} song={song} rank={index + 1} />
+                    ))}
+                 </div>
+             </div>
+
+             {/* TOP ARTISTS */}
+             <div>
+                 <div className="flex justify-between items-end mb-6 px-1">
+                    <h2 className="text-[22px] font-bold text-white tracking-tight">Top Artists</h2>
+                 </div>
+                 <div className="flex items-start overflow-x-auto pb-8 pt-6 no-scrollbar snap-x pl-4 scroll-smooth">
+                    {(dbUnifiedData?.artists || data.artists).slice(0, 10).map((artist: Artist, index: number) => (
+                        <RankedArtist key={artist.id} artist={artist} rank={index + 1} realImage={artistImages[artist.name]} />
+                    ))}
+                 </div>
+             </div>
+        </div>
+
+        {/* SECTION 5: HISTORY FOOTPRINT */}
+        <div className="mb-12">
+             <div className="mb-6 px-1">
+                <h2 className="text-[22px] font-bold text-white tracking-tight">2026 Archive</h2>
+             </div>
+             <HistoryTimeline history={dbUnifiedData?.recentPlays || []} />
+        </div>
+
     </Layout>
   );
 }

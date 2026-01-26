@@ -9,34 +9,15 @@ interface LayoutProps {
 }
 
 const Navbar = ({ user, currentTrack }: { user: any, currentTrack: any }) => (
-  <header className="fixed top-0 left-0 right-0 h-16 glass z-50 flex items-center justify-between px-6 md:px-12 border-b border-[#2C2C2E] bg-black/80 backdrop-blur-md">
-    <div className="flex items-center gap-6">
-      <div className="flex items-center gap-3">
-         {/* User Icon instead of Red Dot */}
-         <div className="w-8 h-8 rounded-full bg-[#2C2C2E] border border-white/10 overflow-hidden">
-             {user?.image ? (
-                 <img src={user.image} className="w-full h-full object-cover" />
-             ) : (
-                 <User className="w-4 h-4 text-white m-auto h-full" />
-             )}
-         </div>
-         <span className="text-xl font-black tracking-tighter text-white uppercase italic">Punky</span>
-      </div>
-    </div>
-    
-    {/* Removed Dashboard/Discover/Search/NowPlaying as requested */}
-
-    <div className="flex items-center gap-4">
-      {/* Empty right side or user actions if needed later */}
-    </div>
-  </header>
+  // Navbar removed as requested
+  null
 );
 
 export const Layout: React.FC<LayoutProps> = ({ children, user, currentTrack }) => {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-[#FA2D48] selection:text-white font-[Inter] overflow-x-hidden">
-      <Navbar user={user} currentTrack={currentTrack} />
-      <main className="pt-24 pb-12 px-6 md:px-12 max-w-[1400px] mx-auto animate-fade-in-up w-full">
+      {/* Navbar removed */}
+      <main className="pt-8 pb-12 px-6 md:px-12 max-w-[1400px] mx-auto animate-fade-in-up w-full">
         {children}
       </main>
       
