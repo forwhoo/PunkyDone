@@ -80,66 +80,49 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
   };
 
   return (
-    <Card className="flex flex-col bg-transparent border-none shadow-none overflow-visible relative min-h-[450px]">
-      <CardHeader className="pb-6 pl-1 pr-1 pt-0 flex flex-col xl:flex-row xl:items-center justify-between border-b border-white/5 gap-4">
-        <div>
-           <CardTitle className="text-white text-[22px] font-bold tracking-tight mb-1">{username}'s Chart</CardTitle>
-           <div className="text-[#8E8E93] text-sm flex items-center gap-2">
-              <Calendar className="w-3 h-3" />
-              <span>{getDateRangeText()} · {activeTab}</span>
+    <div className="flex flex-col overflow-visible relative">
+      <div className="pb-4 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+           <div>
+              <h3 className="text-white text-lg font-bold tracking-tight">{title}</h3>
+              <div className="text-[#8E8E93] text-xs flex items-center gap-2 mt-1">
+                 <Calendar className="w-3 h-3" />
+                 <span>{getDateRangeText()}</span>
+              </div>
            </div>
         </div>
         
-        <div className="flex flex-wrap items-center gap-2 md:gap-3">
-           {/* Time Range Toggle */}
-           <div className="flex bg-[#2C2C2E] p-1 rounded-lg">
-             {['Daily', 'Weekly', 'Monthly'].map((range) => (
-               <button
-                 key={range}
-                 onClick={() => onTimeRangeChange(range as any)}
-                 className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide rounded-[6px] transition-all ${
-                   timeRange === range 
-                   ? 'bg-[#FA2D48] text-white shadow-md' 
-                   : 'text-[#8E8E93] hover:text-white'
-                 }`}
-               >
-                 {range}
-               </button>
-             ))}
-           </div>
-
-            {/* Category Toggle */}
-            <div className="flex bg-[#2C2C2E] p-1 rounded-lg">
-              {['Songs', 'Albums', 'Artists'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab as any)}
-                  className={`px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide rounded-[6px] transition-all ${
-                    activeTab === tab 
-                    ? 'bg-[#FA2D48] text-white shadow-md' 
-                    : 'text-[#8E8E93] hover:text-white'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+        {/* Category Toggle Only - Time range is controlled by parent */}
+        <div className="flex bg-[#0A0A0A] p-1 rounded-xl w-fit border border-white/5">
+          {['Artists', 'Albums', 'Songs'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab as any)}
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wide rounded-lg transition-all ${
+                activeTab === tab 
+                ? 'bg-[#FA2D48] text-white shadow-lg shadow-[#FA2D48]/20' 
+                : 'text-[#8E8E93] hover:text-white'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
-      </CardHeader>
+      </div>
 
-      <div className="flex-1 p-0 overflow-hidden">
+      <div className="flex-1 overflow-hidden">
          {/* LIST VIEW - LISTEN CHART */}
          <div className="w-full">
-               <div className="grid grid-cols-[45px_1fr_40px_40px_40px] md:grid-cols-[70px_1fr_100px_80px_80px] px-4 md:px-6 py-3 border-b border-white/5 text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-[#8E8E93]">
-                   <div>#</div>
+               <div className="grid grid-cols-[40px_1fr_50px_50px_50px] px-3 py-3 border-b border-white/10 text-[10px] font-bold uppercase tracking-widest text-[#8E8E93]">
+                   <div className="text-center">#</div>
                    <div>{activeTab === 'Songs' ? 'TRACK' : activeTab === 'Artists' ? 'ARTIST' : 'ALBUM'}</div>
                    <div className="text-center">PK</div>
                    <div className="text-center">LW</div>
-                   <div className="text-center">Wks</div>
+                   <div className="text-center">WKS</div>
                </div>
                
-               <div className="flex flex-col">
-                   {listData.map((item: any, idx) => {
+               <div className="flex flex-col max-h-[400px] overflow-y-auto custom-scrollbar">
+                   {listData.slice(0, 10).map((item: any, idx) => {
                        const rank = idx + 1;
                        // Mock data logic for display if not present (remove in prod if always present)
                        const trend = item.trend || 'NEW';
@@ -148,56 +131,49 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
                        const streak = item.streak || 1; 
 
                        const getTrendIcon = (t: string) => {
-                           if (t === 'UP') return <TrendingUp className="w-2.5 h-2.5 md:w-3 h-3 text-green-500" />;
-                           if (t === 'DOWN') return <TrendingDown className="w-2.5 h-2.5 md:w-3 h-3 text-red-500" />;
-                           if (t === 'STABLE') return <Minus className="w-2.5 h-2.5 md:w-3 h-3 text-gray-500" />;
+                           if (t === 'UP') return <TrendingUp className="w-3 h-3 text-green-500" />;
+                           if (t === 'DOWN') return <TrendingDown className="w-3 h-3 text-red-500" />;
+                           if (t === 'STABLE') return <Minus className="w-3 h-3 text-gray-500" />;
                            return <SparklesBadge />;
                        };
 
                        return (
-                       <div key={item.id} className="grid grid-cols-[45px_1fr_40px_40px_40px] md:grid-cols-[70px_1fr_100px_80px_80px] items-center px-4 md:px-6 py-4 hover:bg-white/5 transition-colors group border-b border-white/5 last:border-0 relative overflow-hidden">
+                       <div key={item.id} className="grid grid-cols-[40px_1fr_50px_50px_50px] items-center px-3 py-3 hover:bg-white/5 transition-colors group border-b border-white/5 last:border-0">
                            
                            {/* Rank + Trend Column */}
-                           <div className="flex flex-col items-center justify-center -ml-1 md:-ml-2 w-10 md:w-14">
-                               <span className={`text-[14px] md:text-[16px] font-black italic tracking-tighter ${rank === 1 ? 'text-[#FA2D48] md:text-[20px]' : 'text-white'}`}>
+                           <div className="flex flex-col items-center justify-center">
+                               <span className={`text-sm font-black ${rank <= 3 ? 'text-[#FA2D48]' : 'text-white'}`}>
                                    {rank}
                                </span>
-                               <div className="flex items-center gap-1 mt-0.5">
+                               <div className="flex items-center gap-0.5 mt-0.5">
                                    {trend === 'NEW' ? (
-                                       <span className="text-[7px] md:text-[9px] font-black text-[#FA2D48] uppercase tracking-wider bg-[#FA2D48]/10 px-1 rounded-sm">NEW</span>
+                                       <span className="text-[8px] font-black text-[#FA2D48] uppercase">NEW</span>
                                    ) : (
-                                       <>
-                                         {getTrendIcon(trend)}
-                                         {trend !== 'STABLE' && (
-                                            <span className={`text-[7px] md:text-[9px] font-bold ${trend === 'UP' ? 'text-green-500' : 'text-red-500'}`}>
-                                                {Math.abs((item.prev || 0) - rank) || 1}
-                                            </span>
-                                         )}
-                                       </>
+                                       getTrendIcon(trend)
                                    )}
                                </div>
                            </div>
                            
                            {/* Track Info */}
-                           <div className="flex items-center gap-3 md:gap-4 min-w-0 pr-2">
-                               <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg overflow-hidden bg-[#2C2C2E] relative group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all shrink-0">
+                           <div className="flex items-center gap-3 min-w-0 pr-2">
+                               <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#2C2C2E] relative shrink-0 border border-white/5">
                                    <img 
                                       src={getImageSrc(item)} 
                                       className="w-full h-full object-cover" 
                                       onError={handleImageError}
                                    />
                                    {activeTab === 'Songs' && (
-                                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                         <Play className="w-4 h-4 md:w-5 md:h-5 text-white fill-white drop-shadow-lg" />
+                                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                         <Play className="w-4 h-4 text-white fill-white" />
                                      </div>
                                    )}
                                </div>
-                               <div className="min-w-0 flex flex-col justify-center">
-                                   <div className="font-bold text-white text-[13px] md:text-[15px] truncate group-hover:text-[#FA2D48] transition-colors leading-tight">
+                               <div className="min-w-0">
+                                   <div className="font-semibold text-white text-sm truncate group-hover:text-[#FA2D48] transition-colors">
                                        {item.name || item.title}
                                    </div>
                                    {(item.artist && activeTab !== 'Artists') && (
-                                       <div className="text-[11px] md:text-[12px] text-[#8E8E93] truncate hover:text-white transition-colors cursor-pointer w-fit mt-0.5">
+                                       <div className="text-xs text-[#8E8E93] truncate mt-0.5">
                                            {item.artist}
                                        </div>
                                    )}
@@ -205,19 +181,16 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
                            </div>
                            
                            {/* Stats Columns */}
-                           <div className="flex flex-col items-center justify-center">
-                               <span className="text-[12px] md:text-[14px] font-bold text-white/90">{peak}</span>
-                               <span className="text-[7px] md:text-[9px] text-[#555] font-mono uppercase hidden md:inline">Peak</span>
+                           <div className="text-center">
+                               <span className="text-sm font-bold text-white">{peak}</span>
                            </div>
                            
-                           <div className="flex flex-col items-center justify-center">
-                               <span className="text-[12px] md:text-[14px] font-bold text-[#8E8E93]">{trend === 'NEW' ? '-' : prev}</span>
-                               <span className="text-[7px] md:text-[9px] text-[#555] font-mono uppercase hidden md:inline">Last</span>
+                           <div className="text-center">
+                               <span className="text-sm font-medium text-[#8E8E93]">{trend === 'NEW' ? '-' : prev}</span>
                            </div>
 
-                            <div className="flex flex-col items-center justify-center">
-                               <span className="text-[12px] md:text-[14px] font-bold text-white">{streak}</span>
-                               <span className="text-[7px] md:text-[9px] text-[#555] font-mono uppercase hidden md:inline">Wks</span>
+                            <div className="text-center">
+                               <span className="text-sm font-bold text-white">{streak}</span>
                            </div>
 
                        </div>
@@ -225,7 +198,7 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
                </div>
            </div>
       </div>
-    </Card>
+    </div>
   );
 };
 

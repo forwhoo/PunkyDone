@@ -126,30 +126,31 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
     // We use Framer Motion for smooth continuous rotation
     
     return (
-        <div className="mb-24 relative z-0 flex flex-col md:flex-row gap-8 items-start">
+        <div className="relative z-0 flex flex-col md:flex-row gap-8 items-start">
             
             <div className="flex-1 w-full relative">
-                <div className="flex justify-between items-end mb-6 px-2">
+                <div className="flex justify-between items-end mb-8 px-2">
                     <div>
-                        <h2 className="text-[22px] font-bold text-white tracking-tight flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                            <Sparkles size={18} className="text-[#FA2D48]" />
                             Obsession Orbit
                         </h2>
-                        <p className="text-[#8E8E93] text-[13px]">
-                            Your {activeTab} rotation
+                        <p className="text-[#8E8E93] text-sm mt-1">
+                            Your {activeTab} universe in motion
                         </p>
                     </div>
                     
                     {/* Custom Toggle UI */}
-                    <div className="bg-[#1C1C1E] p-1 rounded-full flex gap-1 border border-white/10">
+                    <div className="bg-[#0A0A0A] p-1 rounded-full flex gap-1 border border-white/10">
                         <button 
                             onClick={() => setActiveTab('artist')}
-                            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#FA2D48] text-white shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
+                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#FA2D48] text-white shadow-lg shadow-[#FA2D48]/20' : 'text-[#8E8E93] hover:text-white'}`}
                         >
                             <Mic2 size={12} /> Artists
                         </button>
                         <button 
                             onClick={() => setActiveTab('album')}
-                            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'album' ? 'bg-[#FA2D48] text-white shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
+                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'album' ? 'bg-[#FA2D48] text-white shadow-lg shadow-[#FA2D48]/20' : 'text-[#8E8E93] hover:text-white'}`}
                         >
                             <Disc size={12} /> Albums
                         </button>
@@ -159,10 +160,10 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                 {/* MAIN ORBIT VIEW */}
                 <motion.div 
                     layout
-                    className="relative w-full max-w-[500px] mx-auto aspect-square my-8 select-none perspective-1000"
+                    className="relative w-full max-w-[480px] mx-auto aspect-square select-none"
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 1, ease: "easeOut" }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
                 >
                     
                     {/* Center Item */}
@@ -171,18 +172,19 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                             className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 cursor-pointer group transition-all duration-300 ${selectedItem && selectedItem.id !== centerItem.id ? 'opacity-30 blur-sm scale-90' : 'opacity-100'}`}
                             onClick={() => setSelectedItem(selectedItem?.id === centerItem.id ? null : centerItem)}
                         >
-                            <div className="relative w-32 h-32 md:w-40 md:h-40">
-                                {/* Shiny Effect Ring */}
-                                <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-white/20 to-transparent blur-sm animate-pulse"></div>
+                            <div className="relative w-28 h-28 md:w-36 md:h-36">
+                                {/* Animated Glow Ring */}
+                                <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-[#FA2D48] via-[#FF9F0A] to-[#FA2D48] opacity-60 blur-xl animate-pulse"></div>
+                                <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-[#FA2D48]/40 to-transparent"></div>
                                 
                                 <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-[#1C1C1E] transition-transform duration-500 group-hover:scale-105">
                                     <img src={centerItem.image} className="w-full h-full object-cover" />
                                 </div>
                                 
                                 {/* Badge */}
-                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20 flex items-center gap-1 whitespace-nowrap">
-                                    <Sparkles size={10} className="text-[#FA2D48] fill-[#FA2D48]" />
-                                    #{1} OBSESSION
+                                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#FA2D48] to-[#FF6B6B] text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg z-20 flex items-center gap-1.5 whitespace-nowrap">
+                                    <Sparkles size={10} className="fill-current" />
+                                    #1 OBSESSION
                                 </div>
                             </div>
                         </div>
@@ -256,9 +258,10 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         </motion.div>
                     </div>
 
-                    {/* Orbital Lines */}
-                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-50 scale-[0.68]"></div>
-                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-30 scale-[0.96] border-dashed"></div>
+                    {/* Orbital Lines - Enhanced */}
+                    <div className="absolute inset-0 rounded-full border border-[#FA2D48]/10 opacity-60 scale-[0.68]"></div>
+                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-40 scale-[0.96] border-dashed"></div>
+                    <div className="absolute inset-0 rounded-full border border-[#FA2D48]/5 opacity-30 scale-[0.82]"></div>
                 </motion.div>
             </div>
 
