@@ -130,7 +130,13 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
         return () => clearInterval(interval);
     }, [recentPlays]);
 
+    const [hoveredArtist, setHoveredArtist] = useState<TrendingArtist | null>(null);
+
+    // ... (rest of code)
+
     if (trendingArtists.length === 0) return null;
+
+    const displayArtist = hoveredArtist || trendingArtists[0];
 
     return (
         <div className="mb-12">
@@ -145,32 +151,14 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
                 </div>
             </div>
             
-            <div className="flex items-start overflow-x-auto pb-24 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
+            <div className="flex items-start overflow-x-auto pb-6 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
                 {trendingArtists.map((artist: any, index) => (
-                    <div key={artist.name} className="flex-shrink-0 relative flex flex-col items-center snap-start group cursor-pointer w-[140px] md:w-[160px] mr-3">
-                        {/* Hover Reason Tooltip (Updated to be below and visible) */}
-                        <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-48 bg-[#1C1C1E] border border-white/10 p-3 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 translate-y-2 group-hover:translate-y-0 backdrop-blur-xl">
-                            <div className="text-[10px] uppercase font-bold text-[#FA2D48] mb-2 tracking-wider">Trend Analysis</div>
-                            <div className="space-y-1.5">
-                                <div className="flex justify-between text-[11px]">
-                                    <span className="text-[#8E8E93]">24h Volume</span>
-                                    <span className="text-white font-bold">{artist.recentPlays} plays</span>
-                                </div>
-                                <div className="flex justify-between text-[11px]">
-                                    <span className="text-[#8E8E93]">Velocity</span>
-                                    <span className="text-white font-bold">{artist.velocity}% ↑</span>
-                                </div>
-                                <div className="flex justify-between text-[11px]">
-                                    <span className="text-[#8E8E93]">Return Rate</span>
-                                    <span className="text-white font-bold">Every {artist.returnFrequencyHrs}h</span>
-                                </div>
-                            </div>
-                            <div className="mt-2 pt-2 border-t border-white/5 flex justify-between items-center">
-                                <span className="text-[10px] text-[#8E8E93]">Overall Score</span>
-                                <span className="text-sm font-black text-white">{artist.trendScore}</span>
-                            </div>
-                        </div>
-
+                    <div 
+                        key={artist.name} 
+                        className="flex-shrink-0 relative flex flex-col items-center snap-start group cursor-pointer w-[140px] md:w-[160px] mr-3"
+                        onMouseEnter={() => setHoveredArtist(artist)}
+                        onMouseLeave={() => setHoveredArtist(null)}
+                    >
                         <div className="relative">
                             {/* Big Number Style (Like Top Albums) */}
                             <span className={`text-[100px] leading-none font-black text-outline absolute -left-4 -bottom-2 z-0 select-none pointer-events-none scale-y-90 italic ${index === 0 ? 'text-[#FA2D48]/20 opacity-100' : 'opacity-20'}`}>
@@ -206,6 +194,40 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
                         </div>
                     </div>
                 ))}
+            </div>
+
+            {/* Separate Analysis Bar (Always Visible / Updates on Hover) */}
+            <div className="mt-4 mx-2 bg-[#1C1C1E] border border-white/5 rounded-xl p-4 flex items-center justify-between transition-all duration-300">
+                <div className="flex items-center gap-4">
+                     <div className="w-10 h-10 rounded-full bg-[#2C2C2E] overflow-hidden border border-white/10 hidden md:block">
+                         <img src={displayArtist.image} className="w-full h-full object-cover" />
+                     </div>
+                     <div>
+                         <div className="text-[10px] uppercase font-bold text-[#FA2D48] tracking-wider mb-0.5">
+                             {hoveredArtist ? 'Current Selection' : 'Top Trending'}
+                         </div>
+                         <div className="text-white font-bold text-sm">{displayArtist.name} Analysis</div>
+                     </div>
+                </div>
+
+                <div className="flex items-center gap-4 md:gap-8 text-right md:text-left">
+                     <div className="hidden md:block">
+                        <div className="text-[10px] text-[#8E8E93] uppercase">24h Vol</div>
+                        <div className="text-white font-bold text-xs">{displayArtist.recentPlays} plays</div>
+                     </div>
+                     <div>
+                        <div className="text-[10px] text-[#8E8E93] uppercase">Speed</div>
+                        <div className="text-white font-bold text-xs">{displayArtist.velocity}% ↑</div>
+                     </div>
+                     <div>
+                        <div className="text-[10px] text-[#8E8E93] uppercase">Return</div>
+                        <div className="text-white font-bold text-xs">{displayArtist.returnFrequencyHrs}h</div>
+                     </div>
+                      <div>
+                        <div className="text-[10px] text-[#8E8E93] uppercase">Score</div>
+                        <div className="text-[#FA2D48] font-black text-xl">{displayArtist.trendScore}</div>
+                     </div>
+                </div>
             </div>
         </div>
     );

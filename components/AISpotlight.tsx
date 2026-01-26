@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from './UIComponents';
-import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap } from 'lucide-react';
-import { generateDynamicCategoryQuery, answerMusicQuestion } from '../services/geminiService';
+import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieChart } from 'lucide-react';
+import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory } from '../services/geminiService';
 import { fetchSmartPlaylist, fetchWeeklyCharts, syncWeeklyCharts } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import ReactMarkdown from 'react-markdown';
@@ -37,6 +37,11 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
     // Store array of category results
     const [categoryResults, setCategoryResults] = useState<CategoryResult[]>([]);
     
+    // Weekly Insight State
+    const [insightMode, setInsightMode] = useState(false);
+    const [insightData, setInsightData] = useState<any[]>([]);
+    const [insightStep, setInsightStep] = useState(0);
+
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [chatResponse, setChatResponse] = useState<string | null>(null);
     const [displayedText, setDisplayedText] = useState("");
@@ -80,8 +85,19 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
         setChatResponse(null);
         setDisplayedText("");
         setCategoryResults([]); // clear previous
+        setInsightMode(false); // Reset insight mode
         
         try {
+            // SPECIAL HANDLER: WEEKLY INSIGHT
+            if (manualPrompt === 'Weekly Insight') {
+                 setInsightMode(true);
+                 setInsightStep(0);
+                 const slides = await generateWeeklyInsightStory(contextData);
+                 setInsightData(slides);
+                 setLoading(false);
+                 return;
+            }
+
             // Determine query type
             const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover', 'top', 'best', 'most', 'rank', 'chart', 'favorite', 'least', 'wrapped', 'gems', 'rewind', 'vibes', 'mix', 'weekly', 'insight', 'stats'];
             const isAnalysisQuery = analysisKeywords.some(k => promptToUse.toLowerCase().includes(k));
@@ -337,12 +353,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                                 onClick={() => handleQuery(suggestion)}
                                 className={`px-4 py-2 rounded-full border text-sm transition-all active:scale-95 relative overflow-hidden group/sug ${
                                     suggestion === 'Weekly Insight' 
-                                    ? 'bg-[#FA2D48] border-[#FA2D48] text-white font-bold shadow-[0_0_20px_rgba(250,45,72,0.4)] animate-shine' 
+                                    ? 'bg-transparent border-[#FA2D48] text-[#FA2D48] font-bold shadow-[0_0_20px_rgba(250,45,72,0.1)] hover:bg-[#FA2D48] hover:text-white' 
                                     : 'bg-white/5 border-white/10 text-[#8E8E93] hover:bg-white/10 hover:text-white hover:border-white/20'
                                 }`}
                             >
                                 {suggestion === 'Weekly Insight' && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover/sug:animate-[shine_1.5s_infinite] pointer-events-none" />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#FA2D48]/20 to-transparent -translate-x-full group-hover/sug:animate-[shine_1.5s_infinite] pointer-events-none" />
                                 )}
                                 {suggestion}
                             </button>
@@ -356,6 +372,101 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                 <div className="mb-4 mx-1 bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-xs font-mono flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                     {errorMsg}
+                </div>
+            )}
+
+            {/* WEEKLY INSIGHT STORY MODE */}
+            {insightMode && insightData.length > 0 && (
+                <div className="animate-in fade-in zoom-in duration-500 mb-10 w-full max-w-2xl mx-auto">
+                    <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2C2C2E] border border-white/10 rounded-2xl p-8 min-h-[400px] flex flex-col justify-between shadow-2xl relative overflow-hidden">
+                         
+                         {/* Progress Bar */}
+                         <div className="flex gap-2 mb-6">
+                            {insightData.map((_, i) => (
+                                <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= insightStep ? 'bg-[#FA2D48]' : 'bg-white/10'}`} />
+                            ))}
+                         </div>
+                         
+                         {/* Content */}
+                         <div className="flex-1 flex flex-col items-center justify-center text-center">
+                              <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">{insightData[insightStep].title}</h3>
+                              <p className="text-[#8E8E93] text-lg mb-8 max-w-md">{insightData[insightStep].content}</p>
+
+                              {/* Visualization Area */}
+                              <div className="w-full flex justify-center items-center flex-1">
+                                   {insightData[insightStep].type === 'stat' && (
+                                       <div className="flex flex-col items-center animate-in zoom-in duration-300">
+                                            <span className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FA2D48] to-purple-500">
+                                                {insightData[insightStep].data?.value}
+                                            </span>
+                                            <span className="text-white/60 font-mono mt-2 uppercase tracking-widest text-sm">
+                                                {insightData[insightStep].data?.subtext}
+                                            </span>
+                                       </div>
+                                   )}
+
+                                   {insightData[insightStep].type === 'quiz' && (
+                                       <div className="grid gap-3 w-full max-w-sm">
+                                            {insightData[insightStep].data?.options.map((opt: string, idx: number) => (
+                                                <button 
+                                                    key={idx}
+                                                    onClick={(e) => {
+                                                        const btn = e.currentTarget;
+                                                        if (idx === insightData[insightStep].data.correctIndex) {
+                                                            btn.style.borderColor = '#22c55e';
+                                                            btn.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+                                                            btn.innerText = "Correct!";
+                                                        } else {
+                                                            btn.style.borderColor = '#ef4444';
+                                                            btn.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                                                        }
+                                                    }}
+                                                    className="w-full py-4 px-6 rounded-xl border border-white/10 bg-white/5 text-white font-bold hover:bg-white/10 hover:scale-[1.02] transition-all"
+                                                >
+                                                    {opt}
+                                                </button>
+                                            ))}
+                                            <p className="text-[10px] text-white/30 mt-4">*Based on your actual history</p>
+                                       </div>
+                                   )}
+
+                                   {insightData[insightStep].type === 'chart' && (
+                                       <div className="w-full max-w-xs space-y-4">
+                                           {insightData[insightStep].data?.points.map((p: any, idx: number) => (
+                                               <div key={idx} className="space-y-1">
+                                                   <div className="flex justify-between text-xs font-bold text-white uppercase">
+                                                       <span>{p.label}</span>
+                                                       <span>{p.value}%</span>
+                                                   </div>
+                                                   <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                                                       <div 
+                                                         style={{ width: `${p.value}%` }} 
+                                                         className={`h-full ${idx % 2 === 0 ? 'bg-[#FA2D48]' : 'bg-blue-500'}`} 
+                                                       />
+                                                   </div>
+                                               </div>
+                                           ))}
+                                       </div>
+                                   )}
+                              </div>
+                         </div>
+
+                         {/* Navigation */}
+                         <div className="mt-8 flex justify-end">
+                             <button 
+                                onClick={() => {
+                                    if (insightStep < insightData.length - 1) {
+                                        setInsightStep(prev => prev + 1);
+                                    } else {
+                                        setInsightMode(false); // End story
+                                    }
+                                }}
+                                className="flex items-center gap-2 px-6 py-2 bg-white text-black rounded-full font-bold hover:scale-105 transition-transform"
+                             >
+                                {insightStep === insightData.length - 1 ? 'Finish' : 'Next'} <ChevronRight size={16} />
+                             </button>
+                         </div>
+                    </div>
                 </div>
             )}
 

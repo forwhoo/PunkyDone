@@ -204,6 +204,61 @@ export interface AIFilterResult {
 }
 
 
+// WEEKLY INSIGHT GENERATOR
+export const generateWeeklyInsightStory = async (context: any): Promise<any[]> => {
+    try {
+        const client = getAiClient();
+        if (!client) throw new Error("No AI Client");
+
+        const prompt = `
+        You are the Pulse Music Engine. Generate an interactive "Weekly Insight" story for this user.
+        Return a JSON ARRAY of 5 "slides".
+
+        User Data: ${JSON.stringify(context)}
+
+        Structure each slide object as:
+        {
+           "type": "stat" | "quiz" | "chart" | "text",
+           "title": "Short Header",
+           "content": "Description or Question",
+           "data": {} // Depends on type
+        }
+
+        Slide Types:
+        1. "text": Intro slide. "Welcome to your Weekly Pulse".
+        2. "stat": Highlight a specific big number (e.g., "You listened to 1,200 mins"). data: { "value": "1,200 m", "subtext": "+10% vs last week" }
+        3. "quiz": A simple trivia question about their habits. data: { "options": ["Artist A", "Artist B"], "correctIndex": 0, "answerCheck": "You listened to Artist A 50 times!" }
+        4. "chart": A breakdown. data: { "points": [{"label": "Rap", "value": 60}, {"label": "Pop", "value": 40}] }
+        5. "text": Outro.
+
+        Keep it fun, high energy, and personalized. 
+        JSON ONLY. No markdown.
+        `;
+        
+        const response = await client.chat.completions.create({
+            model: "moonshotai/kimi-k2-instruct-0905",
+            messages: [{ role: "system", content: "You are a JSON generator." }, { role: "user", content: prompt }],
+            temperature: 0.7,
+            response_format: { type: "json_object" }
+        });
+
+        const raw = response.choices[0]?.message?.content || "[]";
+        // Parse safely
+        try {
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : (parsed.slides || []);
+        } catch (e) {
+             // Heuristic cleanup if markdown exists
+             const jsonMatch = raw.match(/\[.*\]/s);
+             return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+        }
+
+    } catch (e) {
+        console.error(e);
+        return [];
+    }
+};
+
 export const generateDynamicCategoryQuery = async (context: { 
     artists: string[], 
     albums: string[], 

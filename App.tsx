@@ -20,23 +20,23 @@ import {
 import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts } from './services/dbService';
 import { generateMusicInsight, generateRankingInsights } from './services/geminiService';
 
-// HISTORY COMPONENT: Simple Card
+// HISTORY COMPONENT: Enhanced Glass Card
 const HistoryCard = ({ item }: { item: any }) => (
-    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[280px] mr-3 bg-[#1C1C1E]/60 border border-white/5 p-3 rounded-2xl hover:bg-[#2C2C2E] transition-all hover:scale-[1.02] hover:shadow-xl">
-        <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-[#2C2C2E] flex-shrink-0 shadow-lg group-hover:shadow-2xl transition-all">
-            <img src={item.cover} alt={item.track_name} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                 <Play className="w-5 h-5 text-white fill-current" />
+    <div className="flex-shrink-0 relative group cursor-pointer w-[160px] md:w-[180px] mr-4">
+        <div className="relative aspect-square rounded-xl overflow-hidden shadow-lg bg-[#2C2C2E] border border-white/5 group-hover:border-white/20 transition-all duration-300">
+            <img src={item.cover} alt={item.track_name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                 <Play className="w-10 h-10 text-white fill-white drop-shadow-xl scale-75 group-hover:scale-100 transition-transform" />
+            </div>
+            <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md border border-white/10">
+                <span className="text-[10px] text-white font-mono font-bold">
+                    {new Date(item.played_at).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'}).replace(' ', '')}
+                </span>
             </div>
         </div>
-        <div className="ml-4 flex-1 min-w-0 flex flex-col justify-center">
-             <h3 className="text-[14px] font-bold text-white truncate group-hover:text-[#FA2D48] transition-colors leading-tight">{item.track_name}</h3>
-             <p className="text-[12px] text-[#8E8E93] truncate mt-0.5">{item.artist_name}</p>
-        </div>
-        <div className="absolute top-3 right-3">
-            <span className="text-[10px] text-[#555] font-mono group-hover:text-[#FA2D48] transition-colors bg-white/5 px-2 py-0.5 rounded-full">
-                {new Date(item.played_at).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'}).replace(' ', '')}
-            </span>
+        <div className="mt-3">
+             <h3 className="text-[14px] font-bold text-white truncate group-hover:text-[#FA2D48] transition-colors">{item.track_name}</h3>
+             <p className="text-[12px] text-[#8E8E93] truncate">{item.artist_name}</p>
         </div>
     </div>
 );
@@ -88,21 +88,26 @@ const RankedArtist = ({ artist, rank, realImage }: { artist: Artist, rank: numbe
     </div>
 );
 
-// RANKED COMPONENT: Top Song (Horizontal Card with Number)
+// RANKED COMPONENT: Top Song (Vertical Ticket Style)
 const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
-    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[240px] md:w-[280px] mr-4">
-        <div className="flex flex-col bg-gradient-to-br from-[#1C1C1E] to-[#2C2C2E]/30 hover:to-[#2C2C2E] border border-white/5 rounded-2xl p-4 pr-6 transition-all duration-300 w-full backdrop-blur-sm hover:-translate-y-1 hover:shadow-xl hover:border-white/10">
-            <div className="flex items-center gap-4">
-                <div className="flex flex-col items-center justify-center w-8">
-                     <span className="text-[32px] font-black text-[#FA2D48] leading-none italic">#{rank}</span>
-                </div>
-                <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-[#2C2C2E] shadow-lg">
-                    <img src={song.cover} alt={song.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
-                </div>
-                <div className="flex-1 min-w-0">
-                    <h3 className="text-[15px] font-bold text-white truncate leading-tight group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
-                    <p className="text-[13px] text-[#8E8E93] truncate mt-1">{song.artist}</p>
+    <div className="flex-shrink-0 relative group cursor-pointer w-[160px] md:w-[180px] mr-4 snap-start">
+         {/* Rank Badge */}
+         <div className="absolute -top-3 -left-3 z-20 bg-[#FA2D48] text-white w-8 h-8 flex items-center justify-center font-black text-sm rounded-lg shadow-lg rotate-3 group-hover:rotate-0 transition-transform">
+            #{rank}
+         </div>
+
+         <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[#2C2C2E] shadow-lg border border-white/5 group-hover:border-white/20 transition-all">
+             <img src={song.cover} alt={song.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90"></div>
+             
+             {/* Text Content */}
+             <div className="absolute bottom-0 left-0 right-0 p-4">
+                 <h3 className="text-[16px] font-bold text-white leading-tight mb-1 line-clamp-2 group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
+                 <p className="text-[12px] text-white/60 truncate font-medium">{song.artist}</p>
+             </div>
+         </div>
+    </div>
+);
                     <div className="flex items-center gap-2 mt-1">
                     <p className="text-[10px] text-[#FA2D48] font-bold uppercase tracking-wide">{song.timeStr}</p>
                     <span className="text-[10px] text-white/20">•</span>
