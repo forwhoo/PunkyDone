@@ -34,9 +34,9 @@ const Navbar = ({ user, currentTrack }: { user: any, currentTrack: any }) => (
 
 export const Layout: React.FC<LayoutProps> = ({ children, user, currentTrack }) => {
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-[#FA2D48] selection:text-white font-[Inter]">
+    <div className="min-h-screen bg-black text-white selection:bg-[#FA2D48] selection:text-white font-[Inter] overflow-x-hidden">
       <Navbar user={user} currentTrack={currentTrack} />
-      <main className="pt-24 pb-12 px-6 md:px-12 max-w-[1400px] mx-auto animate-fade-in-up">
+      <main className="pt-24 pb-12 px-6 md:px-12 max-w-[1400px] mx-auto animate-fade-in-up w-full">
         {children}
       </main>
       

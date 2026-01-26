@@ -463,7 +463,33 @@ function App() {
              />
         </div>
 
-        {/* WrappedModal removed */}
+        {/* Improved Wrapped Trigger */}
+        <div className="mb-12 px-1">
+             <button 
+                onClick={() => setWrappedOpen(true)}
+                className="w-full relative group overflow-hidden rounded-[32px] bg-[#1C1C1E] border border-white/5 p-8 flex flex-col sm:flex-row items-center justify-between gap-6 hover:border-[#FA2D48]/30 transition-all duration-500 shadow-2xl"
+             >
+                <div className="absolute inset-0 bg-gradient-to-r from-[#FA2D48]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-center gap-6 relative z-10">
+                    <div className="w-16 h-16 rounded-2xl bg-[#FA2D48] flex items-center justify-center shadow-[0_0_30px_rgba(250,45,72,0.3)] group-hover:scale-110 transition-transform duration-500">
+                        <Sparkles className="text-white w-8 h-8" />
+                    </div>
+                    <div className="text-center sm:text-left">
+                        <h3 className="text-2xl font-black text-white tracking-tight">Your Weekly Analysis is Ready</h3>
+                        <p className="text-[#8E8E93] text-sm font-medium">Explore your listening patterns through AI-powered insights.</p>
+                    </div>
+                </div>
+                <div className="px-6 py-3 rounded-full bg-white/5 border border-white/10 text-white text-xs font-bold uppercase tracking-[0.2em] group-hover:bg-[#FA2D48] group-hover:border-[#FA2D48] transition-all relative z-10">
+                    View Report
+                </div>
+             </button>
+        </div>
+
+        <WrappedModal 
+            isOpen={wrappedOpen} 
+            onClose={() => setWrappedOpen(false)} 
+            period={currentWrappedPeriod} 
+        />
 
         {/* TOP ALBUMS - Horizontal Scroll */}
         <div className="mb-12">

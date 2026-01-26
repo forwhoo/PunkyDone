@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from './UIComponents';
-import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send } from 'lucide-react';
+import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion } from '../services/geminiService';
 import { fetchSmartPlaylist } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
-import { WrappedView } from './WrappedView'; // New Component
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -40,8 +39,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
     const [typing, setTyping] = useState(false);
     const [discoveryMode, setDiscoveryMode] = useState(false);
     const sectionRef = useRef<HTMLDivElement>(null);
-
-    const [activeWrapped, setActiveWrapped] = useState<CategoryResult | null>(null);
 
     // Typing effect logic
     useEffect(() => {
@@ -309,12 +306,19 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                 </div>
                 
                 {/* Discovery Toggle */}
-                <div className="flex justify-center mt-3">
+                <div className="flex justify-center mt-4">
                     <button 
-                        onClick={() => setDiscoveryMode(!discoveryMode)}
-                        className={`text-[11px] font-bold tracking-widest uppercase py-1 px-3 rounded-md transition-all border ${discoveryMode ? 'bg-[#FA2D48]/20 border-[#FA2D48] text-[#FA2D48] shadow-[0_0_15px_rgba(250,45,72,0.3)]' : 'border-transparent text-[#555] hover:text-white'}`}
+                        onClick={() => {
+                            setDiscoveryMode(!discoveryMode);
+                        }}
+                        className={`flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase py-2 px-4 rounded-full transition-all border ${
+                            discoveryMode 
+                                ? 'bg-[#FA2D48]/20 border-[#FA2D48] text-[#FA2D48] shadow-[0_0_20px_rgba(250,45,72,0.4)]' 
+                                : 'bg-white/5 border-white/10 text-white/30 hover:text-white/60 hover:bg-white/10'
+                        }`}
                     >
-                        {discoveryMode ? "⚡ Discovery Mode: ON" : "Discovery Mode: OFF"}
+                        <Zap size={12} className={discoveryMode ? "fill-current" : ""} />
+                        {discoveryMode ? "Discovery Mode Active" : "Discovery Mode"}
                     </button>
                 </div>
 
@@ -345,6 +349,39 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
             {/* Discovery Results - Multiple Categories Support */}
             {mode === 'discover' && categoryResults.length > 0 && (
                 <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                    <style>
+                        {`
+                        @keyframes shine-red {
+                            0% { transform: translateX(-150%) skewX(-25deg); }
+                            100% { transform: translateX(150%) skewX(-25deg); }
+                        }
+                        .animate-shine {
+                            position: relative;
+                            overflow: hidden;
+                        }
+                        .animate-shine::after {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: linear-gradient(
+                                90deg,
+                                transparent 20%,
+                                rgba(255, 255, 255, 0.4) 45%,
+                                rgba(255, 255, 255, 0.6) 50%,
+                                rgba(255, 255, 255, 0.4) 55%,
+                                transparent 80%
+                            );
+                            animation: shine-red 2.5s infinite;
+                        }
+                        .text-outline {
+                            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
+                            color: transparent;
+                        }
+                        `}
+                    </style>
                     {categoryResults.map((category) => (
                         <div key={category.id} className="relative">
                             {/* Category Header */}
@@ -357,12 +394,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/60 text-[11px] font-bold font-mono">
                                     {category.stats}
                                 </div>
-                                <button 
-                                    onClick={() => setActiveWrapped(category)}
-                                    className="ml-4 text-xs text-[#FA2D48] hover:text-white underline transition-colors"
-                                >
-                                    View as Story
-                                </button>
                             </div>
                             
                             {/* Tracks Carousel */}
@@ -373,11 +404,11 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                                             {index + 1}
                                         </span>
                                         <div className="relative z-10 ml-10 md:ml-12">
-                                            <div className={`w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl transition-all duration-300 group-hover:-translate-y-2 relative ${item.isSuggestion ? 'border-2 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.3)]' : 'border border-white/5 group-hover:border-white/20'}`}>
+                                            <div className={`w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl transition-all duration-300 group-hover:-translate-y-2 relative ${item.isSuggestion ? 'border-2 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)] animate-shine' : 'border border-white/5 group-hover:border-white/20'}`}>
                                                 <img src={item.cover} alt={item.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                                                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
                                                     {item.isSuggestion ? (
-                                                        <span className="text-cyan-400 font-bold text-sm uppercase tracking-widest border border-cyan-400 px-2 py-1 rounded-md">New Find</span>
+                                                        <span className="text-red-500 font-bold text-sm uppercase tracking-widest border border-red-500 px-2 py-1 rounded-md bg-black/40">New Find</span>
                                                     ) : (
                                                         <>
                                                             <span className="text-white font-bold text-2xl drop-shadow-md">{item.timeStr || item.listens}</span>
@@ -387,7 +418,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                                                 </div>
                                             </div>
                                             <div className="mt-3 relative z-20">
-                                                <h3 className={`text-[15px] font-semibold truncate w-32 md:w-40 leading-tight transition-colors ${item.isSuggestion ? 'text-cyan-400' : 'text-white group-hover:text-[#FA2D48]'}`}>{item.title}</h3>
+                                                <h3 className={`text-[15px] font-semibold truncate w-32 md:w-40 leading-tight transition-colors ${item.isSuggestion ? 'text-red-500' : 'text-white group-hover:text-[#FA2D48]'}`}>{item.title}</h3>
                                                 <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5">
                                                     {(item.type === 'artist' || item.title === item.artist) ? 'Artist' : item.artist}
                                                 </p>
@@ -407,15 +438,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                      <div className="w-10 h-10 border-2 border-[#FA2D48] border-t-transparent rounded-full animate-spin mb-4"></div>
                      <p className="text-[#8E8E93] text-sm animate-pulse">Designing your collection...</p>
                 </div>
-            )}
-            {/* Wrapped Story Modal */}
-            {activeWrapped && (
-                <WrappedView 
-                    data={activeWrapped.tracks}
-                    title={activeWrapped.title}
-                    description={activeWrapped.description}
-                    onClose={() => setActiveWrapped(null)}
-                />
             )}
         </div>
     );

@@ -86,7 +86,7 @@ USER QUESTION: "${question}"
 6. Tone: Smart, professional, minimalist.    `;
 
     const response = await client.chat.completions.create({
-        model: "openai/gpt-oss-120b",
+        model: "moonshotai/kimi-k2-instruct-0905",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
         max_tokens: 600
@@ -125,7 +125,7 @@ RULES:
         `;
 
         const response = await client.chat.completions.create({
-            model: "openai/gpt-oss-120b",
+            model: "moonshotai/kimi-k2-instruct-0905",
             messages: [{ role: "system", content: systemPrompt }, { role: "user", content: query }],
             temperature: 0.7,
             max_tokens: 300
@@ -289,7 +289,7 @@ Return an ARRAY of objects:
             : `Generate a random creative category based on the user's library and current time.`;
 
         const response = await client.chat.completions.create({
-            model: "openai/gpt-oss-120b",
+            model: "moonshotai/kimi-k2-instruct-0905",
             messages: [
                 { role: "system", content: "You are a JSON-only API. Return raw JSON. No markdown, no explanation." },
                 { role: "system", content: systemInstructions },

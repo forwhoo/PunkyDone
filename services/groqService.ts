@@ -45,7 +45,7 @@ ${JSON.stringify(context, null, 2)}
 
     try {
         const response = await client.chat.completions.create({
-            model: "openai/gpt-oss-120b", // Using a solid model on Groq
+            model: "moonshotai/kimi-k2-instruct-0905", // Using a solid model on Groq
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: query }
