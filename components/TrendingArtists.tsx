@@ -183,12 +183,19 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                     )}
 
                     {/* Inner Ring Layer (Counter-Clockwise) */}
-                    <div className={`absolute inset-0 z-20 pointer-events-none transition-all duration-500 ${selectedItem ? 'opacity-30' : 'opacity-100'}`}>
-                        <motion.div 
-                            className="w-full h-full absolute inset-0"
-                            animate={{ rotate: 360 }}
-                            transition={{ repeat: Infinity, duration: 60, ease: "linear" }}
-                        >
+                    <div 
+                        className={`absolute inset-0 z-20 transition-all duration-500 hover:[animation-play-state:paused] ${selectedItem ? 'opacity-30' : 'opacity-100'}`}
+                        style={{ animation: 'spin-slow 60s linear infinite' }}
+                    >
+                         {/* Note: spin-slow needs to be defined or we use inline keyframes equivalent */}
+                         <style>{`
+                            @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                            @keyframes spin-reverse-slow { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+                            .animate-spin-slow { animation: spin-slow 60s linear infinite; }
+                            .animate-spin-reverse-slow { animation: spin-reverse-slow 90s linear infinite; }
+                         `}</style>
+                        
+                        <div className="w-full h-full absolute inset-0 animate-spin-slow group-hover:[animation-play-state:paused]">
                             {innerRing.map((item, i) => {
                                 const total = innerRing.length;
                                 const angle = (i / total) * 360;
@@ -199,30 +206,30 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                         key={item.id}
                                         className="absolute top-1/2 left-1/2 w-0 h-0 pointer-events-auto"
                                         style={{ 
-                                            transform: `rotate(${angle}deg) translate(${radius * 5}px) rotate(-${angle}deg)` // maintain upright
+                                            transform: `rotate(${angle}deg) translate(${radius * 5}px) rotate(-${angle}deg)` 
                                         }}
                                     >
-                                        <OrbitNode 
-                                            item={item} 
-                                            rank={i + 2} 
-                                            size={60} 
-                                            isActive={selectedItem?.id === item.id}
-                                            isDimmed={selectedItem !== null && selectedItem.id !== item.id}
-                                            onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)} 
-                                        />
+                                        <div className="animate-spin-reverse-slow group-hover:[animation-play-state:paused]">
+                                            <OrbitNode 
+                                                item={item} 
+                                                rank={i + 2} 
+                                                size={60} 
+                                                isActive={selectedItem?.id === item.id}
+                                                isDimmed={selectedItem !== null && selectedItem.id !== item.id}
+                                                onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)} 
+                                            />
+                                        </div>
                                     </div>
                                 );
                             })}
-                        </motion.div>
+                        </div>
                     </div>
 
                     {/* Outer Ring Layer (Clockwise) */}
-                    <div className={`absolute inset-0 z-10 pointer-events-none transition-all duration-500 ${selectedItem ? 'opacity-30' : 'opacity-100'}`}>
-                        <motion.div 
-                            className="w-full h-full absolute inset-0"
-                            animate={{ rotate: -360 }}
-                            transition={{ repeat: Infinity, duration: 90, ease: "linear" }}
-                        >
+                    <div 
+                        className={`absolute inset-0 z-10 transition-all duration-500 ${selectedItem ? 'opacity-30' : 'opacity-100'}`}
+                    >
+                         <div className="w-full h-full absolute inset-0 animate-spin-reverse-slow group-hover:[animation-play-state:paused]">
                             {outerRing.map((item, i) => {
                                 const total = outerRing.length;
                                 const angle = (i / total) * 360;
@@ -236,18 +243,20 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                             transform: `rotate(${angle}deg) translate(${radius * 5}px) rotate(-${angle}deg)` 
                                         }}
                                     >
-                                        <OrbitNode 
-                                            item={item} 
-                                            rank={i + 10} 
-                                            size={40} 
-                                            isActive={selectedItem?.id === item.id}
-                                            isDimmed={selectedItem !== null && selectedItem.id !== item.id}
-                                            onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)} 
-                                        />
+                                        <div className="animate-spin-slow group-hover:[animation-play-state:paused]">
+                                            <OrbitNode 
+                                                item={item} 
+                                                rank={i + 10} 
+                                                size={40} 
+                                                isActive={selectedItem?.id === item.id}
+                                                isDimmed={selectedItem !== null && selectedItem.id !== item.id}
+                                                onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)} 
+                                            />
+                                        </div>
                                     </div>
                                 );
                             })}
-                        </motion.div>
+                        </div>
                     </div>
 
                     {/* Orbital Lines - Enhanced */}
@@ -382,14 +391,11 @@ const OrbitNode = ({ item, rank, size, isActive, isDimmed, onClick }: { item: Tr
             </div>
 
             {/* Custom Tooltip - STRAIGHT (Not rotated via parent) */}
-            {/* Since parent div is counter-rotated, this tooltip will be upright. */}
-            <div className={`absolute top-full mt-2 left-1/2 -translate-x-1/2 transition-opacity pointer-events-none z-50 min-w-[100px] text-center ${isActive || isDimmed ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
-                 <div className="bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2 shadow-xl backdrop-blur-md transform-none">
-                     <p className="text-[10px] font-bold text-white truncate max-w-[120px]">{item.name}</p>
-                     <div className="flex items-center justify-center gap-2 mt-1">
-                         <p className="text-[9px] text-[#FA2D48] font-mono leading-none">#{rank}</p>
-                         <p className="text-[9px] text-[#8E8E93] leading-none border-l border-white/10 pl-2">Score: {item.trendScore}</p>
-                     </div>
+            <div className={`absolute top-full mt-3 left-1/2 -translate-x-1/2 transition-all duration-200 pointer-events-none z-[60] min-w-[max-content] text-center ${isActive || isDimmed ? 'opacity-0' : 'opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-2'}`}>
+                 <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 shadow-2xl transform-none flex items-center gap-3">
+                     <span className="text-[10px] font-black text-[#FA2D48] font-mono">#{rank}</span>
+                     <div className="h-3 w-px bg-white/20"></div>
+                     <p className="text-[11px] font-bold text-white whitespace-nowrap">{item.recentPlays} plays</p>
                  </div>
             </div>
         </div>

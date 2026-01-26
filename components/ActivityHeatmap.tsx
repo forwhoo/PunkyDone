@@ -161,46 +161,69 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
                 </div>
             </div>
 
-            {/* CLICK MODAL - Reusing standard modal style */}
+            {/* SIDE PANEL DETAILS (Replaces Modal) */}
             {selectedDate && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div 
-                        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity"
+                <>
+                     {/* Backdrop */}
+                     <div 
+                        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-500"
                         onClick={() => setSelectedDate(null)}
-                    />
-                    <div className="relative bg-[#1C1C1E] w-full max-w-lg max-h-[70vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-white/10 animate-in zoom-in-95 duration-300">
+                     />
+
+                    <div className="fixed top-0 right-0 h-screen w-full sm:w-[400px] bg-[#1C1C1E] border-l border-white/10 shadow-2xl z-50 flex flex-col transform transition-transform duration-500 ease-spring animate-in slide-in-from-right">
                          {/* Header */}
-                         <div className="flex justify-between items-center p-6 border-b border-white/5 bg-[#1C1C1E]">
-                            <div>
-                                <h2 className="text-xl font-bold text-white tracking-tight">Activity • {selectedDate}</h2>
-                                <span className="text-[#8E8E93] text-sm">{selectedTracks.length} tracks played</span>
-                            </div>
+                         <div className="relative h-40 w-full bg-gradient-to-b from-[#2C2C2E] to-[#1C1C1E] p-6 flex flex-col justify-end">
                             <button 
                                 onClick={() => setSelectedDate(null)}
-                                className="w-8 h-8 rounded-full bg-[#2C2C2E] flex items-center justify-center text-white hover:bg-[#3A3A3C] transition-colors"
+                                className="absolute top-6 right-6 w-8 h-8 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center text-white transition-colors backdrop-blur-md"
                             >
                                 <X size={16} />
                             </button>
+                            
+                            <h2 className="text-3xl font-bold text-white tracking-tight">{new Date(selectedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</h2>
+                            <p className="text-[#FA2D48] text-sm font-medium uppercase tracking-wider mt-1">
+                                {selectedTracks.length} tracks • {new Date(selectedDate).toLocaleDateString(undefined, { year: 'numeric' })}
+                            </p>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin scrollbar-thumb-[#FA2D48] scrollbar-track-transparent">
-                             {selectedTracks.map((track, i) => (
-                                 <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
-                                     <div className="w-10 h-10 rounded-md overflow-hidden bg-[#2C2C2E]">
-                                         <img src={track.cover || track.album_cover} className="w-full h-full object-cover" />
-                                     </div>
-                                     <div className="flex-1 min-w-0">
-                                         <h4 className="text-sm font-semibold text-white truncate">{track.track_name || track.name}</h4>
-                                         <p className="text-xs text-[#8E8E93] truncate">{track.artist_name || track.artist}</p>
-                                     </div>
-                                     <span className="text-xs text-[#8E8E93] font-mono">
-                                         {new Date(track.played_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                     </span>
+                        {/* List */}
+                        <div className="flex-1 overflow-y-auto p-0 scrollbar-thin scrollbar-thumb-[#FA2D48] scrollbar-track-transparent">
+                             {/* Stats Summary */}
+                             <div className="grid grid-cols-2 gap-px bg-white/5 mb-4">
+                                 <div className="bg-[#1C1C1E] p-4 text-center">
+                                     <span className="block text-xl font-bold text-white">{selectedTracks.length}</span>
+                                     <span className="text-[10px] text-[#8E8E93] uppercase tracking-widest">Plays</span>
                                  </div>
-                             ))}
+                                 <div className="bg-[#1C1C1E] p-4 text-center">
+                                     <span className="block text-xl font-bold text-white">
+                                         {Math.round(selectedTracks.reduce((acc, t) => acc + (t.duration_ms || 0), 0) / 60000)}
+                                     </span>
+                                     <span className="text-[10px] text-[#8E8E93] uppercase tracking-widest">Minutes</span>
+                                 </div>
+                             </div>
+
+                             <div className="px-4 pb-12 space-y-1">
+                                 {selectedTracks.map((track, i) => (
+                                     <div key={i} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors group">
+                                         <span className="text-[10px] font-mono text-[#8E8E93]/50 w-6 text-right pt-[2px]">
+                                             {new Date(track.played_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                         </span>
+                                         
+                                         <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-[#2C2C2E] flex-shrink-0 shadow-lg group-hover:shadow-xl transition-all">
+                                             <img src={track.cover || track.album_cover} className="w-full h-full object-cover" />
+                                             <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                                         </div>
+                                         
+                                         <div className="flex-1 min-w-0">
+                                             <h4 className="text-[13px] font-bold text-white truncate group-hover:text-[#FA2D48] transition-colors">{track.track_name || track.name}</h4>
+                                             <p className="text-[12px] text-[#8E8E93] truncate">{track.artist_name || track.artist}</p>
+                                         </div>
+                                     </div>
+                                 ))}
+                             </div>
                         </div>
                     </div>
-                </div>
+                </>
             )}
         </>
     );

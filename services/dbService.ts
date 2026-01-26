@@ -20,50 +20,32 @@ export const fetchCharts = async (period: 'daily' | 'weekly' | 'monthly' = 'week
     try {
         console.log("Fetching charts for", period);
         
-        const { data, error } = await supabase.rpc('get_dynamic_chart', { 
-            period_type: period, 
-            target_date: new Date().toISOString() 
-        });
+        // DISABLE RPC CALL due to "ambiguous column" error on server side
+        // OLD: const { data, error } = await supabase.rpc('get_dynamic_chart', ...);
 
-        if (error) {
-           console.warn("RPC Chart Error (Fallback to Manual Calc):", error.message || error);
-           // FALLBACK: Use manual calculation if RPC is broken (like the "ambiguous" error)
-           const dashboardStats = await fetchDashboardStats(
-               period.charAt(0).toUpperCase() + period.slice(1) as any
-           );
-           
-           // Convert dashboardStats.songs to chart format
-           return (dashboardStats.songs || []).slice(0, 20).map((song: any, i: number) => ({
-               id: song.id,
-               title: song.title,
-               artist: song.artist,
-               cover: song.cover,
-               listens: song.listens,
-               timeStr: song.timeStr,
-               rank: i + 1,
-               prev: null,
-               peak: i + 1,
-               streak: 1,
-               trend: 'NEW'
-           }));
-        }
+        // ALWAYS USE FALLBACK (Manual Calc) UNTIL RPC IS FIXED
+        const dashboardStats = await fetchDashboardStats(
+            period.charAt(0).toUpperCase() + period.slice(1) as any
+        );
+        
+        // Convert dashboardStats.songs to chart format
+        return (dashboardStats.songs || []).slice(0, 20).map((song: any, i: number) => ({
+            id: song.id,
+            title: song.title,
+            artist: song.artist,
+            cover: song.cover,
+            listens: song.listens,
+            timeStr: song.timeStr,
+            rank: i + 1,
+            prev: null,
+            peak: i + 1,
+            streak: 1,
+            trend: 'NEW'
+        }));
+        
+        /* RPC CODE REMOVED FOR STABILITY */
 
-        if (!data || data.length === 0) return [];
-
-        return data.map((item: any) => ({
-            id: item.spotify_id || item.id,
-            title: item.track_name || 'Unknown Track',
-            artist: item.artist_name || 'Unknown Artist',
-            cover: item.album_cover || item.image,
-            listens: item.plays_count || 0,
-            timeStr: formatDuration(item.total_duration_ms || 0),
-            
-            // Billboard Stats
-            rank: item.rank || 0,
-            prev: item.prev_rank || null,
-            peak: item.peak_rank || item.rank,
-            streak: item.streak_count || 1,
-            trend: item.trend_status // 'UP', 'DOWN', 'STABLE', 'NEW'
+    } catch (err) {
         }));
     } catch (e) {
         console.error("fetchCharts Exception:", e);

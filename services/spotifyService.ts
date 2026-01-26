@@ -308,39 +308,68 @@ const msToTime = (duration: number) => {
   return minutes + ":" + (parseInt(seconds) < 10 ? '0' : '') + seconds;
 };
 
+// Simple in-memory cache
+const artistImageCache: Record<string, string> = {};
+
 export const fetchArtistImages = async (token: string, artistNames: string[]) => {
     if (!token || !artistNames.length) return {};
     
-    // Batch in groups of 5? No, Search API is 1 by 1.
-    // Or we use 'Get Several Artists' if we have IDs. We don't have IDs.
-    // We have names. We can try to match with 'Get User's Top Artists' cache? 
-    // No, that's not reliable.
-    
-    // We will search for each artist. Limit to first 5 or so to avoid rate limits?
-    // Let's assume the component calls this for the top items.
-    
     const imageMap: Record<string, string> = {};
-    
-    // Minimal optimization: Only fetch unique names
     const uniqueNames = Array.from(new Set(artistNames));
+    const namesToFetch: string[] = [];
 
-    // Parallel fetch with limit (don't spam 50 requests)
-    const promises = uniqueNames.slice(0, 10).map(async (name) => {
-        try {
-            const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(name)}&type=artist&limit=1`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = await res.json();
-            const artist = data.artists?.items[0];
-            if (artist && artist.images?.length > 0) {
-                imageMap[name] = artist.images[0].url;
-            }
-        } catch (e) {
-            console.error('Artist fetch error:', e);
+    // Check cache first
+    uniqueNames.forEach(name => {
+        if (artistImageCache[name]) {
+            imageMap[name] = artistImageCache[name];
+        } else {
+            namesToFetch.push(name);
         }
     });
 
-    await Promise.all(promises);
+    if (namesToFetch.length === 0) return imageMap;
+
+    // Throttle helper
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    // Parallel fetch with limit and delay
+    // Process in chunks of 5
+    const chunkSize = 5;
+    for (let i = 0; i < namesToFetch.length; i += chunkSize) {
+        const chunk = namesToFetch.slice(i, i + chunkSize);
+        
+        await Promise.all(chunk.map(async (name) => {
+            try {
+                // Rate limit protection - small random delay per request
+                await delay(Math.random() * 200 + 100); 
+
+                const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(name)}&type=artist&limit=1`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                if (res.status === 429) {
+                    console.warn(`Rate limit hit for ${name}, skipping.`);
+                    return;
+                }
+
+                if (!res.ok) return;
+
+                const data = await res.json();
+                const artist = data.artists?.items[0];
+                if (artist && artist.images?.length > 0) {
+                    const url = artist.images[0].url;
+                    imageMap[name] = url;
+                    artistImageCache[name] = url; // Update cache
+                }
+            } catch (e) {
+                console.error('Artist fetch error:', e);
+            }
+        }));
+        
+        // Wait between chunks
+        if (i + chunkSize < namesToFetch.length) await delay(500);
+    }
+
     return imageMap;
 };
 

@@ -433,20 +433,21 @@ function App() {
                 history={dbUnifiedData?.recentPlays || data?.recentRaw || []}
                 user={data.user}
                 contextData={{
-                    artists: (dbUnifiedData?.artists || data.artists).map((a: Artist) => {
+                    artists: (dbUnifiedData?.artists || data.artists).map((a: Artist, idx: number) => {
                         const time = a.timeStr || '';
                         const mins = time.replace('m', '');
-                        return `${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
+                        // Include Rank for AI
+                        return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
                     }),
-                    albums: (dbUnifiedData?.albums || data.albums).map((a: Album) => {
+                    albums: (dbUnifiedData?.albums || data.albums).map((a: Album, idx: number) => {
                         const time = a.timeStr || '';
                         const mins = time.replace('m', '');
-                        return `${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
+                        return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
                     }),
-                    songs: (dbUnifiedData?.songs || data.songs).map((s: Song) => {
+                    songs: (dbUnifiedData?.songs || data.songs).map((s: Song, idx: number) => {
                         const time = s.timeStr || '';
                         const mins = time.replace('m', '');
-                        return `${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
+                        return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
                     }),
                     globalStats: dbStats
                 }} 
