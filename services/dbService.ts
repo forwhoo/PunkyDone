@@ -18,7 +18,6 @@ export interface HistoryItem {
 // Calls Supabase RPC to calc Trends, Streaks on the fly
 export const fetchCharts = async (period: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<any[]> => {
     try {
-        // Log parameters for debugging
         console.log("Fetching charts for", period);
         
         const { data, error } = await supabase.rpc('get_dynamic_chart', { 
@@ -27,9 +26,26 @@ export const fetchCharts = async (period: 'daily' | 'weekly' | 'monthly' = 'week
         });
 
         if (error) {
-           console.warn("RPC Chart Error (Fallback to empty):", error.message || error);
-           // Attempt a minimal fallback by fetching most recent tracks if the RPC is missing
-           return [];
+           console.warn("RPC Chart Error (Fallback to Manual Calc):", error.message || error);
+           // FALLBACK: Use manual calculation if RPC is broken (like the "ambiguous" error)
+           const dashboardStats = await fetchDashboardStats(
+               period.charAt(0).toUpperCase() + period.slice(1) as any
+           );
+           
+           // Convert dashboardStats.songs to chart format
+           return (dashboardStats.songs || []).slice(0, 20).map((song: any, i: number) => ({
+               id: song.id,
+               title: song.title,
+               artist: song.artist,
+               cover: song.cover,
+               listens: song.listens,
+               timeStr: song.timeStr,
+               rank: i + 1,
+               prev: null,
+               peak: i + 1,
+               streak: 1,
+               trend: 'NEW'
+           }));
         }
 
         if (!data || data.length === 0) return [];

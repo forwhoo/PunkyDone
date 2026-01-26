@@ -33,10 +33,10 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ history }) => 
         return processed;
     }, [history]);
 
-    // FILTER DATA BASED ON VIEW
-    const filteredItems = useMemo(() => {
-        if (timelineData.length === 0) return [];
+    const [selectedTimeRange, setSelectedTimeRange] = useState<{start: number, end: number} | null>(null);
 
+    // Helper for current range boundaries
+    const getRangeBoundaries = () => {
         const start = new Date(currentDate);
         const end = new Date(currentDate);
 
@@ -44,12 +44,10 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ history }) => 
             start.setHours(0, 0, 0, 0);
             end.setHours(23, 59, 59, 999);
         } else if (view === 'week') {
-            // Start of week (Monday)
             const day = start.getDay();
             const diff = start.getDate() - day + (day === 0 ? -6 : 1); 
             start.setDate(diff);
             start.setHours(0,0,0,0);
-            
             end.setDate(start.getDate() + 6);
             end.setHours(23,59,59,999);
         } else if (view === 'month') {
@@ -64,37 +62,41 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ history }) => 
             end.setMonth(11, 31);
             end.setHours(23,59,59,999);
         }
+        return { start: start.getTime(), end: end.getTime(), startObj: start, endObj: end };
+    };
 
+    const { start: rangeStart, end: rangeEnd, startObj: rangeStartDate } = useMemo(getRangeBoundaries, [view, currentDate]);
+
+    // FILTER DATA BASED ON VIEW
+    const filteredItems = useMemo(() => {
+        if (timelineData.length === 0) return [];
         return timelineData.filter(item => 
-            item.ts >= start.getTime() && item.ts <= end.getTime()
+            item.ts >= rangeStart && item.ts <= rangeEnd
         );
-    }, [timelineData, view, currentDate]);
-
-    const [selectedTimeRange, setSelectedTimeRange] = useState<{start: number, end: number} | null>(null);
+    }, [timelineData, rangeStart, rangeEnd]);
 
     // Filter by Time of Day logic
     // Create density buckets for visualizer instead of raw dots
     const densityData = useMemo(() => {
         if (filteredItems.length === 0) return [];
-        const { start, end } = getRange();
-        const totalDuration = end - start;
+        const totalDuration = rangeEnd - rangeStart;
         const bucketCount = 60; // 60 bars across the width
         const bucketSize = totalDuration / bucketCount;
         
         const buckets = new Array(bucketCount).fill(0).map(() => ({ count: 0, items: [] as any[], ts: 0 }));
         
         filteredItems.forEach(item => {
-            const offset = item.ts - start;
+            const offset = item.ts - rangeStart;
             const bucketIndex = Math.floor(offset / bucketSize);
             if (bucketIndex >= 0 && bucketIndex < bucketCount) {
                 buckets[bucketIndex].count++;
                 buckets[bucketIndex].items.push(item);
-                buckets[bucketIndex].ts = start + (bucketIndex * bucketSize); // Approximate time
+                buckets[bucketIndex].ts = rangeStart + (bucketIndex * bucketSize); // Approximate time
             }
         });
         
         return buckets;
-    }, [filteredItems, view, currentDate]);
+    }, [filteredItems, rangeStart, rangeEnd]);
 
     return (
         <div className="mb-16 animate-in fade-in duration-700">

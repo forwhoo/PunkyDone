@@ -136,9 +136,15 @@ export const fetchSpotifyData = async (token: string) => {
       fetch('https://api.spotify.com/v1/me/player/currently-playing', { headers })
     ]);
 
+    // Handle 401 Unauthorized globally for any endpoint
+    if ([artistsRes, tracksRes, recentRes, userRes, nowPlayingRes].some(r => r.status === 401)) {
+        console.warn("Spotify Token Unauthorized (401)");
+        return null;
+    }
+
     if (!artistsRes.ok || !tracksRes.ok || !recentRes.ok || !userRes.ok) {
         console.warn("Spotify API Error:", artistsRes.status, tracksRes.status);
-        return null; // Return null so caller can handle/refresh
+        return null;
     }
 
     const artistsData = await artistsRes.json();
