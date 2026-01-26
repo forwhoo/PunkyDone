@@ -127,10 +127,10 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
         </div>
       </CardHeader>
 
-      <div className="flex-1 p-0">
+      <div className="flex-1 p-0 overflow-hidden">
          {/* LIST VIEW - LISTEN CHART */}
          <div className="w-full">
-               <div className="grid grid-cols-[60px_1fr_80px_60px_60px] md:grid-cols-[70px_1fr_100px_80px_80px] px-6 py-3 border-b border-white/5 text-[10px] font-bold uppercase tracking-widest text-[#8E8E93]">
+               <div className="grid grid-cols-[45px_1fr_40px_40px_40px] md:grid-cols-[70px_1fr_100px_80px_80px] px-4 md:px-6 py-3 border-b border-white/5 text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-[#8E8E93]">
                    <div>Rank</div>
                    <div>Track</div>
                    <div className="text-center">PK</div>
@@ -148,28 +148,28 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
                        const streak = item.streak || 1; 
 
                        const getTrendIcon = (t: string) => {
-                           if (t === 'UP') return <TrendingUp className="w-3 h-3 text-green-500" />;
-                           if (t === 'DOWN') return <TrendingDown className="w-3 h-3 text-red-500" />;
-                           if (t === 'STABLE') return <Minus className="w-3 h-3 text-gray-500" />;
+                           if (t === 'UP') return <TrendingUp className="w-2.5 h-2.5 md:w-3 h-3 text-green-500" />;
+                           if (t === 'DOWN') return <TrendingDown className="w-2.5 h-2.5 md:w-3 h-3 text-red-500" />;
+                           if (t === 'STABLE') return <Minus className="w-2.5 h-2.5 md:w-3 h-3 text-gray-500" />;
                            return <SparklesBadge />;
                        };
 
                        return (
-                       <div key={item.id} className="grid grid-cols-[60px_1fr_80px_60px_60px] md:grid-cols-[70px_1fr_100px_80px_80px] items-center px-6 py-4 hover:bg-white/5 transition-colors group border-b border-white/5 last:border-0 relative overflow-hidden">
+                       <div key={item.id} className="grid grid-cols-[45px_1fr_40px_40px_40px] md:grid-cols-[70px_1fr_100px_80px_80px] items-center px-4 md:px-6 py-4 hover:bg-white/5 transition-colors group border-b border-white/5 last:border-0 relative overflow-hidden">
                            
                            {/* Rank + Trend Column */}
-                           <div className="flex flex-col items-center justify-center -ml-2 w-14">
-                               <span className={`text-[16px] font-black italic tracking-tighter ${rank === 1 ? 'text-[#FA2D48] text-[20px]' : 'text-white'}`}>
+                           <div className="flex flex-col items-center justify-center -ml-1 md:-ml-2 w-10 md:w-14">
+                               <span className={`text-[14px] md:text-[16px] font-black italic tracking-tighter ${rank === 1 ? 'text-[#FA2D48] md:text-[20px]' : 'text-white'}`}>
                                    {rank}
                                </span>
                                <div className="flex items-center gap-1 mt-0.5">
                                    {trend === 'NEW' ? (
-                                       <span className="text-[9px] font-black text-[#FA2D48] uppercase tracking-wider bg-[#FA2D48]/10 px-1 rounded-sm">NEW</span>
+                                       <span className="text-[7px] md:text-[9px] font-black text-[#FA2D48] uppercase tracking-wider bg-[#FA2D48]/10 px-1 rounded-sm">NEW</span>
                                    ) : (
                                        <>
                                          {getTrendIcon(trend)}
                                          {trend !== 'STABLE' && (
-                                            <span className={`text-[9px] font-bold ${trend === 'UP' ? 'text-green-500' : 'text-red-500'}`}>
+                                            <span className={`text-[7px] md:text-[9px] font-bold ${trend === 'UP' ? 'text-green-500' : 'text-red-500'}`}>
                                                 {Math.abs((item.prev || 0) - rank) || 1}
                                             </span>
                                          )}
@@ -179,8 +179,8 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
                            </div>
                            
                            {/* Track Info */}
-                           <div className="flex items-center gap-4 min-w-0 pr-4">
-                               <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#2C2C2E] relative group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all shrink-0">
+                           <div className="flex items-center gap-3 md:gap-4 min-w-0 pr-2">
+                               <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg overflow-hidden bg-[#2C2C2E] relative group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all shrink-0">
                                    <img 
                                       src={getImageSrc(item)} 
                                       className="w-full h-full object-cover" 
@@ -188,41 +188,36 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
                                    />
                                    {activeTab === 'Songs' && (
                                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                         <Play className="w-5 h-5 text-white fill-white drop-shadow-lg" />
+                                         <Play className="w-4 h-4 md:w-5 md:h-5 text-white fill-white drop-shadow-lg" />
                                      </div>
                                    )}
                                </div>
                                <div className="min-w-0 flex flex-col justify-center">
-                                   <div className="font-bold text-white text-[15px] truncate group-hover:text-[#FA2D48] transition-colors leading-tight">
+                                   <div className="font-bold text-white text-[13px] md:text-[15px] truncate group-hover:text-[#FA2D48] transition-colors leading-tight">
                                        {item.name || item.title}
                                    </div>
                                    {(item.artist && activeTab !== 'Artists') && (
-                                       <div className="text-[12px] text-[#8E8E93] truncate hover:text-white transition-colors cursor-pointer w-fit mt-0.5">
+                                       <div className="text-[11px] md:text-[12px] text-[#8E8E93] truncate hover:text-white transition-colors cursor-pointer w-fit mt-0.5">
                                            {item.artist}
                                        </div>
                                    )}
-                                   {/* Mobile Stats (only visible on small screens) */}
-                                   <div className="flex md:hidden gap-3 mt-1 text-[10px] text-gray-500 font-mono">
-                                        <span>Pk: <span className="text-white">{peak}</span></span>
-                                        <span>Wks: <span className="text-white">{streak}</span></span>
-                                   </div>
                                </div>
                            </div>
                            
-                           {/* Desktop Stats Columns */}
-                           <div className="hidden md:flex flex-col items-center justify-center">
-                               <span className="text-[14px] font-bold text-white/90">{peak}</span>
-                               <span className="text-[9px] text-[#555] font-mono uppercase">Peak</span>
+                           {/* Stats Columns */}
+                           <div className="flex flex-col items-center justify-center">
+                               <span className="text-[12px] md:text-[14px] font-bold text-white/90">{peak}</span>
+                               <span className="text-[7px] md:text-[9px] text-[#555] font-mono uppercase hidden md:inline">Peak</span>
                            </div>
                            
-                           <div className="hidden md:flex flex-col items-center justify-center">
-                               <span className="text-[14px] font-bold text-[#8E8E93]">{trend === 'NEW' ? '-' : prev}</span>
-                               <span className="text-[9px] text-[#555] font-mono uppercase">Last</span>
+                           <div className="flex flex-col items-center justify-center">
+                               <span className="text-[12px] md:text-[14px] font-bold text-[#8E8E93]">{trend === 'NEW' ? '-' : prev}</span>
+                               <span className="text-[7px] md:text-[9px] text-[#555] font-mono uppercase hidden md:inline">Last</span>
                            </div>
 
-                            <div className="hidden md:flex flex-col items-center justify-center">
-                               <span className="text-[14px] font-bold text-white">{streak}</span>
-                               <span className="text-[9px] text-[#555] font-mono uppercase">Wks</span>
+                            <div className="flex flex-col items-center justify-center">
+                               <span className="text-[12px] md:text-[14px] font-bold text-white">{streak}</span>
+                               <span className="text-[7px] md:text-[9px] text-[#555] font-mono uppercase hidden md:inline">Wks</span>
                            </div>
 
                        </div>

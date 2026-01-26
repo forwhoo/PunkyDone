@@ -101,16 +101,18 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
             trending.push({
                 name,
                 image: stats.image,
-                trendScore,
+                trendScore: Math.round(trendScore),
                 recentPlays: recentPlays24h,
                 spreadTime: Math.round(spreadTimeHours),
-                avgTimeReturn: avgTimeReturnMs // Store in MS for accurate display
-            });
+                avgTimeReturn: avgTimeReturnMs, // Store in MS for accurate display
+                velocity: Math.round(velocity * 100),
+                returnFrequencyHrs: (avgTimeReturnMs / 3600000).toFixed(1)
+            } as any);
         });
 
         // Sort by trend score
-        trending.sort((a, b) => b.trendScore - a.trendScore);
-        setTrendingArtists(trending.slice(0, 8));
+        trending.sort((a: any, b: any) => b.trendScore - a.trendScore);
+        setTrendingArtists(trending.slice(0, 15));
         setLastUpdate(new Date());
     };
 
@@ -144,14 +146,37 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
             </div>
             
             <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
-                {trendingArtists.map((artist, index) => (
+                {trendingArtists.map((artist: any, index) => (
                     <div key={artist.name} className="flex-shrink-0 relative flex flex-col items-center snap-start group cursor-pointer w-[140px] md:w-[160px] mr-3">
+                        {/* Hover Reason Tooltip */}
+                        <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 bg-[#1C1C1E] border border-white/10 p-3 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 translate-y-2 group-hover:translate-y-0 backdrop-blur-xl">
+                            <div className="text-[10px] uppercase font-bold text-[#FA2D48] mb-2 tracking-wider">Trend Analysis</div>
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between text-[11px]">
+                                    <span className="text-[#8E8E93]">24h Volume</span>
+                                    <span className="text-white font-bold">{artist.recentPlays} plays</span>
+                                </div>
+                                <div className="flex justify-between text-[11px]">
+                                    <span className="text-[#8E8E93]">Velocity</span>
+                                    <span className="text-white font-bold">{artist.velocity}% ↑</span>
+                                </div>
+                                <div className="flex justify-between text-[11px]">
+                                    <span className="text-[#8E8E93]">Return Rate</span>
+                                    <span className="text-white font-bold">Every {artist.returnFrequencyHrs}h</span>
+                                </div>
+                            </div>
+                            <div className="mt-2 pt-2 border-t border-white/5 flex justify-between items-center">
+                                <span className="text-[10px] text-[#8E8E93]">Overall Score</span>
+                                <span className="text-sm font-black text-white">{artist.trendScore}</span>
+                            </div>
+                        </div>
+
                         <div className="relative">
-                            <div className="relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-all duration-300 shadow-xl">
+                            <div className="relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-all duration-300 shadow-xl group-hover:border-[#FA2D48]/50">
                                 <img 
                                     src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
                                     alt={artist.name} 
-                                    className="w-full h-full object-cover" 
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                                 <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-1">
@@ -160,7 +185,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
                                 </div>
                             </div>
                             {index === 0 && (
-                                <div className="absolute -top-2 -right-2 bg-[#FA2D48] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg z-20">
+                                <div className="absolute -top-2 -right-2 bg-[#FA2D48] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg z-20 animate-bounce">
                                     #1
                                 </div>
                             )}

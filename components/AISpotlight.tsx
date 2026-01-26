@@ -13,7 +13,13 @@ interface TopAIProps {
         artists: string[], 
         albums: string[], 
         songs: string[],
-        globalStats?: { weeklyTime: string, weeklyTrend: string, totalTracks: number, totalMinutes?: number }
+        globalStats?: { 
+            weeklyTime: string, 
+            weeklyTrend: string, 
+            totalTracks: number, 
+            totalMinutes?: number,
+            charts?: any[] 
+        }
     };
 }
 
@@ -323,7 +329,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                 </div>
 
                 {/* Quick Feature Suggestions */}
-                {mode === 'discover' && categoryResults.length === 0 && !loading && !displayedText && (
+                {(!loading && !typing) && (
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-8 max-w-2xl mx-auto">
                         {['Weekly Insight', 'Top Artists', 'Morning Vibes', 'Hidden Gems', '80s Rewind', 'Chill Mix'].map((suggestion) => (
                             <button
@@ -332,7 +338,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                                 className={`px-4 py-2 rounded-full border text-sm transition-all active:scale-95 relative overflow-hidden group/sug ${
                                     suggestion === 'Weekly Insight' 
                                     ? 'bg-[#FA2D48] border-[#FA2D48] text-white font-bold shadow-[0_0_20px_rgba(250,45,72,0.4)] animate-shine' 
-                                    : 'bg-white/5 border-white/5 text-[#8E8E93] hover:bg-white/10 hover:text-white hover:border-white/20'
+                                    : 'bg-white/5 border-white/10 text-[#8E8E93] hover:bg-white/10 hover:text-white hover:border-white/20'
                                 }`}
                             >
                                 {suggestion === 'Weekly Insight' && (

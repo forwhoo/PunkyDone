@@ -48,6 +48,7 @@ export const answerMusicQuestion = async (question: string, context: {
     weeklyTrend: string, 
     totalTracks: number, 
     totalMinutes?: number,
+    charts?: any[],
     extraStats?: { longestGapHours: string, longestSessionHours: string }
   }
 }): Promise<string> => {
@@ -60,6 +61,7 @@ export const answerMusicQuestion = async (question: string, context: {
 - Weekly Trend: ${context.globalStats.weeklyTrend}
 - Total History Tracks: ${context.globalStats.totalTracks}
 - Total Minutes Listened (Overall): ${context.globalStats.totalMinutes || 'Unknown'} min
+- Current Charts Top 5: ${context.globalStats.charts?.slice(0, 5).map(c => `${c.title} (#${c.rank}, LW: ${c.last_week_rank})`).join(', ') || 'N/A'}
 - Longest Gap Between Tracks (Last 14 days): ${context.globalStats.extraStats?.longestGapHours || '?'} hours
 - Longest Continuous Session (Last 14 days): ${context.globalStats.extraStats?.longestSessionHours || '?'} hours
     ` : '';
@@ -211,7 +213,8 @@ export const generateDynamicCategoryQuery = async (context: {
         weeklyTrend: string, 
         totalTracks: number, 
         totalMinutes?: number,
-        extraStats?: { longestGapHours: string, longestSessionHours: string }
+        extraStats?: { longestGapHours: string, longestSessionHours: string },
+        charts?: any[]
     }
 }, userPrompt?: string): Promise<AIFilterResult[]> => {
     try {
@@ -232,11 +235,19 @@ export const generateDynamicCategoryQuery = async (context: {
 - Weekly Trend: ${context.globalStats.weeklyTrend}
 - Total Minutes (All Time): ${context.globalStats.totalMinutes || '?'} min
 - Longest Session: ${context.globalStats.extraStats?.longestSessionHours || '?'} hours
+- Current Charts: ${JSON.stringify(context.globalStats.charts?.slice(0, 5).map(c => `${c.title} by ${c.artist} (Rank #${c.rank}, LW #${c.last_week_rank})`) || 'No chart data available')}
         ` : '';
 
         const systemInstructions = `
 You are the DJ Algorithm for a premium music dashboard.
 Your job: Create **ONE OR MORE** unique, creative listening categories from the user's REAL library based on their request.
+
+## CHART CONTEXT:
+If a song has jumped significantly in rank (e.g., LW #20 -> Rank #1), mention its "Meteorite Rise" or "Chart Dominance" in the category description!
+
+## FORMATTING RULES:
+- **TIME**: ALWAYS use American AM/PM time (e.g., "5:00 PM" instead of "17:00").
+- **TONE**: Smart, professional, minimalist.
 
 ${statsInfo}
 

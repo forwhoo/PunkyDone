@@ -162,8 +162,11 @@ function App() {
       // Function to refresh DB view
       const refreshDbStats = async () => {
           const stats = await fetchListeningStats();
-          setDbStats(stats);
           const dashboardStuff = await fetchDashboardStats(timeRange);
+          // Fetch dynamic charts for AI context
+          const currentCharts = await fetchCharts(timeRange.toLowerCase() as any);
+          
+          setDbStats({ ...stats, charts: currentCharts });
           setDbUnifiedData(dashboardStuff);
       };
 
