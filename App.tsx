@@ -491,6 +491,8 @@ function App() {
         {/* TRENDING ARTISTS - Live updating */}
         <TrendingArtists 
             artists={dbUnifiedData?.artists || data.artists}
+            albums={dbUnifiedData?.albums || data.albums}
+            songs={dbUnifiedData?.songs || data.songs}
             recentPlays={dbUnifiedData?.recentPlays || []}
             artistImages={artistImages}
         />
