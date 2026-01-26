@@ -211,25 +211,35 @@ export const generateWeeklyInsightStory = async (context: any): Promise<any[]> =
         if (!client) throw new Error("No AI Client");
 
         const prompt = `
-        You are the Pulse Music Engine. Generate an interactive "Weekly Insight" story for this user.
-        Return a JSON ARRAY of 5 "slides".
+        You are the Pulse Music Engine. Generate an immersive, interactive "Weekly Insight" story for this user.
+        Return a JSON ARRAY of 7 to 9 "slides".
 
         User Data: ${JSON.stringify(context)}
 
         Structure each slide object as:
         {
-           "type": "stat" | "quiz" | "chart" | "text",
+           "type": "text" | "stat" | "quiz" | "bar_chart" | "pie_chart" | "race_chart",
            "title": "Short Header",
            "content": "Description or Question",
            "data": {} // Depends on type
         }
 
-        Slide Types:
-        1. "text": Intro slide. "Welcome to your Weekly Pulse".
-        2. "stat": Highlight a specific big number (e.g., "You listened to 1,200 mins"). data: { "value": "1,200 m", "subtext": "+10% vs last week" }
-        3. "quiz": A simple trivia question about their habits. data: { "options": ["Artist A", "Artist B"], "correctIndex": 0, "answerCheck": "You listened to Artist A 50 times!" }
-        4. "chart": A breakdown. data: { "points": [{"label": "Rap", "value": 60}, {"label": "Pop", "value": 40}] }
-        5. "text": Outro.
+        Slide Types & Data Schemas:
+        1. "text": Intro/Outro/Section Header. data: { "background": "gradient-name" }
+        2. "stat": Big number highlight. data: { "value": "1,200 m", "subtext": "Top 1% of listeners", "icon": "emoji" }
+        3. "quiz": Trivia. data: { "options": ["A", "B", "C"], "correctIndex": 0, "explanation": "You played them 42 times!" }
+        4. "bar_chart": Compare 3-5 items (e.g. Days of Week activity). data: { "points": [{"label": "Mon", "value": 30}, {"label": "Tue", "value": 80}...] }
+        5. "pie_chart": Genre/Mood breakdown. data: { "segments": [{"label": "Pop", "value": 40, "color": "#ec4899"}, {"label": "Rock", "value": 20, "color": "#8b5cf6"}...] }
+        6. "race_chart": A "race" between top artists/songs. data: { "competitors": [{"name": "Artist A", "score": 95}, {"name": "Artist B", "score": 88}, {"name": "Artist C", "score": 70}] }
+
+        Sequence Guide:
+        - Slide 1: Intro (text)
+        - Slide 2: Big Stat (stat)
+        - Slide 3: Artist Race (race_chart) - Visualize their top artists competing.
+        - Slide 4: Genre Mix (pie_chart)
+        - Slide 5: Quiz (quiz)
+        - Slide 6: Activity Trend (bar_chart)
+        - Slide 7: Outro (text)
 
         Keep it fun, high energy, and personalized. 
         JSON ONLY. No markdown.

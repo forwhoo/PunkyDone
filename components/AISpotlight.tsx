@@ -393,59 +393,155 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token }) => {
                               <p className="text-[#8E8E93] text-lg mb-8 max-w-md">{insightData[insightStep].content}</p>
 
                               {/* Visualization Area */}
-                              <div className="w-full flex justify-center items-center flex-1">
+                              <div className="w-full flex justify-center items-center flex-1 min-h-[200px]">
+                                   {insightData[insightStep].type === 'text' && (
+                                       <div className="flex items-center justify-center animate-in zoom-in duration-500">
+                                            <Sparkles className="w-24 h-24 text-[#FA2D48] opacity-80 animate-pulse" />
+                                       </div>
+                                   )}
+
                                    {insightData[insightStep].type === 'stat' && (
                                        <div className="flex flex-col items-center animate-in zoom-in duration-300">
-                                            <span className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FA2D48] to-purple-500">
+                                            <span className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FA2D48] to-[#FF9F0A] drop-shadow-2xl">
                                                 {insightData[insightStep].data?.value}
                                             </span>
-                                            <span className="text-white/60 font-mono mt-2 uppercase tracking-widest text-sm">
+                                            <span className="text-white/60 font-mono mt-4 uppercase tracking-widest text-sm bg-white/5 px-4 py-1 rounded-full border border-white/10">
                                                 {insightData[insightStep].data?.subtext}
                                             </span>
                                        </div>
                                    )}
 
                                    {insightData[insightStep].type === 'quiz' && (
-                                       <div className="grid gap-3 w-full max-w-sm">
+                                       <div className="grid gap-3 w-full max-w-sm animate-in slide-in-from-right duration-500">
                                             {insightData[insightStep].data?.options.map((opt: string, idx: number) => (
                                                 <button 
                                                     key={idx}
                                                     onClick={(e) => {
                                                         const btn = e.currentTarget;
+                                                        const explanation = insightData[insightStep].data.explanation || "";
+                                                        
+                                                        // Reset all siblings
+                                                        const parent = btn.parentElement;
+                                                        if(parent) {
+                                                            Array.from(parent.children).forEach((child: any) => {
+                                                                child.style.opacity = '0.5';
+                                                                child.disabled = true;
+                                                            });
+                                                        }
+                                                        
+                                                        btn.style.opacity = '1';
+                                                        
                                                         if (idx === insightData[insightStep].data.correctIndex) {
                                                             btn.style.borderColor = '#22c55e';
-                                                            btn.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
-                                                            btn.innerText = "Correct!";
+                                                            btn.style.backgroundColor = 'rgba(34, 197, 94, 0.2)';
+                                                            btn.innerHTML = `<span class='flex justify-between items-center'><span>${opt}</span> <span class='text-xs'>✅ Correct!</span></span>`;
                                                         } else {
                                                             btn.style.borderColor = '#ef4444';
-                                                            btn.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                                                            btn.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                                                            btn.innerHTML = `<span class='flex justify-between items-center'><span>${opt}</span> <span class='text-xs'>❌</span></span>`;
                                                         }
+                                                        
+                                                        // Show explanation logic could go here, or just appended
+                                                        // For now simplified
                                                     }}
-                                                    className="w-full py-4 px-6 rounded-xl border border-white/10 bg-white/5 text-white font-bold hover:bg-white/10 hover:scale-[1.02] transition-all"
+                                                    className="w-full text-left py-4 px-6 rounded-xl border border-white/10 bg-white/5 text-white font-bold hover:bg-white/10 hover:border-white/30 hover:scale-[1.02] transition-all"
                                                 >
                                                     {opt}
                                                 </button>
                                             ))}
-                                            <p className="text-[10px] text-white/30 mt-4">*Based on your actual history</p>
                                        </div>
                                    )}
 
-                                   {insightData[insightStep].type === 'chart' && (
-                                       <div className="w-full max-w-xs space-y-4">
+                                   {(insightData[insightStep].type === 'chart' || insightData[insightStep].type === 'bar_chart') && (
+                                       <div className="w-full max-w-sm space-y-4 animate-in slide-in-from-bottom duration-700 fade-in">
                                            {insightData[insightStep].data?.points.map((p: any, idx: number) => (
                                                <div key={idx} className="space-y-1">
                                                    <div className="flex justify-between text-xs font-bold text-white uppercase">
                                                        <span>{p.label}</span>
-                                                       <span>{p.value}%</span>
+                                                       <span>{p.value}</span>
                                                    </div>
-                                                   <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                                                   <div className="h-3 w-full bg-white/10 rounded-full overflow-hidden">
                                                        <div 
-                                                         style={{ width: `${p.value}%` }} 
-                                                         className={`h-full ${idx % 2 === 0 ? 'bg-[#FA2D48]' : 'bg-blue-500'}`} 
+                                                         style={{ width: `${Math.min(p.value, 100)}%` }} 
+                                                         className={`h-full ${idx % 2 === 0 ? 'bg-[#FA2D48]' : 'bg-[#FF9F0A]'} transition-all duration-1000 ease-out`} 
                                                        />
                                                    </div>
                                                </div>
                                            ))}
+                                       </div>
+                                   )}
+                                   
+                                   {insightData[insightStep].type === 'pie_chart' && (
+                                       <div className="relative w-64 h-64 flex items-center justify-center animate-in zoom-in duration-700">
+                                            {/* We simulate a pie chart using conic gradient */}
+                                            {(() => {
+                                                const segments = insightData[insightStep].data?.segments || [];
+                                                let gradientString = "";
+                                                let currentDeg = 0;
+                                                const total = segments.reduce((sum: number, s: any) => sum + s.value, 0);
+                                                
+                                                segments.forEach((seg: any) => {
+                                                    const deg = (seg.value / total) * 360;
+                                                    gradientString += `${seg.color || '#FA2D48'} ${currentDeg}deg ${currentDeg + deg}deg, `;
+                                                    currentDeg += deg;
+                                                });
+                                                
+                                                gradientString = gradientString.slice(0, -2); // remove last comma
+                                                
+                                                return (
+                                                    <div 
+                                                        className="w-full h-full rounded-full border-4 border-white/10 shadow-2xl relative"
+                                                        style={{ background: `conic-gradient(${gradientString})` }}
+                                                    >
+                                                        {/* Center hole for donut effect */}
+                                                        <div className="absolute inset-4 bg-[#212123] rounded-full flex flex-col items-center justify-center text-center p-4">
+                                                            <span className="text-white/50 text-xs font-bold uppercase tracking-wider">Top Genre</span>
+                                                            <span className="text-white font-black text-xl">{segments[0]?.label}</span>
+                                                            <span className="text-[#FA2D48] font-bold">{Math.round((segments[0]?.value / total) * 100)}%</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
+                                            
+                                            {/* Legend */}
+                                            <div className="absolute -right-32 top-0 bottom-0 flex flex-col justify-center gap-2">
+                                                {insightData[insightStep].data?.segments.map((s: any, i: number) => (
+                                                    <div key={i} className="flex items-center gap-2 text-xs text-white/80">
+                                                        <span className="w-3 h-3 rounded-full" style={{ background: s.color || '#FA2D48' }} />
+                                                        <span className="font-bold">{s.label}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                       </div>
+                                   )}
+
+                                   {insightData[insightStep].type === 'race_chart' && (
+                                       <div className="w-full max-w-sm space-y-3 animate-in fade-in duration-500">
+                                            {insightData[insightStep].data?.competitors.map((c: any, idx: number) => (
+                                                <div key={idx} className="relative group transition-all hover:scale-105">
+                                                    <div className="flex items-center gap-3 relative z-10 p-2">
+                                                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold ring-2 ring-white/20">
+                                                            #{idx + 1}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="flex justify-between text-sm font-bold text-white mb-1">
+                                                                <span>{c.name}</span>
+                                                                <span className="text-[#FA2D48]">{c.score} pts</span>
+                                                            </div>
+                                                            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                                                                <div 
+                                                                    className="h-full bg-gradient-to-r from-[#FA2D48] to-[#FF9F0A] rounded-full relative"
+                                                                    style={{ width: `${Math.min(c.score, 100)}%` }}
+                                                                >
+                                                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full shadow-[0_0_10px_white] animate-pulse" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {/* Background Glow */}
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                </div>
+                                            ))}
                                        </div>
                                    )}
                               </div>
