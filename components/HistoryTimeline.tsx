@@ -48,43 +48,43 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ history }) => 
         return { dailyData: grouped, maxCount: Math.max(max, 1), totalPlays: total };
     }, [history]);
 
-    // 2. Generate Calendar Grid (Current Year Only - 2026)
+    // 2. Generate Calendar Grid (Last 365 Days)
     const calendarGrid = useMemo(() => {
         const today = new Date();
-        const currentYear = today.getFullYear();
-        const startDate = new Date(currentYear, 0, 1); // Jan 1st of current year
+        const endDate = new Date(2026, 11, 31); // Dec 31, 2026
+        const startDate = new Date(2026, 0, 1); // Jan 1, 2026
 
-        // Align start date to previous Sunday for proper grid alignment
-        const dayOfWeek = startDate.getDay(); // 0 = Sunday
+        // Align start date to previous Sunday to make grid nice
+        const startDayOfWeek = startDate.getDay(); // 0 = Sunday
         const gridStart = new Date(startDate);
-        gridStart.setDate(startDate.getDate() - dayOfWeek);
+        gridStart.setDate(startDate.getDate() - startDayOfWeek);
+
+        // Align end date to next Saturday
+        const endDayOfWeek = endDate.getDay();
+        const gridEnd = new Date(endDate);
+        gridEnd.setDate(endDate.getDate() + (6 - endDayOfWeek));
 
         const weeks = [];
         let current = new Date(gridStart);
         
-        // Ensure we cover the full range until today (or end of year if you prefer full calendar)
-        // Let's go until today for now to save space, or end of year for full grid. 
-        // User asked to make it smaller/fit, so until today is usually better, 
-        // but "This year Only" implies the structure of 2026.
-        // Let's go to today + end of current week
-        const endDate = new Date(today);
-        // Extend to end of current week to avoid cutoff
-        const endDayOfWeek = endDate.getDay();
-        endDate.setDate(endDate.getDate() + (6 - endDayOfWeek));
-        
-        // Safety break
         let iterations = 0;
-        while (current <= endDate && iterations < 54) { // Max 53 weeks
+        // Should be around 53-54 weeks 
+        while (current <= gridEnd && iterations < 60) {
             const week = [];
             for (let i = 0; i < 7; i++) {
                 const dateStr = current.toLocaleDateString('en-CA');
-                const isCurrentYear = current.getFullYear() === currentYear;
                 
+                // Only count plays if it's actually within 2026 
+                // OR within our known history range. 
+                // However, the user wants "show all 365 days for 2026".
+                // We mark days outside 2026 (from padding) as !inYear
+                const is2026 = current.getFullYear() === 2026;
+
                 week.push({
                     date: dateStr,
                     dateObj: new Date(current),
                     count: dailyData[dateStr]?.length || 0,
-                    inYear: isCurrentYear
+                    inYear: is2026
                 });
                 current.setDate(current.getDate() + 1);
             }
@@ -192,7 +192,6 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({ history }) => 
                                                     className="w-full h-full object-cover rounded-md shadow-lg" 
                                                 />
                                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
-                                                     <Play size={16} fill="white" className="text-white" />
                                                 </div>
                                             </div>
                                             <div className="min-w-0 flex-1 flex flex-col justify-center">

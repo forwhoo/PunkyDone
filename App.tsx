@@ -415,6 +415,7 @@ function App() {
   return (
     <Layout user={data.user} currentTrack={data.currentTrack}>
         <HeroCarousel 
+            userImage={data?.user?.image}
             insight={insight}  
             loadingInsight={loadingInsight} 
             onGenerateInsight={handleGetInsight} 

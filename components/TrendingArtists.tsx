@@ -113,6 +113,9 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
         return () => clearInterval(interval);
     }, [recentPlays, activeTab]);
 
+    // Handle Closing
+    const handleClose = () => setSelectedItem(null);
+
 
     // ORBITAL LAYOUT
     const centerItem = trendingItems[0];
@@ -123,129 +126,208 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
     // We use Framer Motion for smooth continuous rotation
     
     return (
-        <div className="mb-24 relative z-0">
-             <div className="flex justify-between items-end mb-6 px-2">
-                 <div>
-                    <h2 className="text-[22px] font-bold text-white tracking-tight flex items-center gap-2">
-                        Obsession Orbit
-                    </h2>
-                    <p className="text-[#8E8E93] text-[13px]">
-                        Your {activeTab} rotation
-                    </p>
-                </div>
-                
-                {/* Custom Toggle UI */}
-                <div className="bg-[#1C1C1E] p-1 rounded-full flex gap-1 border border-white/10">
-                    <button 
-                        onClick={() => setActiveTab('artist')}
-                        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#FA2D48] text-white shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
-                    >
-                        <Mic2 size={12} /> Artists
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('album')}
-                        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'album' ? 'bg-[#FA2D48] text-white shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
-                    >
-                        <Disc size={12} /> Albums
-                    </button>
-                </div>
-            </div>
-
-            {/* MAIN ORBIT VIEW */}
-            <div className="relative w-full max-w-[500px] mx-auto aspect-square my-8 select-none perspective-1000">
-                
-                {/* Center Item */}
-                {centerItem && (
-                    <div 
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 cursor-pointer group"
-                        onClick={() => setSelectedItem(centerItem)}
-                    >
-                        <div className="relative w-32 h-32 md:w-40 md:h-40">
-                             {/* Shiny Effect Ring */}
-                             <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-white/20 to-transparent blur-sm animate-pulse"></div>
-                             
-                             <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-[#1C1C1E] transition-transform duration-500 group-hover:scale-105">
-                                <img src={centerItem.image} className="w-full h-full object-cover" />
-                             </div>
-                             
-                             {/* Badge */}
-                             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20 flex items-center gap-1 whitespace-nowrap">
-                                <Sparkles size={10} className="text-[#FA2D48] fill-[#FA2D48]" />
-                                #{1} OBSESSION
-                             </div>
-                        </div>
+        <div className="mb-24 relative z-0 flex flex-col md:flex-row gap-8 items-start">
+            
+            <div className="flex-1 w-full relative">
+                <div className="flex justify-between items-end mb-6 px-2">
+                    <div>
+                        <h2 className="text-[22px] font-bold text-white tracking-tight flex items-center gap-2">
+                            Obsession Orbit
+                        </h2>
+                        <p className="text-[#8E8E93] text-[13px]">
+                            Your {activeTab} rotation
+                        </p>
                     </div>
-                )}
-
-                {/* Inner Ring Layer (Counter-Clockwise) */}
-                <div className="absolute inset-0 z-20 pointer-events-none">
-                     <motion.div 
-                        className="w-full h-full absolute inset-0"
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 60, ease: "linear" }}
-                     >
-                        {innerRing.map((item, i) => {
-                             const total = innerRing.length;
-                             const angle = (i / total) * 360;
-                             const radius = 34; // %
-                             
-                             return (
-                                <div 
-                                    key={item.id}
-                                    className="absolute top-1/2 left-1/2 w-0 h-0 pointer-events-auto"
-                                    style={{ 
-                                        transform: `rotate(${angle}deg) translate(${radius * 5}px) rotate(-${angle}deg)` // maintain upright
-                                    }}
-                                >
-                                     <OrbitNode item={item} rank={i + 2} size={60} onClick={() => setSelectedItem(item)} />
-                                </div>
-                             );
-                        })}
-                     </motion.div>
+                    
+                    {/* Custom Toggle UI */}
+                    <div className="bg-[#1C1C1E] p-1 rounded-full flex gap-1 border border-white/10">
+                        <button 
+                            onClick={() => setActiveTab('artist')}
+                            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#FA2D48] text-white shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
+                        >
+                            <Mic2 size={12} /> Artists
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('album')}
+                            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'album' ? 'bg-[#FA2D48] text-white shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
+                        >
+                            <Disc size={12} /> Albums
+                        </button>
+                    </div>
                 </div>
 
-                {/* Outer Ring Layer (Clockwise) */}
-                <div className="absolute inset-0 z-10 pointer-events-none">
-                     <motion.div 
-                        className="w-full h-full absolute inset-0"
-                        animate={{ rotate: -360 }}
-                        transition={{ repeat: Infinity, duration: 90, ease: "linear" }}
-                     >
-                        {outerRing.map((item, i) => {
-                             const total = outerRing.length;
-                             const angle = (i / total) * 360;
-                             const radius = 48; // %
-                             
-                             return (
-                                <div 
-                                    key={item.id}
-                                    className="absolute top-1/2 left-1/2 w-0 h-0 pointer-events-auto"
-                                    style={{ 
-                                        transform: `rotate(${angle}deg) translate(${radius * 5}px) rotate(-${angle}deg)` 
-                                    }}
-                                >
-                                     <OrbitNode item={item} rank={i + 10} size={40} onClick={() => setSelectedItem(item)} />
+                {/* MAIN ORBIT VIEW */}
+                <motion.div 
+                    layout
+                    className="relative w-full max-w-[500px] mx-auto aspect-square my-8 select-none perspective-1000"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                >
+                    
+                    {/* Center Item */}
+                    {centerItem && (
+                        <div 
+                            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 cursor-pointer group transition-all duration-300 ${selectedItem && selectedItem.id !== centerItem.id ? 'opacity-30 blur-sm scale-90' : 'opacity-100'}`}
+                            onClick={() => setSelectedItem(selectedItem?.id === centerItem.id ? null : centerItem)}
+                        >
+                            <div className="relative w-32 h-32 md:w-40 md:h-40">
+                                {/* Shiny Effect Ring */}
+                                <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-white/20 to-transparent blur-sm animate-pulse"></div>
+                                
+                                <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-[#1C1C1E] transition-transform duration-500 group-hover:scale-105">
+                                    <img src={centerItem.image} className="w-full h-full object-cover" />
                                 </div>
-                             );
-                        })}
-                     </motion.div>
-                </div>
+                                
+                                {/* Badge */}
+                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-20 flex items-center gap-1 whitespace-nowrap">
+                                    <Sparkles size={10} className="text-[#FA2D48] fill-[#FA2D48]" />
+                                    #{1} OBSESSION
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-                {/* Orbital Lines */}
-                <div className="absolute inset-0 rounded-full border border-white/5 opacity-50 scale-[0.68]"></div>
-                <div className="absolute inset-0 rounded-full border border-white/5 opacity-30 scale-[0.96] border-dashed"></div>
+                    {/* Inner Ring Layer (Counter-Clockwise) */}
+                    <div className={`absolute inset-0 z-20 pointer-events-none transition-all duration-500 ${selectedItem ? 'opacity-30' : 'opacity-100'}`}>
+                        <motion.div 
+                            className="w-full h-full absolute inset-0"
+                            animate={{ rotate: 360 }}
+                            transition={{ repeat: Infinity, duration: 60, ease: "linear" }}
+                        >
+                            {innerRing.map((item, i) => {
+                                const total = innerRing.length;
+                                const angle = (i / total) * 360;
+                                const radius = 34; // %
+                                
+                                return (
+                                    <div 
+                                        key={item.id}
+                                        className="absolute top-1/2 left-1/2 w-0 h-0 pointer-events-auto"
+                                        style={{ 
+                                            transform: `rotate(${angle}deg) translate(${radius * 5}px) rotate(-${angle}deg)` // maintain upright
+                                        }}
+                                    >
+                                        <OrbitNode 
+                                            item={item} 
+                                            rank={i + 2} 
+                                            size={60} 
+                                            isActive={selectedItem?.id === item.id}
+                                            isDimmed={selectedItem !== null && selectedItem.id !== item.id}
+                                            onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)} 
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </motion.div>
+                    </div>
+
+                    {/* Outer Ring Layer (Clockwise) */}
+                    <div className={`absolute inset-0 z-10 pointer-events-none transition-all duration-500 ${selectedItem ? 'opacity-30' : 'opacity-100'}`}>
+                        <motion.div 
+                            className="w-full h-full absolute inset-0"
+                            animate={{ rotate: -360 }}
+                            transition={{ repeat: Infinity, duration: 90, ease: "linear" }}
+                        >
+                            {outerRing.map((item, i) => {
+                                const total = outerRing.length;
+                                const angle = (i / total) * 360;
+                                const radius = 48; // %
+                                
+                                return (
+                                    <div 
+                                        key={item.id}
+                                        className="absolute top-1/2 left-1/2 w-0 h-0 pointer-events-auto"
+                                        style={{ 
+                                            transform: `rotate(${angle}deg) translate(${radius * 5}px) rotate(-${angle}deg)` 
+                                        }}
+                                    >
+                                        <OrbitNode 
+                                            item={item} 
+                                            rank={i + 10} 
+                                            size={40} 
+                                            isActive={selectedItem?.id === item.id}
+                                            isDimmed={selectedItem !== null && selectedItem.id !== item.id}
+                                            onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)} 
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </motion.div>
+                    </div>
+
+                    {/* Orbital Lines */}
+                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-50 scale-[0.68]"></div>
+                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-30 scale-[0.96] border-dashed"></div>
+                </motion.div>
             </div>
 
-            {/* DETAIL MODAL OVERLAY */}
+            {/* SIDE PANEL DETAILS (Replaces Modal) */}
             <AnimatePresence>
                 {selectedItem && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <motion.div 
+                        initial={{ opacity: 0, x: 50, width: 0 }} 
+                        animate={{ opacity: 1, x: 0, width: 400 }} 
+                        exit={{ opacity: 0, x: 50, width: 0 }}
+                        className="h-[600px] w-[400px] flex-shrink-0 bg-[#1C1C1E] border border-white/10 rounded-3xl overflow-hidden relative shadow-2xl z-20 hidden lg:block"
+                    >
+                        {/* Close Button */}
+                        <button 
+                            onClick={handleClose}
+                            className="absolute top-4 right-4 bg-black/40 hover:bg-black/80 rounded-full p-2 text-white z-20 transition-colors"
+                        >
+                            <X size={16} />
+                        </button>
+
+                        {/* Panel Header */}
+                        <div className="relative h-48 w-full">
+                            <img src={selectedItem.image} className="w-full h-full object-cover opacity-80" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1E] to-transparent"></div>
+                            <div className="absolute bottom-4 left-6 right-6">
+                                    <h2 className="text-2xl font-bold text-white leading-tight truncate">{selectedItem.name}</h2>
+                                    {selectedItem.subName && <p className="text-sm text-[#FA2D48] font-medium">{selectedItem.subName}</p>}
+                                    <div className="flex items-center gap-3 mt-2">
+                                        <span className="text-xs bg-white/10 backdrop-blur-md px-2 py-0.5 rounded text-white/80">
+                                            Score: {selectedItem.trendScore}
+                                        </span>
+                                        <span className="text-xs bg-white/10 backdrop-blur-md px-2 py-0.5 rounded text-white/80">
+                                            {selectedItem.recentPlays} recent plays
+                                        </span>
+                                    </div>
+                            </div>
+                        </div>
+
+                        {/* Song List */}
+                        <div className="p-4 overflow-y-auto h-[calc(100%-192px)] custom-scrollbar">
+                            <h4 className="text-xs font-bold text-[#8E8E93] uppercase tracking-widest mb-3 px-2">Track History</h4>
+                            <div className="space-y-1">
+                                {selectedItem.tracks?.map((track: any, i: number) => (
+                                    <div key={i} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-xl transition-colors group">
+                                        <div className="w-8 h-8 rounded-md overflow-hidden bg-[#2C2C2E] flex-shrink-0 relative">
+                                            <img src={track.album_cover || track.cover} className="w-full h-full object-cover" />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <h5 className="text-sm font-medium text-white truncate group-hover:text-[#FA2D48] transition-colors">{track.track_name}</h5>
+                                            <p className="text-[11px] text-[#8E8E93] truncate">{track.played_at ? new Date(track.played_at).toLocaleDateString() : 'Unknown date'}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Mobile Modal Fallback */}
+            <AnimatePresence>
+                {selectedItem && (
+                    <div className="lg:hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
                             exit={{ opacity: 0 }}
                             onClick={() => setSelectedItem(null)}
-                            className="absolute inset-0 bg-black/80 backdrop-blur-sm" // click outside to close
+                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
                         />
                         <motion.div 
                              initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -253,47 +335,21 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                              exit={{ scale: 0.9, opacity: 0, y: 20 }}
                              className="bg-[#1C1C1E] border border-white/10 w-full max-w-md max-h-[70vh] rounded-3xl overflow-hidden relative shadow-2xl z-[101]"
                         >
-                            {/* Close Button */}
-                            <button 
-                                onClick={() => setSelectedItem(null)}
-                                className="absolute top-4 right-4 bg-black/40 hover:bg-black/80 rounded-full p-2 text-white z-20 transition-colors"
-                            >
-                                <X size={16} />
-                            </button>
-
-                            {/* Modal Header */}
+                            <button onClick={() => setSelectedItem(null)} className="absolute top-4 right-4 bg-black/40 hover:bg-black/80 rounded-full p-2 text-white z-20"><X size={16} /></button>
                             <div className="relative h-40">
                                 <img src={selectedItem.image} className="w-full h-full object-cover opacity-60" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1E] to-transparent"></div>
                                 <div className="absolute bottom-4 left-6 right-6">
-                                     <h2 className="text-2xl font-bold text-white leading-tight truncate">{selectedItem.name}</h2>
+                                     <h2 className="text-xl font-bold text-white leading-tight truncate">{selectedItem.name}</h2>
                                      {selectedItem.subName && <p className="text-sm text-[#FA2D48] font-medium">{selectedItem.subName}</p>}
-                                     <div className="flex items-center gap-3 mt-2">
-                                         <span className="text-xs bg-white/10 backdrop-blur-md px-2 py-0.5 rounded text-white/80">
-                                             Heat Score: {selectedItem.trendScore}
-                                         </span>
-                                         <span className="text-xs bg-white/10 backdrop-blur-md px-2 py-0.5 rounded text-white/80">
-                                             {selectedItem.recentPlays} recent plays
-                                         </span>
-                                     </div>
                                 </div>
                             </div>
-
-                            {/* Song List */}
                             <div className="p-4 overflow-y-auto max-h-[calc(70vh-160px)]">
-                                <h4 className="text-xs font-bold text-[#8E8E93] uppercase tracking-widest mb-3 px-2">Recently Played Tracks</h4>
                                 <div className="space-y-1">
                                     {selectedItem.tracks?.map((track: any, i: number) => (
-                                        <div key={i} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-xl transition-colors group">
-                                            <div className="w-8 h-8 rounded-md overflow-hidden bg-[#2C2C2E] flex-shrink-0 relative">
-                                                <img src={track.album_cover || track.cover} className="w-full h-full object-cover" />
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <div className="w-1 h-3 bg-white rounded-full"></div> {/* Simple play bar icon */}
-                                                </div>
-                                            </div>
+                                        <div key={i} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-xl transition-colors">
                                             <div className="min-w-0 flex-1">
-                                                <h5 className="text-sm font-medium text-white truncate group-hover:text-[#FA2D48] transition-colors">{track.track_name}</h5>
-                                                <p className="text-[11px] text-[#8E8E93] truncate">{track.played_at ? new Date(track.played_at).toLocaleDateString() : 'Unknown date'}</p>
+                                                <h5 className="text-sm font-medium text-white truncate">{track.track_name}</h5>
                                             </div>
                                         </div>
                                     ))}
@@ -308,14 +364,14 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
 };
 
 // Helper Component for Orbit Nodes
-const OrbitNode = ({ item, rank, size, onClick }: { item: TrendingItem, rank: number, size: number, onClick: () => void }) => {
+const OrbitNode = ({ item, rank, size, isActive, isDimmed, onClick }: { item: TrendingItem, rank: number, size: number, isActive: boolean, isDimmed: boolean, onClick: () => void }) => {
     return (
         <div 
-            className="group absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+            className={`group absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 ${isDimmed ? 'opacity-20 scale-75 blur-[1px]' : 'opacity-100'} ${isActive ? 'scale-110 z-50' : ''}`}
             onClick={onClick}
         >
             <div 
-                className="relative rounded-full overflow-hidden border border-[#1C1C1E] shadow-lg transition-transform duration-300 group-hover:scale-125 bg-[#1C1C1E]"
+                className={`relative rounded-full overflow-hidden border transition-all duration-300 bg-[#1C1C1E] ${isActive ? 'border-[#FA2D48] shadow-[0_0_20px_#FA2D48]' : 'border-[#1C1C1E] shadow-lg group-hover:scale-125'}`}
                 style={{ width: size, height: size }}
             >
                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
@@ -324,11 +380,15 @@ const OrbitNode = ({ item, rank, size, onClick }: { item: TrendingItem, rank: nu
                 <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none"></div>
             </div>
 
-            {/* Custom Tooltip */}
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 min-w-[100px] text-center">
-                 <div className="bg-[#1C1C1E] border border-white/10 rounded-lg px-2 py-1.5 shadow-xl backdrop-blur-md">
-                     <p className="text-[9px] font-bold text-white truncate max-w-[120px]">{item.name}</p>
-                     <p className="text-[8px] text-[#FA2D48] leading-none mt-0.5">Rank #{rank}</p>
+            {/* Custom Tooltip - STRAIGHT (Not rotated via parent) */}
+            {/* Since parent div is counter-rotated, this tooltip will be upright. */}
+            <div className={`absolute top-full mt-2 left-1/2 -translate-x-1/2 transition-opacity pointer-events-none z-50 min-w-[100px] text-center ${isActive || isDimmed ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
+                 <div className="bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2 shadow-xl backdrop-blur-md transform-none">
+                     <p className="text-[10px] font-bold text-white truncate max-w-[120px]">{item.name}</p>
+                     <div className="flex items-center justify-center gap-2 mt-1">
+                         <p className="text-[9px] text-[#FA2D48] font-mono leading-none">#{rank}</p>
+                         <p className="text-[9px] text-[#8E8E93] leading-none border-l border-white/10 pl-2">Score: {item.trendScore}</p>
+                     </div>
                  </div>
             </div>
         </div>

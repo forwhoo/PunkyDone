@@ -87,6 +87,7 @@ const HeroCard = ({ title, subtitle, meta, gradientClass, icon: Icon, children, 
 );
 
 interface HeroCarouselProps {
+  userImage?: string;
   insight: string | null;
   loadingInsight: boolean;
   onGenerateInsight: (query?: string) => void;
@@ -106,7 +107,7 @@ const SUGGESTIONS = [
     { label: "Workout energy check", icon: Clock, color: "from-emerald-500 to-teal-500" },
 ];
 
-export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topArtistImage, topAlbumImage, weeklyStats, topGenre, longestSession, recentPlays = [], topSongs = [] }: HeroCarouselProps) => {
+export const HeroCarousel = ({ userImage, insight, loadingInsight, onGenerateInsight, topArtistImage, topAlbumImage, weeklyStats, topGenre, longestSession, recentPlays = [], topSongs = [] }: HeroCarouselProps) => {
   const [showInput, setShowInput] = useState(false);
   const [inputValue, setInputValue] = useState('');
   
@@ -150,12 +151,20 @@ export const HeroCarousel = ({ insight, loadingInsight, onGenerateInsight, topAr
   };
 
   return (
-    <div className="w-full mb-10">
-      
-      <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x scroll-smooth -mx-1 px-1">
-        
-        {/* WIDGETS REMOVED */}
-
+    <div className="w-full mb-8 flex justify-center">
+      {/* Replaced Weekly Insight content with User Profile Image */}
+      <div className="relative group">
+          <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10">
+               {userImage ? (
+                   <img src={userImage} alt="User" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+               ) : (
+                   <div className="w-full h-full bg-[#2C2C2E] flex items-center justify-center">
+                       <Music className="w-10 h-10 text-white/20" />
+                   </div>
+               )}
+          </div>
+          {/* Glow effect */}
+          <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-[#FA2D48]/20 to-transparent blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
       </div>
     </div>
   );
