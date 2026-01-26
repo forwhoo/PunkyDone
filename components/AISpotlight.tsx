@@ -110,7 +110,6 @@ const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: 
     </div>
     );
 };
-};
 
 interface CategoryResult {
     id: string;
