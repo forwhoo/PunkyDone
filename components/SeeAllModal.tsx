@@ -121,6 +121,14 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                             alt={item.name} 
                                             className="w-full h-full object-cover rounded-full"
                                         />
+
+                                        {/* Gradient for text readability */}
+                                        <div className="absolute inset-x-0 bottom-0 h-1/2 rounded-full bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                                        
+                                        {/* Name Inside Image */}
+                                        <div className="absolute inset-x-0 bottom-0 pb-3 px-3 text-center">
+                                            <h3 className="text-[12px] font-bold text-white drop-shadow-md truncate">{item.name}</h3>
+                                        </div>
                                         
                                         {/* Hover Blur & Stats */}
                                         <div className="absolute inset-0 rounded-full bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center text-center p-2">
@@ -128,11 +136,6 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                             <span className="text-[9px] uppercase tracking-widest text-white/70 mb-1">Plays</span>
                                             <span className="text-xs font-bold text-[#FA2D48] bg-white/10 px-2 py-0.5 rounded-full">{item.timeStr || '0m'}</span>
                                         </div>
-                                    </div>
-                                    
-                                    {/* Name Below - Visual Stack */}
-                                    <div className="mt-[-20px] pt-8 pb-3 px-3 bg-[#2C2C2E] rounded-2xl w-full text-center border border-white/5 relative z-0 transition-transform group-hover:translate-y-1">
-                                         <h3 className="text-[13px] font-bold text-white truncate px-1">{item.name}</h3>
                                     </div>
                                 </div>
                             ))}

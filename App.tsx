@@ -372,7 +372,7 @@ function App() {
 
   if (!token) {
       return (
-          <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
+          <div className="min-h-[100dvh] min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
               <div className="w-20 h-20 bg-gradient-to-tr from-[#FA2D48] to-[#FF2D55] rounded-3xl flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(250,45,72,0.4)]">
                   <Music className="w-10 h-10 text-white" />
               </div>
@@ -469,6 +469,7 @@ function App() {
                 history={safeRecent}
                 user={data.user}
                 contextData={{
+                    userName: data.user?.display_name,
                     artists: safeArtists.map((a: Artist, idx: number) => {
                         const time = a.timeStr || '';
                         const mins = time.replace('m', '');

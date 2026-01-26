@@ -16,6 +16,7 @@ interface TopAIProps {
         artists: string[], 
         albums: string[], 
         songs: string[],
+        userName?: string,
         globalStats?: { 
             weeklyTime: string, 
             weeklyTrend: string, 
@@ -28,19 +29,42 @@ interface TopAIProps {
 }
 
 // Reusable Ranked Item Component (Internal)
-const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: number, displayMode?: 'mins' | 'plays' | 'date' }) => {
+const formatDuration = (durationMs?: number) => {
+    if (!durationMs || Number.isNaN(durationMs)) return null;
+    const totalSeconds = Math.round(durationMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
+
+const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: number, displayMode?: 'mins' | 'plays' | 'date' | 'length' }) => {
     const getDisplayValue = () => {
-        if (displayMode === 'mins' && item.mins != null) return `${item.mins}m`;
-        if (displayMode === 'plays' && item.plays != null) return `${item.plays}p`;
-        if (displayMode === 'date' && (item.date || item.played_at)) {
-             const d = new Date(item.date || item.played_at);
-             return d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+        if (displayMode === 'mins') {
+            const val = item.mins ?? item.totalMinutes ?? (item.timeStr ? parseInt(item.timeStr.replace(/[^0-9]/g, ''), 10) : null);
+            return val != null ? `${val}m` : null;
         }
-        if (displayMode === 'date' && item.year) return item.year;
+        if (displayMode === 'plays') {
+            const val = item.plays ?? item.listens ?? item.totalListens ?? null;
+            return val != null ? `${val}p` : null;
+        }
+        if (displayMode === 'date') {
+            const dateValue = item.date || item.played_at || item.lastPlayed;
+            if (dateValue) {
+                const d = new Date(dateValue);
+                return d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+            }
+            if (item.year) return item.year;
+        }
+        if (displayMode === 'length') {
+            const durationValue = item.avgDurationMs ?? item.duration_ms ?? item.durationMs ?? null;
+            return formatDuration(durationValue);
+        }
         
         // Smart Fallback hierarchy
-        if (item.mins) return `${item.mins}m`;
-        if (item.plays) return `${item.plays}p`;
+        const mins = item.mins ?? item.totalMinutes ?? (item.timeStr ? parseInt(item.timeStr.replace(/[^0-9]/g, ''), 10) : null);
+        if (mins) return `${mins}m`;
+        const plays = item.plays ?? item.listens ?? item.totalListens ?? null;
+        if (plays) return `${plays}p`;
         return `#${rank}`;
     };
 
@@ -68,7 +92,7 @@ const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: 
                 {/* Hover Overlay with Stats - Now Dynamic */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40 backdrop-blur-sm">
                      <span className="text-white font-bold text-xl drop-shadow-md">
-                         {getDisplayValue()}
+                         {getDisplayValue() || `#${rank}`}
                      </span>
                 </div>
             </div>
@@ -84,7 +108,8 @@ const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: 
             </div>
         </div>
     </div>
-);
+    );
+};
 };
 
 interface CategoryResult {
@@ -105,7 +130,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     
     // Global View Config for newly generated results
     const [viewMode, setViewMode] = useState<'standard' | 'ranked'>('standard');
-    const [sortMode, setSortMode] = useState<'mins' | 'plays' | 'date'>('mins');
+    const [sortMode, setSortMode] = useState<'mins' | 'plays' | 'date' | 'length'>('mins');
 
     const [insightMode, setInsightMode] = useState(false);
     const [insightData, setInsightData] = useState<any[]>([]);
@@ -125,6 +150,31 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         if (!user || !user.display_name) return "there";
         return user.display_name.split(' ')[0].toLowerCase();
     }, [user]);
+
+    const sortTracks = (tracks: any[]) => {
+        const sorted = [...tracks];
+        const getPlays = (track: any) => track.listens ?? track.plays ?? track.totalListens ?? 0;
+        const getMinutes = (track: any) => {
+            if (track.totalMinutes !== undefined) return Number(track.totalMinutes) || 0;
+            if (track.timeStr) return parseInt(track.timeStr.replace(/[^0-9]/g, ''), 10) || 0;
+            return 0;
+        };
+        const getDate = (track: any) => {
+            const dateValue = track.lastPlayed || track.played_at || track.date;
+            const time = dateValue ? new Date(dateValue).getTime() : 0;
+            return Number.isNaN(time) ? 0 : time;
+        };
+        const getLength = (track: any) => track.avgDurationMs ?? track.duration_ms ?? track.durationMs ?? 0;
+
+        sorted.sort((a, b) => {
+            if (sortMode === 'plays') return getPlays(b) - getPlays(a);
+            if (sortMode === 'date') return getDate(b) - getDate(a);
+            if (sortMode === 'length') return getLength(b) - getLength(a);
+            return getMinutes(b) - getMinutes(a);
+        });
+
+        return sorted;
+    };
 
     // Typing effect logic
     useEffect(() => {
@@ -421,6 +471,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                 {/* Quick Feature Suggestions Removed via user request */}
             </div>
+            </div>
 
             {/* Error Messages */}
             {errorMsg && (
@@ -678,12 +729,11 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                 <div className="flex items-center gap-3">
                                     {/* Sort Toggles */}
                                     <div className="flex bg-[#1C1C1E] rounded-lg p-0.5 border border-white/5">
-                                        {(['mins', 'plays', 'date'] as const).map(m => (
+                                        {(['mins', 'plays', 'date', 'length'] as const).map(m => (
                                             <button
                                                 key={m}
                                                 onClick={() => {
                                                     setSortMode(m);
-                                                    // Logic to actually sort tracks would go here or effect
                                                 }}
                                                 className={`px-2 py-1 text-[10px] uppercase font-bold rounded-md transition-all ${sortMode === m ? 'bg-white/10 text-white' : 'text-[#8E8E93] hover:text-white'}`}
                                             >
@@ -711,7 +761,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                             {/* Horizontal Scroll List */}
                             <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-2 scroll-smooth gap-4 min-h-[280px]">
-                                {category.tracks.map((track, trackIndex) => (
+                                {sortTracks(category.tracks).map((track, trackIndex) => (
                                     viewMode === 'ranked' ? (
                                         <AI_RankedItem key={trackIndex} item={{...track}} rank={trackIndex + 1} displayMode={sortMode} />
                                     ) : (
