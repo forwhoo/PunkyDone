@@ -43,12 +43,8 @@ export const fetchCharts = async (period: 'daily' | 'weekly' | 'monthly' = 'week
             trend: 'NEW'
         }));
         
-        /* RPC CODE REMOVED FOR STABILITY */
-
     } catch (err) {
-        }));
-    } catch (e) {
-        console.error("fetchCharts Exception:", e);
+        console.error("fetchCharts Exception:", err);
         return [];
     }
 };
