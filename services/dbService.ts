@@ -438,7 +438,7 @@ interface AIFilter {
     recentDays?: number;
     minDurationMs?: number;
     maxDurationMs?: number;
-    sortBy?: 'plays' | 'minutes' | 'recency';
+    sortBy?: 'plays' | 'minutes' | 'recency' | 'duration';
     sortOrder?: 'highest' | 'lowest';
     minPlays?: number;
     limit?: number;
@@ -595,6 +595,12 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
         
         if (sortField === 'minutes') {
             results.sort((a, b) => ascending ? a.totalMs - b.totalMs : b.totalMs - a.totalMs);
+        } else if (sortField === 'duration') {
+            results.sort((a, b) => {
+                const avgA = a.plays > 0 ? a.totalMs / a.plays : 0;
+                const avgB = b.plays > 0 ? b.totalMs / b.plays : 0;
+                return ascending ? avgA - avgB : avgB - avgA;
+            });
         } else if (sortField === 'recency') {
             results.sort((a, b) => ascending 
                 ? a.lastPlayed.getTime() - b.lastPlayed.getTime() 
@@ -613,6 +619,9 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
             listens: item.plays,
             timeStr: `${Math.round(item.totalMs / 60000)}m`,
             totalMinutes: Math.round(item.totalMs / 60000),
+            totalMs: item.totalMs,
+            avgDurationMs: item.plays > 0 ? Math.round(item.totalMs / item.plays) : 0,
+            lastPlayed: item.lastPlayed.toISOString(),
             type: item.type
         }));
 
@@ -677,6 +686,5 @@ export const fetchArtistNetwork = async (limit = 1000) => {
 
     return { artistInfo, pairs };
 };
-
 
 
