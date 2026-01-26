@@ -32,21 +32,12 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
         if (!recentPlays || recentPlays.length === 0) return;
 
         const now = new Date().getTime();
-        const last24Hours = now - (24 * 60 * 60 * 1000);
-        
-        // Dynamically set window based on timeRange
-        let windowMs = 7 * 24 * 60 * 60 * 1000; // Default Week
-        if (timeRange === 'Daily') windowMs = 24 * 60 * 60 * 1000;
-        if (timeRange === 'Monthly') windowMs = 30 * 24 * 60 * 60 * 1000;
-        
-        const startTime = now - windowMs;
-
-        // Filter recent plays window
-        const recentWindow = recentPlays.filter(play => new Date(play.played_at).getTime() > startTime);
+        const dayMs = 24 * 60 * 60 * 1000;
+        const sessionGapMs = 90 * 60 * 1000; // 90 minutes
 
         const stats: Record<string, { plays: number[], image: string, subName?: string, tracks: any[] }> = {};
 
-        recentWindow.forEach(play => {
+        recentPlays.forEach(play => {
             let key = ''; 
             let name = '';
             let subName = '';
@@ -83,16 +74,38 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             if (data.plays.length < 1) return;
 
             const sortedPlays = data.plays.sort((a,b) => a - b);
-            const recent24h = sortedPlays.filter(t => t > last24Hours).length;
-            
-            // POPULARITY SCORE FORMULA
-            // 1. Base: Recent Plays (Last 24h) * 15
-            // 2. Volume: Total Plays (Last 7d) * 2
-            // 3. Recency Boost: If played in last 3 hours, +20 points
-            const timeSinceLastPlay = (now - sortedPlays[sortedPlays.length - 1]) / (1000 * 60 * 60);
-            const recencyBoost = timeSinceLastPlay < 3 ? 20 : 0;
+            const totalPlays = sortedPlays.length;
+            const firstPlay = sortedPlays[0];
+            const lastPlay = sortedPlays[totalPlays - 1];
 
-            const score = (recent24h * 15) + (data.plays.length * 2) + recencyBoost;
+            const spanDays = Math.max(1, Math.ceil((lastPlay - firstPlay) / dayMs) + 1);
+            const uniqueDays = new Set(sortedPlays.map(play => new Date(play).toDateString())).size;
+            const consistency = uniqueDays / spanDays;
+            const playsPerDay = totalPlays / uniqueDays;
+
+            let sessionCount = 1;
+            for (let i = 1; i < sortedPlays.length; i += 1) {
+                if (sortedPlays[i] - sortedPlays[i - 1] > sessionGapMs) sessionCount += 1;
+            }
+            const sessionIntensity = totalPlays / sessionCount;
+
+            const daysSinceLastPlay = (now - lastPlay) / dayMs;
+            const recencyFactor = Math.exp(-daysSinceLastPlay / 14);
+
+            const halfLifeMs = 14 * dayMs;
+            const recencyWeightedPlays = sortedPlays.reduce((sum, play) => {
+                const age = now - play;
+                return sum + Math.exp(-age / halfLifeMs);
+            }, 0);
+
+            const volumeScore = Math.log1p(totalPlays) * 28;
+            const consistencyScore = Math.min(1, consistency) * 40;
+            const intensityScore = Math.min(1.5, playsPerDay / 3) * 22;
+            const focusScore = Math.min(1.5, sessionIntensity / 4) * 18;
+            const recencyScore = Math.min(1.5, recencyFactor * 1.5) * 20;
+            const momentumScore = recencyWeightedPlays * 6;
+
+            const score = volumeScore + consistencyScore + intensityScore + focusScore + recencyScore + momentumScore;
 
             result.push({
                 id: key,
@@ -100,7 +113,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                 subName: data.subName,
                 image: data.image,
                 trendScore: Math.round(score),
-                recentPlays: recent24h,
+                recentPlays: totalPlays,
                 type: activeTab,
                 tracks: data.tracks
             });
