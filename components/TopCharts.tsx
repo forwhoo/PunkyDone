@@ -81,7 +81,7 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
 
   return (
     <Card className="flex flex-col bg-[#1C1C1E] border-none shadow-none overflow-visible relative min-h-[450px]">
-      <CardHeader className="pb-4 pl-5 pr-5 pt-6 flex flex-col md:flex-row md:items-center justify-between border-b border-white/5 gap-4">
+      <CardHeader className="pb-4 pl-5 pr-5 pt-6 flex flex-col xl:flex-row xl:items-center justify-between border-b border-white/5 gap-4">
         <div>
            <CardTitle className="text-white text-[22px] font-bold tracking-tight mb-1">{username}'s Chart</CardTitle>
            <div className="text-[#8E8E93] text-sm flex items-center gap-2">
@@ -90,7 +90,7 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
            </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
            {/* Time Range Toggle */}
            <div className="flex bg-[#2C2C2E] p-1 rounded-lg">
              {['Daily', 'Weekly', 'Monthly'].map((range) => (
@@ -131,8 +131,8 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
          {/* LIST VIEW - LISTEN CHART */}
          <div className="w-full">
                <div className="grid grid-cols-[45px_1fr_40px_40px_40px] md:grid-cols-[70px_1fr_100px_80px_80px] px-4 md:px-6 py-3 border-b border-white/5 text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-[#8E8E93]">
-                   <div>Rank</div>
-                   <div>Track</div>
+                   <div>#</div>
+                   <div>{activeTab === 'Songs' ? 'TRACK' : activeTab === 'Artists' ? 'ARTIST' : 'ALBUM'}</div>
                    <div className="text-center">PK</div>
                    <div className="text-center">LW</div>
                    <div className="text-center">Wks</div>
@@ -222,11 +222,6 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
 
                        </div>
                    )})}
-               </div>
-               <div className="p-4 flex justify-center border-t border-white/5">
-                   <button className="text-xs font-bold uppercase tracking-widest text-[#FA2D48] hover:text-white transition-colors flex items-center gap-2">
-                       See Full Chart <ArrowRight className="w-3 h-3" />
-                   </button>
                </div>
            </div>
       </div>

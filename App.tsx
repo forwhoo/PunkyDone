@@ -22,16 +22,21 @@ import { generateMusicInsight, generateRankingInsights } from './services/gemini
 
 // HISTORY COMPONENT: Simple Card
 const HistoryCard = ({ item }: { item: any }) => (
-    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[240px] mr-3 bg-[#1C1C1E]/40 border border-white/5 p-2 rounded-xl hover:bg-[#1C1C1E] transition-all">
-        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-[#2C2C2E] flex-shrink-0">
+    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[280px] mr-3 bg-[#1C1C1E]/60 border border-white/5 p-3 rounded-2xl hover:bg-[#2C2C2E] transition-all hover:scale-[1.02] hover:shadow-xl">
+        <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-[#2C2C2E] flex-shrink-0 shadow-lg group-hover:shadow-2xl transition-all">
             <img src={item.cover} alt={item.track_name} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                 <Play className="w-5 h-5 text-white fill-current" />
+            </div>
         </div>
-        <div className="ml-3 flex-1 min-w-0">
-             <h3 className="text-[13px] font-bold text-white truncate group-hover:text-[#FA2D48] transition-colors">{item.track_name}</h3>
-             <p className="text-[11px] text-[#8E8E93] truncate">{item.artist_name}</p>
+        <div className="ml-4 flex-1 min-w-0 flex flex-col justify-center">
+             <h3 className="text-[14px] font-bold text-white truncate group-hover:text-[#FA2D48] transition-colors leading-tight">{item.track_name}</h3>
+             <p className="text-[12px] text-[#8E8E93] truncate mt-0.5">{item.artist_name}</p>
         </div>
-        <div className="t-0 r-0 absolute p-2">
-            <span className="text-[9px] text-[#555] font-mono">{new Date(item.played_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+        <div className="absolute top-3 right-3">
+            <span className="text-[10px] text-[#555] font-mono group-hover:text-[#FA2D48] transition-colors bg-white/5 px-2 py-0.5 rounded-full">
+                {new Date(item.played_at).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'}).replace(' ', '')}
+            </span>
         </div>
     </div>
 );
@@ -86,17 +91,18 @@ const RankedArtist = ({ artist, rank, realImage }: { artist: Artist, rank: numbe
 // RANKED COMPONENT: Top Song (Horizontal Card with Number)
 const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
     <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[240px] md:w-[280px] mr-4">
-        <div className="flex flex-col bg-[#1C1C1E]/50 hover:bg-[#1C1C1E] border border-white/5 rounded-xl p-3 pr-6 transition-all duration-300 w-full backdrop-blur-sm">
+        <div className="flex flex-col bg-gradient-to-br from-[#1C1C1E] to-[#2C2C2E]/30 hover:to-[#2C2C2E] border border-white/5 rounded-2xl p-4 pr-6 transition-all duration-300 w-full backdrop-blur-sm hover:-translate-y-1 hover:shadow-xl hover:border-white/10">
             <div className="flex items-center gap-4">
-                <span className="text-[40px] font-black text-outline leading-none w-8 text-center italic opacity-70">
-                    {rank}
-                </span>
-                <div className="relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-[#2C2C2E]">
-                    <img src={song.cover} alt={song.title} className="w-full h-full object-cover group-hover:blur-[1px] transition-all" />
+                <div className="flex flex-col items-center justify-center w-8">
+                     <span className="text-[32px] font-black text-[#FA2D48] leading-none italic">#{rank}</span>
+                </div>
+                <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-[#2C2C2E] shadow-lg">
+                    <img src={song.cover} alt={song.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
                 </div>
                 <div className="flex-1 min-w-0">
-                    <h3 className="text-[14px] font-bold text-white truncate leading-tight group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
-                    <p className="text-[12px] text-[#8E8E93] truncate mt-0.5">{song.artist}</p>
+                    <h3 className="text-[15px] font-bold text-white truncate leading-tight group-hover:text-[#FA2D48] transition-colors">{song.title}</h3>
+                    <p className="text-[13px] text-[#8E8E93] truncate mt-1">{song.artist}</p>
                     <div className="flex items-center gap-2 mt-1">
                     <p className="text-[10px] text-[#FA2D48] font-bold uppercase tracking-wide">{song.timeStr}</p>
                     <span className="text-[10px] text-white/20">•</span>

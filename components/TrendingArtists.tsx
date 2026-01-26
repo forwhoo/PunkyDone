@@ -145,11 +145,11 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
                 </div>
             </div>
             
-            <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
+            <div className="flex items-start overflow-x-auto pb-24 pt-2 no-scrollbar snap-x pl-2 scroll-smooth">
                 {trendingArtists.map((artist: any, index) => (
                     <div key={artist.name} className="flex-shrink-0 relative flex flex-col items-center snap-start group cursor-pointer w-[140px] md:w-[160px] mr-3">
-                        {/* Hover Reason Tooltip */}
-                        <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 bg-[#1C1C1E] border border-white/10 p-3 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 translate-y-2 group-hover:translate-y-0 backdrop-blur-xl">
+                        {/* Hover Reason Tooltip (Updated to be below and visible) */}
+                        <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-48 bg-[#1C1C1E] border border-white/10 p-3 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 translate-y-2 group-hover:translate-y-0 backdrop-blur-xl">
                             <div className="text-[10px] uppercase font-bold text-[#FA2D48] mb-2 tracking-wider">Trend Analysis</div>
                             <div className="space-y-1.5">
                                 <div className="flex justify-between text-[11px]">
@@ -172,23 +172,26 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, recen
                         </div>
 
                         <div className="relative">
-                            <div className="relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border border-white/5 group-hover:scale-105 transition-all duration-300 shadow-xl group-hover:border-[#FA2D48]/50">
+                            {/* Big Number Style (Like Top Albums) */}
+                            <span className={`text-[100px] leading-none font-black text-outline absolute -left-4 -bottom-2 z-0 select-none pointer-events-none scale-y-90 italic ${index === 0 ? 'text-[#FA2D48]/20 opacity-100' : 'opacity-20'}`}>
+                                {index + 1}
+                            </span>
+
+                            <div className={`relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#2C2C2E] border group-hover:scale-105 transition-all duration-300 shadow-xl ml-4 ${index === 0 ? 'border-[#FA2D48] shadow-[0_0_30px_rgba(250,45,72,0.3)]' : 'border-white/5 group-hover:border-[#FA2D48]/50'}`}>
                                 <img 
                                     src={artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
                                     alt={artist.name} 
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                                 />
+                                {index === 0 && (
+                                     <div className="absolute inset-0 bg-gradient-to-tr from-[#FA2D48]/20 to-transparent animate-pulse pointer-events-none"></div>
+                                )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                                 <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-1">
                                     <TrendingUp className="w-3 h-3 text-[#FA2D48]" />
                                     <span className="text-white text-[10px] font-bold">{Math.round(artist.trendScore)}</span>
                                 </div>
                             </div>
-                            {index === 0 && (
-                                <div className="absolute -top-2 -right-2 bg-[#FA2D48] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg z-20 animate-bounce">
-                                    #1
-                                </div>
-                            )}
                         </div>
                         <div className="text-center mt-3 px-1 w-full">
                             <h3 className="text-[14px] font-medium text-white truncate w-full group-hover:text-[#FA2D48] transition-colors">{artist.name}</h3>
