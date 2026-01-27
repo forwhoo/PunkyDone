@@ -273,10 +273,13 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             const finalImage = data.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(key)}&background=random`;
             
             // Ensure key is a string and handle potential undefined/null
-            const safeKey = String(key || 'unknown');
+            let safeKey = String(key || 'unknown');
+            if (safeKey === 'undefined' || safeKey === 'null') safeKey = 'unknown';
             
+            const trendId = safeKey.replace ? safeKey.replace(/\s+/g, '-').toLowerCase() : 'unknown-item';
+
             result.push({
-                id: `trend-${safeKey.replace(/\s+/g, '-').toLowerCase()}-${activeTab}`,
+                id: `trend-${trendId}-${activeTab}`,
                 name: activeTab === 'artist' ? key : data.subName ? key.split('||')[0] : key,
                 subName: data.subName,
                 image: finalImage,

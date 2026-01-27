@@ -5,8 +5,9 @@ import { Button } from './UIComponents';
 // --- Typewriter Component ---
 const Typewriter = ({ text }: { text: string }) => {
   // Simple markdown image parser: ![Alt](Url)
-  const imageMatch = text.match(/!\[(.*?)\]\((.*?)\)/);
-  const cleanText = text.replace(/!\[(.*?)\]\((.*?)\)/, '').trim();
+  const safeText = text || '';
+  const imageMatch = safeText.match(/!\[(.*?)\]\((.*?)\)/);
+  const cleanText = safeText.replace(/!\[(.*?)\]\((.*?)\)/, '').trim();
 
   const [displayedText, setDisplayedText] = useState('');
   

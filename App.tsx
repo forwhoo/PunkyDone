@@ -539,18 +539,18 @@ function App() {
                 contextData={{
                     userName: data.user?.display_name,
                     artists: safeArtists.map((a: Artist, idx: number) => {
-                        const time = a.timeStr || '';
+                        const time = String(a.timeStr || '');
                         const mins = time.replace('m', '');
                         // Include Rank for AI
                         return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
                     }),
                     albums: safeAlbums.map((a: Album, idx: number) => {
-                        const time = a.timeStr || '';
+                        const time = String(a.timeStr || '');
                         const mins = time.replace('m', '');
                         return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
                     }),
                     songs: safeSongs.map((s: Song, idx: number) => {
-                        const time = s.timeStr || '';
+                        const time = String(s.timeStr || '');
                         const mins = time.replace('m', '');
                         return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
                     }),
