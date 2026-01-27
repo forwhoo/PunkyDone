@@ -386,7 +386,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         initial={{ opacity: 0, x: 50 }} 
                         animate={{ opacity: 1, x: 0 }} 
                         exit={{ opacity: 0, x: 50 }}
-                        className="absolute top-0 right-0 bottom-0 w-full md:w-[350px] z-[50]"
+                        className="absolute top-0 right-0 bottom-0 w-full md:w-[320px] z-[50]"
                     >
                         {/* Backdrop for mobile only */}
                         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSelectedItem(null)}></div>
@@ -403,7 +403,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                             </button>
 
                             {/* BANNER HEADER */}
-                            <div className="relative w-full h-64 overflow-hidden">
+                            <div className="relative w-full h-56 overflow-hidden flex-shrink-0">
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1E] via-transparent to-transparent z-10"></div>
                                 <img 
                                     src={selectedItem.image} 
@@ -411,51 +411,45 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                     className="w-full h-full object-cover"
                                 />
                                 <div className="absolute bottom-4 left-6 z-20">
-                                    <h2 className="text-3xl font-black text-white leading-none tracking-tight mb-1 drop-shadow-lg">{selectedItem.name}</h2>
-                                    {selectedItem.subName && <p className="text-white/60 text-sm font-medium tracking-wide drop-shadow-md">{selectedItem.subName}</p>}
-                                    <div className="inline-flex items-center gap-1.5 mt-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/5">
-                                        <Sparkles size={12} className="text-white" />
+                                    <h2 className="text-2xl font-black text-white leading-none tracking-tight mb-1 drop-shadow-lg line-clamp-2">{selectedItem.name}</h2>
+                                    {selectedItem.subName && <p className="text-white/60 text-xs font-medium tracking-wide drop-shadow-md">{selectedItem.subName}</p>}
+                                    <div className="inline-flex items-center gap-1.5 mt-2 bg-white/10 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/5">
+                                        <Sparkles size={10} className="text-white" />
                                         <span className="text-[10px] uppercase font-bold text-white tracking-wider">Obsession Score: {selectedItem.trendScore}</span>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto no-scrollbar pb-8">
-                                {/* STATS ROW (Horizontal Scroll) */}
+                            <div className="flex-1 overflow-y-auto no-scrollbar pb-8 pt-2">
+                                {/* STATS ROW (Grid Layout) */}
                                 {/* @ts-ignore */}
                                 {selectedItem.stats ? (
                                     <>
-                                        <div className="flex gap-3 px-6 py-6 overflow-x-auto no-scrollbar snap-x">
+                                        <div className="grid grid-cols-3 gap-2 px-4 mb-6">
                                             {/* @ts-ignore */}
-                                            <div className="flex-shrink-0 w-28 bg-white/5 p-3 rounded-xl border border-white/5 snap-start">
-                                                <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1 flex items-center gap-1">
-                                                    <TrendingUp size={10} /> Streak
-                                                </div>
+                                            <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
+                                                <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Streak</div>
                                                 {/* @ts-ignore */}
-                                                <div className="text-xl font-bold text-white leading-none">{selectedItem.stats.streak}<span className="text-xs font-normal text-white/40 ml-0.5">d</span></div>
+                                                <div className="text-lg font-bold text-white leading-none">{selectedItem.stats.streak}<span className="text-[10px] font-normal text-white/40 ml-0.5">d</span></div>
                                             </div>
 
-                                            <div className="flex-shrink-0 w-28 bg-white/5 p-3 rounded-xl border border-white/5 snap-start">
-                                                <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1 flex items-center gap-1">
-                                                    <Clock size={10} /> Peak
-                                                </div>
+                                            <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
+                                                <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Peak</div>
                                                 {/* @ts-ignore */}
-                                                <div className="text-lg font-bold text-white leading-none truncate">{selectedItem.stats.peakTime}</div>
+                                                <div className="text-base font-bold text-white leading-none truncate w-full">{selectedItem.stats.peakTime}</div>
                                             </div>
 
-                                            <div className="flex-shrink-0 w-28 bg-white/5 p-3 rounded-xl border border-white/5 snap-start">
-                                                <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1 flex items-center gap-1">
-                                                    <Disc size={10} /> Time
-                                                </div>
+                                            <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
+                                                <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Time</div>
                                                 {/* @ts-ignore */}
-                                                <div className="text-lg font-bold text-white leading-none truncate">{selectedItem.stats.totalTime}</div>
+                                                <div className="text-base font-bold text-white leading-none truncate w-full">{selectedItem.stats.totalTime}</div>
                                             </div>
                                         </div>
 
                                         {/* TOP SONGS LIST */}
-                                        <div className="px-6">
-                                            <h3 className="text-white text-sm font-bold mb-4 sticky top-0 bg-[#1C1C1E] z-10 py-2 border-b border-white/5">Top Tracks</h3>
-                                            <div className="space-y-1">
+                                        <div className="px-4">
+                                            <h3 className="text-white text-xs font-bold uppercase tracking-widest mb-3 pl-2 opacity-50">Top Tracks</h3>
+                                            <div className="space-y-0.5">
                                                 {/* @ts-ignore */}
                                                 {selectedItem.tracks && selectedItem.tracks.length > 0 ? (
                                                     // Group and sort tracks
@@ -467,18 +461,21 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                                     }, {}))
                                                     // @ts-ignore
                                                     .sort((a: any, b: any) => b.count - a.count)
-                                                    .slice(0, 10)
+                                                    .slice(0, 15) // Show more tracks since list is compact
                                                     .map((track: any, idx) => (
-                                                        <div key={idx} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg group transition-colors cursor-default">
-                                                            <div className="text-[#8E8E93] font-mono text-xs w-4 text-center">{idx + 1}</div>
+                                                        <div key={idx} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-md group transition-colors cursor-default">
+                                                            <div className="text-[#8E8E93] font-mono text-[10px] w-4 text-center">{idx + 1}</div>
+                                                            <div className="w-8 h-8 rounded bg-[#2C2C2E] overflow-hidden flex-shrink-0">
+                                                                <img src={track.album_cover || track.cover} className="w-full h-full object-cover" alt="" />
+                                                            </div>
                                                             <div className="min-w-0 flex-1">
-                                                                <div className="text-sm font-medium text-white truncate">{track.track_name}</div>
-                                                                <div className="text-xs text-[#8E8E93] truncate">{track.count} plays</div>
+                                                                <div className="text-[13px] font-medium text-white truncate group-hover:text-white transition-colors">{track.track_name}</div>
+                                                                <div className="text-[10px] text-[#8E8E93] truncate">{track.count} plays</div>
                                                             </div>
                                                         </div>
                                                     ))
                                                 ) : (
-                                                     <div className="text-xs text-[#8E8E93] italic py-4">Track data unavailable</div>
+                                                     <div className="text-xs text-[#8E8E93] italic py-4 text-center">Track data unavailable</div>
                                                 )}
                                             </div>
                                         </div>
