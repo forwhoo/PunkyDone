@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
+import { Artist, Album, Song } from './types';
 // import { TopCharts } from './components/TopCharts';
 import { RankingWidget } from './components/RankingWidget';
 import { AISpotlight } from './components/AISpotlight';
@@ -389,6 +390,60 @@ function App() {
     setLoadingInsight(false);
   };
 
+  // ONLY fallback to Spotify data if DB is strictly empty, but we expect DB to have data now with rolling windows
+  // If user has 0 database plays, then we might show Spotify data, which is acceptable as a "seed" state.
+  // But to respect "use the database", we rely on the fact that if they have History, they have Stats.
+  // UPDATE: User requested "Start Listening" if no data. Do NOT fallback to Spotify.
+
+  const hasDbData = dbUnifiedData && 
+                    (dbUnifiedData.artists?.length > 0 || 
+                     dbUnifiedData.songs?.length > 0 || 
+                     dbUnifiedData.albums?.length > 0);
+
+  const safeArtists = dbUnifiedData?.artists || [];
+  const safeAlbums = dbUnifiedData?.albums || [];
+  const safeSongs = dbUnifiedData?.songs || [];
+  const safeRecent = dbUnifiedData?.recentPlays || data?.recentRaw || []; // Recent plays can still come from Spotify recent for immediate feedback? 
+                                                                          // Actually user said "always use the database". 
+                                                                          // But recent plays are usually synced. stick to DB for charts. 
+                                                                          // Keep recentPlays logic hybrid for responsiveness, or strict DB?
+                                                                          // User said "if it is daily and i did not lsisne song ... tell the user start listening"
+                                                                          // So we should be strict.
+
+  const selectedArtistStats = useMemo(() => {
+      if (!selectedTopArtist) return null;
+
+      const artistName = selectedTopArtist.name;
+      const artistPlays = safeRecent.filter((play: any) => play.artist_name === artistName || play.artist === artistName);
+      const totalPlaysAllArtists = safeArtists.reduce((sum: number, artist: Artist) => sum + (artist.totalListens || 0), 0);
+      const popularityScore = totalPlaysAllArtists > 0
+          ? Math.round(((selectedTopArtist.totalListens || 0) / totalPlaysAllArtists) * 100)
+          : 0;
+
+      const dayCounts: Record<string, number> = {};
+      const uniqueDays = new Set<string>();
+      artistPlays.forEach((play: any) => {
+          if (!play.played_at) return;
+          const date = new Date(play.played_at);
+          if (Number.isNaN(date.getTime())) return;
+          uniqueDays.add(date.toISOString().slice(0, 10));
+          const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+          dayCounts[dayName] = (dayCounts[dayName] || 0) + 1;
+      });
+
+      const activeDays = uniqueDays.size;
+      const peakDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+
+      return {
+          popularityScore,
+          activeDays,
+          peakDay
+      };
+  }, [selectedTopArtist, safeArtists, safeRecent]);
+  
+  // Strict DB check for charts
+  const showEmptyState = !loading && dbUnifiedData && !hasDbData;
+
   if (!token) {
       return (
           <div className="min-h-[100dvh] min-h-screen bg-black text-white flex items-center justify-center p-6 relative overflow-hidden">
@@ -456,60 +511,8 @@ function App() {
       );
   }
 
-  // ONLY fallback to Spotify data if DB is strictly empty, but we expect DB to have data now with rolling windows
-  // If user has 0 database plays, then we might show Spotify data, which is acceptable as a "seed" state.
-  // But to respect "use the database", we rely on the fact that if they have History, they have Stats.
-  // UPDATE: User requested "Start Listening" if no data. Do NOT fallback to Spotify.
 
-  const hasDbData = dbUnifiedData && 
-                    (dbUnifiedData.artists?.length > 0 || 
-                     dbUnifiedData.songs?.length > 0 || 
-                     dbUnifiedData.albums?.length > 0);
-
-  const safeArtists = dbUnifiedData?.artists || [];
-  const safeAlbums = dbUnifiedData?.albums || [];
-  const safeSongs = dbUnifiedData?.songs || [];
-  const safeRecent = dbUnifiedData?.recentPlays || data?.recentRaw || []; // Recent plays can still come from Spotify recent for immediate feedback? 
-                                                                          // Actually user said "always use the database". 
-                                                                          // But recent plays are usually synced. stick to DB for charts. 
-                                                                          // Keep recentPlays logic hybrid for responsiveness, or strict DB?
-                                                                          // User said "if it is daily and i did not lsisne song ... tell the user start listening"
-                                                                          // So we should be strict.
-
-  const selectedArtistStats = useMemo(() => {
-      if (!selectedTopArtist) return null;
-
-      const artistName = selectedTopArtist.name;
-      const artistPlays = safeRecent.filter((play: any) => play.artist_name === artistName || play.artist === artistName);
-      const totalPlaysAllArtists = safeArtists.reduce((sum: number, artist: Artist) => sum + (artist.totalListens || 0), 0);
-      const popularityScore = totalPlaysAllArtists > 0
-          ? Math.round(((selectedTopArtist.totalListens || 0) / totalPlaysAllArtists) * 100)
-          : 0;
-
-      const dayCounts: Record<string, number> = {};
-      const uniqueDays = new Set<string>();
-      artistPlays.forEach((play: any) => {
-          if (!play.played_at) return;
-          const date = new Date(play.played_at);
-          if (Number.isNaN(date.getTime())) return;
-          uniqueDays.add(date.toISOString().slice(0, 10));
-          const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
-          dayCounts[dayName] = (dayCounts[dayName] || 0) + 1;
-      });
-
-      const activeDays = uniqueDays.size;
-      const peakDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
-
-      return {
-          popularityScore,
-          activeDays,
-          peakDay
-      };
-  }, [selectedTopArtist, safeArtists, safeRecent]);
-  
-  // Strict DB check for charts
-  const showEmptyState = !loading && dbUnifiedData && !hasDbData;
-
+    
   return (
     <>
     <Layout user={data.user} currentTrack={data.currentTrack}>
