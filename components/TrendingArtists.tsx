@@ -381,36 +381,37 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             </div>
             
             {/* SIDE PANEL VIEW (Replaces Modal) */}
-            <AnimatePresence>
-                {selectedItem && createPortal(
-                    <>
-                        {/* Global Backdrop (Click to close) */}
-                        <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[150]"
-                            onClick={() => setSelectedItem(null)}
-                        />
+            {createPortal(
+                <AnimatePresence mode="wait">
+                    {selectedItem && (
+                        <>
+                            {/* Global Backdrop (Click to close) */}
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[150]"
+                                onClick={() => setSelectedItem(null)}
+                            />
 
-                        {/* Floating Side Panel */}
-                        <motion.div 
-                            initial={{ opacity: 0, x: 50, scale: 0.95 }} 
-                            animate={{ opacity: 1, x: 0, scale: 1 }} 
-                            exit={{ opacity: 0, x: 50, scale: 0.95 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="fixed top-2 bottom-2 right-2 w-[calc(100vw-16px)] md:w-[320px] z-[200] max-h-[calc(100vh-16px)]"
-                        >
-                            <div 
-                                className="h-full w-full bg-[#1C1C1E] rounded-3xl overflow-hidden flex flex-col relative shadow-2xl border border-white/10"
-                                onClick={(e) => e.stopPropagation()}
+                            {/* Floating Side Panel */}
+                            <motion.div 
+                                initial={{ opacity: 0, x: 50, scale: 0.95 }} 
+                                animate={{ opacity: 1, x: 0, scale: 1 }} 
+                                exit={{ opacity: 0, x: 50, scale: 0.95 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                className="fixed top-2 bottom-2 right-2 w-[calc(100vw-16px)] md:w-[320px] z-[200] max-h-[calc(100vh-16px)] pointer-events-none"
                             >
-                                <button 
-                                    onClick={() => setSelectedItem(null)} 
-                                    className="absolute top-4 right-4 bg-black/40 hover:bg-black/60 rounded-full p-2 text-white z-50 transition-colors backdrop-blur-md"
+                                <div 
+                                    className="h-full w-full bg-[#1C1C1E] rounded-3xl overflow-hidden flex flex-col relative shadow-2xl border border-white/10 pointer-events-auto"
+                                    onClick={(e) => e.stopPropagation()}
                                 >
-                                    <X size={20} />
-                                </button>
+                                    <button 
+                                        onClick={() => setSelectedItem(null)} 
+                                        className="absolute top-4 right-4 bg-black/40 hover:bg-black/60 rounded-full p-2 text-white z-50 transition-colors backdrop-blur-md"
+                                    >
+                                        <X size={20} />
+                                    </button>
 
                             {/* BANNER HEADER */}
                             <div className="relative w-full h-56 overflow-hidden flex-shrink-0">
@@ -499,12 +500,11 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                             </div>
                         </div>
                     </motion.div>
-                    </>,
-                    document.body
-                )}
-            </AnimatePresence>
-        </div>
-    );
+                        </>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
 };
 
 // Helper Component for Orbit Nodes
