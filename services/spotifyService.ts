@@ -311,8 +311,15 @@ const msToTime = (duration: number) => {
 // Simple in-memory cache
 const artistImageCache: Record<string, string> = {};
 
-export const fetchArtistImages = async (token: string, artistNames: string[]) => {
-    if (!token || !artistNames.length) return {};
+export const fetchArtistImages = async (
+    token: string, 
+    artistNames: string[],
+    onProgress?: (status: string) => void
+) => {
+    if (!token || !artistNames.length) {
+        console.log('[fetchArtistImages] No token or empty artist list');
+        return {};
+    }
     
     const imageMap: Record<string, string> = {};
     const uniqueNames = Array.from(new Set(artistNames));
@@ -327,51 +334,77 @@ export const fetchArtistImages = async (token: string, artistNames: string[]) =>
         }
     });
 
-    if (namesToFetch.length === 0) return imageMap;
+    console.log(`[fetchArtistImages] 🎤 ${uniqueNames.length} unique artists, ${Object.keys(imageMap).length} cached, ${namesToFetch.length} to fetch`);
+
+    if (namesToFetch.length === 0) {
+        console.log('[fetchArtistImages] ✅ All images from cache!');
+        return imageMap;
+    }
 
     // Throttle helper
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-    // Parallel fetch with limit and delay
-    // Process in chunks of 2 (Much slower to avoid rate limits)
-    const chunkSize = 2;
+    // Process in chunks of 5 (faster but still safe)
+    const chunkSize = 5;
+    let fetched = 0;
+    let found = 0;
+    let rateLimitHit = false;
+    
+    console.log(`[fetchArtistImages] 🌐 Starting fetch for ${namesToFetch.length} artists in chunks of ${chunkSize}...`);
+    
     for (let i = 0; i < namesToFetch.length; i += chunkSize) {
+        if (rateLimitHit) {
+            console.warn('[fetchArtistImages] ⚠️ Rate limit hit, stopping early');
+            break;
+        }
+        
         const chunk = namesToFetch.slice(i, i + chunkSize);
         
         await Promise.all(chunk.map(async (name) => {
             try {
-                // Rate limit protection - Larger delay per request
-                await delay(Math.random() * 500 + 300); 
+                // Rate limit protection
+                await delay(Math.random() * 200 + 100); 
 
                 const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(name)}&type=artist&limit=1`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 
+                fetched++;
+                
                 if (res.status === 429) {
-                    console.warn(`Rate limit hit for ${name}, skipping.`);
-                    // If we hit a rate limit, pause for 2 seconds before continuing the outer loop?
-                    // We can't easily pause the other parallel promises, but we can prevent future chunks.
+                    console.warn(`[fetchArtistImages] ⚠️ Rate limit hit at ${name}`);
+                    rateLimitHit = true;
                     return;
                 }
 
-                if (!res.ok) return;
+                if (!res.ok) {
+                    console.warn(`[fetchArtistImages] ⚠️ ${res.status} for "${name}"`);
+                    return;
+                }
 
                 const data = await res.json();
                 const artist = data.artists?.items[0];
                 if (artist && artist.images?.length > 0) {
                     const url = artist.images[0].url;
                     imageMap[name] = url;
-                    artistImageCache[name] = url; // Update cache
+                    artistImageCache[name] = url;
+                    found++;
                 }
             } catch (e) {
-                console.error('Artist fetch error:', e);
+                console.error(`[fetchArtistImages] ❌ Error for ${name}:`, e);
             }
         }));
         
-        // Wait SIGNIFICANTLY longer between chunks (1.5s)
-        if (i + chunkSize < namesToFetch.length) await delay(1500);
+        // Progress update
+        const percent = Math.round(((i + chunk.length) / namesToFetch.length) * 100);
+        console.log(`[fetchArtistImages] 📊 ${percent}% - Fetched ${fetched}/${namesToFetch.length}, found ${found} images`);
+        onProgress?.(`🌐 Fetching from Spotify: ${percent}% (${found}/${fetched} found)`);
+        
+        // Wait between chunks (500ms)
+        if (i + chunkSize < namesToFetch.length && !rateLimitHit) await delay(500);
     }
 
+    console.log(`[fetchArtistImages] ✅ Complete! Found ${found}/${namesToFetch.length} artist images`);
     return imageMap;
 };
 

@@ -962,43 +962,59 @@ export const backfillExtendedHistoryImages = async (
 ): Promise<{ success: boolean; message: string }> => {
     try {
         console.log('[backfillImages] 🎨 Starting image backfill process...');
-        onProgress('Fetching unique artists and albums...');
+        onProgress('🔍 Scanning database for missing images...');
         
-        // Get unique artists (that don't have images yet)
-        const { data: artistsNeedingImages } = await supabase
+        // Get unique artists (that don't have images yet) - check for NULL only first
+        const { data: artistsNeedingImages, error: fetchError } = await supabase
             .from('extended_streaming_history')
             .select('artist_name')
-            .or('album_cover.is.null,album_cover.eq.')
-            .limit(5000);
+            .is('album_cover', null)
+            .not('artist_name', 'is', null)
+            .limit(10000);
 
-        if (!artistsNeedingImages || artistsNeedingImages.length === 0) {
-            console.log('[backfillImages] ✅ No images to backfill - all records have covers');
-            return { success: true, message: 'No images to backfill' };
+        if (fetchError) {
+            console.error('[backfillImages] ❌ Error fetching artists:', fetchError);
+            return { success: false, message: 'Failed to fetch artists: ' + fetchError.message };
         }
 
-        const uniqueArtists = [...new Set(artistsNeedingImages.map(x => x.artist_name).filter(Boolean))];
+        console.log(`[backfillImages] 📊 Query returned ${artistsNeedingImages?.length || 0} records with NULL album_cover`);
+
+        if (!artistsNeedingImages || artistsNeedingImages.length === 0) {
+            console.log('[backfillImages] ✅ No images to backfill - all records have covers!');
+            onProgress('✅ All images already present!');
+            return { success: true, message: 'All images already present!' };
+        }
+
+        const uniqueArtists = [...new Set(artistsNeedingImages.map(x => x.artist_name).filter(Boolean))] as string[];
         console.log(`[backfillImages] 📊 Found ${artistsNeedingImages.length} records from ${uniqueArtists.length} unique artists needing images`);
+        console.log('[backfillImages] 🎤 Sample artists:', uniqueArtists.slice(0, 10));
         
-        onProgress(`Fetching images for ${uniqueArtists.length} artists from Spotify...`);
+        onProgress(`🎤 Found ${uniqueArtists.length} artists needing images. Fetching from Spotify...`);
         
         // Import fetchArtistImages from spotifyService
         const { fetchArtistImages } = await import('./spotifyService');
         
-        console.log('[backfillImages] 🌐 Requesting artist images from Spotify API...');
-        const artistImages = await fetchArtistImages(token, uniqueArtists);
+        console.log('[backfillImages] 🌐 Calling Spotify API for artist images (this may take a while)...');
+        const startTime = Date.now();
         
+        // Pass onProgress to fetchArtistImages for real-time Spotify API progress
+        const artistImages = await fetchArtistImages(token, uniqueArtists, onProgress);
+        
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
         const imageCount = Object.keys(artistImages).length;
-        console.log(`[backfillImages] 📥 Received ${imageCount}/${uniqueArtists.length} artist images from Spotify`);
+        console.log(`[backfillImages] 📥 Spotify returned ${imageCount}/${uniqueArtists.length} images in ${elapsed}s`);
         
         if (imageCount === 0) {
-            console.warn('[backfillImages] ⚠️ No images returned from Spotify');
-            return { success: false, message: 'Spotify returned no images' };
+            console.warn('[backfillImages] ⚠️ No images returned from Spotify!');
+            onProgress('⚠️ Spotify returned no images');
+            return { success: false, message: 'Spotify returned no images - check token' };
         }
         
-        onProgress(`Updating database with ${imageCount} images...`);
+        onProgress(`📝 Updating database with ${imageCount} images...`);
         
         // Update each artist's records with their image
-        let updated = 0;
+        let updatedRecords = 0;
+        let updatedArtists = 0;
         let processed = 0;
         const total = Object.entries(artistImages).length;
         
@@ -1009,31 +1025,34 @@ export const backfillExtendedHistoryImages = async (
                 .from('extended_streaming_history')
                 .update({ album_cover: imageUrl })
                 .eq('artist_name', artistName)
-                .or('album_cover.is.null,album_cover.eq.')
+                .is('album_cover', null)
                 .select('id');
             
             processed++;
             const percent = Math.round((processed / total) * 100);
             
             if (!error && data && data.length > 0) {
-                updated++;
-                console.log(`[backfillImages] ✓ ${percent}% - Updated ${data.length} records for "${artistName}"`);
+                updatedArtists++;
+                updatedRecords += data.length;
+                console.log(`[backfillImages] ✓ ${percent}% - Updated ${data.length} tracks for "${artistName}"`);
             } else if (error) {
-                console.error(`[backfillImages] ✗ ${percent}% - Failed to update "${artistName}":`, error);
+                console.error(`[backfillImages] ✗ ${percent}% - DB error for "${artistName}":`, error);
+            } else {
+                console.log(`[backfillImages] - ${percent}% - No NULL records found for "${artistName}" (maybe already updated?)`);
             }
             
-            // Update progress every 10%
-            if (percent % 10 === 0 || processed === total) {
-                onProgress(`Updating database: ${percent}% (${updated}/${processed} artists)`);
-            }
+            // Update UI progress
+            onProgress(`📝 ${percent}% complete (${updatedArtists} artists, ${updatedRecords} tracks)`);
         }
         
-        const finalMessage = `Updated ${updated} artists with images`;
-        console.log(`[backfillImages] 🎉 Complete! ${finalMessage}`);
+        const finalMessage = `✅ Done! Updated ${updatedRecords} tracks across ${updatedArtists} artists`;
+        console.log(`[backfillImages] 🎉 ${finalMessage}`);
+        onProgress(finalMessage);
         return { success: true, message: finalMessage };
         
     } catch (err: any) {
         console.error('[backfillImages] ❌ Error:', err);
+        onProgress(`❌ Error: ${err.message}`);
         return { success: false, message: err.message };
     }
 };
