@@ -1078,8 +1078,9 @@ export const backfillExtendedHistoryImages = async (
         onProgress(`📝 Step 4: Saving ${albumCovers.length} covers to database...`);
         console.log('[backfillImages] 📝 Calling update_album_covers RPC with', albumCovers.length, 'covers...');
         
+        // Pass as JSON array directly (not stringified)
         const { data: updateResult, error: updateError } = await supabase.rpc('update_album_covers', {
-            covers: JSON.stringify(albumCovers)
+            covers: albumCovers
         });
         
         if (updateError) {
