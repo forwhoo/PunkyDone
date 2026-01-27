@@ -956,140 +956,81 @@ export const uploadExtendedHistory = async (
 };
 
 // Backfill images for extended_streaming_history after upload
+// Uses server-side RPC functions for reliable updates
 export const backfillExtendedHistoryImages = async (
   token: string,
   onProgress: (status: string) => void
 ): Promise<{ success: boolean; message: string }> => {
     try {
         console.log('[backfillImages] 🎨 Starting image backfill process...');
-        onProgress('🔍 Scanning database for missing images...');
+        onProgress('🔍 Checking current status...');
         
-        // STEP 1: Get records needing images (with album info for matching)
-        const { data: recordsNeedingImages, error: fetchError } = await supabase
-            .from('extended_streaming_history')
-            .select('id, track_name, artist_name, album_name')
-            .is('album_cover', null)
-            .not('track_name', 'is', null)
-            .limit(50000);
-
-        if (fetchError) {
-            console.error('[backfillImages] ❌ Error fetching records:', fetchError);
-            return { success: false, message: 'Failed to fetch records: ' + fetchError.message };
-        }
-
-        console.log(`[backfillImages] 📊 Found ${recordsNeedingImages?.length || 0} records with NULL album_cover`);
-
-        if (!recordsNeedingImages || recordsNeedingImages.length === 0) {
-            console.log('[backfillImages] ✅ No images to backfill - all records have covers!');
-            onProgress('✅ All images already present!');
-            return { success: true, message: 'All images already present!' };
-        }
-
-        // STEP 2: Check listening_history for existing covers we can borrow
-        onProgress('📚 Checking listening_history for existing album covers...');
-        console.log('[backfillImages] 📚 Looking for existing covers in listening_history...');
-        
-        const { data: existingCovers } = await supabase
-            .from('listening_history')
-            .select('track_name, artist_name, album_name, album_cover')
-            .not('album_cover', 'is', null)
-            .not('album_cover', 'eq', '');
-        
-        // Build lookup maps for quick matching
-        const coverByTrackArtist = new Map<string, string>();
-        const coverByAlbumArtist = new Map<string, string>();
-        
-        if (existingCovers) {
-            console.log(`[backfillImages] 📚 Found ${existingCovers.length} records with covers in listening_history`);
-            existingCovers.forEach(row => {
-                if (row.album_cover) {
-                    // Key by track+artist (most specific)
-                    const trackKey = `${row.track_name?.toLowerCase()}|||${row.artist_name?.toLowerCase()}`;
-                    if (!coverByTrackArtist.has(trackKey)) {
-                        coverByTrackArtist.set(trackKey, row.album_cover);
-                    }
-                    // Key by album+artist (for other tracks on same album)
-                    const albumKey = `${row.album_name?.toLowerCase()}|||${row.artist_name?.toLowerCase()}`;
-                    if (!coverByAlbumArtist.has(albumKey)) {
-                        coverByAlbumArtist.set(albumKey, row.album_cover);
-                    }
-                }
-            });
-            console.log(`[backfillImages] 📚 Built ${coverByTrackArtist.size} track lookups, ${coverByAlbumArtist.size} album lookups`);
-        }
-
-        // STEP 3: Match records to existing covers
-        let borrowedCount = 0;
-        const recordsStillNeedingImages: typeof recordsNeedingImages = [];
-        
-        onProgress('🔗 Matching records to existing covers...');
-        
-        for (const record of recordsNeedingImages) {
-            const trackKey = `${record.track_name?.toLowerCase()}|||${record.artist_name?.toLowerCase()}`;
-            const albumKey = `${record.album_name?.toLowerCase()}|||${record.artist_name?.toLowerCase()}`;
-            
-            let foundCover = coverByTrackArtist.get(trackKey) || coverByAlbumArtist.get(albumKey);
-            
-            if (foundCover) {
-                // Update this record with borrowed cover
-                const { error } = await supabase
-                    .from('extended_streaming_history')
-                    .update({ album_cover: foundCover })
-                    .eq('id', record.id);
-                
-                if (!error) {
-                    borrowedCount++;
-                    if (borrowedCount % 500 === 0) {
-                        console.log(`[backfillImages] 📚 Borrowed ${borrowedCount} covers so far...`);
-                        onProgress(`📚 Borrowed ${borrowedCount} covers from listening_history...`);
-                    }
-                }
-            } else {
-                recordsStillNeedingImages.push(record);
-            }
+        // STEP 0: Check how many need covers
+        const { data: statusBefore, error: statusError } = await supabase.rpc('count_null_covers');
+        if (statusError) {
+            console.error('[backfillImages] ❌ count_null_covers not found. Run supabase_backfill_covers.sql first!');
+            return { success: false, message: 'Please run supabase_backfill_covers.sql in Supabase SQL Editor first!' };
         }
         
-        console.log(`[backfillImages] 📚 Borrowed ${borrowedCount} covers from listening_history`);
-        console.log(`[backfillImages] 🎵 ${recordsStillNeedingImages.length} records still need images from Spotify`);
+        console.log('[backfillImages] 📊 Status before:', statusBefore);
+        onProgress(`📊 ${statusBefore.null_covers} records need covers (${statusBefore.percent_complete}% complete)`);
         
-        if (recordsStillNeedingImages.length === 0) {
-            const msg = `✅ Done! Borrowed ${borrowedCount} covers from listening_history`;
+        if (statusBefore.null_covers === 0) {
+            onProgress('✅ All records already have covers!');
+            return { success: true, message: 'All records already have covers!' };
+        }
+
+        // STEP 1: Borrow from listening_history (server-side)
+        onProgress('📚 Step 1: Copying covers from listening_history...');
+        console.log('[backfillImages] 📚 Calling backfill_covers_from_history RPC...');
+        
+        const { data: borrowResult, error: borrowError } = await supabase.rpc('backfill_covers_from_history');
+        
+        if (borrowError) {
+            console.error('[backfillImages] ❌ Borrow error:', borrowError);
+        } else {
+            console.log('[backfillImages] 📚 Borrow result:', borrowResult);
+            onProgress(`📚 Borrowed ${borrowResult.total_updated} covers from listening_history`);
+        }
+
+        // STEP 2: Get albums still needing covers
+        onProgress('🎵 Step 2: Finding albums that still need covers...');
+        console.log('[backfillImages] 🎵 Calling get_albums_needing_covers RPC...');
+        
+        const { data: albumsNeeded, error: albumsError } = await supabase.rpc('get_albums_needing_covers', { max_results: 1000 });
+        
+        if (albumsError) {
+            console.error('[backfillImages] ❌ Albums error:', albumsError);
+            return { success: false, message: 'Failed to get albums: ' + albumsError.message };
+        }
+        
+        console.log(`[backfillImages] 🎵 ${albumsNeeded?.length || 0} unique albums still need covers`);
+        
+        if (!albumsNeeded || albumsNeeded.length === 0) {
+            const msg = `✅ Done! Borrowed ${borrowResult?.total_updated || 0} covers from history`;
             onProgress(msg);
             return { success: true, message: msg };
         }
-
-        // STEP 4: Get unique albums to fetch from Spotify
-        const uniqueAlbums = new Map<string, { album: string; artist: string }>();
-        recordsStillNeedingImages.forEach(r => {
-            if (r.album_name && r.artist_name) {
-                const key = `${r.album_name}|||${r.artist_name}`;
-                if (!uniqueAlbums.has(key)) {
-                    uniqueAlbums.set(key, { album: r.album_name, artist: r.artist_name });
-                }
-            }
-        });
         
-        console.log(`[backfillImages] 🎵 Need to fetch ${uniqueAlbums.size} unique albums from Spotify`);
-        onProgress(`🌐 Fetching ${uniqueAlbums.size} album covers from Spotify...`);
+        onProgress(`🌐 Step 3: Fetching ${albumsNeeded.length} albums from Spotify...`);
 
-        // STEP 5: Fetch album covers from Spotify
-        const albumCovers = new Map<string, string>();
-        const albumsArray = Array.from(uniqueAlbums.entries());
+        // STEP 3: Fetch album covers from Spotify
+        const albumCovers: { album: string; artist: string; cover: string }[] = [];
         const chunkSize = 5;
         let fetched = 0;
         let found = 0;
         
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
         
-        for (let i = 0; i < albumsArray.length; i += chunkSize) {
-            const chunk = albumsArray.slice(i, i + chunkSize);
+        for (let i = 0; i < albumsNeeded.length; i += chunkSize) {
+            const chunk = albumsNeeded.slice(i, i + chunkSize);
             
-            await Promise.all(chunk.map(async ([key, { album, artist }]) => {
+            await Promise.all(chunk.map(async (item: { album_name: string; artist_name: string }) => {
                 try {
-                    await delay(Math.random() * 150 + 50);
+                    await delay(Math.random() * 100 + 50);
                     
                     // Search for album by name + artist
-                    const query = encodeURIComponent(`album:${album} artist:${artist}`);
+                    const query = encodeURIComponent(`album:${item.album_name} artist:${item.artist_name}`);
                     const res = await fetch(`https://api.spotify.com/v1/search?q=${query}&type=album&limit=1`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
@@ -1106,56 +1047,56 @@ export const backfillExtendedHistoryImages = async (
                     const data = await res.json();
                     const albumData = data.albums?.items[0];
                     if (albumData?.images?.[0]?.url) {
-                        albumCovers.set(key, albumData.images[0].url);
+                        albumCovers.push({
+                            album: item.album_name,
+                            artist: item.artist_name,
+                            cover: albumData.images[0].url
+                        });
                         found++;
                     }
                 } catch (e) {
-                    console.error(`[backfillImages] ❌ Error fetching album "${album}":`, e);
+                    console.error(`[backfillImages] ❌ Error fetching "${item.album_name}":`, e);
                 }
             }));
             
-            const percent = Math.round(((i + chunk.length) / albumsArray.length) * 100);
-            console.log(`[backfillImages] 🌐 ${percent}% - Fetched ${fetched}, found ${found} album covers`);
-            onProgress(`🌐 Fetching albums: ${percent}% (${found}/${fetched} found)`);
+            const percent = Math.round(((i + chunk.length) / albumsNeeded.length) * 100);
+            console.log(`[backfillImages] 🌐 ${percent}% - Fetched ${fetched}, found ${found} covers`);
+            onProgress(`🌐 Fetching: ${percent}% (${found}/${fetched} found)`);
             
-            if (i + chunkSize < albumsArray.length) await delay(400);
+            if (i + chunkSize < albumsNeeded.length) await delay(300);
         }
         
-        console.log(`[backfillImages] 📥 Spotify returned ${found}/${uniqueAlbums.size} album covers`);
+        console.log(`[backfillImages] 📥 Spotify returned ${found}/${albumsNeeded.length} album covers`);
 
-        // STEP 6: Update records with fetched album covers
-        onProgress(`📝 Updating database with ${found} album covers...`);
-        let updatedRecords = 0;
-        let processed = 0;
-        const total = albumCovers.size;
+        if (albumCovers.length === 0) {
+            const msg = `✅ Done! Borrowed ${borrowResult?.total_updated || 0} covers (Spotify returned none)`;
+            onProgress(msg);
+            return { success: true, message: msg };
+        }
+
+        // STEP 4: Bulk update using server-side RPC
+        onProgress(`📝 Step 4: Saving ${albumCovers.length} covers to database...`);
+        console.log('[backfillImages] 📝 Calling update_album_covers RPC with', albumCovers.length, 'covers...');
         
-        for (const [key, imageUrl] of albumCovers.entries()) {
-            const [albumName, artistName] = key.split('|||');
-            
-            const { data, error } = await supabase
-                .from('extended_streaming_history')
-                .update({ album_cover: imageUrl })
-                .eq('album_name', albumName)
-                .eq('artist_name', artistName)
-                .is('album_cover', null)
-                .select('id');
-            
-            processed++;
-            const percent = Math.round((processed / total) * 100);
-            
-            if (!error && data && data.length > 0) {
-                updatedRecords += data.length;
-                console.log(`[backfillImages] ✓ ${percent}% - Updated ${data.length} tracks for "${albumName}"`);
-            }
-            
-            if (percent % 10 === 0 || processed === total) {
-                onProgress(`📝 Saving: ${percent}% (${updatedRecords} tracks updated)`);
-            }
+        const { data: updateResult, error: updateError } = await supabase.rpc('update_album_covers', {
+            covers: JSON.stringify(albumCovers)
+        });
+        
+        if (updateError) {
+            console.error('[backfillImages] ❌ Update error:', updateError);
+            return { success: false, message: 'Failed to save covers: ' + updateError.message };
         }
         
-        const finalMessage = `✅ Done! Borrowed ${borrowedCount} from history + ${updatedRecords} from Spotify`;
+        console.log('[backfillImages] 📝 Update result:', updateResult);
+
+        // STEP 5: Check final status
+        const { data: statusAfter } = await supabase.rpc('count_null_covers');
+        console.log('[backfillImages] 📊 Status after:', statusAfter);
+        
+        const finalMessage = `✅ Done! Borrowed ${borrowResult?.total_updated || 0} + Spotify ${updateResult?.records_updated || 0} = ${statusAfter?.percent_complete || 0}% complete`;
         console.log(`[backfillImages] 🎉 ${finalMessage}`);
         onProgress(finalMessage);
+        
         return { success: true, message: finalMessage };
         
     } catch (err: any) {
@@ -1164,6 +1105,3 @@ export const backfillExtendedHistoryImages = async (
         return { success: false, message: err.message };
     }
 };
-
-
-
