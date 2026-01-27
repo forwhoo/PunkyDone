@@ -7,7 +7,6 @@ import { RankingWidget } from './components/RankingWidget';
 import { AISpotlight } from './components/AISpotlight';
 import { TrendingArtists } from './components/TrendingArtists';
 import { UpcomingArtists } from './components/UpcomingArtists';
-import { HourlyChart } from './components/HourlyChart';
 import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 
@@ -654,9 +653,6 @@ function App() {
                     topArtists={safeArtists} 
                     artistImages={artistImages} 
                 />
-
-                {/* HOURLY CHART */}
-                <HourlyChart history={safeRecent} />
 
             </div>
             )}
