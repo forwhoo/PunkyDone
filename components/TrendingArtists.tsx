@@ -505,6 +505,8 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                 </AnimatePresence>,
                 document.body
             )}
+        </div>
+    );
 };
 
 // Helper Component for Orbit Nodes
