@@ -1,15 +1,41 @@
-import React, { useMemo, useState } from 'react';
-import { ChevronDown, X, Music } from 'lucide-react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { ChevronDown, X, Music, Check } from 'lucide-react';
 
 interface ActivityHeatmapProps {
     history: any[];
 }
 
+const AVAILABLE_YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
+
 export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => {
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [selectedTracks, setSelectedTracks] = useState<any[]>([]);
+    const [selectedYear, setSelectedYear] = useState<number>(2026);
+    const [showYearDropdown, setShowYearDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // 1. Process Data: Group by Date (YYYY-MM-DD)
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowYearDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Filter history by selected year
+    const filteredHistory = useMemo(() => {
+        if (!history) return [];
+        return history.filter(item => {
+            if (!item.played_at) return false;
+            const year = new Date(item.played_at).getFullYear();
+            return year === selectedYear;
+        });
+    }, [history, selectedYear]);
+
+    // 1. Process Data: Group by Date (YYYY-MM-DD) - Optimized with single pass
     const { dailyData, dailyTracks, maxCount, totalPlays, totalMinutes } = useMemo(() => {
         const grouped: Record<string, number> = {};
         const tracks: Record<string, any[]> = {};
@@ -17,41 +43,40 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
         let tPlays = 0;
         let tMins = 0;
 
-        if (!history) return { dailyData: {}, dailyTracks: {}, maxCount: 1, totalPlays: 0, totalMinutes: 0 };
+        if (!filteredHistory || filteredHistory.length === 0) {
+            return { dailyData: {}, dailyTracks: {}, maxCount: 1, totalPlays: 0, totalMinutes: 0 };
+        }
 
-        history.forEach(item => {
-            if (!item.played_at) return;
+        // Single pass through data
+        for (const item of filteredHistory) {
+            if (!item.played_at) continue;
             tPlays++;
             tMins += (item.duration_ms || 0) / 60000;
 
             const date = new Date(item.played_at);
             const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD
             
-            if (!grouped[dateStr]) grouped[dateStr] = 0;
-            grouped[dateStr]++;
+            grouped[dateStr] = (grouped[dateStr] || 0) + 1;
             
             if (!tracks[dateStr]) tracks[dateStr] = [];
             tracks[dateStr].push(item);
-        });
+            
+            // Track max inline
+            if (grouped[dateStr] > max) max = grouped[dateStr];
+        }
 
         // Sort tracks by time desc
-        Object.keys(tracks).forEach(date => {
-            tracks[date].sort((a,b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime());
-        });
-
-        Object.values(grouped).forEach(count => {
-            if (count > max) max = count;
-        });
+        for (const date of Object.keys(tracks)) {
+            tracks[date].sort((a, b) => new Date(b.played_at).getTime() - new Date(a.played_at).getTime());
+        }
 
         return { dailyData: grouped, dailyTracks: tracks, maxCount: Math.max(max, 5), totalPlays: tPlays, totalMinutes: Math.round(tMins) };
-    }, [history]);
+    }, [filteredHistory]);
 
     // 2. Generate Calendar Grid (Horizontal: Weeks, Vertical: Days)
     const weeks = useMemo(() => {
-        // Target Year 2026 as requested
-        const year = 2026;
+        const year = selectedYear;
         const startDate = new Date(year, 0, 1); // Jan 1
-        // const endDate = new Date(year, 11, 31); // Dec 31
         
         // Align to Sunday start
         const startDayOfWeek = startDate.getDay(); // 0 = Sunday
@@ -62,23 +87,23 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
         let current = new Date(gridStart);
         
         // Loop for 53 weeks to fill the grid
-        for(let w=0; w<53; w++) {
+        for (let w = 0; w < 53; w++) {
             const currentWeek = [];
-            for(let d=0; d<7; d++) {
-                 const dateStr = current.toLocaleDateString('en-CA');
-                 const isTargetYear = current.getFullYear() === year;
+            for (let d = 0; d < 7; d++) {
+                const dateStr = current.toLocaleDateString('en-CA');
+                const isTargetYear = current.getFullYear() === year;
                  
-                 currentWeek.push({
+                currentWeek.push({
                     date: dateStr,
                     count: dailyData[dateStr] || 0,
                     inYear: isTargetYear
-                 });
-                 current.setDate(current.getDate() + 1);
+                });
+                current.setDate(current.getDate() + 1);
             }
             weeksArr.push(currentWeek);
         }
         return weeksArr;
-    }, [dailyData]);
+    }, [dailyData, selectedYear]);
 
     const getColor = (count: number, inYear: boolean) => {
         if (!inYear) return 'bg-[#1C1C1E] opacity-20'; // Placeholder for padding days
@@ -126,12 +151,37 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history }) => 
                              <p className="text-[13px] text-[#8E8E93] font-medium flex items-center gap-2">
                                 <span>{totalMinutes.toLocaleString()} minutes of music</span>
                                 <span className="w-1 h-1 rounded-full bg-[#333]"></span>
-                                <span>2026</span>
+                                <span>{selectedYear}</span>
                              </p>
                         </div>
-                        <button className="flex items-center gap-1 text-[12px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors">
-                            2026 <ChevronDown size={14} />
-                        </button>
+                        <div className="relative" ref={dropdownRef}>
+                            <button 
+                                onClick={() => setShowYearDropdown(!showYearDropdown)}
+                                className="flex items-center gap-1 text-[12px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors"
+                            >
+                                {selectedYear} <ChevronDown size={14} className={`transition-transform ${showYearDropdown ? 'rotate-180' : ''}`} />
+                            </button>
+                            {showYearDropdown && (
+                                <div className="absolute right-0 top-full mt-1 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[100px] animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {AVAILABLE_YEARS.map(year => (
+                                        <button
+                                            key={year}
+                                            onClick={() => {
+                                                setSelectedYear(year);
+                                                setShowYearDropdown(false);
+                                                setSelectedDate(null);
+                                            }}
+                                            className={`w-full px-4 py-2 text-left text-[12px] font-medium flex items-center justify-between gap-2 hover:bg-white/5 transition-colors ${
+                                                year === selectedYear ? 'text-white bg-white/5' : 'text-[#8E8E93]'
+                                            }`}
+                                        >
+                                            {year}
+                                            {year === selectedYear && <Check size={12} className="text-[#FA2D48]" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                     
                     <div className="w-full overflow-x-auto no-scrollbar">

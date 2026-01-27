@@ -374,134 +374,94 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         };
     }
     
-    // 1. Top Artists (count by artist_name)
-    const { data: artistsData, error: artistError } = await supabase
-       .from('listening_history')
-       .select('artist_name, duration_ms, played_at')
-       .gte('played_at', startDate.toISOString());
+    // 1. Fetch all data in a single optimized query
+    const { data: historyData, error: historyError } = await supabase
+        .from('listening_history')
+        .select('track_name, artist_name, album_name, album_cover, duration_ms, played_at')
+        .gte('played_at', startDate.toISOString())
+        .order('played_at', { ascending: false });
 
-    // NOTE: Extended history fetching removed - handled by RPC for All Time
-    let extendedArtists: any[] = [];
-    // NOTE: Extended history fetching removed - All Time is handled entirely by RPC block above
+    if (historyError) {
+        console.error("[dbService] ❌ Query Error:", historyError);
+        return { artists: [], songs: [], albums: [], hourlyActivity: [], recentPlays: [] };
+    }
 
-    const combinedArtists = [...(artistsData || [])];
+    const allData = historyData || [];
     
-    const artistCounts: Record<string, { count: number, time: number }> = {};
-    const artistImages: Record<string, string> = {}; // Helper to find an image
+    // Use Maps for O(1) lookups - much faster than objects for large datasets
+    const artistCounts = new Map<string, { count: number, time: number, image: string }>();
+    const songCounts = new Map<string, { count: number, artist: string, cover: string, duration: number, totalTime: number }>();
+    const albumStats = new Map<string, { count: number, duration: number, artist: string, cover: string }>();
 
-    combinedArtists?.forEach((item: any) => {
-        if (!artistCounts[item.artist_name]) artistCounts[item.artist_name] = { count: 0, time: 0 };
-        
-        // Fix: Only count as a "Play" if duration > 30s
-        if ((item.duration_ms || 0) > 30000) {
-            artistCounts[item.artist_name].count += 1;
-        }
-        
-        artistCounts[item.artist_name].time += (item.duration_ms || 0);
-    });
+    // Single pass through data to compute all stats
+    for (const item of allData) {
+        const durationMs = item.duration_ms || 0;
+        const isValidPlay = durationMs > 30000; // Only count as play if > 30s
 
-    // Also scan albums to find matching images for artists
-    const { data: albumCovers } = await supabase.from('listening_history').select('artist_name, album_cover');
-    albumCovers?.forEach((item:any) => {
-        if (!artistImages[item.artist_name] && item.album_cover) {
-            artistImages[item.artist_name] = item.album_cover;
+        // Artist stats
+        if (item.artist_name) {
+            if (!artistCounts.has(item.artist_name)) {
+                artistCounts.set(item.artist_name, { count: 0, time: 0, image: item.album_cover || '' });
+            }
+            const artist = artistCounts.get(item.artist_name)!;
+            if (isValidPlay) artist.count++;
+            artist.time += durationMs;
+            if (!artist.image && item.album_cover) artist.image = item.album_cover;
         }
-    });
+
+        // Song stats
+        if (item.track_name && item.artist_name) {
+            const songKey = `${item.track_name}||${item.artist_name}`;
+            if (!songCounts.has(songKey)) {
+                songCounts.set(songKey, { count: 0, artist: item.artist_name, cover: item.album_cover || '', duration: durationMs, totalTime: 0 });
+            }
+            const song = songCounts.get(songKey)!;
+            if (isValidPlay) song.count++;
+            song.totalTime += durationMs;
+            if (!song.cover && item.album_cover) song.cover = item.album_cover;
+        }
+
+        // Album stats
+        if (item.album_name && item.album_name !== 'Unknown Album' && item.artist_name) {
+            const albumKey = `${item.album_name}||${item.artist_name}`;
+            if (!albumStats.has(albumKey)) {
+                albumStats.set(albumKey, { count: 0, duration: 0, artist: item.artist_name, cover: item.album_cover || '' });
+            }
+            const album = albumStats.get(albumKey)!;
+            if (isValidPlay) album.count++;
+            album.duration += durationMs;
+            if (!album.cover && item.album_cover) album.cover = item.album_cover;
+        }
+    }
     
-    const topArtists = Object.entries(artistCounts)
-        .sort(([, a], [, b]) => b.time - a.time) // Sort by TIME listened, not just adds
+    // Convert Maps to sorted arrays
+    const topArtists = Array.from(artistCounts.entries())
+        .sort(([, a], [, b]) => b.time - a.time)
         .slice(0, 100)
         .map(([name, info], index) => ({
             id: `artist-${index}`,
             name,
-            image: artistImages[name] || '', 
+            image: info.image,
             totalListens: info.count,
             timeStr: `${Math.floor(info.time / 60000)}m`,
             trend: 0
         }));
 
-    // 2. Top Songs
-    const { data: songsData } = await supabase
-        .from('listening_history')
-        .select('track_name, artist_name, album_cover, duration_ms, played_at')
-        .gte('played_at', startDate.toISOString());
-
-    // NOTE: All Time Logic moved to RPC block above, so this section only handles Daily/Weekly/Monthly now
-    // (kept cleanup for consistent code flow if RPC fails/is removed)
-    
-    // FETCH EXTENDED IF ALL TIME
-    let extendedSongs: any[] = [];
-    // if (timeRange === 'All Time') { ... } // RPC HANDLED
-    const combinedSongs = [...(songsData || []), ...extendedSongs];
-        
-    const songCounts: Record<string, { count: number, artist: string, cover: string, duration: number, totalTime: number }> = {};
-    combinedSongs?.forEach((item: any) => {
-        const key = `${item.track_name}||${item.artist_name}`; 
-        if (!songCounts[key]) {
-            songCounts[key] = { count: 0, artist: item.artist_name, cover: item.album_cover || '', duration: item.duration_ms, totalTime: 0 };
-        }
-        // Prefer an entry that HAS a cover if one exists
-        if (item.album_cover && !songCounts[key].cover) {
-             songCounts[key].cover = item.album_cover;
-        }
-
-        // Fix: Only count as a "Play" if duration > 30s
-        if ((item.duration_ms || 0) > 30000) {
-            songCounts[key].count++;
-        }
-        
-        songCounts[key].totalTime += (item.duration_ms || 0);
-    });
-
-    const topSongs = Object.entries(songCounts)
+    const topSongs = Array.from(songCounts.entries())
         .sort(([, a], [, b]) => b.totalTime - a.totalTime)
         .slice(0, 100)
         .map(([key, info], index) => ({
             id: `song-${index}`,
             title: key.split('||')[0],
             artist: info.artist,
-            album: '', 
+            album: '',
             cover: info.cover,
-            duration: msToTime(info.duration), // Track length
+            duration: msToTime(info.duration),
             listens: info.count,
             timeStr: `${Math.floor(info.totalTime / 60000)}m`
         }));
 
-    // 3. Top Albums
-    const { data: albumsData } = await supabase
-        .from('listening_history')
-        .select('album_name, artist_name, album_cover, duration_ms, played_at')
-        .gte('played_at', startDate.toISOString());
-
-    // NOTE: All Time Logic moved to RPC block above
-    
-    // FETCH EXTENDED IF ALL TIME
-    let extendedAlbums: any[] = [];
-    
-    const combinedAlbums = [...(albumsData || []), ...extendedAlbums];
-
-    const albumStats: Record<string, { count: number, duration: number, artist: string, cover: string }> = {};
-    combinedAlbums?.forEach((item: any) => {
-         // Skip empty albums
-        if (!item.album_name || item.album_name === 'Unknown Album') return;
-
-        const key = `${item.album_name}||${item.artist_name}`;
-        if (!albumStats[key]) {
-             albumStats[key] = { count: 0, duration: 0, artist: item.artist_name, cover: item.album_cover || '' };
-        }
-        if (item.album_cover && !albumStats[key].cover) {
-             albumStats[key].cover = item.album_cover;
-        }
-
-        // Fix: Only count as a "Play" if duration > 30s
-        if ((item.duration_ms || 0) > 30000) {
-            albumStats[key].count++;
-        }
-        
-        albumStats[key].duration += (item.duration_ms || 0);
-    });
-
-    const topAlbums = Object.entries(albumStats)
+    const topAlbums = Array.from(albumStats.entries())
         .sort(([, a], [, b]) => b.duration - a.duration)
         .slice(0, 100)
         .map(([key, info], index) => ({
@@ -514,13 +474,8 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
             timeStr: `${Math.floor(info.duration / 60000)}m`
         }));
     
-    // 4. Hourly Activity Graph (Today)
+    // 4. Hourly Activity Graph (Today) - Use data we already have if today
     const today = new Date().toISOString().split('T')[0];
-    const { data: todayData } = await supabase
-        .from('listening_history')
-        .select('*')
-        .gte('played_at', `${today}T00:00:00.000Z`)
-        .order('played_at', { ascending: true });
     
     // Helper for American Time
     const formatTo12Hour = (hour: number) => {
@@ -529,28 +484,43 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         return `${h} ${ampm}`;
     };
 
-    // Bucket by hour (00 to 23)
+    // Bucket by hour (00 to 23) - reuse allData if it contains today
     const hourlyMap: Record<number, { min: number, count: number, songs: any[] }> = {};
-    for (let i=0; i<24; i++) hourlyMap[i] = { min: 0, count: 0, songs: [] };
+    for (let i = 0; i < 24; i++) hourlyMap[i] = { min: 0, count: 0, songs: [] };
 
-    if (todayData) {
-        todayData.forEach((item: any) => {
-            const date = new Date(item.played_at);
-            const hour = date.getHours(); // Local browser time
-            
-            hourlyMap[hour].min += (item.duration_ms / 60000);
-            hourlyMap[hour].count += 1;
-            hourlyMap[hour].songs.push(item);
-        });
+    // Filter today's data from allData or fetch separately if needed
+    const todayData = allData.filter(item => item.played_at?.startsWith(today));
+    
+    for (const item of todayData) {
+        const date = new Date(item.played_at);
+        const hour = date.getHours();
+        
+        hourlyMap[hour].min += ((item.duration_ms || 0) / 60000);
+        hourlyMap[hour].count += 1;
+        hourlyMap[hour].songs.push(item);
     }
 
     const hourlyActivity = Object.entries(hourlyMap).map(([h, data]) => {
         const hour = parseInt(h);
-        const topSong = data.songs.length > 0 ? 
-            data.songs.reduce((prev, current) => 
-                (data.songs.filter(s => s.track_name === prev.track_name).length > 
-                 data.songs.filter(s => s.track_name === current.track_name).length) ? prev : current
-            ) : null;
+        // Optimize: use Map for counting instead of filter
+        let topSong: any = null;
+        if (data.songs.length > 0) {
+            const songCountMap = new Map<string, { count: number, song: any }>();
+            for (const s of data.songs) {
+                const key = s.track_name;
+                if (!songCountMap.has(key)) {
+                    songCountMap.set(key, { count: 0, song: s });
+                }
+                songCountMap.get(key)!.count++;
+            }
+            let maxCount = 0;
+            songCountMap.forEach(({ count, song }) => {
+                if (count > maxCount) {
+                    maxCount = count;
+                    topSong = song;
+                }
+            });
+        }
 
         return {
             time: formatTo12Hour(hour),
@@ -563,14 +533,8 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         };
     });
 
-    // 5. Recent Plays (Last 2000 for Timeline Heatmap)
-    const { data: recentHistory } = await supabase
-        .from('listening_history')
-        .select('*')
-        .order('played_at', { ascending: false })
-        .limit(2000);
-        
-    const recentPlays = recentHistory?.map((item: any) => ({
+    // 5. Recent Plays - Use allData instead of separate query (already sorted desc)
+    const recentPlays = allData.slice(0, 2000).map((item: any) => ({
         ...item,
         cover: item.album_cover 
     })) || [];

@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { TrendingUp, Sparkles, Disc, Mic2, Music, X, Clock } from 'lucide-react';
+import { TrendingUp, Sparkles, Disc, Mic2, Music, X, Clock, ChevronDown, Check } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+
+const AVAILABLE_YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
 
 interface TrendingItem {
     id: string;
@@ -27,17 +29,39 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
     const [activeTab, setActiveTab] = useState<'artist' | 'album'>('artist');
     const [trendingItems, setTrendingItems] = useState<TrendingItem[]>([]);
     const [selectedItem, setSelectedItem] = useState<TrendingItem | null>(null);
+    const [selectedYear, setSelectedYear] = useState<number>(2026);
+    const [showYearDropdown, setShowYearDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Stats Calculation Helper
-    const calculateArtistStats = (artistName: string) => {
-        const artistPlays = recentPlays.filter(p => p.artist_name === artistName);
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowYearDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Filter recentPlays by selected year - memoized for performance
+    const filteredPlays = useMemo(() => {
+        if (!recentPlays || recentPlays.length === 0) return [];
+        return recentPlays.filter(play => {
+            if (!play.played_at) return false;
+            return new Date(play.played_at).getFullYear() === selectedYear;
+        });
+    }, [recentPlays, selectedYear]);
+
+    // Stats Calculation Helper - Optimized with useCallback
+    const calculateArtistStats = useCallback((artistName: string) => {
+        const artistPlays = filteredPlays.filter(p => p.artist_name === artistName);
         if (!artistPlays.length) return null;
 
-        // 1. Streak Calculation
-        const playDates = Array.from(new Set(artistPlays.map(p => new Date(p.played_at).setHours(0,0,0,0)))).sort((a,b) => a - b);
-        let currentStreak = 0;
-        let maxStreak = 0;
-        let prevDate = null;
+        // 1. Streak Calculation - Optimized with Set
+        const playDateSet = new Set<number>();
+        artistPlays.forEach(p => playDateSet.add(new Date(p.played_at).setHours(0,0,0,0)));
+        const playDates = Array.from(playDateSet).sort((a, b) => a - b);
 
         // Calculate "Current Active Streak" (ending today or yesterday)
         let activeStreak = 0;
@@ -47,7 +71,6 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
         // Reverse iterate for active streak
         for (let i = playDates.length - 1; i >= 0; i--) {
             if (i === playDates.length - 1) {
-                // Must be today or yesterday to start counting "active" streak
                 if (playDates[i] === now || playDates[i] === yesterday) {
                     activeStreak = 1;
                 } else {
@@ -60,44 +83,95 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             }
         }
 
-        // 2. Favorite Song
-        const songCounts: Record<string, number> = {};
-        artistPlays.forEach(p => songCounts[p.track_name] = (songCounts[p.track_name] || 0) + 1);
-        const topSongEntry = Object.entries(songCounts).sort((a,b) => b[1] - a[1])[0];
+        // 2. Favorite Song - Use Map for O(n) counting
+        const songCounts = new Map<string, number>();
+        artistPlays.forEach(p => songCounts.set(p.track_name, (songCounts.get(p.track_name) || 0) + 1));
+        let topSongName = 'Unknown';
+        let maxPlays = 0;
+        songCounts.forEach((count, name) => {
+            if (count > maxPlays) {
+                maxPlays = count;
+                topSongName = name;
+            }
+        });
         
         // 3. Peak Listening Time (Hour)
-        const hourCounts = new Array(24).fill(0);
+        const hourCounts = new Uint16Array(24); // Faster than Array
         artistPlays.forEach(p => {
             const h = new Date(p.played_at).getHours();
             hourCounts[h]++;
         });
-        const peakHour = hourCounts.indexOf(Math.max(...hourCounts));
+        let peakHour = 0;
+        let maxHourCount = 0;
+        for (let i = 0; i < 24; i++) {
+            if (hourCounts[i] > maxHourCount) {
+                maxHourCount = hourCounts[i];
+                peakHour = i;
+            }
+        }
         const formatTime = (h: number) => {
             if (h === 0) return 'Midnight';
             if (h === 12) return 'Noon';
             return h > 12 ? `${h-12} PM` : `${h} AM`;
         };
 
-        // 4. Total Listening Time (Estimated)
-        const totalDurationMs = artistPlays.reduce((acc, curr) => acc + (curr.duration_ms || 180000), 0);
+        // 4. Total Listening Time
+        let totalDurationMs = 0;
+        artistPlays.forEach(p => totalDurationMs += (p.duration_ms || 180000));
         const hours = Math.floor(totalDurationMs / (1000 * 60 * 60));
         const minutes = Math.floor((totalDurationMs % (1000 * 60 * 60)) / (1000 * 60));
 
         return {
             streak: activeStreak,
-            topSong: topSongEntry ? topSongEntry[0] : 'Unknown',
+            topSong: topSongName,
             peakTime: formatTime(peakHour),
             totalTime: `${hours}h ${minutes}m`,
             firstPlay: new Date(Math.min(...artistPlays.map(p => new Date(p.played_at).getTime()))).toLocaleDateString()
         };
-    };
+    }, [filteredPlays]);
 
     const handleItemClick = (item: TrendingItem) => {
         if (item.type === 'artist') {
             const stats = calculateArtistStats(item.name);
-            setSelectedItem({ ...item, stats }); // Attach stats to item
+            
+            // Get all tracks for this artist from filteredPlays with play counts
+            const artistPlays = filteredPlays.filter(p => p.artist_name === item.name);
+            const trackCounts = new Map<string, { track: any, count: number }>();
+            
+            for (const play of artistPlays) {
+                const key = play.track_name;
+                if (!trackCounts.has(key)) {
+                    trackCounts.set(key, { track: play, count: 0 });
+                }
+                trackCounts.get(key)!.count++;
+            }
+            
+            // Convert to array sorted by count
+            const tracksWithCounts = Array.from(trackCounts.values())
+                .sort((a, b) => b.count - a.count)
+                .map(({ track, count }) => ({ ...track, count }));
+            
+            setSelectedItem({ ...item, stats, tracks: tracksWithCounts });
         } else {
-            setSelectedItem(item);
+            // For albums, also get tracks with counts
+            const albumPlays = filteredPlays.filter(p => 
+                p.album_name === item.name && p.artist_name === item.subName
+            );
+            const trackCounts = new Map<string, { track: any, count: number }>();
+            
+            for (const play of albumPlays) {
+                const key = play.track_name;
+                if (!trackCounts.has(key)) {
+                    trackCounts.set(key, { track: play, count: 0 });
+                }
+                trackCounts.get(key)!.count++;
+            }
+            
+            const tracksWithCounts = Array.from(trackCounts.values())
+                .sort((a, b) => b.count - a.count)
+                .map(({ track, count }) => ({ ...track, count }));
+            
+            setSelectedItem({ ...item, tracks: tracksWithCounts });
         }
     };
 
@@ -111,83 +185,80 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
         return () => { document.body.style.overflow = 'unset'; };
     }, [selectedItem]);
 
-    // Calculate Trending Data based on Active Tab
-    const calculateTrending = () => {
-        if (!recentPlays || recentPlays.length === 0) return;
+    // Calculate Trending Data based on Active Tab - Optimized with useMemo
+    const calculatedTrending = useMemo(() => {
+        if (!filteredPlays || filteredPlays.length === 0) return [];
 
-        const now = new Date().getTime();
-        const dayMs = 24 * 60 * 60 * 1000;
-        const sessionGapMs = 90 * 60 * 1000; // 90 minutes
+        const now = Date.now();
+        const stats = new Map<string, { plays: number[], image: string | null, subName?: string, tracks: any[] }>();
 
-        const stats: Record<string, { plays: number[], image: string, subName?: string, tracks: any[] }> = {};
-
-        recentPlays.forEach(play => {
+        // Single pass through data
+        for (const play of filteredPlays) {
             let key = ''; 
-            let name = '';
-            let subName = '';
             let image = '';
+            let subName = '';
             
             if (activeTab === 'artist') {
                 key = play.artist_name;
-                name = play.artist_name;
-                image = (artistImages && artistImages[name]) ? artistImages[name] : (play.album_cover || play.cover);
-                
-                // Update if valid image found
-                if (artistImages && artistImages[name]) image = artistImages[name];
+                image = (artistImages && artistImages[key]) ? artistImages[key] : (play.album_cover || play.cover);
             } else {
                 key = `${play.album_name}||${play.artist_name}`;
-                name = play.album_name;
                 subName = play.artist_name;
                 image = play.album_cover || play.cover;
             }
 
-            if (!stats[key]) {
-                // Ensure image is valid
+            if (!stats.has(key)) {
                 const validImage = image && image.length > 5 ? image : null;
-                stats[key] = { plays: [], image: validImage, subName, tracks: [] };
-            } else if (!stats[key].image && image && image.length > 5) {
-                // Retroactively fix image if missing
-                stats[key].image = image;
+                stats.set(key, { plays: [], image: validImage, subName, tracks: [] });
+            } else if (!stats.get(key)!.image && image && image.length > 5) {
+                stats.get(key)!.image = image;
             }
-            stats[key].plays.push(new Date(play.played_at).getTime());
             
-            // Add track info for detail view (dedupe by track name)
-            if (!stats[key].tracks.find((t: any) => t.track_name === play.track_name)) {
-                stats[key].tracks.push(play);
+            stats.get(key)!.plays.push(new Date(play.played_at).getTime());
+            
+            // Add track info (dedupe by track name)
+            const trackData = stats.get(key)!;
+            if (!trackData.tracks.find((t: any) => t.track_name === play.track_name)) {
+                trackData.tracks.push(play);
             }
-        });
+        }
 
-        // Compute Scores
+        // Compute Scores - Optimized calculations
         const result: TrendingItem[] = [];
-        Object.entries(stats).forEach(([key, data]) => {
+        const halfLifeMs = 14 * 24 * 60 * 60 * 1000;
+        const sessionGapMs = 90 * 60 * 1000;
+
+        stats.forEach((data, key) => {
             if (data.plays.length < 1) return;
 
-            const sortedPlays = data.plays.sort((a,b) => a - b);
+            const sortedPlays = data.plays.sort((a, b) => a - b);
             const totalPlays = sortedPlays.length;
             const firstPlay = sortedPlays[0];
             const lastPlay = sortedPlays[totalPlays - 1];
 
-            const spanDays = Math.max(1, Math.ceil((lastPlay - firstPlay) / 24 * 60 * 60 * 1000) + 1);
-            const uniqueDays = new Set(sortedPlays.map(play => new Date(play).toDateString())).size;
+            const spanDays = Math.max(1, Math.ceil((lastPlay - firstPlay) / (24 * 60 * 60 * 1000)) + 1);
+            const uniqueDaysSet = new Set(sortedPlays.map(play => Math.floor(play / (24 * 60 * 60 * 1000))));
+            const uniqueDays = uniqueDaysSet.size;
             const consistency = uniqueDays / spanDays;
             const playsPerDay = totalPlays / uniqueDays;
 
+            // Session counting
             let sessionCount = 1;
-            const sessionGapMs = 90 * 60 * 1000;
-            for (let i = 1; i < sortedPlays.length; i += 1) {
-                if (sortedPlays[i] - sortedPlays[i - 1] > sessionGapMs) sessionCount += 1;
+            for (let i = 1; i < sortedPlays.length; i++) {
+                if (sortedPlays[i] - sortedPlays[i - 1] > sessionGapMs) sessionCount++;
             }
             const sessionIntensity = totalPlays / sessionCount;
 
             const daysSinceLastPlay = (now - lastPlay) / (24 * 60 * 60 * 1000);
             const recencyFactor = Math.exp(-daysSinceLastPlay / 14);
 
-            const halfLifeMs = 14 * 24 * 60 * 60 * 1000;
-            const recencyWeightedPlays = sortedPlays.reduce((sum, play) => {
-                const age = now - play;
-                return sum + Math.exp(-age / halfLifeMs);
-            }, 0);
+            // Recency weighted plays
+            let recencyWeightedPlays = 0;
+            for (const play of sortedPlays) {
+                recencyWeightedPlays += Math.exp(-(now - play) / halfLifeMs);
+            }
 
+            // Score components
             const volumeScore = Math.log1p(totalPlays) * 28;
             const consistencyScore = Math.min(1, consistency) * 40;
             const intensityScore = Math.min(1.5, playsPerDay / 3) * 22;
@@ -197,11 +268,10 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
 
             const score = volumeScore + consistencyScore + intensityScore + focusScore + recencyScore + momentumScore;
 
-            // Use specific fallbacks for known issues or generic
-            let finalImage = data.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(key)}&background=random`;
+            const finalImage = data.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(key)}&background=random`;
             
             result.push({
-                id: `trend-${key.replace(/\s+/g, '-').toLowerCase()}-${activeTab}`, // Unique ID
+                id: `trend-${key.replace(/\s+/g, '-').toLowerCase()}-${activeTab}`,
                 name: activeTab === 'artist' ? key : data.subName ? key.split('||')[0] : key,
                 subName: data.subName,
                 image: finalImage,
@@ -213,18 +283,13 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
         });
 
         result.sort((a, b) => b.trendScore - a.trendScore);
-        setTrendingItems(result.slice(0, 27)); // Top 27 fit the rings
-    };
+        return result.slice(0, 27);
+    }, [filteredPlays, activeTab, artistImages]);
 
+    // Update trending items when calculation changes
     useEffect(() => {
-        calculateTrending();
-    }, [recentPlays, activeTab, artistImages]);
-
-    // Live update
-    useEffect(() => {
-        const interval = setInterval(calculateTrending, 5000);
-        return () => clearInterval(interval);
-    }, [recentPlays, activeTab]);
+        setTrendingItems(calculatedTrending);
+    }, [calculatedTrending]);
 
     // Handle Closing
     const handleClose = () => setSelectedItem(null);
@@ -252,21 +317,52 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         </p>
                     </div>
                     
+                    <div className="flex items-center gap-2">
+                        {/* Year Dropdown */}
+                        <div className="relative" ref={dropdownRef}>
+                            <button 
+                                onClick={() => setShowYearDropdown(!showYearDropdown)}
+                                className="flex items-center gap-1 text-[11px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors"
+                            >
+                                {selectedYear} <ChevronDown size={12} className={`transition-transform ${showYearDropdown ? 'rotate-180' : ''}`} />
+                            </button>
+                            {showYearDropdown && (
+                                <div className="absolute right-0 top-full mt-1 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[90px] animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {AVAILABLE_YEARS.map(year => (
+                                        <button
+                                            key={year}
+                                            onClick={() => {
+                                                setSelectedYear(year);
+                                                setShowYearDropdown(false);
+                                                setSelectedItem(null);
+                                            }}
+                                            className={`w-full px-3 py-1.5 text-left text-[11px] font-medium flex items-center justify-between gap-2 hover:bg-white/5 transition-colors ${
+                                                year === selectedYear ? 'text-white bg-white/5' : 'text-[#8E8E93]'
+                                            }`}
+                                        >
+                                            {year}
+                                            {year === selectedYear && <Check size={10} className="text-[#FA2D48]" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
-                    {/* Custom Toggle UI */}
-                    <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-1 border border-white/5 shadow-sm">
-                        <button 
-                            onClick={() => setActiveTab('artist')}
-                            className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
-                        >
-                             Artists
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('album')}
-                            className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'album' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
-                        >
-                             Albums
-                        </button>
+                        {/* Custom Toggle UI */}
+                        <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-1 border border-white/5 shadow-sm">
+                            <button 
+                                onClick={() => setActiveTab('artist')}
+                                className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                            >
+                                 Artists
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('album')}
+                                className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'album' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                            >
+                                 Albums
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -463,17 +559,9 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                             <div className="space-y-0.5">
                                                 {/* @ts-ignore */}
                                                 {selectedItem.tracks && selectedItem.tracks.length > 0 ? (
-                                                    // Group and sort tracks
-                                                    Object.values(selectedItem.tracks.reduce((acc: any, track: any) => {
-                                                        const id = track.track_name; 
-                                                        if (!acc[id]) acc[id] = { ...track, count: 0 };
-                                                        acc[id].count++;
-                                                        return acc;
-                                                    }, {}))
-                                                    // @ts-ignore
-                                                    .sort((a: any, b: any) => b.count - a.count)
-                                                    .slice(0, 15) // Show more tracks since list is compact
-                                                    .map((track: any, idx) => (
+                                                    selectedItem.tracks
+                                                    .slice(0, 15)
+                                                    .map((track: any, idx: number) => (
                                                         <div key={idx} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-md group transition-colors cursor-default">
                                                             <div className="text-[#8E8E93] font-mono text-[10px] w-4 text-center">{idx + 1}</div>
                                                             <div className="w-8 h-8 rounded bg-[#2C2C2E] overflow-hidden flex-shrink-0">
