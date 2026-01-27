@@ -234,6 +234,9 @@ export const fetchListeningStats = async () => {
 };
 
 export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Monthly' | 'All Time' = 'Weekly') => {
+    console.log(`[dbService] 📊 fetchDashboardStats called with timeRange: ${timeRange}`);
+    const functionStart = performance.now();
+    
     // Calculate date range based on timeRange selection
     const now = new Date();
     let startDate: Date;
@@ -257,64 +260,88 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
 
     // OPTIMIZATION: Use Server-side RPC for All Time to avoid crashing browser with 80k rows
     if (timeRange === 'All Time') {
-        console.log("[dbService] Fetching All Time stats from RPC...");
+        const startTime = performance.now();
+        console.log("[dbService] ⏳ Fetching ALL TIME stats from RPC...");
+        
         const { data, error } = await supabase.rpc('get_all_time_stats');
         
+        const elapsed = Math.round(performance.now() - startTime);
+        console.log(`[dbService] ⏱️ RPC completed in ${elapsed}ms`);
+        
         if (error) {
-            console.error("[dbService] RPC Error:", error);
-            // Fallback (or return empty if truly broken)
+            console.error("[dbService] ❌ RPC Error:", error);
+            console.log("[dbService] Returning empty fallback for All Time");
+            // Return structure matching what the rest of this function returns
             return {
-                artistInfo: [], // not used in this path usually
-                pairs: {},
-                dashboardStats: null
+                artists: [],
+                songs: [],
+                albums: [],
+                hourlyActivity: [],
+                recentPlays: []
             };
         }
 
-        console.log("[dbService] RPC Result:", data ? "Data Received" : "No Data", data?.totals);
-
-        // Transform RPC result to expected format
-        if (data) {
-             const artists = (data.artists || []).map((a: any, i: number) => ({
-                 id: `artist-${i}`,
-                 name: a.name,
-                 image: a.image,
-                 totalListens: a.totalListens,
-                 timeStr: a.timeStr,
-                 trend: 0
-             }));
-
-             const songs = (data.songs || []).map((s: any, i: number) => ({
-                 id: `song-${i}`,
-                 title: s.title,
-                 artist: s.artist,
-                 cover: s.cover,
-                 listens: s.listens,
-                 timeStr: s.timeStr,
-                 rank: i + 1
-             }));
-             
-             const albums = (data.albums || []).map((a: any, i: number) => ({
-                 id: `album-${i}`,
-                 title: a.title,
-                 artist: a.artist,
-                 cover: a.cover,
-                 totalListens: a.totalListens,
-                 timeStr: a.timeStr
-             }));
-             
-             // Extract global totals calculated by the server
-             const totalMinutes = data.totals?.minutes || 0;
-             const totalTracks = data.totals?.tracks || 0;
-
-             return {
-                 topArtists: artists,
-                 topSongs: songs,
-                 topAlbums: albums,
-                 hourlyActivity: [], // Optional: add hourly aggregation to RPC if needed later
-                 totalMinutes: totalMinutes,
-                 totalTracks: totalTracks
-             };
+        if (!data) {
+            console.warn("[dbService] ⚠️ RPC returned null/undefined data");
+            return {
+                artists: [],
+                songs: [],
+                albums: [],
+                hourlyActivity: [],
+                recentPlays: []
+            };
         }
+
+        // Log stats
+        const artistCount = data.artists?.length || 0;
+        const songCount = data.songs?.length || 0;
+        const albumCount = data.albums?.length || 0;
+        const totalMins = data.totals?.minutes || 0;
+        const totalTracks = data.totals?.tracks || 0;
+        
+        console.log(`[dbService] ✅ ALL TIME Stats Loaded:`);
+        console.log(`   → ${artistCount} artists, ${songCount} songs, ${albumCount} albums`);
+        console.log(`   → Total: ${totalMins} minutes listened, ${totalTracks} plays (>30s)`);
+
+        // Transform RPC result to expected format (matching non-RPC return shape)
+        const artists = (data.artists || []).map((a: any, i: number) => ({
+            id: `artist-${i}`,
+            name: a.name,
+            image: a.image || '',
+            totalListens: a.totalListens || 0,
+            timeStr: a.timeStr || '0m',
+            trend: 0
+        }));
+
+        const songs = (data.songs || []).map((s: any, i: number) => ({
+            id: `song-${i}`,
+            title: s.title,
+            artist: s.artist,
+            album: '',
+            cover: s.cover || '',
+            duration: '',
+            listens: s.listens || 0,
+            timeStr: s.timeStr || '0m'
+        }));
+         
+        const albums = (data.albums || []).map((a: any, i: number) => ({
+            id: `album-${i}`,
+            title: a.title,
+            artist: a.artist,
+            cover: a.cover || '',
+            year: 2024,
+            totalListens: a.totalListens || 0,
+            timeStr: a.timeStr || '0m'
+        }));
+
+        // Return structure matching the non-RPC path
+        return {
+            artists: artists,
+            songs: songs,
+            albums: albums,
+            hourlyActivity: [],
+            recentPlays: []
+        };
     }
     
     // 1. Top Artists (count by artist_name)
@@ -323,33 +350,11 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
        .select('artist_name, duration_ms, played_at')
        .gte('played_at', startDate.toISOString());
 
-    // FETCH EXTENDED IF ALL TIME (Parallel fetch)
+    // NOTE: Extended history fetching removed - handled by RPC for All Time
     let extendedArtists: any[] = [];
-    if (timeRange === 'All Time') {
-         // Get min date from active history to avoid overlap queries if possible,
-         // but simpler to just fetch and dedupe in memory for accuracy
-         const { data: extData } = await supabase
-            .from('extended_streaming_history')
-            .select('artist_name, duration_ms, played_at')
-            .gte('played_at', startDate.toISOString());
-         if (extData) extendedArtists = extData;
-    }
+    // NOTE: Extended history fetching removed - All Time is handled entirely by RPC block above
 
-    // Deduplication Strategy:
-    // 1. Create a Set of timestamps from the "High Quality" (listening_history) source.
-    // 2. Filter extended history to exclude anything with a matching timestamp.
-    // 3. Apply "30-second rule" for Play Counts (but keep duration for Time).
-    
-    // Note: Timestamps might differ by ms, so we could round to seconds, but let's try strict first.
-    // If JSON import used original ISO strings, they should match exactly.
-    const activeTimestamps = new Set(artistsData?.map((x: any) => new Date(x.played_at).getTime()) || []);
-    
-    const uniqueExtended = extendedArtists.filter((x: any) => {
-        const ts = new Date(x.played_at).getTime();
-        return !activeTimestamps.has(ts);
-    });
-
-    const combinedArtists = [...(artistsData || []), ...uniqueExtended];
+    const combinedArtists = [...(artistsData || [])];
     
     const artistCounts: Record<string, { count: number, time: number }> = {};
     const artistImages: Record<string, string> = {}; // Helper to find an image
@@ -539,6 +544,10 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         ...item,
         cover: item.album_cover 
     })) || [];
+
+    const elapsed = Math.round(performance.now() - functionStart);
+    console.log(`[dbService] ✅ ${timeRange} stats computed in ${elapsed}ms`);
+    console.log(`   → ${topArtists.length} artists, ${topSongs.length} songs, ${topAlbums.length} albums`);
 
     return {
         artists: topArtists,
