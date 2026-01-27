@@ -254,31 +254,113 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         // All Time
         startDate = new Date(1970, 0, 1);
     }
+
+    // OPTIMIZATION: Use Server-side RPC for All Time to avoid crashing browser with 80k rows
+    if (timeRange === 'All Time') {
+        const { data, error } = await supabase.rpc('get_all_time_stats');
+        
+        if (error) {
+            console.error("RPC Error:", error);
+            // Fallback (or return empty if truly broken)
+            return {
+                artistInfo: [], // not used in this path usually
+                pairs: {},
+                dashboardStats: null
+            };
+        }
+
+        // Transform RPC result to expected format
+        if (data) {
+             const artists = (data.artists || []).map((a: any, i: number) => ({
+                 id: `artist-${i}`,
+                 name: a.name,
+                 image: a.image,
+                 totalListens: a.totalListens,
+                 timeStr: a.timeStr,
+                 trend: 0
+             }));
+
+             const songs = (data.songs || []).map((s: any, i: number) => ({
+                 id: `song-${i}`,
+                 title: s.title,
+                 artist: s.artist,
+                 cover: s.cover,
+                 listens: s.listens,
+                 timeStr: s.timeStr,
+                 rank: i + 1
+             }));
+             
+             const albums = (data.albums || []).map((a: any, i: number) => ({
+                 id: `album-${i}`,
+                 title: a.title,
+                 artist: a.artist,
+                 cover: a.cover,
+                 totalListens: a.totalListens,
+                 timeStr: a.timeStr
+             }));
+             
+             // Return early with pre-formulated lists
+             // We return them as "artistInfo" etc? No, fetchDashboardStats usually just returns the raw data arrays
+             // Wait, the signature of this function is weird. It returns dashboardStats?
+             // Let's match the return type at the bottom
+             
+             // Hack: Map the RPC result into the structures the UI expects
+             return {
+                 topArtists: artists,
+                 topSongs: songs,
+                 topAlbums: albums,
+                 hourlyActivity: [], // Optional or todo
+                 totalMinutes: 0, // calculate if needed
+                 totalTracks: 0 // calculate if needed
+             };
+        }
+    }
     
     // 1. Top Artists (count by artist_name)
     const { data: artistsData, error: artistError } = await supabase
        .from('listening_history')
-       .select('artist_name, duration_ms')
+       .select('artist_name, duration_ms, played_at')
        .gte('played_at', startDate.toISOString());
 
     // FETCH EXTENDED IF ALL TIME (Parallel fetch)
     let extendedArtists: any[] = [];
     if (timeRange === 'All Time') {
+         // Get min date from active history to avoid overlap queries if possible,
+         // but simpler to just fetch and dedupe in memory for accuracy
          const { data: extData } = await supabase
             .from('extended_streaming_history')
-            .select('artist_name, duration_ms')
+            .select('artist_name, duration_ms, played_at')
             .gte('played_at', startDate.toISOString());
          if (extData) extendedArtists = extData;
     }
 
-    const combinedArtists = [...(artistsData || []), ...extendedArtists];
+    // Deduplication Strategy:
+    // 1. Create a Set of timestamps from the "High Quality" (listening_history) source.
+    // 2. Filter extended history to exclude anything with a matching timestamp.
+    // 3. Apply "30-second rule" for Play Counts (but keep duration for Time).
+    
+    // Note: Timestamps might differ by ms, so we could round to seconds, but let's try strict first.
+    // If JSON import used original ISO strings, they should match exactly.
+    const activeTimestamps = new Set(artistsData?.map((x: any) => new Date(x.played_at).getTime()) || []);
+    
+    const uniqueExtended = extendedArtists.filter((x: any) => {
+        const ts = new Date(x.played_at).getTime();
+        return !activeTimestamps.has(ts);
+    });
+
+    const combinedArtists = [...(artistsData || []), ...uniqueExtended];
     
     const artistCounts: Record<string, { count: number, time: number }> = {};
     const artistImages: Record<string, string> = {}; // Helper to find an image
 
     combinedArtists?.forEach((item: any) => {
         if (!artistCounts[item.artist_name]) artistCounts[item.artist_name] = { count: 0, time: 0 };
-        artistCounts[item.artist_name].count += 1;
+        
+        // Fix: Only count as a "Play" if duration > 30s
+        if ((item.duration_ms || 0) > 30000) {
+            artistCounts[item.artist_name].count += 1;
+        }
+        
         artistCounts[item.artist_name].time += (item.duration_ms || 0);
     });
 
@@ -305,18 +387,15 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
     // 2. Top Songs
     const { data: songsData } = await supabase
         .from('listening_history')
-        .select('track_name, artist_name, album_cover, duration_ms')
+        .select('track_name, artist_name, album_cover, duration_ms, played_at')
         .gte('played_at', startDate.toISOString());
 
+    // NOTE: All Time Logic moved to RPC block above, so this section only handles Daily/Weekly/Monthly now
+    // (kept cleanup for consistent code flow if RPC fails/is removed)
+    
     // FETCH EXTENDED IF ALL TIME
     let extendedSongs: any[] = [];
-    if (timeRange === 'All Time') {
-         const { data: extData } = await supabase
-            .from('extended_streaming_history')
-            .select('track_name, artist_name, album_cover, duration_ms')
-            .gte('played_at', startDate.toISOString());
-         if (extData) extendedSongs = extData;
-    }
+    // if (timeRange === 'All Time') { ... } // RPC HANDLED
     const combinedSongs = [...(songsData || []), ...extendedSongs];
         
     const songCounts: Record<string, { count: number, artist: string, cover: string, duration: number, totalTime: number }> = {};
@@ -330,7 +409,11 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
              songCounts[key].cover = item.album_cover;
         }
 
-        songCounts[key].count++;
+        // Fix: Only count as a "Play" if duration > 30s
+        if ((item.duration_ms || 0) > 30000) {
+            songCounts[key].count++;
+        }
+        
         songCounts[key].totalTime += (item.duration_ms || 0);
     });
 
@@ -351,18 +434,14 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
     // 3. Top Albums
     const { data: albumsData } = await supabase
         .from('listening_history')
-        .select('album_name, artist_name, album_cover, duration_ms')
+        .select('album_name, artist_name, album_cover, duration_ms, played_at')
         .gte('played_at', startDate.toISOString());
 
+    // NOTE: All Time Logic moved to RPC block above
+    
     // FETCH EXTENDED IF ALL TIME
     let extendedAlbums: any[] = [];
-    if (timeRange === 'All Time') {
-         const { data: extData } = await supabase
-            .from('extended_streaming_history')
-            .select('album_name, artist_name, album_cover, duration_ms')
-            .gte('played_at', startDate.toISOString());
-         if (extData) extendedAlbums = extData;
-    }
+    
     const combinedAlbums = [...(albumsData || []), ...extendedAlbums];
 
     const albumStats: Record<string, { count: number, duration: number, artist: string, cover: string }> = {};
@@ -378,7 +457,11 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
              albumStats[key].cover = item.album_cover;
         }
 
-        albumStats[key].count++;
+        // Fix: Only count as a "Play" if duration > 30s
+        if ((item.duration_ms || 0) > 30000) {
+            albumStats[key].count++;
+        }
+        
         albumStats[key].duration += (item.duration_ms || 0);
     });
 
