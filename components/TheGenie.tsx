@@ -82,28 +82,31 @@ export const TheGenie: React.FC<TheGenieProps> = ({ recentPlays }) => {
                 const sub = type === 'artist' ? 'Artist' : item.artist!;
                 const img = getImage(type === 'artist' ? name : sub);
 
+                // Matching RankedAlbum style from App.tsx/TopCharts
                 return (
-                    <div key={idx} className="flex-shrink-0 relative flex items-center snap-start group cursor-default w-[200px] md:w-[240px]">
-                        <span className="text-[120px] leading-none font-black text-outline absolute -left-4 -bottom-4 z-0 select-none pointer-events-none scale-y-90 italic opacity-20 text-purple-500/20">
+                    <div key={idx} className="flex-shrink-0 relative flex items-center snap-start group cursor-default w-[180px] md:w-[220px]">
+                        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-white/5">
                             {item.rank}
                         </span>
-                        <div className="relative z-10 ml-8 md:ml-10">
-                            <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-2xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-purple-500/50 transition-all duration-300 group-hover:-translate-y-2 relative">
-                                <img src={img} alt={name} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
-                                <div className="absolute bottom-2 left-2 right-2">
-                                     <div className="text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded inline-block mb-1 shadow-sm">Genie Pick</div>
+                        <div className="relative z-10 ml-10 md:ml-12">
+                            <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
+                                <img 
+                                    src={img} 
+                                    alt={name} 
+                                    className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" 
+                                />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
+                                    <span className="text-white text-[10px] font-bold uppercase tracking-wider text-center px-2">
+                                        {item.reason}
+                                    </span>
                                 </div>
                             </div>
-                            <div className="mt-3 relative z-20 w-32 md:w-40">
-                                <h3 className="text-[15px] font-bold text-white truncate leading-tight group-hover:text-purple-400 transition-colors">
+                            <div className="mt-3 relative z-20">
+                                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-white transition-colors">
                                     {name}
                                 </h3>
-                                <p className="text-[13px] text-white/60 truncate mt-0.5 font-medium">
+                                <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">
                                     {sub}
-                                </p>
-                                <p className="text-[10px] text-[#8E8E93] mt-2 italic leading-tight line-clamp-2 border-l-2 border-purple-500/30 pl-2">
-                                    "{item.reason}"
                                 </p>
                             </div>
                         </div>
@@ -115,32 +118,30 @@ export const TheGenie: React.FC<TheGenieProps> = ({ recentPlays }) => {
     };
 
     return (
-        <div className="mb-12">
-            <div className="flex justify-between items-center mb-2 px-1">
-                <div className="flex items-center gap-3">
+        <div className="mb-20">
+            <div className="flex justify-between items-center mb-6 px-1">
+                <div>
                     <h3 className="text-[20px] font-bold text-white tracking-tight flex items-center gap-2">
-                        <Sparkles className="text-purple-400" /> The Genie
+                         Conquerors of the Week
                     </h3>
+                    <p className="text-[#8E8E93] text-xs mt-1 flex items-center gap-1">
+                        <Sparkles size={10} className="text-purple-400" /> with AI Intelligence
+                    </p>
                 </div>
             </div>
-            <p className="text-[#8E8E93] text-sm mb-6 pl-1">
-                AI-Predicted "Conquerors of the Week" powered by deep learning
-            </p>
 
             {/* ARTISTS SECTION */}
-             <div className="mb-8">
-                <div className="flex items-center gap-2 pl-6 mb-2">
-                    <Mic2 size={14} className="text-purple-400"/>
-                    <span className="text-xs font-bold text-white/80 uppercase tracking-wider">Artists to Watch</span>
+             <div className="mb-10">
+                <div className="flex items-center gap-3 pl-1 mb-4">
+                    <h4 className="text-lg font-bold text-white">Artists</h4>
                 </div>
                 {renderList(prediction.artists, 'artist')}
             </div>
 
             {/* SONGS SECTION */}
             <div>
-                <div className="flex items-center gap-2 pl-6 mb-2">
-                    <Disc size={14} className="text-blue-400"/>
-                    <span className="text-xs font-bold text-white/80 uppercase tracking-wider">Songs to Conquer</span>
+                 <div className="flex items-center gap-3 pl-1 mb-4">
+                    <h4 className="text-lg font-bold text-white">Songs</h4>
                 </div>
                 {renderList(prediction.songs, 'song')}
             </div>

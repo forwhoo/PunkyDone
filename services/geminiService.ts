@@ -126,26 +126,26 @@ export const generateWeeklyPrediction = async (recentPlays: any[]): Promise<any>
     `;
 
     const prompt = `
-      You are "The Genie", a mystical advanced music AI. 
-      Analyze the user's history and predict the FUTURE.
+      You are "The Genie", an advanced music AI judge. 
       
-      Generate two rankings for the "Week Ahead":
-      1. "Artists to Watch" (Top 3 artists they should focus on)
-      2. "Songs to Conquer" (Top 3 songs that will define their week)
+      OBJECTIVE: Select the "Conquerors of the Week" from the user's history.
       
-      Use your "Deep Intelligence" to connect their recent habits to these predictions.
+      ALGORITHM CRITERIA FOR APPROVAL:
+      1. Must be high-quality matches for the user's taste.
+      2. Must be a mix of heavy hitters and redisicovered gems.
+      3. Total of 8 Artists and 8 Songs required.
+      
+      Review the provided context and select the top 8 "worthy" candidates for each category.
       
       Output ONLY valid JSON format:
       {
         "artists": [
-           { "rank": 1, "name": "Name", "reason": "Mystical reason why" },
-           { "rank": 2, "name": "Name", "reason": "Reason" },
-           { "rank": 3, "name": "Name", "reason": "Reason" }
+           { "rank": 1, "name": "Name", "reason": "Short reason (max 10 words)" },
+           ... (8 items)
         ],
         "songs": [
-           { "rank": 1, "title": "Title", "artist": "Artist", "reason": "Mystical reason" },
-           { "rank": 2, "title": "Title", "artist": "Artist", "reason": "Reason" },
-           { "rank": 3, "title": "Title", "artist": "Artist", "reason": "Reason" }
+           { "rank": 1, "title": "Title", "artist": "Artist", "reason": "Short reason (max 10 words)" },
+           ... (8 items)
         ]
       }
       
@@ -156,7 +156,8 @@ export const generateWeeklyPrediction = async (recentPlays: any[]): Promise<any>
     const response = await client.chat.completions.create({
         model: "llama3-70b-8192",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
+        temperature: 0.6,
+        max_tokens: 1500,
         response_format: { type: "json_object" }
     });
 
@@ -165,19 +166,8 @@ export const generateWeeklyPrediction = async (recentPlays: any[]): Promise<any>
     return JSON.parse(content);
   } catch (err) {
       console.error("Genie Error:", err);
-      // Fallback mock
-      return {
-          artists: [
-              { rank: 1, name: "The Weeknd", reason: "The stars align for late night vibes." },
-              { rank: 2, name: "Daft Punk", reason: "Electronic nostalgia is in your future." },
-              { rank: 3, name: "SZA", reason: "Emotional clarity comes with her voice." }
-          ],
-          songs: [
-            { rank: 1, title: "Starboy", artist: "The Weeknd", reason: "Energy boost needed for Tuesday." },
-            { rank: 2, title: "Get Lucky", artist: "Daft Punk", reason: "Luck is on your side." },
-            { rank: 3, title: "Kill Bill", artist: "SZA", reason: "Release your inner tension." }
-          ]
-      };
+      // Fallback mock (return 8 empty placeholders or mock data to avoid UI break)
+      return null;
   }
 };
 
