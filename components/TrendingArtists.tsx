@@ -27,6 +27,89 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
     const [trendingItems, setTrendingItems] = useState<TrendingItem[]>([]);
     const [selectedItem, setSelectedItem] = useState<TrendingItem | null>(null);
 
+    // Stats Calculation Helper
+    const calculateArtistStats = (artistName: string) => {
+        const artistPlays = recentPlays.filter(p => p.artist_name === artistName);
+        if (!artistPlays.length) return null;
+
+        // 1. Streak Calculation
+        const playDates = Array.from(new Set(artistPlays.map(p => new Date(p.played_at).setHours(0,0,0,0)))).sort((a,b) => a - b);
+        let currentStreak = 0;
+        let maxStreak = 0;
+        let prevDate = null;
+
+        // Calculate "Current Active Streak" (ending today or yesterday)
+        let activeStreak = 0;
+        const now = new Date().setHours(0,0,0,0);
+        const yesterday = now - 86400000;
+        
+        // Reverse iterate for active streak
+        for (let i = playDates.length - 1; i >= 0; i--) {
+            if (i === playDates.length - 1) {
+                // Must be today or yesterday to start counting "active" streak
+                if (playDates[i] === now || playDates[i] === yesterday) {
+                    activeStreak = 1;
+                } else {
+                    break;
+                }
+            } else {
+                const dayDiff = (playDates[i+1] - playDates[i]) / 86400000;
+                if (dayDiff === 1) activeStreak++;
+                else break;
+            }
+        }
+
+        // 2. Favorite Song
+        const songCounts: Record<string, number> = {};
+        artistPlays.forEach(p => songCounts[p.track_name] = (songCounts[p.track_name] || 0) + 1);
+        const topSongEntry = Object.entries(songCounts).sort((a,b) => b[1] - a[1])[0];
+        
+        // 3. Peak Listening Time (Hour)
+        const hourCounts = new Array(24).fill(0);
+        artistPlays.forEach(p => {
+            const h = new Date(p.played_at).getHours();
+            hourCounts[h]++;
+        });
+        const peakHour = hourCounts.indexOf(Math.max(...hourCounts));
+        const formatTime = (h: number) => {
+            if (h === 0) return 'Midnight';
+            if (h === 12) return 'Noon';
+            return h > 12 ? `${h-12} PM` : `${h} AM`;
+        };
+
+        // 4. Total Listening Time (Estimated)
+        const totalDurationMs = artistPlays.reduce((acc, curr) => acc + (curr.duration_ms || 180000), 0);
+        const hours = Math.floor(totalDurationMs / (1000 * 60 * 60));
+        const minutes = Math.floor((totalDurationMs % (1000 * 60 * 60)) / (1000 * 60));
+
+        return {
+            streak: activeStreak,
+            topSong: topSongEntry ? topSongEntry[0] : 'Unknown',
+            peakTime: formatTime(peakHour),
+            totalTime: `${hours}h ${minutes}m`,
+            firstPlay: new Date(Math.min(...artistPlays.map(p => new Date(p.played_at).getTime()))).toLocaleDateString()
+        };
+    };
+
+    const handleItemClick = (item: TrendingItem) => {
+        if (item.type === 'artist') {
+            const stats = calculateArtistStats(item.name);
+            setSelectedItem({ ...item, stats }); // Attach stats to item
+        } else {
+            setSelectedItem(item);
+        }
+    };
+
+    // Scroll Lock Effect
+    useEffect(() => {
+        if (selectedItem) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [selectedItem]);
+
     // Calculate Trending Data based on Active Tab
     const calculateTrending = () => {
         if (!recentPlays || recentPlays.length === 0) return;
@@ -201,7 +284,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                             className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 cursor-pointer group transition-all duration-300 ${selectedItem && selectedItem.id !== centerItem.id ? 'opacity-30 blur-sm scale-90' : 'opacity-100'}`}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedItem(selectedItem?.id === centerItem.id ? null : centerItem);
+                                handleItemClick(centerItem);
                             }}
                         >
                             <div className="relative w-28 h-28 md:w-36 md:h-36">
@@ -245,7 +328,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                                 size={60} 
                                                 isActive={selectedItem?.id === item.id}
                                                 isDimmed={selectedItem !== null && selectedItem.id !== item.id}
-                                                onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)} 
+                                                onClick={() => handleItemClick(item)} 
                                             />
                                         </div>
                                     </div>
@@ -280,7 +363,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                                 size={40} 
                                                 isActive={selectedItem?.id === item.id}
                                                 isDimmed={selectedItem !== null && selectedItem.id !== item.id}
-                                                onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)} 
+                                                onClick={() => handleItemClick(item)} 
                                             />
                                         </div>
                                     </div>
@@ -301,56 +384,85 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                 initial={{ opacity: 0, scale: 0.9, x: 20 }} 
                                 animate={{ opacity: 1, scale: 1, x: 0 }} 
                                 exit={{ opacity: 0, scale: 0.9, x: 20 }}
-                                className="absolute top-[10%] -right-[60%] w-[280px] z-50 hidden lg:block"
+                                className="absolute top-[0%] -right-[80%] w-[320px] z-50 hidden lg:block"
                             >
-                                <div className="bg-[#1C1C1E]/90 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
-                                    {/* Small 'Orbit-style' Modal Header */}
-                                    <div className="relative h-32">
-                                        <img src={selectedItem.image} className="w-full h-full object-cover opacity-50" />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1E] to-transparent"></div>
+                                <div className="bg-[#1C1C1E]/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
+                                    {/* CD Header */}
+                                    <div className="relative h-40 bg-gradient-to-b from-blue-900/20 to-[#1C1C1E] flex flex-col items-center justify-center pt-4">
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); setSelectedItem(null); }}
-                                            className="absolute top-2 right-2 bg-black/40 hover:bg-black/80 rounded-full p-1.5 text-white z-20 transition-colors"
+                                            className="absolute top-3 right-3 bg-black/40 hover:bg-black/80 rounded-full p-1.5 text-white z-20 transition-colors"
                                         >
-                                            <X size={14} />
+                                            <X size={16} />
                                         </button>
-                                        <div className="absolute bottom-3 left-4 right-4">
-                                            <h3 className="text-lg font-bold text-white leading-tight truncate">{selectedItem.name}</h3>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-[10px] font-bold text-[#FA2D48] bg-[#FA2D48]/10 px-2 py-0.5 rounded-full border border-[#FA2D48]/20">
-                                                    #{trendingItems.findIndex(x => x.id === selectedItem.id) + 1} Trending
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Stats & Fun Facts */}
-                                    <div className="p-4 pt-2">
-                                        <div className="grid grid-cols-2 gap-2 mb-4">
-                                            <div className="bg-white/5 rounded-lg p-2 text-center border border-white/5">
-                                                <div className="text-[10px] text-[#8E8E93] uppercase tracking-wider">Score</div>
-                                                <div className="text-xl font-black text-white">{selectedItem.trendScore}</div>
-                                            </div>
-                                            <div className="bg-white/5 rounded-lg p-2 text-center border border-white/5">
-                                                <div className="text-[10px] text-[#8E8E93] uppercase tracking-wider">Plays</div>
-                                                <div className="text-xl font-black text-white">{selectedItem.recentPlays}</div>
+                                        
+                                        <div className="relative w-24 h-24 group">
+                                            {/* CD Effect */}
+                                            <div className="absolute inset-0 rounded-full bg-black/20 animate-spin-slow" style={{ animationDuration: '6s' }}></div>
+                                            <img 
+                                                src={selectedItem.image} 
+                                                alt={selectedItem.name} 
+                                                className="w-full h-full object-cover rounded-full border-[4px] border-[#1C1C1E] shadow-xl relative z-10"
+                                            />
+                                            {/* Center Hole */}
+                                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-[#1C1C1E] rounded-full z-30 flex items-center justify-center border border-white/5">
+                                                <div className="w-2 h-2 bg-black/80 rounded-full"></div>
                                             </div>
                                         </div>
                                         
-                                        <p className="text-[11px] text-[#8E8E93] uppercase font-bold mb-2 pl-1">Top Tracks</p>
-                                        <div className="space-y-1 max-h-[160px] overflow-y-auto custom-scrollbar">
-                                            {selectedItem.tracks?.slice(0, 5).map((track: any, i: number) => (
-                                                <div key={i} className="flex items-center gap-2 p-1.5 hover:bg-white/5 rounded-lg transition-colors group/track cursor-default">
-                                                     <div className="w-6 h-6 rounded bg-[#2C2C2E] overflow-hidden flex-shrink-0">
-                                                         <img src={track.album_cover || track.cover} className="w-full h-full object-cover" />
-                                                     </div>
-                                                     <div className="min-w-0 flex-1">
-                                                         <div className="text-[11px] font-semibold text-white truncate group-hover/track:text-[#FA2D48]">{track.track_name}</div>
-                                                         <div className="text-[9px] text-[#8E8E93] truncate">{track.played_at ? new Date(track.played_at).toLocaleDateString() : ''}</div>
-                                                     </div>
+                                        <h3 className="text-lg font-bold text-white leading-tight truncate mt-3 w-4/5 text-center">{selectedItem.name}</h3>
+                                        <div className="text-[10px] text-white/50 uppercase tracking-widest mt-0.5">Stats Profile</div>
+                                    </div>
+
+                                    {/* Stats Grid */}
+                                    <div className="p-4 pt-0 space-y-3">
+                                        {/* @ts-ignore */}
+                                        {selectedItem.stats ? (
+                                            <>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div className="bg-white/5 rounded-lg p-3 border border-white/5">
+                                                        <div className="flex items-center gap-1.5 text-orange-400 mb-1">
+                                                            <TrendingUp size={12} />
+                                                            <span className="text-[9px] font-bold uppercase">Streak</span>
+                                                        </div>
+                                                        {/* @ts-ignore */}
+                                                        <div className="text-xl font-black text-white leading-none">{selectedItem.stats.streak} <span className="text-[9px] font-medium text-white/40">DAYS</span></div>
+                                                    </div>
+                                                    <div className="bg-white/5 rounded-lg p-3 border border-white/5">
+                                                        <div className="flex items-center gap-1.5 text-blue-400 mb-1">
+                                                            <Clock size={12} />
+                                                            <span className="text-[9px] font-bold uppercase">Peak</span>
+                                                        </div>
+                                                        {/* @ts-ignore */}
+                                                        <div className="text-xl font-black text-white leading-none">{selectedItem.stats.peakTime}</div>
+                                                    </div>
                                                 </div>
-                                            ))}
-                                        </div>
+
+                                                <div className="bg-white/5 rounded-lg p-3 border border-white/5">
+                                                    <div className="flex items-center gap-1.5 text-purple-400 mb-1">
+                                                        <Music size={12} />
+                                                        <span className="text-[9px] font-bold uppercase">On Repeat</span>
+                                                    </div>
+                                                    {/* @ts-ignore */}
+                                                    <div className="text-sm font-bold text-white truncate">{selectedItem.stats.topSong}</div>
+                                                </div>
+
+                                                <div className="bg-white/5 rounded-lg p-3 border border-white/5 flex justify-between items-center">
+                                                    <div>
+                                                        <div className="text-[9px] text-white/40 uppercase mb-0.5">Total Time</div>
+                                                        {/* @ts-ignore */}
+                                                        <div className="text-sm font-bold text-white">{selectedItem.stats.totalTime}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-[9px] text-white/40 uppercase mb-0.5" align="right">First Play</div>
+                                                        {/* @ts-ignore */}
+                                                        <div className="text-sm font-bold text-white">{selectedItem.stats.firstPlay}</div>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="text-center py-4 text-white/40 text-xs">Generating stats...</div>
+                                        )}
                                     </div>
                                 </div>
                             </motion.div>

@@ -8,6 +8,7 @@ import { RankingWidget } from './components/RankingWidget';
 import { AISpotlight } from './components/AISpotlight';
 import { TrendingArtists } from './components/TrendingArtists';
 import { UpcomingArtists } from './components/UpcomingArtists';
+import { TheGenie } from './components/TheGenie';
 import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 
@@ -681,6 +682,9 @@ function App() {
                         <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank songs yet.</p>
                     )}
                 </div>
+
+                {/* THE GENIE PREDICTOR */}
+                <TheGenie recentPlays={safeRecent} />
 
                 {/* UPCOMING ARTISTS */}
                 <UpcomingArtists 

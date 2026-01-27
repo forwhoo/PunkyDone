@@ -90,6 +90,59 @@ export const logSinglePlay = async (track: any, listenedMs: number, extraData: a
     }
 };
 
+// PREDICTOR (THE GENIE) SERVICE
+export const getDailyPrediction = async () => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        // Try to fetch from Supabase
+        const { data, error } = await supabase
+            .from('predictor')
+            .select('*')
+            .eq('date', today)
+            .maybeSingle(); // Use maybeSingle to avoid 406 on no rows
+
+        if (error) throw error;
+        if (data) return data;
+
+        // Fallback to localStorage if Supabase fails or empty (for dev resilience)
+        const local = localStorage.getItem('muse_daily_prediction');
+        if (local) {
+            const parsed = JSON.parse(local);
+            if (parsed.date === today) return parsed;
+        }
+        return null;
+    } catch (err) {
+        console.warn("Predictor Table fetch error (likely table doesn't exist yet):", err);
+        // Fallback to localStorage
+        const today = new Date().toISOString().split('T')[0];
+        const local = localStorage.getItem('muse_daily_prediction');
+        if (local) {
+            const parsed = JSON.parse(local);
+            if (parsed.date === today) return parsed;
+        }
+        return null;
+    }
+};
+
+export const saveDailyPrediction = async (prediction: any) => {
+    const today = new Date().toISOString().split('T')[0];
+    const payload = { date: today, content: prediction }; // standardized struct
+
+    // 1. Save to LocalStorage (Always works)
+    localStorage.setItem('muse_daily_prediction', JSON.stringify(payload));
+
+    // 2. Try to Save to Supabase
+    try {
+        const { error } = await supabase
+            .from('predictor')
+            .upsert(payload, { onConflict: 'date' });
+        
+        if (error) console.warn("Predictor Table save error:", error.message);
+    } catch (err) {
+        // Ignore DB errors if table missing
+    }
+};
+
 let lastSyncedTime: string | null = null;
 
 export const syncRecentPlays = async (recentItems: any[]) => {

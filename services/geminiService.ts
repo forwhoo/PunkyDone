@@ -110,6 +110,64 @@ USER QUESTION: "${question}"
   }
 };
 
+export const generateWeeklyPrediction = async (recentPlays: any[]): Promise<any> => {
+  try {
+    const client = getAiClient();
+    if (!client) return null;
+
+    const artists = Array.from(new Set(recentPlays.map(p => p.artist_name)));
+    const songs = recentPlays.slice(0, 30).map(p => p.track_name);
+    
+    // Simple heuristic context
+    const context = `
+      Recent User History:
+      - Top Artists Recently: ${artists.slice(0, 10).join(', ')}
+      - Top Songs Recently: ${songs.slice(0, 10).join(', ')}
+    `;
+
+    const prompt = `
+      You are "The Genie", a mystical music predictor. 
+      Analyze the user's recent listening history and predict ONE artist and ONE song that will "Conquer Their Week".
+      
+      Output ONLY valid JSON format like this:
+      {
+        "artist": {
+           "name": "Artist Name",
+           "reason": "Short mystical reason why (1 sentence)"
+        },
+        "song": {
+           "title": "Song Title",
+           "artist": "Song Artist",
+           "reason": "Short mystical reason why (1 sentence)"
+        }
+      }
+      
+      Do not include markdown formatting. Just the JSON string.
+      
+      Context:
+      ${context}
+    `;
+
+    const response = await client.chat.completions.create({
+        model: "llama3-70b-8192",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        response_format: { type: "json_object" }
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) return null;
+    return JSON.parse(content);
+  } catch (err) {
+      console.error("Genie Error:", err);
+      // Fallback mock
+      return {
+          artist: { name: "The Weeknd", reason: "His energy matches your late night vibes perfectly this week." },
+          song: { title: "Starboy", artist: "The Weeknd", reason: "It's time for a resurgence of this classic in your rotation." }
+      };
+  }
+};
+
 export const generateMusicInsight = async (query: string, stats: any): Promise<string> => {
     try {
         const client = getAiClient();
