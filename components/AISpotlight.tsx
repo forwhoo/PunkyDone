@@ -3,7 +3,7 @@ import { Card } from './UIComponents';
 // import { ActivityHeatmap } from './ActivityHeatmap';
 import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2 } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory } from '../services/geminiService';
-import { fetchSmartPlaylist, uploadExtendedHistory, SpotifyHistoryItem } from '../services/dbService';
+import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -172,7 +172,23 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 });
 
                 if (result.success) {
-                    setChatResponse("✅ Upload complete! Your extended history has been imported.");
+                    // Start image backfill
+                    setChatResponse("✅ Upload complete! Fetching album covers from Spotify...");
+                    
+                    if (token) {
+                        const backfillResult = await backfillExtendedHistoryImages(token, (status) => {
+                            setChatResponse(`✅ Upload complete! ${status}`);
+                        });
+                        
+                        if (backfillResult.success) {
+                            setChatResponse(`✅ All done! ${backfillResult.message}`);
+                        } else {
+                            setChatResponse(`✅ Upload complete, but image fetch had issues: ${backfillResult.message}`);
+                        }
+                    } else {
+                        setChatResponse("✅ Upload complete! (Could not fetch images - no Spotify token)");
+                    }
+                    
                     setUserPrompt("");
                 } else {
                     setErrorMsg("Upload failed: " + result.message);
@@ -253,6 +269,32 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         if (promptToUse.trim().toLowerCase() === '@json') {
             fileInputRef.current?.click();
             setUserPrompt("");
+            return;
+        }
+
+        if (promptToUse.trim().toLowerCase() === '@backfill') {
+            setUserPrompt("");
+            setLoading(true);
+            setChatResponse("Fetching images from Spotify for extended history...");
+            
+            if (!token) {
+                setErrorMsg("No Spotify token found. Please refresh the page and log in.");
+                setLoading(false);
+                return;
+            }
+            
+            const result = await backfillExtendedHistoryImages(token, (status) => {
+                setChatResponse(status);
+            });
+            
+            if (result.success) {
+                setChatResponse(`✅ ${result.message}`);
+            } else {
+                setErrorMsg(result.message);
+                setChatResponse(null);
+            }
+            
+            setLoading(false);
             return;
         }
         

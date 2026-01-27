@@ -234,8 +234,8 @@ function App() {
   useEffect(() => {
       const syncAndFetchStats = async () => {
         if (data && data.recentRaw) {
-             // Use syncRecentPlays as the source of truth
-             await syncRecentPlays(data.recentRaw); 
+             // Use syncRecentPlays as the source of truth, pass token for image backfill
+             await syncRecentPlays(data.recentRaw, token); 
              
              // Refresh stats after every sync to ensure live updates
              refreshDbStats();

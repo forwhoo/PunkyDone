@@ -92,7 +92,7 @@ export const logSinglePlay = async (track: any, listenedMs: number, extraData: a
 
 let lastSyncedTime: string | null = null;
 
-export const syncRecentPlays = async (recentItems: any[]) => {
+export const syncRecentPlays = async (recentItems: any[], token?: string) => {
   if (!recentItems || recentItems.length === 0) return;
 
   // If we haven't synced yet this session, look up the latest song in DB
@@ -141,6 +141,36 @@ export const syncRecentPlays = async (recentItems: any[]) => {
     , newItems[0]);
     
     lastSyncedTime = latest.played_at;
+    
+    // Backfill missing artist images if token is available
+    if (token) {
+        // Get unique artists that need images
+        const artistsNeedingImages = [...new Set(
+            historyItems
+                .filter(item => !item.album_cover || item.album_cover === '')
+                .map(item => item.artist_name)
+        )];
+        
+        if (artistsNeedingImages.length > 0) {
+            console.log(`[syncRecentPlays] Fetching images for ${artistsNeedingImages.length} artists`);
+            try {
+                const { fetchArtistImages } = await import('./spotifyService');
+                const artistImages = await fetchArtistImages(token, artistsNeedingImages);
+                
+                // Update records with artist images
+                for (const [artistName, imageUrl] of Object.entries(artistImages)) {
+                    await supabase
+                        .from('listening_history')
+                        .update({ album_cover: imageUrl })
+                        .eq('artist_name', artistName)
+                        .or('album_cover.is.null,album_cover.eq.');
+                }
+            } catch (err) {
+                console.error('[syncRecentPlays] Failed to fetch artist images:', err);
+            }
+        }
+    }
+    
     // console.log(`Synced ${historyItems.length} NEW items to Supabase`);
   }
 };
@@ -877,7 +907,7 @@ export const uploadExtendedHistory = async (
         album_name: item.master_metadata_album_album_name || 'Unknown Album',
         spotify_id: item.spotify_track_uri || item.spotify_episode_uri || 'unknown',
         duration_ms: item.ms_played,
-        album_cover: null, // No cover in JSON
+        album_cover: null, // Will be backfilled after upload
         user_timezone: 'UTC',
         
         // Optional extras
@@ -892,6 +922,8 @@ export const uploadExtendedHistory = async (
   };
 
   try {
+    console.log('[uploadExtendedHistory] Starting upload of', total, 'records');
+    
     for (let i = 0; i < total; i += CHUNK_SIZE) {
       const rawChunk = jsonData.slice(i, i + CHUNK_SIZE);
       // Map and filter out nulls (podcasts/bad data)
@@ -916,10 +948,63 @@ export const uploadExtendedHistory = async (
       onProgress(percent);
     }
 
-    return { success: true, message: 'Upload complete' };
+    console.log('[uploadExtendedHistory] Upload complete, starting image backfill...');
+    return { success: true, message: 'Upload complete - backfilling images...' };
   } catch (err: any) {
     return { success: false, message: err.message };
   }
+};
+
+// Backfill images for extended_streaming_history after upload
+export const backfillExtendedHistoryImages = async (
+  token: string,
+  onProgress: (status: string) => void
+): Promise<{ success: boolean; message: string }> => {
+    try {
+        onProgress('Fetching unique artists and albums...');
+        
+        // Get unique artists (that don't have images yet)
+        const { data: artistsNeedingImages } = await supabase
+            .from('extended_streaming_history')
+            .select('artist_name')
+            .is('album_cover', null)
+            .limit(1000);
+
+        if (!artistsNeedingImages || artistsNeedingImages.length === 0) {
+            return { success: true, message: 'No images to backfill' };
+        }
+
+        const uniqueArtists = [...new Set(artistsNeedingImages.map(x => x.artist_name))];
+        console.log(`[backfillImages] Found ${uniqueArtists.length} unique artists needing images`);
+        
+        onProgress(`Fetching images for ${uniqueArtists.length} artists from Spotify...`);
+        
+        // Import fetchArtistImages from spotifyService
+        const { fetchArtistImages } = await import('./spotifyService');
+        const artistImages = await fetchArtistImages(token, uniqueArtists);
+        
+        console.log(`[backfillImages] Received ${Object.keys(artistImages).length} artist images`);
+        onProgress('Updating database with images...');
+        
+        // Update each artist's records with their image
+        let updated = 0;
+        for (const [artistName, imageUrl] of Object.entries(artistImages)) {
+            const { error } = await supabase
+                .from('extended_streaming_history')
+                .update({ album_cover: imageUrl })
+                .eq('artist_name', artistName)
+                .is('album_cover', null);
+            
+            if (!error) updated++;
+        }
+        
+        console.log(`[backfillImages] Updated ${updated} artists with images`);
+        return { success: true, message: `Updated ${updated} artists with images` };
+        
+    } catch (err: any) {
+        console.error('[backfillImages] Error:', err);
+        return { success: false, message: err.message };
+    }
 };
 
 
