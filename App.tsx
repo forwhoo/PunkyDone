@@ -474,6 +474,37 @@ function App() {
                                                                           // Keep recentPlays logic hybrid for responsiveness, or strict DB?
                                                                           // User said "if it is daily and i did not lsisne song ... tell the user start listening"
                                                                           // So we should be strict.
+
+  const selectedArtistStats = useMemo(() => {
+      if (!selectedTopArtist) return null;
+
+      const artistName = selectedTopArtist.name;
+      const artistPlays = safeRecent.filter((play: any) => play.artist_name === artistName || play.artist === artistName);
+      const totalPlaysAllArtists = safeArtists.reduce((sum: number, artist: Artist) => sum + (artist.totalListens || 0), 0);
+      const popularityScore = totalPlaysAllArtists > 0
+          ? Math.round(((selectedTopArtist.totalListens || 0) / totalPlaysAllArtists) * 100)
+          : 0;
+
+      const dayCounts: Record<string, number> = {};
+      const uniqueDays = new Set<string>();
+      artistPlays.forEach((play: any) => {
+          if (!play.played_at) return;
+          const date = new Date(play.played_at);
+          if (Number.isNaN(date.getTime())) return;
+          uniqueDays.add(date.toISOString().slice(0, 10));
+          const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+          dayCounts[dayName] = (dayCounts[dayName] || 0) + 1;
+      });
+
+      const activeDays = uniqueDays.size;
+      const peakDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+
+      return {
+          popularityScore,
+          activeDays,
+          peakDay
+      };
+  }, [selectedTopArtist, safeArtists, safeRecent]);
   
   // Strict DB check for charts
   const showEmptyState = !loading && dbUnifiedData && !hasDbData;
@@ -768,13 +799,13 @@ function App() {
                         </div>
                         <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-5 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-colors">
                             <Calendar size={20} className="text-white mb-2" />
-                            <span className="text-sm font-bold text-white mt-1 mb-1">Heavy Rotation</span>
-                            <span className="text-[10px] uppercase tracking-widest text-[#8E8E93]">Consistency</span>
+                            <span className="text-2xl font-bold text-white mb-1">{selectedArtistStats?.peakDay || '—'}</span>
+                            <span className="text-[10px] uppercase tracking-widest text-[#8E8E93]">Peak Day</span>
                         </div>
                         <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-5 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-colors">
                             <Sparkles size={20} className="text-white mb-2" />
-                            <span className="text-sm font-bold text-white mt-1 mb-1">Top Tier</span>
-                            <span className="text-[10px] uppercase tracking-widest text-[#8E8E93]">Status</span>
+                            <span className="text-2xl font-bold text-white mb-1">{selectedArtistStats?.popularityScore || 0}%</span>
+                            <span className="text-[10px] uppercase tracking-widest text-[#8E8E93]">Popularity Score</span>
                         </div>
                     </motion.div>
 
