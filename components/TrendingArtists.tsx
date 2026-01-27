@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { TrendingUp, Sparkles, Disc, Mic2, Music, X, Clock } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -381,7 +382,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             
             {/* SIDE PANEL VIEW (Replaces Modal) */}
             <AnimatePresence>
-                {selectedItem && (
+                {selectedItem && createPortal(
                     <>
                         {/* Global Backdrop (Click to close) */}
                         <motion.div 
@@ -498,6 +499,8 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                             </div>
                         </div>
                     </motion.div>
+                    </>,
+                    document.body
                 )}
             </AnimatePresence>
         </div>
