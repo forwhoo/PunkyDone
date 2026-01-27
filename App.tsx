@@ -556,7 +556,7 @@ function App() {
                             key={range}
                             onClick={() => {
                                 setTimeRange(range);
-                                fetchDashboardStats(range).then(setDbUnifiedData);
+                                fetchDashboardStats(range).then(data => setDbUnifiedData(data));
                             }}
                             className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
                                 timeRange === range 
