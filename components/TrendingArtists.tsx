@@ -392,85 +392,101 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSelectedItem(null)}></div>
 
                         <div 
-                             className="h-full w-full bg-[#000000]/80 backdrop-blur-xl border-l border-white/10 flex flex-col relative shadow-2xl ml-auto"
+                             className="h-full w-full bg-[#1C1C1E]/95 backdrop-blur-2xl border-l border-white/10 flex flex-col relative shadow-2xl ml-auto"
                              onClick={(e) => e.stopPropagation()}
                         >
                             <button 
                                 onClick={() => setSelectedItem(null)} 
-                                className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white z-20 transition-colors"
+                                className="absolute top-4 right-4 bg-black/20 hover:bg-black/40 rounded-full p-2 text-white z-20 transition-colors backdrop-blur-md"
                             >
                                 <X size={18} />
                             </button>
 
-                            {/* Minimal Header */}
-                            <div className="relative pt-10 pb-6 px-6 flex flex-col items-center border-b border-white/5 bg-transparent">
-                                <div className="relative w-32 h-32 mb-4 group">
-                                    {/* CD Effect - Gone, just clean image */}
-                                    <div className="absolute inset-0 rounded-full bg-white/5 animate-pulse"></div>
-                                    <img 
-                                        src={selectedItem.image} 
-                                        alt={selectedItem.name} 
-                                        className="w-full h-full object-cover rounded-full shadow-2xl relative z-10"
-                                    />
+                            {/* BANNER HEADER */}
+                            <div className="relative w-full h-64 overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1E] via-transparent to-transparent z-10"></div>
+                                <img 
+                                    src={selectedItem.image} 
+                                    alt={selectedItem.name} 
+                                    className="w-full h-full object-cover"
+                                />
+                                <div className="absolute bottom-4 left-6 z-20">
+                                    <h2 className="text-3xl font-black text-white leading-none tracking-tight mb-1 drop-shadow-lg">{selectedItem.name}</h2>
+                                    {selectedItem.subName && <p className="text-white/60 text-sm font-medium tracking-wide drop-shadow-md">{selectedItem.subName}</p>}
+                                    <div className="inline-flex items-center gap-1.5 mt-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/5">
+                                        <Sparkles size={12} className="text-white" />
+                                        <span className="text-[10px] uppercase font-bold text-white tracking-wider">Obsession Score: {selectedItem.trendScore}</span>
+                                    </div>
                                 </div>
-                                <h2 className="text-xl font-bold text-white text-center leading-tight mb-1">{selectedItem.name}</h2>
-                                {selectedItem.subName && <p className="text-[#8E8E93] text-xs font-medium uppercase tracking-widest">{selectedItem.subName}</p>}
                             </div>
-
-                            <div className="p-6 overflow-y-auto no-scrollbar flex-1">
-                                {/* Fun Facts Grid - MONOCHROME */}
+                            
+                            <div className="flex-1 overflow-y-auto no-scrollbar pb-8">
+                                {/* STATS ROW (Horizontal Scroll) */}
                                 {/* @ts-ignore */}
                                 {selectedItem.stats ? (
-                                    <div className="space-y-3">
-                                        {/* @ts-ignore */}
-                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5 flex items-center gap-4">
-                                            <div className="p-2 bg-white/5 rounded-full text-white">
-                                                <TrendingUp size={16} />
-                                            </div>
-                                            <div>
-                                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#8E8E93] block mb-0.5">Current Streak</span>
+                                    <>
+                                        <div className="flex gap-3 px-6 py-6 overflow-x-auto no-scrollbar snap-x">
+                                            {/* @ts-ignore */}
+                                            <div className="flex-shrink-0 w-28 bg-white/5 p-3 rounded-xl border border-white/5 snap-start">
+                                                <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1 flex items-center gap-1">
+                                                    <TrendingUp size={10} /> Streak
+                                                </div>
                                                 {/* @ts-ignore */}
-                                                <div className="text-lg font-bold text-white">{selectedItem.stats.streak} <span className="text-sm font-normal text-white/40">Days</span></div>
+                                                <div className="text-xl font-bold text-white leading-none">{selectedItem.stats.streak}<span className="text-xs font-normal text-white/40 ml-0.5">d</span></div>
+                                            </div>
+
+                                            <div className="flex-shrink-0 w-28 bg-white/5 p-3 rounded-xl border border-white/5 snap-start">
+                                                <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1 flex items-center gap-1">
+                                                    <Clock size={10} /> Peak
+                                                </div>
+                                                {/* @ts-ignore */}
+                                                <div className="text-lg font-bold text-white leading-none truncate">{selectedItem.stats.peakTime}</div>
+                                            </div>
+
+                                            <div className="flex-shrink-0 w-28 bg-white/5 p-3 rounded-xl border border-white/5 snap-start">
+                                                <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1 flex items-center gap-1">
+                                                    <Disc size={10} /> Time
+                                                </div>
+                                                {/* @ts-ignore */}
+                                                <div className="text-lg font-bold text-white leading-none truncate">{selectedItem.stats.totalTime}</div>
                                             </div>
                                         </div>
 
-                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5 flex items-center gap-4">
-                                            <div className="p-2 bg-white/5 rounded-full text-white">
-                                                <Music size={16} />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#8E8E93] block mb-0.5">Top Track</span>
+                                        {/* TOP SONGS LIST */}
+                                        <div className="px-6">
+                                            <h3 className="text-white text-sm font-bold mb-4 sticky top-0 bg-[#1C1C1E] z-10 py-2 border-b border-white/5">Top Tracks</h3>
+                                            <div className="space-y-1">
                                                 {/* @ts-ignore */}
-                                                <div className="text-sm font-bold text-white truncate w-48">{selectedItem.stats.topSong}</div>
+                                                {selectedItem.tracks && selectedItem.tracks.length > 0 ? (
+                                                    // Group and sort tracks
+                                                    Object.values(selectedItem.tracks.reduce((acc: any, track: any) => {
+                                                        const id = track.track_name; 
+                                                        if (!acc[id]) acc[id] = { ...track, count: 0 };
+                                                        acc[id].count++;
+                                                        return acc;
+                                                    }, {}))
+                                                    // @ts-ignore
+                                                    .sort((a: any, b: any) => b.count - a.count)
+                                                    .slice(0, 10)
+                                                    .map((track: any, idx) => (
+                                                        <div key={idx} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg group transition-colors cursor-default">
+                                                            <div className="text-[#8E8E93] font-mono text-xs w-4 text-center">{idx + 1}</div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="text-sm font-medium text-white truncate">{track.track_name}</div>
+                                                                <div className="text-xs text-[#8E8E93] truncate">{track.count} plays</div>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                     <div className="text-xs text-[#8E8E93] italic py-4">Track data unavailable</div>
+                                                )}
                                             </div>
                                         </div>
-
-                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5 flex items-center gap-4">
-                                             <div className="p-2 bg-white/5 rounded-full text-white">
-                                                <Clock size={16} />
-                                            </div>
-                                            <div>
-                                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#8E8E93] block mb-0.5">Peak Time</span>
-                                                {/* @ts-ignore */}
-                                                <div className="text-lg font-bold text-white">{selectedItem.stats.peakTime}</div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5 flex items-center gap-4">
-                                             <div className="p-2 bg-white/5 rounded-full text-white">
-                                                <Disc size={16} />
-                                            </div>
-                                            <div>
-                                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#8E8E93] block mb-0.5">Dedication</span>
-                                                {/* @ts-ignore */}
-                                                <div className="text-lg font-bold text-white">{selectedItem.stats.totalTime}</div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    </>
                                 ) : (
-                                    <div className="text-center text-white/40 py-10 flex flex-col items-center gap-2">
-                                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                                        <span className="text-xs tracking-widest uppercase">Calculating...</span>
+                                    <div className="text-center text-white/40 py-20 flex flex-col items-center gap-2">
+                                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                        <span className="text-xs tracking-widest uppercase">Calculating Orbit...</span>
                                     </div>
                                 )}
                             </div>
