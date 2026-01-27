@@ -199,11 +199,13 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             let subName = '';
             
             if (activeTab === 'artist') {
-                key = play.artist_name;
+                key = play.artist_name || 'Unknown Artist';
                 image = (artistImages && artistImages[key]) ? artistImages[key] : (play.album_cover || play.cover);
             } else {
-                key = `${play.album_name}||${play.artist_name}`;
-                subName = play.artist_name;
+                const album = play.album_name || 'Unknown Album';
+                const artist = play.artist_name || 'Unknown Artist';
+                key = `${album}||${artist}`;
+                subName = artist;
                 image = play.album_cover || play.cover;
             }
 
@@ -270,8 +272,11 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
 
             const finalImage = data.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(key)}&background=random`;
             
+            // Ensure key is a string and handle potential undefined/null
+            const safeKey = String(key || 'unknown');
+            
             result.push({
-                id: `trend-${key.replace(/\s+/g, '-').toLowerCase()}-${activeTab}`,
+                id: `trend-${safeKey.replace(/\s+/g, '-').toLowerCase()}-${activeTab}`,
                 name: activeTab === 'artist' ? key : data.subName ? key.split('||')[0] : key,
                 subName: data.subName,
                 image: finalImage,
