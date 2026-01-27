@@ -3,7 +3,7 @@ import { Card } from './UIComponents';
 // import { ActivityHeatmap } from './ActivityHeatmap';
 import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2 } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory } from '../services/geminiService';
-import { fetchSmartPlaylist } from '../services/dbService';
+import { fetchSmartPlaylist, uploadExtendedHistory, SpotifyHistoryItem } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -139,6 +139,55 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const [chatResponse, setChatResponse] = useState<string | null>(null);
     const [displayedText, setDisplayedText] = useState("");
     const [userPrompt, setUserPrompt] = useState("");
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        setUploadProgress(0);
+        setErrorMsg(null);
+        setChatResponse("Reading file...");
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const text = event.target?.result as string;
+                // Basic cleanup if it's wrapped in a weird structure, but usually it's array
+                // We'll trust basic JSON.parse first
+                const json = JSON.parse(text) as SpotifyHistoryItem[];
+                
+                if (!Array.isArray(json)) {
+                    throw new Error("Invalid format: Expected an array.");
+                }
+
+                setChatResponse(`Processing ${json.length} items...`);
+                
+                const result = await uploadExtendedHistory(json, (percent) => {
+                    setUploadProgress(percent);
+                    setChatResponse(`Uploading: ${percent}%`);
+                });
+
+                if (result.success) {
+                    setChatResponse("✅ Upload complete! Your extended history has been imported.");
+                    setUserPrompt("");
+                } else {
+                    setErrorMsg("Upload failed: " + result.message);
+                    setChatResponse(null);
+                }
+            } catch (err: any) {
+                setErrorMsg("Failed to parse JSON: " + err.message);
+                setChatResponse(null);
+            } finally {
+                setUploading(false);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+            }
+        };
+        reader.readAsText(file);
+    };
     const [mode, setMode] = useState<'discover' | 'chat'>('discover');
     const [typing, setTyping] = useState(false);
     const [discoveryMode, setDiscoveryMode] = useState(false);
@@ -200,6 +249,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const handleQuery = async (manualPrompt?: string) => {
         const promptToUse = manualPrompt || userPrompt;
         if (!promptToUse.trim()) return;
+
+        if (promptToUse.trim().toLowerCase() === '@json') {
+            fileInputRef.current?.click();
+            setUserPrompt("");
+            return;
+        }
         
         // Update input if manual
         if(manualPrompt) setUserPrompt(manualPrompt);
@@ -436,6 +491,13 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                 {/* Minimal Search Input - Line Style */}
                 <div className="w-full max-w-2xl mx-auto border border-white/10 bg-white/5 rounded-2xl p-2 focus-within:border-[#FA2D48]/50 focus-within:bg-black/40 transition-all backdrop-blur-md shadow-lg">
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileUpload} 
+                        className="hidden" 
+                        accept=".json"
+                    />
                     <div className="relative flex items-center px-4">
                         <input 
                             type="text"

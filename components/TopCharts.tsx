@@ -11,8 +11,8 @@ interface TopChartsProps {
   songs?: Song[];
   albums?: Album[];
   hourlyActivity?: any[];
-  timeRange: 'Daily' | 'Weekly' | 'Monthly';
-  onTimeRangeChange: (range: 'Daily' | 'Weekly' | 'Monthly') => void;
+  timeRange: 'Daily' | 'Weekly' | 'Monthly' | 'All Time';
+  onTimeRangeChange: (range: 'Daily' | 'Weekly' | 'Monthly' | 'All Time') => void;
 }
 
 export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', artists = [], songs = [], albums = [], hourlyActivity = [], timeRange, onTimeRangeChange }) => {
@@ -23,7 +23,7 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
   React.useEffect(() => {
     if (activeTab === 'Songs') {
        // Only fetch if "Songs" because that's what the SQL supports right now
-       const period = timeRange.toLowerCase() as 'daily' | 'weekly' | 'monthly';
+       const period = timeRange.toLowerCase() as 'daily' | 'weekly' | 'monthly' | 'all time';
        fetchCharts(period).then(data => setChartData(data));
     }
   }, [timeRange, activeTab]);
@@ -44,8 +44,11 @@ export const TopCharts: React.FC<TopChartsProps> = ({ title, username = 'Your', 
       const daysToMonday = (dayOfWeek + 6) % 7;
       startDate = new Date(now.getTime() - daysToMonday * 24 * 60 * 60 * 1000);
       startDate.setHours(0, 0, 0, 0);
-    } else {
+    } else if (timeRange === 'Monthly') {
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+    } else {
+        // All Time
+        return 'All Time';
     }
     
     const formatDate = (date: Date) => {

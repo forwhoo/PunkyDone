@@ -16,7 +16,7 @@ export interface HistoryItem {
 
 // DYNAMIC CHART GENERATION (No Stored Table)
 // Calls Supabase RPC to calc Trends, Streaks on the fly
-export const fetchCharts = async (period: 'daily' | 'weekly' | 'monthly' = 'weekly'): Promise<any[]> => {
+export const fetchCharts = async (period: 'daily' | 'weekly' | 'monthly' | 'all time' = 'weekly'): Promise<any[]> => {
     try {
         console.log("Fetching charts for", period);
         
@@ -25,7 +25,7 @@ export const fetchCharts = async (period: 'daily' | 'weekly' | 'monthly' = 'week
 
         // ALWAYS USE FALLBACK (Manual Calc) UNTIL RPC IS FIXED
         const dashboardStats = await fetchDashboardStats(
-            period.charAt(0).toUpperCase() + period.slice(1) as any
+           (period === 'all time' ? 'All Time' : period.charAt(0).toUpperCase() + period.slice(1)) as any
         );
         
         // Convert dashboardStats.songs to chart format
@@ -233,7 +233,7 @@ export const fetchListeningStats = async () => {
   };
 };
 
-export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Monthly' = 'Weekly') => {
+export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Monthly' | 'All Time' = 'Weekly') => {
     // Calculate date range based on timeRange selection
     const now = new Date();
     let startDate: Date;
@@ -247,9 +247,12 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         const daysToMonday = (dayOfWeek + 6) % 7; // Days since last Monday
         startDate = new Date(now.getTime() - daysToMonday * 24 * 60 * 60 * 1000);
         startDate.setHours(0, 0, 0, 0);
-    } else {
+    } else if (timeRange === 'Monthly') {
         // Monthly - get data from first day of current month
         startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+    } else {
+        // All Time
+        startDate = new Date(1970, 0, 1);
     }
     
     // 1. Top Artists (count by artist_name)
@@ -686,5 +689,70 @@ export const fetchArtistNetwork = async (limit = 1000) => {
 
     return { artistInfo, pairs };
 };
+
+// --- Extended History Migration Types & Logic ---
+
+export interface SpotifyHistoryItem {
+  ts: string;
+  username: string;
+  platform: string;
+  ms_played: number;
+  conn_country: string;
+  ip_addr_decrypted: string;
+  user_agent_decrypted: string;
+  master_metadata_track_name: string | null;
+  master_metadata_album_artist_name: string | null;
+  master_metadata_album_album_name: string | null;
+  spotify_track_uri: string | null;
+  episode_name: string | null;
+  episode_show_name: string | null;
+  spotify_episode_uri: string | null;
+  reason_start: string;
+  reason_end: string;
+  shuffle: boolean | null;
+  skipped: boolean | null;
+  offline: boolean | null;
+  offline_timestamp: number | null;
+  incognito_mode: boolean | null;
+}
+
+export const uploadExtendedHistory = async (
+  jsonData: SpotifyHistoryItem[],
+  onProgress: (percent: number) => void
+): Promise<{ success: boolean; message: string }> => {
+  const CHUNK_SIZE = 500;
+  const total = jsonData.length;
+  let processed = 0;
+
+  try {
+    for (let i = 0; i < total; i += CHUNK_SIZE) {
+      const chunk = jsonData.slice(i, i + CHUNK_SIZE);
+      
+      const { error } = await supabase
+        .from('extended_streaming_history')
+        .insert(chunk);
+
+      if (error) {
+        console.error('Error uploading chunk:', error);
+        return { success: false, message: `Upload failed at index ${i}: ${error.message}` };
+      }
+
+      processed += chunk.length;
+      const percent = Math.min(Math.round((processed / total) * 100), 100);
+      onProgress(percent);
+    }
+
+    // Trigger migration RPC (Schema definition must exist)
+    const { error: rpcError } = await supabase.rpc('migrate_extended_history');
+    if (rpcError) {
+        console.warn("Auto-migration RPC failed/missing, but upload persisted.", rpcError);
+    }
+
+    return { success: true, message: 'Upload complete' };
+  } catch (err: any) {
+    return { success: false, message: err.message };
+  }
+};
+
 
 

@@ -162,7 +162,7 @@ function App() {
     }
   }, [dbUnifiedData, data, token]);
 
-  const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly'>('Weekly');
+  const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly' | 'All Time'>('Weekly');
   
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
@@ -554,7 +554,7 @@ function App() {
                     <p className="text-[#8E8E93] text-sm mt-1">Your most played this {timeRange.toLowerCase()}</p>
                 </div>
                 <div className="flex gap-2">
-                    {(['Daily', 'Weekly', 'Monthly'] as const).map((range) => (
+                    {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
                         <button 
                             key={range}
                             onClick={() => {
