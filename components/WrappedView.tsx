@@ -41,7 +41,7 @@ export const WrappedView: React.FC<WrappedCardProps> = ({ data, title, descripti
                     
                     {/* Header */}
                     <div className="mt-12 mb-8">
-                        <span className="text-[#FA2D48] font-bold tracking-widest text-xs uppercase mb-2 block animate-in slide-in-from-left duration-700">Punky Wrapped</span>
+                        <span className="text-white font-bold tracking-widest text-xs uppercase mb-2 block animate-in slide-in-from-left duration-700">Punky Wrapped</span>
                         <h1 className="text-4xl font-black text-white leading-tight mb-4 animate-in slide-in-from-bottom duration-700 delay-100">
                             {title}
                         </h1>
@@ -53,11 +53,11 @@ export const WrappedView: React.FC<WrappedCardProps> = ({ data, title, descripti
                     {/* Main Visual / Chart */}
                     <div className="flex-1 flex flex-col items-center justify-center mb-8 relative">
                          {/* Background Glow */}
-                         <div className="absolute inset-0 bg-gradient-to-t from-[#FA2D48]/20 to-transparent blur-3xl opacity-30"></div>
+                         <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent blur-3xl opacity-30"></div>
                          
                          {topItem && (
                             <div className="relative w-64 h-64 mb-8 group animate-in zoom-in duration-1000 delay-300">
-                                <div className="absolute inset-0 bg-[#FA2D48] rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                                <div className="absolute inset-0 bg-white rounded-full blur-2xl opacity-10 group-hover:opacity-30 transition-opacity"></div>
                                 <img 
                                     src={topItem.cover || topItem.image} 
                                     className={`w-full h-full object-cover shadow-2xl border-2 border-white/10 ${isArtistWrapped ? 'rounded-full' : 'rounded-2xl'}`}
@@ -72,14 +72,14 @@ export const WrappedView: React.FC<WrappedCardProps> = ({ data, title, descripti
                          {/* Stats Grid */}
                          <div className="grid grid-cols-2 gap-4 w-full animate-in slide-in-from-bottom duration-700 delay-500">
                             <div className="bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
-                                <div className="flex items-center gap-2 text-[#FA2D48] mb-1">
+                                <div className="flex items-center gap-2 text-white mb-1">
                                     <Clock className="w-4 h-4" />
                                     <span className="text-xs font-bold uppercase">Time</span>
                                 </div>
                                 <span className="text-2xl font-bold text-white">{totalMins}m</span>
                             </div>
                             <div className="bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
-                                <div className="flex items-center gap-2 text-cyan-400 mb-1">
+                                <div className="flex items-center gap-2 text-white mb-1">
                                     <TrendingUp className="w-4 h-4" />
                                     <span className="text-xs font-bold uppercase">Top Genre</span>
                                 </div>
@@ -108,7 +108,7 @@ export const WrappedView: React.FC<WrappedCardProps> = ({ data, title, descripti
 
                 {/* Footer / postcard action */}
                 <div className="p-6 bg-[#111] border-t border-white/5 flex gap-3 animate-in fade-in duration-1000 delay-1000">
-                    <button className="flex-1 py-4 rounded-xl bg-[#FA2D48] text-white font-bold text-sm tracking-widest uppercase hover:bg-[#d4253d] transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <button className="flex-1 py-4 rounded-xl bg-white text-black font-bold text-sm tracking-widest uppercase hover:bg-gray-200 transition-all active:scale-95 flex items-center justify-center gap-2">
                         <Share2 className="w-4 h-4" />
                         Share Postcard
                     </button>

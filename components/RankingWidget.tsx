@@ -23,7 +23,7 @@ interface RankingWidgetProps {
 export const RankingWidget: React.FC<RankingWidgetProps> = ({ 
   title, 
   items, 
-  color = "#FA2D48", 
+  color = "#ffffff", 
   icon,
   onExpand,
   type = 'list' 

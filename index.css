@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #FA2D48;
-  --color-primary-glow: rgba(250, 45, 72, 0.4);
+  --color-primary: #ffffff;
+  --color-primary-glow: rgba(255, 255, 255, 0.2);
   --color-bg: #000;
   --color-card: #1C1C1E;
   --color-card-elevated: #2C2C2E;
@@ -12,7 +12,10 @@
   --color-border: rgba(255, 255, 255, 0.1);
 }
 
-body {
+::selection {
+  background: white;
+  color: black;
+}
   margin: 0;
   background-color: var(--color-bg);
   color: #fff;
@@ -35,8 +38,8 @@ html {
 
 /* Selection Color */
 ::selection {
-  background: var(--color-primary);
-  color: white;
+  background: white;
+  color: black;
 }
 
 /* AI Markdown Styling */
