@@ -376,146 +376,106 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                     <div className="absolute inset-0 rounded-full border border-white/5 opacity-60 scale-[0.68] pointer-events-none"></div>
                     <div className="absolute inset-0 rounded-full border border-white/5 opacity-40 scale-[0.96] pointer-events-none"></div>
                     <div className="absolute inset-0 rounded-full border border-white/5 opacity-30 scale-[0.82] pointer-events-none"></div>
-
-                    {/* NEW: Contextual Side Modal (Desktop) */}
-                    <AnimatePresence>
-                        {selectedItem && (
-                            <motion.div 
-                                initial={{ opacity: 0, scale: 0.9, x: 20 }} 
-                                animate={{ opacity: 1, scale: 1, x: 0 }} 
-                                exit={{ opacity: 0, scale: 0.9, x: 20 }}
-                                className="absolute top-[0%] -right-[80%] w-[320px] z-50 hidden lg:block"
-                            >
-                                <div className="bg-[#1C1C1E]/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
-                                    {/* CD Header */}
-                                    <div className="relative h-40 bg-gradient-to-b from-blue-900/20 to-[#1C1C1E] flex flex-col items-center justify-center pt-4">
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); setSelectedItem(null); }}
-                                            className="absolute top-3 right-3 bg-black/40 hover:bg-black/80 rounded-full p-1.5 text-white z-20 transition-colors"
-                                        >
-                                            <X size={16} />
-                                        </button>
-                                        
-                                        <div className="relative w-24 h-24 group">
-                                            {/* CD Effect */}
-                                            <div className="absolute inset-0 rounded-full bg-black/20 animate-spin-slow" style={{ animationDuration: '6s' }}></div>
-                                            <img 
-                                                src={selectedItem.image} 
-                                                alt={selectedItem.name} 
-                                                className="w-full h-full object-cover rounded-full border-[4px] border-[#1C1C1E] shadow-xl relative z-10"
-                                            />
-                                            {/* Center Hole */}
-                                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-[#1C1C1E] rounded-full z-30 flex items-center justify-center border border-white/5">
-                                                <div className="w-2 h-2 bg-black/80 rounded-full"></div>
-                                            </div>
-                                        </div>
-                                        
-                                        <h3 className="text-lg font-bold text-white leading-tight truncate mt-3 w-4/5 text-center">{selectedItem.name}</h3>
-                                        <div className="text-[10px] text-white/50 uppercase tracking-widest mt-0.5">Stats Profile</div>
-                                    </div>
-
-                                    {/* Stats Grid */}
-                                    <div className="p-4 pt-0 space-y-3">
-                                        {/* @ts-ignore */}
-                                        {selectedItem.stats ? (
-                                            <>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <div className="bg-white/5 rounded-lg p-3 border border-white/5">
-                                                        <div className="flex items-center gap-1.5 text-orange-400 mb-1">
-                                                            <TrendingUp size={12} />
-                                                            <span className="text-[9px] font-bold uppercase">Streak</span>
-                                                        </div>
-                                                        {/* @ts-ignore */}
-                                                        <div className="text-xl font-black text-white leading-none">{selectedItem.stats.streak} <span className="text-[9px] font-medium text-white/40">DAYS</span></div>
-                                                    </div>
-                                                    <div className="bg-white/5 rounded-lg p-3 border border-white/5">
-                                                        <div className="flex items-center gap-1.5 text-blue-400 mb-1">
-                                                            <Clock size={12} />
-                                                            <span className="text-[9px] font-bold uppercase">Peak</span>
-                                                        </div>
-                                                        {/* @ts-ignore */}
-                                                        <div className="text-xl font-black text-white leading-none">{selectedItem.stats.peakTime}</div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="bg-white/5 rounded-lg p-3 border border-white/5">
-                                                    <div className="flex items-center gap-1.5 text-purple-400 mb-1">
-                                                        <Music size={12} />
-                                                        <span className="text-[9px] font-bold uppercase">On Repeat</span>
-                                                    </div>
-                                                    {/* @ts-ignore */}
-                                                    <div className="text-sm font-bold text-white truncate">{selectedItem.stats.topSong}</div>
-                                                </div>
-
-                                                <div className="bg-white/5 rounded-lg p-3 border border-white/5 flex justify-between items-center">
-                                                    <div>
-                                                        <div className="text-[9px] text-white/40 uppercase mb-0.5">Total Time</div>
-                                                        {/* @ts-ignore */}
-                                                        <div className="text-sm font-bold text-white">{selectedItem.stats.totalTime}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-[9px] text-white/40 uppercase mb-0.5" align="right">First Play</div>
-                                                        {/* @ts-ignore */}
-                                                        <div className="text-sm font-bold text-white">{selectedItem.stats.firstPlay}</div>
-                                                    </div>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <div className="text-center py-4 text-white/40 text-xs">Generating stats...</div>
-                                        )}
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
                 </motion.div>
             </div>
-
-            {/* Old Side Panel Removed - (Kept blank to satisfy tool structure or replaced completely logic) */}
-            {/* The tool replaces the section, so we just didn't include the old side panel here in the newString */}
             
-            {/* Mobile Modal Fallback (Kept for mobile) */}
+            {/* UNIFIED MODAL FOR ALL DEVICES */}
             <AnimatePresence>
                 {selectedItem && (
-                    <div className="lg:hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
                             exit={{ opacity: 0 }}
                             onClick={() => setSelectedItem(null)}
-                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                            className="absolute inset-0 bg-black/80 backdrop-blur-md"
                         />
                         <motion.div 
                              initial={{ scale: 0.9, opacity: 0, y: 20 }}
                              animate={{ scale: 1, opacity: 1, y: 0 }}
                              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                             className="bg-[#1C1C1E] border border-white/10 w-full max-w-md max-h-[70vh] rounded-3xl overflow-hidden relative shadow-2xl z-[101]"
+                             onClick={(e) => e.stopPropagation()}
+                             className="bg-[#1C1C1E] border border-white/10 w-full max-w-lg rounded-3xl overflow-hidden relative shadow-2xl z-[101]"
                         >
-                            <button onClick={() => setSelectedItem(null)} className="absolute top-4 right-4 bg-black/40 hover:bg-black/80 rounded-full p-2 text-white z-20"><X size={16} /></button>
-                            <div className="relative h-40">
-                                <img src={selectedItem.image} className="w-full h-full object-cover opacity-60" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1E] to-transparent"></div>
-                                <div className="absolute bottom-4 left-6 right-6">
-                                     <h2 className="text-xl font-bold text-white leading-tight truncate">{selectedItem.name}</h2>
-                                     {selectedItem.subName && <p className="text-sm text-[#FA2D48] font-medium">{selectedItem.subName}</p>}
-                                     
-                                     {/* Obsession Score Display */}
-                                     <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-[#FA2D48]/20 border border-[#FA2D48]/50 rounded-full text-[#FA2D48]">
-                                        <TrendingUp size={12} />
-                                        <span className="text-[10px] font-bold tracking-wider">+{selectedItem.trendScore} OBSESSION POINTS</span>
-                                     </div>
+                            <button 
+                                onClick={() => setSelectedItem(null)} 
+                                className="absolute top-4 right-4 bg-black/40 hover:bg-black/80 rounded-full p-2 text-white z-20 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+
+                            {/* CD HEADER */}
+                            <div className="relative h-64 bg-gradient-to-b from-blue-900/20 to-[#1C1C1E] flex flex-col items-center justify-center pt-6">
+                                <div className="relative w-40 h-40 group">
+                                    {/* CD Effect */}
+                                    <div className="absolute inset-0 rounded-full bg-black/30 animate-spin-slow" style={{ animationDuration: '6s' }}></div>
+                                    <img 
+                                        src={selectedItem.image} 
+                                        alt={selectedItem.name} 
+                                        className="w-full h-full object-cover rounded-full border-[6px] border-[#1C1C1E] shadow-2xl relative z-10"
+                                    />
+                                    <div className="absolute inset-0 z-20 rounded-full border border-white/5 pointer-events-none content-[''] bg-[radial-gradient(circle,transparent_30%,rgba(255,255,255,0.05)_40%,transparent_50%)]"></div>
+                                    {/* Center Hole */}
+                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-[#1C1C1E] rounded-full z-30 flex items-center justify-center border border-white/5">
+                                        <div className="w-3 h-3 bg-black/80 rounded-full"></div>
+                                    </div>
                                 </div>
+                                <h2 className="text-2xl font-bold text-white mt-6 mb-1 text-center w-4/5 truncate">{selectedItem.name}</h2>
+                                {selectedItem.subName && <p className="text-orange-400 text-xs font-bold uppercase tracking-widest">{selectedItem.subName}</p>}
                             </div>
-                            <div className="p-4 overflow-y-auto max-h-[calc(70vh-160px)]">
-                                <div className="space-y-1">
-                                    {selectedItem.tracks?.map((track: any, i: number) => (
-                                        <div key={i} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-xl transition-colors">
-                                            <div className="min-w-0 flex-1">
-                                                <h5 className="text-sm font-medium text-white truncate">{track.track_name}</h5>
+
+                            <div className="p-6 space-y-6">
+                                {/* Fun Facts Grid */}
+                                {/* @ts-ignore */}
+                                {selectedItem.stats ? (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* @ts-ignore */}
+                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                                            <div className="flex items-center gap-2 mb-2 text-orange-400">
+                                                <TrendingUp size={18} />
+                                                <span className="text-xs font-bold uppercase tracking-wider">Streak</span>
                                             </div>
+                                            {/* @ts-ignore */}
+                                            <div className="text-2xl font-black text-white">{selectedItem.stats.streak} <span className="text-sm font-normal text-white/50">Days</span></div>
+                                            <p className="text-[10px] text-white/40 mt-1">Consecutive days listening</p>
                                         </div>
-                                    ))}
-                                </div>
+
+                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                                            <div className="flex items-center gap-2 mb-2 text-purple-400">
+                                                <Music size={18} />
+                                                <span className="text-xs font-bold uppercase tracking-wider">Top Track</span>
+                                            </div>
+                                            {/* @ts-ignore */}
+                                            <div className="text-lg font-bold text-white leading-tight line-clamp-2">{selectedItem.stats.topSong}</div>
+                                            <p className="text-[10px] text-white/40 mt-1">Your most played</p>
+                                        </div>
+
+                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                                            <div className="flex items-center gap-2 mb-2 text-blue-400">
+                                                <Clock size={18} />
+                                                <span className="text-xs font-bold uppercase tracking-wider">Peak Time</span>
+                                            </div>
+                                            {/* @ts-ignore */}
+                                            <div className="text-xl font-bold text-white">{selectedItem.stats.peakTime}</div>
+                                            <p className="text-[10px] text-white/40 mt-1">When you listen most</p>
+                                        </div>
+
+                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                                            <div className="flex items-center gap-2 mb-2 text-green-400">
+                                                <Disc size={18} />
+                                                <span className="text-xs font-bold uppercase tracking-wider">Dedication</span>
+                                            </div>
+                                            {/* @ts-ignore */}
+                                            <div className="text-xl font-bold text-white">{selectedItem.stats.totalTime}</div>
+                                            <p className="text-[10px] text-white/40 mt-1">Total time engaged</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center text-white/40 py-8 flex flex-col items-center gap-2">
+                                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                        <span className="text-xs">Gathering deep stats...</span>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     </div>

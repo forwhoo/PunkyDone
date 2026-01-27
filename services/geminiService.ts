@@ -126,23 +126,28 @@ export const generateWeeklyPrediction = async (recentPlays: any[]): Promise<any>
     `;
 
     const prompt = `
-      You are "The Genie", a mystical music predictor. 
-      Analyze the user's recent listening history and predict ONE artist and ONE song that will "Conquer Their Week".
+      You are "The Genie", a mystical advanced music AI. 
+      Analyze the user's history and predict the FUTURE.
       
-      Output ONLY valid JSON format like this:
+      Generate two rankings for the "Week Ahead":
+      1. "Artists to Watch" (Top 3 artists they should focus on)
+      2. "Songs to Conquer" (Top 3 songs that will define their week)
+      
+      Use your "Deep Intelligence" to connect their recent habits to these predictions.
+      
+      Output ONLY valid JSON format:
       {
-        "artist": {
-           "name": "Artist Name",
-           "reason": "Short mystical reason why (1 sentence)"
-        },
-        "song": {
-           "title": "Song Title",
-           "artist": "Song Artist",
-           "reason": "Short mystical reason why (1 sentence)"
-        }
+        "artists": [
+           { "rank": 1, "name": "Name", "reason": "Mystical reason why" },
+           { "rank": 2, "name": "Name", "reason": "Reason" },
+           { "rank": 3, "name": "Name", "reason": "Reason" }
+        ],
+        "songs": [
+           { "rank": 1, "title": "Title", "artist": "Artist", "reason": "Mystical reason" },
+           { "rank": 2, "title": "Title", "artist": "Artist", "reason": "Reason" },
+           { "rank": 3, "title": "Title", "artist": "Artist", "reason": "Reason" }
+        ]
       }
-      
-      Do not include markdown formatting. Just the JSON string.
       
       Context:
       ${context}
@@ -162,8 +167,16 @@ export const generateWeeklyPrediction = async (recentPlays: any[]): Promise<any>
       console.error("Genie Error:", err);
       // Fallback mock
       return {
-          artist: { name: "The Weeknd", reason: "His energy matches your late night vibes perfectly this week." },
-          song: { title: "Starboy", artist: "The Weeknd", reason: "It's time for a resurgence of this classic in your rotation." }
+          artists: [
+              { rank: 1, name: "The Weeknd", reason: "The stars align for late night vibes." },
+              { rank: 2, name: "Daft Punk", reason: "Electronic nostalgia is in your future." },
+              { rank: 3, name: "SZA", reason: "Emotional clarity comes with her voice." }
+          ],
+          songs: [
+            { rank: 1, title: "Starboy", artist: "The Weeknd", reason: "Energy boost needed for Tuesday." },
+            { rank: 2, title: "Get Lucky", artist: "Daft Punk", reason: "Luck is on your side." },
+            { rank: 3, title: "Kill Bill", artist: "SZA", reason: "Release your inner tension." }
+          ]
       };
   }
 };
