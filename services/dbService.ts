@@ -730,7 +730,7 @@ export const uploadExtendedHistory = async (
       
       const { error } = await supabase
         .from('extended_streaming_history')
-        .insert(chunk);
+        .upsert(chunk, { onConflict: 'ts, master_metadata_track_name', ignoreDuplicates: true });
 
       if (error) {
         console.error('Error uploading chunk:', error);

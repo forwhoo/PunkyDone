@@ -43,6 +43,9 @@ create policy "User can read own extended history" on extended_streaming_history
 create index if not exists idx_extended_ts on extended_streaming_history(ts);
 create index if not exists idx_extended_artist on extended_streaming_history(master_metadata_album_artist_name);
 
+-- Add unique constraint to prevent duplicates in the staging table
+alter table extended_streaming_history add constraint unique_ts_track unique (ts, master_metadata_track_name);
+
 -- Helper Function to Migrate Data to Main Table
 -- Call this after upload is complete
 create or replace function migrate_extended_history()
