@@ -30,14 +30,24 @@ export const TheGenie: React.FC<TheGenieProps> = ({ recentPlays }) => {
              // 1. Try to get from DB/Local
              const saved = await getDailyPrediction();
              
+             // Validate Data Structure (Must be V2 Arrays)
+             let validData = null;
              if (saved && saved.content) {
-                 setPrediction(saved.content);
+                 // Check if it has the new array structure
+                 if (Array.isArray(saved.content.artists) && Array.isArray(saved.content.songs)) {
+                     validData = saved.content;
+                 }
+             }
+
+             if (validData) {
+                 setPrediction(validData);
                  setLoading(false);
              } else {
-                 // 2. If not found or outdated, generate new
+                 // 2. If not found or outdated/invalid format, generate new
                  if (recentPlays.length > 0) {
                      const newPrediction = await generateWeeklyPrediction(recentPlays);
-                     if (newPrediction) {
+                     // Basic validation of response
+                     if (newPrediction && Array.isArray(newPrediction.artists)) {
                          setPrediction(newPrediction);
                          await saveDailyPrediction(newPrediction);
                      }
@@ -62,7 +72,10 @@ export const TheGenie: React.FC<TheGenieProps> = ({ recentPlays }) => {
         return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`;
     };
 
-    const renderList = (items: GenieItem[], type: 'artist' | 'song') => (
+    const renderList = (items: GenieItem[], type: 'artist' | 'song') => {
+        if (!items || !Array.isArray(items)) return null;
+        
+        return (
         <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
             {items.map((item, idx) => {
                 const name = type === 'artist' ? item.name! : item.title!;
@@ -98,7 +111,8 @@ export const TheGenie: React.FC<TheGenieProps> = ({ recentPlays }) => {
                 );
             })}
         </div>
-    );
+        );
+    };
 
     return (
         <div className="mb-12">
