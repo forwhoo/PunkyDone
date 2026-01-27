@@ -698,8 +698,9 @@ export interface SpotifyHistoryItem {
   platform: string;
   ms_played: number;
   conn_country: string;
-  ip_addr_decrypted: string;
-  user_agent_decrypted: string;
+  ip_addr_decrypted?: string;
+  ip_addr?: string; // Add this
+  user_agent_decrypted?: string;
   master_metadata_track_name: string | null;
   master_metadata_album_artist_name: string | null;
   master_metadata_album_album_name: string | null;
@@ -714,6 +715,7 @@ export interface SpotifyHistoryItem {
   offline: boolean | null;
   offline_timestamp: number | null;
   incognito_mode: boolean | null;
+  [key: string]: any; // Allow other props
 }
 
 export const uploadExtendedHistory = async (
@@ -724,9 +726,45 @@ export const uploadExtendedHistory = async (
   const total = jsonData.length;
   let processed = 0;
 
+  // Helper to sanitize data (remove unknown columns that Supabase rejects)
+  const sanitizeItem = (item: any): Partial<SpotifyHistoryItem> => {
+      // Whitelist of valid columns matching the DB table
+      const validKeys = [
+          'ts', 'username', 'platform', 'ms_played', 'conn_country', 
+          'ip_addr_decrypted', 'user_agent_decrypted', 
+          'master_metadata_track_name', 'master_metadata_album_artist_name', 
+          'master_metadata_album_album_name', 'spotify_track_uri', 
+          'episode_name', 'episode_show_name', 'spotify_episode_uri', 
+          'reason_start', 'reason_end', 'shuffle', 'skipped', 
+          'offline', 'offline_timestamp', 'incognito_mode'
+      ];
+      
+      const clean: any = {};
+      
+      // Map legacy/alternate keys
+      if (item.ip_addr && !item.ip_addr_decrypted) {
+          clean.ip_addr_decrypted = item.ip_addr;
+      }
+
+      validKeys.forEach(key => {
+          if (item[key] !== undefined) {
+              clean[key] = item[key];
+          }
+      });
+      
+      // Ensure specific mappings if clean[key] is still missing but we mapped it manually above
+      if (clean.ip_addr_decrypted && !item.ip_addr_decrypted) {
+          // It was set by the mapping block, so keep it.
+          // (The loop primarily copies direct matches, so this is just to be safe)
+      }
+
+      return clean;
+  };
+
   try {
     for (let i = 0; i < total; i += CHUNK_SIZE) {
-      const chunk = jsonData.slice(i, i + CHUNK_SIZE);
+      const rawChunk = jsonData.slice(i, i + CHUNK_SIZE);
+      const chunk = rawChunk.map(sanitizeItem);
       
       const { error } = await supabase
         .from('extended_streaming_history')
