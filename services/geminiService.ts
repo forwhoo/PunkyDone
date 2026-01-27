@@ -110,67 +110,6 @@ USER QUESTION: "${question}"
   }
 };
 
-export const generateWeeklyPrediction = async (recentPlays: any[]): Promise<any> => {
-  try {
-    const client = getAiClient();
-    if (!client) return null;
-
-    const artists = Array.from(new Set(recentPlays.map(p => p.artist_name)));
-    const songs = recentPlays.slice(0, 30).map(p => p.track_name);
-    
-    // Simple heuristic context
-    const context = `
-      Recent User History:
-      - Top Artists Recently: ${artists.slice(0, 10).join(', ')}
-      - Top Songs Recently: ${songs.slice(0, 10).join(', ')}
-    `;
-
-    const prompt = `
-      You are "The Genie", an advanced music AI judge. 
-      
-      OBJECTIVE: Select the "Conquerors of the Week" from the user's history.
-      
-      ALGORITHM CRITERIA FOR APPROVAL:
-      1. Must be high-quality matches for the user's taste.
-      2. Must be a mix of heavy hitters and redisicovered gems.
-      3. Total of 8 Artists and 8 Songs required.
-      
-      Review the provided context and select the top 8 "worthy" candidates for each category.
-      
-      Output ONLY valid JSON format:
-      {
-        "artists": [
-           { "rank": 1, "name": "Name", "reason": "Short reason (max 10 words)" },
-           ... (8 items)
-        ],
-        "songs": [
-           { "rank": 1, "title": "Title", "artist": "Artist", "reason": "Short reason (max 10 words)" },
-           ... (8 items)
-        ]
-      }
-      
-      Context:
-      ${context}
-    `;
-
-    const response = await client.chat.completions.create({
-        model: "llama3-70b-8192",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.6,
-        max_tokens: 1500,
-        response_format: { type: "json_object" }
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (!content) return null;
-    return JSON.parse(content);
-  } catch (err) {
-      console.error("Genie Error:", err);
-      // Fallback mock (return 8 empty placeholders or mock data to avoid UI break)
-      return null;
-  }
-};
-
 export const generateMusicInsight = async (query: string, stats: any): Promise<string> => {
     try {
         const client = getAiClient();
