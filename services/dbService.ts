@@ -993,11 +993,11 @@ export const backfillExtendedHistoryImages = async (
             onProgress(`📚 Borrowed ${borrowResult.total_updated} covers from listening_history`);
         }
 
-        // STEP 2: Get albums still needing covers
+        // STEP 2: Get albums still needing covers (NOW INCLUDES RECORD IDS)
         onProgress('🎵 Step 2: Finding albums that still need covers...');
         console.log('[backfillImages] 🎵 Calling get_albums_needing_covers RPC...');
         
-        const { data: albumsNeeded, error: albumsError } = await supabase.rpc('get_albums_needing_covers', { max_results: 1000 });
+        const { data: albumsNeeded, error: albumsError } = await supabase.rpc('get_albums_needing_covers', { max_results: 2000 });
         
         if (albumsError) {
             console.error('[backfillImages] ❌ Albums error:', albumsError);
@@ -1005,6 +1005,7 @@ export const backfillExtendedHistoryImages = async (
         }
         
         console.log(`[backfillImages] 🎵 ${albumsNeeded?.length || 0} unique albums still need covers`);
+        console.log('[backfillImages] 🎵 Sample album:', albumsNeeded?.[0]);
         
         if (!albumsNeeded || albumsNeeded.length === 0) {
             const msg = `✅ Done! Borrowed ${borrowResult?.total_updated || 0} covers from history`;
@@ -1014,18 +1015,20 @@ export const backfillExtendedHistoryImages = async (
         
         onProgress(`🌐 Step 3: Fetching ${albumsNeeded.length} albums from Spotify...`);
 
-        // STEP 3: Fetch album covers from Spotify
-        const albumCovers: { album: string; artist: string; cover: string }[] = [];
+        // STEP 3: Fetch album covers from Spotify AND update immediately
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
         const chunkSize = 5;
         let fetched = 0;
         let found = 0;
-        
-        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        let totalUpdated = 0;
         
         for (let i = 0; i < albumsNeeded.length; i += chunkSize) {
             const chunk = albumsNeeded.slice(i, i + chunkSize);
             
-            await Promise.all(chunk.map(async (item: { album_name: string; artist_name: string }) => {
+            // Fetch covers for this chunk
+            const coversToUpdate: { ids: number[]; cover: string }[] = [];
+            
+            await Promise.all(chunk.map(async (item: { album_name: string; artist_name: string; sample_ids: number[] }) => {
                 try {
                     await delay(Math.random() * 100 + 50);
                     
@@ -1046,10 +1049,9 @@ export const backfillExtendedHistoryImages = async (
                     
                     const data = await res.json();
                     const albumData = data.albums?.items[0];
-                    if (albumData?.images?.[0]?.url) {
-                        albumCovers.push({
-                            album: item.album_name,
-                            artist: item.artist_name,
+                    if (albumData?.images?.[0]?.url && item.sample_ids?.length > 0) {
+                        coversToUpdate.push({
+                            ids: item.sample_ids,
                             cover: albumData.images[0].url
                         });
                         found++;
@@ -1059,42 +1061,35 @@ export const backfillExtendedHistoryImages = async (
                 }
             }));
             
+            // Update this batch immediately using direct ID update
+            for (const item of coversToUpdate) {
+                const { data: updated, error } = await supabase.rpc('update_covers_direct', {
+                    record_ids: item.ids,
+                    cover_url: item.cover
+                });
+                
+                if (!error && updated) {
+                    totalUpdated += updated;
+                    console.log(`[backfillImages] ✓ Updated ${updated} records`);
+                } else if (error) {
+                    console.error('[backfillImages] ❌ Update error:', error);
+                }
+            }
+            
             const percent = Math.round(((i + chunk.length) / albumsNeeded.length) * 100);
-            console.log(`[backfillImages] 🌐 ${percent}% - Fetched ${fetched}, found ${found} covers`);
-            onProgress(`🌐 Fetching: ${percent}% (${found}/${fetched} found)`);
+            console.log(`[backfillImages] 🌐 ${percent}% - Fetched ${fetched}, found ${found}, updated ${totalUpdated}`);
+            onProgress(`🌐 ${percent}% (found ${found}, saved ${totalUpdated} records)`);
             
             if (i + chunkSize < albumsNeeded.length) await delay(300);
         }
         
-        console.log(`[backfillImages] 📥 Spotify returned ${found}/${albumsNeeded.length} album covers`);
+        console.log(`[backfillImages] 📥 Total: fetched ${fetched}, found ${found}, updated ${totalUpdated}`);
 
-        if (albumCovers.length === 0) {
-            const msg = `✅ Done! Borrowed ${borrowResult?.total_updated || 0} covers (Spotify returned none)`;
-            onProgress(msg);
-            return { success: true, message: msg };
-        }
-
-        // STEP 4: Bulk update using server-side RPC
-        onProgress(`📝 Step 4: Saving ${albumCovers.length} covers to database...`);
-        console.log('[backfillImages] 📝 Calling update_album_covers RPC with', albumCovers.length, 'covers...');
-        
-        // Pass as JSON array directly (not stringified)
-        const { data: updateResult, error: updateError } = await supabase.rpc('update_album_covers', {
-            covers: albumCovers
-        });
-        
-        if (updateError) {
-            console.error('[backfillImages] ❌ Update error:', updateError);
-            return { success: false, message: 'Failed to save covers: ' + updateError.message };
-        }
-        
-        console.log('[backfillImages] 📝 Update result:', updateResult);
-
-        // STEP 5: Check final status
+        // STEP 4: Check final status
         const { data: statusAfter } = await supabase.rpc('count_null_covers');
         console.log('[backfillImages] 📊 Status after:', statusAfter);
         
-        const finalMessage = `✅ Done! Borrowed ${borrowResult?.total_updated || 0} + Spotify ${updateResult?.records_updated || 0} = ${statusAfter?.percent_complete || 0}% complete`;
+        const finalMessage = `✅ Done! Borrowed ${borrowResult?.total_updated || 0} + Spotify ${totalUpdated} = ${statusAfter?.percent_complete || 0}% complete`;
         console.log(`[backfillImages] 🎉 ${finalMessage}`);
         onProgress(finalMessage);
         

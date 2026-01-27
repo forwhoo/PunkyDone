@@ -60,16 +60,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- STEP 2: Get albums that still need covers
--- Returns up to 500 unique album+artist pairs that have NULL album_cover
+-- STEP 2: Get albums that still need covers - NOW RETURNS IDs TOO
+-- Returns unique album+artist pairs with their record IDs for direct update
 CREATE OR REPLACE FUNCTION get_albums_needing_covers(max_results int DEFAULT 500)
-RETURNS TABLE(album_name text, artist_name text, record_count bigint) AS $$
+RETURNS TABLE(album_name text, artist_name text, record_count bigint, sample_ids bigint[]) AS $$
 BEGIN
     RETURN QUERY
     SELECT 
         e.album_name,
         e.artist_name,
-        COUNT(*) as record_count
+        COUNT(*) as record_count,
+        ARRAY_AGG(e.id) as sample_ids
     FROM extended_streaming_history e
     WHERE e.album_cover IS NULL
         AND e.album_name IS NOT NULL
@@ -82,22 +83,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- STEP 3: Bulk update album covers
--- Takes a JSON array of {album, artist, cover} objects and updates all matching records
-CREATE OR REPLACE FUNCTION update_album_covers(covers json)
+-- STEP 3: Bulk update album covers BY IDS
+-- Takes a JSON array of {ids: [1,2,3], cover: "url"} objects and updates directly by ID
+CREATE OR REPLACE FUNCTION update_album_covers_by_ids(covers json)
 RETURNS json AS $$
 DECLARE
     item json;
     total_updated int := 0;
     albums_processed int := 0;
     row_count int;
+    id_array bigint[];
 BEGIN
     FOR item IN SELECT * FROM json_array_elements(covers)
     LOOP
+        -- Extract the IDs array from the JSON
+        SELECT ARRAY(SELECT json_array_elements_text(item->'ids')::bigint) INTO id_array;
+        
+        -- Update all records with these IDs
         UPDATE extended_streaming_history
         SET album_cover = item->>'cover'
-        WHERE LOWER(album_name) = LOWER(item->>'album')
-            AND LOWER(artist_name) = LOWER(item->>'artist')
+        WHERE id = ANY(id_array)
             AND album_cover IS NULL;
         
         GET DIAGNOSTICS row_count = ROW_COUNT;
@@ -109,6 +114,22 @@ BEGIN
         'albums_processed', albums_processed,
         'records_updated', total_updated
     );
+END;
+$$ LANGUAGE plpgsql;
+
+-- STEP 3b: Simple direct update by ID list + cover URL
+CREATE OR REPLACE FUNCTION update_covers_direct(record_ids bigint[], cover_url text)
+RETURNS int AS $$
+DECLARE
+    updated_count int;
+BEGIN
+    UPDATE extended_streaming_history
+    SET album_cover = cover_url
+    WHERE id = ANY(record_ids)
+        AND album_cover IS NULL;
+    
+    GET DIAGNOSTICS updated_count = ROW_COUNT;
+    RETURN updated_count;
 END;
 $$ LANGUAGE plpgsql;
 
