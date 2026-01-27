@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
@@ -166,18 +166,31 @@ function App() {
   
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
+  
+  // Ref to track current fetch to prevent race conditions
+  const fetchIdRef = useRef(0);
 
       // Function to refresh DB view
       const refreshDbStats = async () => {
-          console.log(`[App] Refreshing DB Stats for ${timeRange}...`);
+          // Increment fetch ID to track this specific request
+          const currentFetchId = ++fetchIdRef.current;
+          const requestedRange = timeRange; // Capture current value
+          
+          console.log(`[App] 📊 Refreshing DB Stats for ${requestedRange}... (fetchId: ${currentFetchId})`);
           try {
-            // If we have manual data, don't clear it immediately to prevent flashing
             const stats = await fetchListeningStats();
-            const dashboardStuff = await fetchDashboardStats(timeRange);
-            // Fetch dynamic charts for AI context
-            const currentCharts = await fetchCharts(timeRange.toLowerCase() as any);
+            const dashboardStuff = await fetchDashboardStats(requestedRange);
             
-            console.log("[App] Dashboard Stats Fetched:", { 
+            // Check if this request is still the latest one
+            if (currentFetchId !== fetchIdRef.current) {
+                console.log(`[App] ⚠️ Discarding stale response for ${requestedRange} (fetchId: ${currentFetchId}, current: ${fetchIdRef.current})`);
+                return; // Discard stale response
+            }
+            
+            // Fetch dynamic charts for AI context
+            const currentCharts = await fetchCharts(requestedRange.toLowerCase() as any);
+            
+            console.log(`[App] ✅ Dashboard Stats for ${requestedRange}:`, { 
                 hasStats: !!stats, 
                 artistCount: dashboardStuff?.artists?.length || 0,
                 songCount: dashboardStuff?.songs?.length || 0,

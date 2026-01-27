@@ -1,6 +1,74 @@
 -- Optimization: Server-side aggregation for All Time stats
 -- Prevents crashing the client with 80k+ records
 
+-- CLEANUP FUNCTION: Find and delete duplicates in extended_streaming_history
+-- Duplicates = same played_at timestamp AND same track_name
+create or replace function cleanup_extended_history_duplicates(dry_run boolean default true)
+returns table(action text, count bigint) as $$
+declare
+    dup_count bigint;
+begin
+    -- First, count duplicates
+    select count(*) into dup_count
+    from (
+        select played_at, track_name, count(*) as cnt
+        from extended_streaming_history
+        where track_name is not null
+        group by played_at, track_name
+        having count(*) > 1
+    ) as dups;
+    
+    if dry_run then
+        return query select 'duplicates_found'::text, dup_count;
+    else
+        -- Delete duplicates, keeping the one with the lowest id (first inserted)
+        with duplicates as (
+            select id, row_number() over (partition by played_at, track_name order by id) as rn
+            from extended_streaming_history
+            where track_name is not null
+        )
+        delete from extended_streaming_history
+        where id in (select id from duplicates where rn > 1);
+        
+        get diagnostics dup_count = row_count;
+        return query select 'duplicates_deleted'::text, dup_count;
+    end if;
+end;
+$$ language plpgsql;
+
+-- Also check for duplicates that exist in BOTH tables (extended AND listening_history)
+-- These can be safely removed from extended since listening_history has cover art
+create or replace function cleanup_extended_vs_listening_duplicates(dry_run boolean default true)
+returns table(action text, count bigint) as $$
+declare
+    dup_count bigint;
+begin
+    -- Count records in extended that also exist in listening_history (same timestamp)
+    select count(*) into dup_count
+    from extended_streaming_history e
+    where exists (
+        select 1 from listening_history l 
+        where l.played_at = e.played_at 
+        and l.track_name = e.track_name
+    );
+    
+    if dry_run then
+        return query select 'cross_table_duplicates_found'::text, dup_count;
+    else
+        delete from extended_streaming_history e
+        where exists (
+            select 1 from listening_history l 
+            where l.played_at = e.played_at 
+            and l.track_name = e.track_name
+        );
+        
+        get diagnostics dup_count = row_count;
+        return query select 'cross_table_duplicates_deleted'::text, dup_count;
+    end if;
+end;
+$$ language plpgsql;
+
+-- Main Stats Function
 create or replace function get_all_time_stats()
 returns json as $$
 declare
