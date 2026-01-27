@@ -22,6 +22,7 @@ export const generateMusicInsights = async (contextData: string): Promise<string
       You are a music analytics expert. Analyze the following data summary and provide a concise, 
       Apple Music-style "Editor's Note" or strategic insight about the listening trends.
       Keep it short, encouraging, and professional (max 2 sentences).
+      Current Date: ${new Date().toLocaleDateString()}
       
       Data: ${contextData}
     `;
@@ -70,6 +71,7 @@ export const answerMusicQuestion = async (question: string, context: {
     const prompt = `
 You are a music analytics assistant with deep knowledge of the user's listening history.
 User name: ${context.userName || 'Unknown'}
+Current Date and Time: ${new Date().toLocaleString()}
 
 USER'S LIBRARY CONTEXT:
 ${statsInfo}

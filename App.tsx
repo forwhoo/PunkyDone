@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Music, X, TrendingUp, Clock, Calendar } from 'lucide-react';
+import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
 // import { TopCharts } from './components/TopCharts';
 import { RankingWidget } from './components/RankingWidget';
 import { AISpotlight } from './components/AISpotlight';
 import { TrendingArtists } from './components/TrendingArtists';
+import { UpcomingArtists } from './components/UpcomingArtists';
+import { HourlyChart } from './components/HourlyChart';
 import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 
@@ -103,7 +105,13 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [dbStats, setDbStats] = useState<any>(null);
   const [dbUnifiedData, setDbUnifiedData] = useState<any>(null);
-  const [artistImages, setArtistImages] = useState<Record<string, string>>({}); // Real artist images
+  // Persist images to prevent reloading glitches
+  const [artistImages, setArtistImages] = useState<Record<string, string>>(() => {
+      try {
+          const saved = localStorage.getItem('artist_images_cache');
+          return saved ? JSON.parse(saved) : {};
+      } catch (e) { return {}; }
+  });
 
   // Top Artist Side Modal State
   const [selectedTopArtist, setSelectedTopArtist] = useState<Artist | null>(null);
@@ -137,7 +145,11 @@ function App() {
         if (needed.length > 0) {
             try {
                 const newImages = await fetchArtistImages(token, needed);
-                setArtistImages(prev => ({ ...prev, ...newImages }));
+                setArtistImages(prev => {
+                    const next = { ...prev, ...newImages };
+                    localStorage.setItem('artist_images_cache', JSON.stringify(next));
+                    return next;
+                });
             } catch (e) {
                 console.error("BG Image Fetch Error", e);
             }
@@ -635,6 +647,17 @@ function App() {
                         <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank songs yet.</p>
                     )}
                 </div>
+
+                {/* UPCOMING ARTISTS */}
+                <UpcomingArtists 
+                    recentPlays={safeRecent} 
+                    topArtists={safeArtists} 
+                    artistImages={artistImages} 
+                />
+
+                {/* HOURLY CHART */}
+                <HourlyChart history={safeRecent} />
+
             </div>
             )}
         </div>
@@ -715,7 +738,7 @@ function App() {
                             
                             {/* Rank Badge */}
                             <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white text-black px-6 py-1.5 rounded-full font-bold text-sm shadow-xl border border-white/20 whitespace-nowrap">
-                                Rank #{data?.artists?.findIndex((a: Artist) => a.id === selectedTopArtist.id) + 1 || '?'}
+                                Rank #{safeArtists.findIndex((a: Artist) => a.id === selectedTopArtist.id) + 1 || '?'}
                             </div>
                         </div>
                     </motion.div>
