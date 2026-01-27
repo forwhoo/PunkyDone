@@ -256,15 +256,27 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
     }
     
     // 1. Top Artists (count by artist_name)
-    const { data: artistsData } = await supabase
+    const { data: artistsData, error: artistError } = await supabase
        .from('listening_history')
        .select('artist_name, duration_ms')
        .gte('played_at', startDate.toISOString());
+
+    // FETCH EXTENDED IF ALL TIME (Parallel fetch)
+    let extendedArtists: any[] = [];
+    if (timeRange === 'All Time') {
+         const { data: extData } = await supabase
+            .from('extended_streaming_history')
+            .select('artist_name, duration_ms')
+            .gte('played_at', startDate.toISOString());
+         if (extData) extendedArtists = extData;
+    }
+
+    const combinedArtists = [...(artistsData || []), ...extendedArtists];
     
     const artistCounts: Record<string, { count: number, time: number }> = {};
     const artistImages: Record<string, string> = {}; // Helper to find an image
 
-    artistsData?.forEach((item: any) => {
+    combinedArtists?.forEach((item: any) => {
         if (!artistCounts[item.artist_name]) artistCounts[item.artist_name] = { count: 0, time: 0 };
         artistCounts[item.artist_name].count += 1;
         artistCounts[item.artist_name].time += (item.duration_ms || 0);
@@ -295,13 +307,29 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         .from('listening_history')
         .select('track_name, artist_name, album_cover, duration_ms')
         .gte('played_at', startDate.toISOString());
+
+    // FETCH EXTENDED IF ALL TIME
+    let extendedSongs: any[] = [];
+    if (timeRange === 'All Time') {
+         const { data: extData } = await supabase
+            .from('extended_streaming_history')
+            .select('track_name, artist_name, album_cover, duration_ms')
+            .gte('played_at', startDate.toISOString());
+         if (extData) extendedSongs = extData;
+    }
+    const combinedSongs = [...(songsData || []), ...extendedSongs];
         
     const songCounts: Record<string, { count: number, artist: string, cover: string, duration: number, totalTime: number }> = {};
-    songsData?.forEach((item: any) => {
+    combinedSongs?.forEach((item: any) => {
         const key = `${item.track_name}||${item.artist_name}`; 
         if (!songCounts[key]) {
-            songCounts[key] = { count: 0, artist: item.artist_name, cover: item.album_cover, duration: item.duration_ms, totalTime: 0 };
+            songCounts[key] = { count: 0, artist: item.artist_name, cover: item.album_cover || '', duration: item.duration_ms, totalTime: 0 };
         }
+        // Prefer an entry that HAS a cover if one exists
+        if (item.album_cover && !songCounts[key].cover) {
+             songCounts[key].cover = item.album_cover;
+        }
+
         songCounts[key].count++;
         songCounts[key].totalTime += (item.duration_ms || 0);
     });
@@ -326,12 +354,30 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         .select('album_name, artist_name, album_cover, duration_ms')
         .gte('played_at', startDate.toISOString());
 
+    // FETCH EXTENDED IF ALL TIME
+    let extendedAlbums: any[] = [];
+    if (timeRange === 'All Time') {
+         const { data: extData } = await supabase
+            .from('extended_streaming_history')
+            .select('album_name, artist_name, album_cover, duration_ms')
+            .gte('played_at', startDate.toISOString());
+         if (extData) extendedAlbums = extData;
+    }
+    const combinedAlbums = [...(albumsData || []), ...extendedAlbums];
+
     const albumStats: Record<string, { count: number, duration: number, artist: string, cover: string }> = {};
-    albumsData?.forEach((item: any) => {
+    combinedAlbums?.forEach((item: any) => {
+         // Skip empty albums
+        if (!item.album_name || item.album_name === 'Unknown Album') return;
+
         const key = `${item.album_name}||${item.artist_name}`;
         if (!albumStats[key]) {
-             albumStats[key] = { count: 0, duration: 0, artist: item.artist_name, cover: item.album_cover };
+             albumStats[key] = { count: 0, duration: 0, artist: item.artist_name, cover: item.album_cover || '' };
         }
+        if (item.album_cover && !albumStats[key].cover) {
+             albumStats[key].cover = item.album_cover;
+        }
+
         albumStats[key].count++;
         albumStats[key].duration += (item.duration_ms || 0);
     });
@@ -699,7 +745,7 @@ export interface SpotifyHistoryItem {
   ms_played: number;
   conn_country: string;
   ip_addr_decrypted?: string;
-  ip_addr?: string; // Add this
+  ip_addr?: string;
   user_agent_decrypted?: string;
   master_metadata_track_name: string | null;
   master_metadata_album_artist_name: string | null;
@@ -715,7 +761,7 @@ export interface SpotifyHistoryItem {
   offline: boolean | null;
   offline_timestamp: number | null;
   incognito_mode: boolean | null;
-  [key: string]: any; // Allow other props
+  [key: string]: any;
 }
 
 export const uploadExtendedHistory = async (
@@ -726,64 +772,55 @@ export const uploadExtendedHistory = async (
   const total = jsonData.length;
   let processed = 0;
 
-  // Helper to sanitize data (remove unknown columns that Supabase rejects)
-  const sanitizeItem = (item: any): Partial<SpotifyHistoryItem> => {
-      // Whitelist of valid columns matching the DB table
-      const validKeys = [
-          'ts', 'username', 'platform', 'ms_played', 'conn_country', 
-          'ip_addr_decrypted', 'user_agent_decrypted', 
-          'master_metadata_track_name', 'master_metadata_album_artist_name', 
-          'master_metadata_album_album_name', 'spotify_track_uri', 
-          'episode_name', 'episode_show_name', 'spotify_episode_uri', 
-          'reason_start', 'reason_end', 'shuffle', 'skipped', 
-          'offline', 'offline_timestamp', 'incognito_mode'
-      ];
-      
-      const clean: any = {};
-      
-      // Map legacy/alternate keys
-      if (item.ip_addr && !item.ip_addr_decrypted) {
-          clean.ip_addr_decrypted = item.ip_addr;
-      }
+  // Helper to map JSON to our DB Schema (extended_streaming_history matching listening_history)
+  const mapToDbSchema = (item: any): any => {
+      // Skip items with no track name (podcasts usually, or errors) if you only want music
+      if (!item.master_metadata_track_name) return null;
 
-      validKeys.forEach(key => {
-          if (item[key] !== undefined) {
-              clean[key] = item[key];
-          }
-      });
-      
-      // Ensure specific mappings if clean[key] is still missing but we mapped it manually above
-      if (clean.ip_addr_decrypted && !item.ip_addr_decrypted) {
-          // It was set by the mapping block, so keep it.
-          // (The loop primarily copies direct matches, so this is just to be safe)
-      }
-
-      return clean;
+      return {
+        played_at: item.ts,
+        track_name: item.master_metadata_track_name,
+        artist_name: item.master_metadata_album_artist_name || 'Unknown Artist',
+        album_name: item.master_metadata_album_album_name || 'Unknown Album',
+        spotify_id: item.spotify_track_uri || item.spotify_episode_uri || 'unknown',
+        duration_ms: item.ms_played,
+        album_cover: null, // No cover in JSON
+        user_timezone: 'UTC',
+        
+        // Optional extras
+        platform: item.platform,
+        conn_country: item.conn_country,
+        ip_addr_decrypted: item.ip_addr_decrypted || item.ip_addr,
+        reason_start: item.reason_start,
+        reason_end: item.reason_end,
+        shuffle: item.shuffle,
+        skipped: item.skipped
+      };
   };
 
   try {
     for (let i = 0; i < total; i += CHUNK_SIZE) {
       const rawChunk = jsonData.slice(i, i + CHUNK_SIZE);
-      const chunk = rawChunk.map(sanitizeItem);
+      // Map and filter out nulls (podcasts/bad data)
+      const chunk = rawChunk.map(mapToDbSchema).filter(x => x !== null);
       
+      if (chunk.length === 0) {
+           processed += rawChunk.length;
+           continue; 
+      }
+
       const { error } = await supabase
         .from('extended_streaming_history')
-        .upsert(chunk, { onConflict: 'ts, master_metadata_track_name', ignoreDuplicates: true });
+        .upsert(chunk, { onConflict: 'played_at, track_name', ignoreDuplicates: true });
 
       if (error) {
         console.error('Error uploading chunk:', error);
         return { success: false, message: `Upload failed at index ${i}: ${error.message}` };
       }
 
-      processed += chunk.length;
+      processed += rawChunk.length;
       const percent = Math.min(Math.round((processed / total) * 100), 100);
       onProgress(percent);
-    }
-
-    // Trigger migration RPC (Schema definition must exist)
-    const { error: rpcError } = await supabase.rpc('migrate_extended_history');
-    if (rpcError) {
-        console.warn("Auto-migration RPC failed/missing, but upload persisted.", rpcError);
     }
 
     return { success: true, message: 'Upload complete' };
