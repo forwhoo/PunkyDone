@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpRight, Music, Disc } from 'lucide-react';
+import { ArrowUpRight, Disc } from 'lucide-react';
 import { Artist } from '../types';
 
 interface UpcomingArtistsProps {
@@ -40,33 +40,45 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
     if (upcoming.length === 0) return null;
 
     return (
-        <div className="bg-[#1C1C1E] rounded-3xl p-6 border border-white/5">
-             <div className="mb-6">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <ArrowUpRight className="text-blue-400" /> Upcoming Artists
-                </h3>
+        <div>
+             <div className="flex justify-between items-center mb-6 px-1">
+                <div className="flex items-center gap-3">
+                    <h3 className="text-[20px] font-bold text-white tracking-tight flex items-center gap-2">
+                        <ArrowUpRight className="text-blue-400" /> Upcoming Artists
+                    </h3>
+                </div>
                 <p className="text-[#8E8E93] text-xs">New artists entering your orbit recently</p>
              </div>
 
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                 {upcoming.map((artist, idx) => (
-                     <div key={idx} className="group relative bg-[#2C2C2E] p-3 rounded-2xl hover:bg-[#3C3C3E] transition-all cursor-default">
-                         <div className="aspect-square rounded-full overflow-hidden mb-3 border border-white/5 group-hover:border-white/20 shadow-lg">
-                             <img 
-                                src={artist.image} 
-                                alt={artist.name} 
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                             />
-                         </div>
-                         <div className="text-center">
-                             <div className="text-white font-bold text-sm truncate">{artist.name}</div>
-                             <div className="text-[#8E8E93] text-[10px] mt-1 flex items-center justify-center gap-1">
-                                <Disc size={8} /> {artist.trackSample}
-                             </div>
-                         </div>
-                     </div>
-                 ))}
-             </div>
+            <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                {upcoming.map((artist, idx) => (
+                    <div key={artist.name} className="flex-shrink-0 relative flex items-center snap-start group cursor-default w-[180px] md:w-[220px]">
+                        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-white/5">
+                            {idx + 1}
+                        </span>
+                        <div className="relative z-10 ml-10 md:ml-12">
+                            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
+                                <img 
+                                    src={artist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=1DB954&color=fff`}
+                                    alt={artist.name} 
+                                    className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" 
+                                />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
+                                    <span className="text-white font-bold text-xl drop-shadow-md">{artist.plays} plays</span>
+                                </div>
+                            </div>
+                            <div className="mt-3 relative z-20">
+                                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-white transition-colors">
+                                    {artist.name}
+                                </h3>
+                                <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium flex items-center gap-1">
+                                    <Disc size={12} /> {artist.trackSample}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };
