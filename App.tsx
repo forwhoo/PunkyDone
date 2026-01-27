@@ -184,7 +184,8 @@ function App() {
             });
 
             if (dashboardStuff) {
-                setDbStats({ ...stats, charts: currentCharts });
+                const safeStats = stats ?? {};
+                setDbStats({ ...safeStats, charts: currentCharts });
                 setDbUnifiedData(dashboardStuff);
             }
           } catch (e) {
