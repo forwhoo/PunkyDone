@@ -77,8 +77,21 @@ begin
         group by album_name, artist_name
         order by total_ms desc
         limit 100
+    ),
+    global_aggregates as (
+        select 
+            coalesce(sum(duration_ms), 0) as total_ms,
+            count(*) as total_tracks
+        from deduped
+        where duration_ms > 30000 -- Only count actual plays for the total track count logic, or remove if you want raw
     )
     select json_build_object(
+        'totals', (
+            select json_build_object(
+                'minutes', round(total_ms / 60000.0), 
+                'tracks', total_tracks
+            ) from global_aggregates
+        ),
         'artists', (
             select json_agg(
                 json_build_object(

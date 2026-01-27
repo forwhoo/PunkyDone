@@ -257,10 +257,11 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
 
     // OPTIMIZATION: Use Server-side RPC for All Time to avoid crashing browser with 80k rows
     if (timeRange === 'All Time') {
+        console.log("[dbService] Fetching All Time stats from RPC...");
         const { data, error } = await supabase.rpc('get_all_time_stats');
         
         if (error) {
-            console.error("RPC Error:", error);
+            console.error("[dbService] RPC Error:", error);
             // Fallback (or return empty if truly broken)
             return {
                 artistInfo: [], // not used in this path usually
@@ -268,6 +269,8 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
                 dashboardStats: null
             };
         }
+
+        console.log("[dbService] RPC Result:", data ? "Data Received" : "No Data", data?.totals);
 
         // Transform RPC result to expected format
         if (data) {
@@ -299,19 +302,17 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
                  timeStr: a.timeStr
              }));
              
-             // Return early with pre-formulated lists
-             // We return them as "artistInfo" etc? No, fetchDashboardStats usually just returns the raw data arrays
-             // Wait, the signature of this function is weird. It returns dashboardStats?
-             // Let's match the return type at the bottom
-             
-             // Hack: Map the RPC result into the structures the UI expects
+             // Extract global totals calculated by the server
+             const totalMinutes = data.totals?.minutes || 0;
+             const totalTracks = data.totals?.tracks || 0;
+
              return {
                  topArtists: artists,
                  topSongs: songs,
                  topAlbums: albums,
-                 hourlyActivity: [], // Optional or todo
-                 totalMinutes: 0, // calculate if needed
-                 totalTracks: 0 // calculate if needed
+                 hourlyActivity: [], // Optional: add hourly aggregation to RPC if needed later
+                 totalMinutes: totalMinutes,
+                 totalTracks: totalTracks
              };
         }
     }
