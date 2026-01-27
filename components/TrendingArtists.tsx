@@ -382,25 +382,34 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             {/* SIDE PANEL VIEW (Replaces Modal) */}
             <AnimatePresence>
                 {selectedItem && (
-                    <motion.div 
-                        initial={{ opacity: 0, x: 50 }} 
-                        animate={{ opacity: 1, x: 0 }} 
-                        exit={{ opacity: 0, x: 50 }}
-                        className="absolute top-0 right-0 bottom-0 w-full md:w-[320px] z-[50]"
-                    >
-                        {/* Backdrop for mobile only */}
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSelectedItem(null)}></div>
+                    <>
+                        {/* Global Backdrop (Click to close) */}
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[150]"
+                            onClick={() => setSelectedItem(null)}
+                        />
 
-                        <div 
-                             className="h-full w-full bg-[#1C1C1E]/95 backdrop-blur-2xl border-l border-white/10 flex flex-col relative shadow-2xl ml-auto"
-                             onClick={(e) => e.stopPropagation()}
+                        {/* Floating Side Panel */}
+                        <motion.div 
+                            initial={{ opacity: 0, x: 50, scale: 0.95 }} 
+                            animate={{ opacity: 1, x: 0, scale: 1 }} 
+                            exit={{ opacity: 0, x: 50, scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            className="fixed top-2 bottom-2 right-2 w-[calc(100vw-16px)] md:w-[320px] z-[200] max-h-[calc(100vh-16px)]"
                         >
-                            <button 
-                                onClick={() => setSelectedItem(null)} 
-                                className="absolute top-4 right-4 bg-black/20 hover:bg-black/40 rounded-full p-2 text-white z-20 transition-colors backdrop-blur-md"
+                            <div 
+                                className="h-full w-full bg-[#1C1C1E] rounded-3xl overflow-hidden flex flex-col relative shadow-2xl border border-white/10"
+                                onClick={(e) => e.stopPropagation()}
                             >
-                                <X size={18} />
-                            </button>
+                                <button 
+                                    onClick={() => setSelectedItem(null)} 
+                                    className="absolute top-4 right-4 bg-black/40 hover:bg-black/60 rounded-full p-2 text-white z-50 transition-colors backdrop-blur-md"
+                                >
+                                    <X size={20} />
+                                </button>
 
                             {/* BANNER HEADER */}
                             <div className="relative w-full h-56 overflow-hidden flex-shrink-0">
