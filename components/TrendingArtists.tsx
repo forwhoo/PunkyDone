@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { TrendingUp, Sparkles, Disc, Mic2, Music, X } from 'lucide-react';
+import { TrendingUp, Sparkles, Disc, Mic2, Music, X, Clock } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface TrendingItem {
