@@ -28,7 +28,7 @@ export const generateMusicInsights = async (contextData: string): Promise<string
     `;
 
     const response = await client.chat.completions.create({
-        model: "llama3-70b-8192",
+        model: "moonshotai/kimi-k2-instruct-0905",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7
     });
@@ -97,7 +97,7 @@ USER QUESTION: "${question}"
 `;
 
     const response = await client.chat.completions.create({
-        model: "llama3-70b-8192",
+        model: "moonshotai/kimi-k2-instruct-0905",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
         max_tokens: 600
