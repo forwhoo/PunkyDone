@@ -2,13 +2,12 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from './UIComponents';
 // import { ActivityHeatmap } from './ActivityHeatmap';
 import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2 } from 'lucide-react';
-import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory } from '../services/geminiService';
+import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory, generateWrappedVibe } from '../services/geminiService';
 import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { WrappedStory } from './WrappedStory';
 
 interface TopAIProps {
     token?: string | null;
@@ -35,18 +34,18 @@ const formatDuration = (durationMs?: number) => {
     const totalSeconds = Math.round(durationMs / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return `${minutes}:${seconds.toString().padStart(2, '0')} `;
 };
 
 const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: number, displayMode?: 'mins' | 'plays' | 'date' | 'length' }) => {
     const getDisplayValue = () => {
         if (displayMode === 'mins') {
             const val = item.mins ?? item.totalMinutes ?? (item.timeStr ? parseInt(item.timeStr.replace(/[^0-9]/g, ''), 10) : null);
-            return val != null ? `${val}m` : null;
+            return val != null ? `${val} m` : null;
         }
         if (displayMode === 'plays') {
             const val = item.plays ?? item.listens ?? item.totalListens ?? null;
-            return val != null ? `${val}p` : null;
+            return val != null ? `${val} p` : null;
         }
         if (displayMode === 'date') {
             const dateValue = item.date || item.played_at || item.lastPlayed;
@@ -63,10 +62,10 @@ const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: 
 
         // Smart Fallback hierarchy
         const mins = item.mins ?? item.totalMinutes ?? (item.timeStr ? parseInt(item.timeStr.replace(/[^0-9]/g, ''), 10) : null);
-        if (mins) return `${mins}m`;
+        if (mins) return `${mins} m`;
         const plays = item.plays ?? item.listens ?? item.totalListens ?? null;
-        if (plays) return `${plays}p`;
-        return `#${rank}`;
+        if (plays) return `${plays} p`;
+        return `#${rank} `;
     };
 
     return (
@@ -78,7 +77,7 @@ const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: 
 
             <div className="relative z-10 ml-10 md:ml-12">
                 {/* Image Container */}
-                <div className={`w-32 h-32 md:w-40 md:h-40 overflow-hidden bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative ${item.type === 'artist' ? 'rounded-full' : 'rounded-xl'}`}>
+                <div className={`w - 32 h - 32 md: w - 40 md: h - 40 overflow - hidden bg - [#2C2C2E] shadow - 2xl border border - white / 5 group - hover: border - white / 20 transition - all duration - 300 group - hover: -translate - y - 2 relative ${item.type === 'artist' ? 'rounded-full' : 'rounded-xl'} `}>
                     {/* Fallback & Image */}
                     <div className="absolute inset-0 flex items-center justify-center bg-[#1C1C1E]">
                         <Music2 className="text-white/20" size={48} />
@@ -93,7 +92,7 @@ const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: 
                     {/* Hover Overlay with Stats - Now Dynamic */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40 backdrop-blur-sm">
                         <span className="text-white font-bold text-xl drop-shadow-md">
-                            {getDisplayValue() || `#${rank}`}
+                            {getDisplayValue() || `#${rank} `}
                         </span>
                     </div>
                 </div>
@@ -135,7 +134,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const [insightMode, setInsightMode] = useState(false);
     const [insightData, setInsightData] = useState<any[]>([]);
     const [insightStep, setInsightStep] = useState(0);
-    const [wrappedData, setWrappedData] = useState<any>(null);
+    // const [wrappedData, setWrappedData] = useState<any>(null); // Removed
 
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [chatResponse, setChatResponse] = useState<string | null>(null);
@@ -170,7 +169,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                 const result = await uploadExtendedHistory(json, (percent) => {
                     setUploadProgress(percent);
-                    setChatResponse(`Uploading: ${percent}%`);
+                    setChatResponse(`Uploading: ${percent}% `);
                 });
 
                 if (result.success) {
@@ -179,13 +178,13 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                     if (token) {
                         const backfillResult = await backfillExtendedHistoryImages(token, (status) => {
-                            setChatResponse(`✅ Upload complete! ${status}`);
+                            setChatResponse(`✅ Upload complete! ${status} `);
                         });
 
                         if (backfillResult.success) {
-                            setChatResponse(`✅ All done! ${backfillResult.message}`);
+                            setChatResponse(`✅ All done! ${backfillResult.message} `);
                         } else {
-                            setChatResponse(`✅ Upload complete, but image fetch had issues: ${backfillResult.message}`);
+                            setChatResponse(`✅ Upload complete, but image fetch had issues: ${backfillResult.message} `);
                         }
                     } else {
                         setChatResponse("✅ Upload complete! (Could not fetch images - no Spotify token)");
@@ -290,7 +289,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             });
 
             if (result.success) {
-                setChatResponse(`✅ ${result.message}`);
+                setChatResponse(`✅ ${result.message} `);
             } else {
                 setErrorMsg(result.message);
                 setChatResponse(null);
@@ -309,31 +308,44 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         setDisplayedText("");
         setCategoryResults([]); // clear previous
         setInsightMode(false); // Reset insight mode
-        setWrappedData(null); // Reset wrapped
+        // setWrappedData(null); // REMOVED
 
         try {
             const lower = promptToUse.toLowerCase();
 
-            // SPECIAL HANDLER: WRAPPED (Daily, Weekly, Monthly)
-            // If user explicitly asks for "wrapped" or "recap"
+            // SPECIAL HANDLER: WRAPPED (Daily, Weekly, Monthly) -> NOW WITH VIBE CHECK
             if (lower.includes('wrapped') || lower.includes('recap')) {
                 let period: 'daily' | 'weekly' | 'monthly' = 'daily';
                 if (lower.includes('week')) period = 'weekly';
                 if (lower.includes('month')) period = 'monthly';
-                // If just "wrapped", maybe default to specific logic or ask? Defaulting to "weekly" or "daily"
-                // Let's default to weekly if vague
-                if (!lower.includes('day') && !lower.includes('week') && !lower.includes('month')) {
-                    period = 'weekly';
-                }
+                if (!lower.includes('day') && !lower.includes('week') && !lower.includes('month')) period = 'weekly';
 
+                // 1. Get stats + top tracks
                 const stats = await getWrappedStats(period);
-                if (stats) {
-                    setWrappedData(stats);
+                if (stats && stats.topTracks && stats.topTracks.length > 0) {
+                    // 2. Generate Twist using AI
+                    const vibe = await generateWrappedVibe(stats.topTracks);
+
+                    // 3. Create a Category Result
+                    const wrappedCategory: CategoryResult = {
+                        id: `wrapped - ${Date.now()} `,
+                        title: `✨ ${vibe.title} `,
+                        description: `AI Vibe Check: "${vibe.description}"`,
+                        stats: `${stats.totalMinutes} mins • ${stats.totalTracks} tracks`,
+                        tracks: stats.topTracks,
+                        viewMode: 'ranked'
+                    };
+
+                    setCategoryResults([wrappedCategory]);
+                    setMode('discover');
+                    setViewMode('ranked');
+                    setSortMode('plays');
                     setLoading(false);
                     setUserPrompt("");
                     return;
+
                 } else {
-                    setErrorMsg(`No ${period} stats found. Start listening!`);
+                    setErrorMsg(`No ${period} stats found.Start listening!`);
                     setLoading(false);
                     return;
                 }
@@ -390,7 +402,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                         if (data.length > 0) {
                             newResults.push({
-                                id: `cat-${Date.now()}-${idx}`,
+                                id: `cat - ${Date.now()} -${idx} `,
                                 title: concept.title,
                                 description: concept.description,
                                 stats: `${data.length} items`,
@@ -624,14 +636,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 </div>
             )}
 
-
-            {/* WRAPPED STORY MODE */}
-            {wrappedData && (
-                <WrappedStory
-                    data={wrappedData}
-                    onClose={() => setWrappedData(null)}
-                />
-            )}
 
             {/* WEEKLY INSIGHT STORY MODE */}
             {insightMode && insightData.length > 0 && (

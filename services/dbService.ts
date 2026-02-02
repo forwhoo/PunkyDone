@@ -1133,8 +1133,21 @@ export const getWrappedStats = async (period: 'daily' | 'weekly' | 'monthly' = '
         }
     });
 
+
     const topArtistEntry = Object.entries(artists).sort((a, b) => b[1].count - a[1].count)[0];
     const topSongEntry = Object.entries(songs).sort((a, b) => b[1].count - a[1].count)[0];
+
+    // Sort all songs for the "Vibe Check" list
+    const topTracks = Object.entries(songs)
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 50)
+        .map(([key, data]) => ({
+            title: key, // title is the key in our simple map
+            artist: data.artist,
+            cover: data.cover,
+            plays: data.count,
+            type: 'song'
+        }));
 
     return {
         type: 'WRAPPED',
@@ -1143,6 +1156,7 @@ export const getWrappedStats = async (period: 'daily' | 'weekly' | 'monthly' = '
         totalMinutes,
         topArtist: topArtistEntry ? { name: topArtistEntry[0], count: topArtistEntry[1].count, image: topArtistEntry[1].image } : null,
         topSong: topSongEntry ? { title: topSongEntry[0], count: topSongEntry[1].count, cover: topSongEntry[1].cover, artist: topSongEntry[1].artist } : null,
+        topTracks: topTracks, // Now returning the list!
         totalTracks: rawData.length
     };
 }

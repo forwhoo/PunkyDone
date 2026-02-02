@@ -14,11 +14,11 @@ const getAiClient = () => {
 };
 
 export const generateMusicInsights = async (contextData: string): Promise<string> => {
-  try {
-    const client = getAiClient();
-    if (!client) return "Configure VITE_GROQ_API_KEY to see insights.";
+    try {
+        const client = getAiClient();
+        if (!client) return "Configure VITE_GROQ_API_KEY to see insights.";
 
-    const prompt = `
+        const prompt = `
       You are a music analytics expert. Analyze the following data summary and provide a concise, 
       Apple Music-style "Editor's Note" or strategic insight about the listening trends.
       Keep it short, encouraging, and professional (max 2 sentences).
@@ -27,38 +27,38 @@ export const generateMusicInsights = async (contextData: string): Promise<string
       Data: ${contextData}
     `;
 
-    const response = await client.chat.completions.create({
-        model: "moonshotai/kimi-k2-instruct-0905",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7
-    });
-    
-    return response.choices[0]?.message?.content || "No insights available via Groq.";
-  } catch (error) {
-    console.error("Groq API Error:", error);
-    return "Unable to generate insights right now.";
-  }
+        const response = await client.chat.completions.create({
+            model: "moonshotai/kimi-k2-instruct-0905",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7
+        });
+
+        return response.choices[0]?.message?.content || "No insights available via Groq.";
+    } catch (error) {
+        console.error("Groq API Error:", error);
+        return "Unable to generate insights right now.";
+    }
 };
 
-export const answerMusicQuestion = async (question: string, context: { 
-  artists: string[], 
-  albums: string[], 
-  songs: string[],
-  userName?: string,
-  globalStats?: { 
-    weeklyTime: string, 
-    weeklyTrend: string, 
-    totalTracks: number, 
-    totalMinutes?: number,
-    charts?: any[],
-    extraStats?: { longestGapHours: string, longestSessionHours: string }
-  }
+export const answerMusicQuestion = async (question: string, context: {
+    artists: string[],
+    albums: string[],
+    songs: string[],
+    userName?: string,
+    globalStats?: {
+        weeklyTime: string,
+        weeklyTrend: string,
+        totalTracks: number,
+        totalMinutes?: number,
+        charts?: any[],
+        extraStats?: { longestGapHours: string, longestSessionHours: string }
+    }
 }): Promise<string> => {
-  try {
-    const client = getAiClient();
-    if (!client) return "Configure VITE_GROQ_API_KEY to use chat features.";
+    try {
+        const client = getAiClient();
+        if (!client) return "Configure VITE_GROQ_API_KEY to use chat features.";
 
-    const statsInfo = context.globalStats ? `
+        const statsInfo = context.globalStats ? `
 - This Week's Listening Time: ${context.globalStats.weeklyTime}
 - Weekly Trend: ${context.globalStats.weeklyTrend}
 - Total History Tracks: ${context.globalStats.totalTracks}
@@ -68,7 +68,7 @@ export const answerMusicQuestion = async (question: string, context: {
 - Longest Continuous Session (Last 14 days): ${context.globalStats.extraStats?.longestSessionHours || '?'} hours
     ` : '';
 
-    const prompt = `
+        const prompt = `
 You are a music analytics assistant with deep knowledge of the user's listening history.
 User name: ${context.userName || 'Unknown'}
 Current Date and Time: ${new Date().toLocaleString()}
@@ -96,18 +96,18 @@ USER QUESTION: "${question}"
    - "Deep Cut" usually means songs with encoded popularity < 30 (if available) or rarely played tracks.
 `;
 
-    const response = await client.chat.completions.create({
-        model: "moonshotai/kimi-k2-instruct-0905",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 600
-    });
-    
-    return response.choices[0]?.message?.content || "I couldn't process that question. Try rephrasing!";
-  } catch (error) {
-    console.error("Chat Error:", error);
-    return "Unable to answer right now. Try again!";
-  }
+        const response = await client.chat.completions.create({
+            model: "moonshotai/kimi-k2-instruct-0905",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
+            max_tokens: 600
+        });
+
+        return response.choices[0]?.message?.content || "I couldn't process that question. Try rephrasing!";
+    } catch (error) {
+        console.error("Chat Error:", error);
+        return "Unable to answer right now. Try again!";
+    }
 };
 
 export const generateMusicInsight = async (query: string, stats: any): Promise<string> => {
@@ -176,26 +176,26 @@ export const generateRankingInsights = async (items: string[]): Promise<Record<s
 
 export interface AIFilterArgs {
     // Result Type
-    type?: 'song' | 'album' | 'artist'; 
+    type?: 'song' | 'album' | 'artist';
 
     // Field matching
     field?: 'artist_name' | 'album_name' | 'track_name';
     value?: string; // Exact match
     contains?: string; // Partial match (broader results)
-    
+
     // Time filters
     timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | 'latenight';
     dayOfWeek?: 'weekday' | 'weekend';
     recentDays?: number; // Last N days (e.g., 7, 30)
-    
+
     // Duration filters
     minDurationMs?: number; // Songs longer than X
     maxDurationMs?: number; // Songs shorter than X
-    
+
     // Aggregation
     sortBy?: 'plays' | 'minutes' | 'recency' | 'duration';
     sortOrder?: 'highest' | 'lowest';
-    
+
     // Result control
     minPlays?: number; // Ensure at least X plays
     limit?: number; // How many results (default 20)
@@ -253,7 +253,7 @@ export const generateWeeklyInsightStory = async (context: any): Promise<any[]> =
         Keep it fun, high energy, and personalized. 
         JSON ONLY. No markdown.
         `;
-        
+
         const response = await client.chat.completions.create({
             model: "moonshotai/kimi-k2-instruct-0905",
             messages: [{ role: "system", content: "You are a JSON generator." }, { role: "user", content: prompt }],
@@ -267,9 +267,9 @@ export const generateWeeklyInsightStory = async (context: any): Promise<any[]> =
             const parsed = JSON.parse(raw);
             return Array.isArray(parsed) ? parsed : (parsed.slides || []);
         } catch (e) {
-             // Heuristic cleanup if markdown exists
-             const jsonMatch = raw.match(/\[.*\]/s);
-             return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+            // Heuristic cleanup if markdown exists
+            const jsonMatch = raw.match(/\[.*\]/s);
+            return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
         }
 
     } catch (e) {
@@ -278,15 +278,15 @@ export const generateWeeklyInsightStory = async (context: any): Promise<any[]> =
     }
 };
 
-export const generateDynamicCategoryQuery = async (context: { 
-    artists: string[], 
-    albums: string[], 
-    songs: string[] ,
+export const generateDynamicCategoryQuery = async (context: {
+    artists: string[],
+    albums: string[],
+    songs: string[],
     userName?: string,
-    globalStats?: { 
-        weeklyTime: string, 
-        weeklyTrend: string, 
-        totalTracks: number, 
+    globalStats?: {
+        weeklyTime: string,
+        weeklyTrend: string,
+        totalTracks: number,
         totalMinutes?: number,
         extraStats?: { longestGapHours: string, longestSessionHours: string },
         charts?: any[]
@@ -298,7 +298,7 @@ export const generateDynamicCategoryQuery = async (context: {
 
         const hour = new Date().getHours();
         const timeOfDay = hour < 6 ? 'latenight' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : hour < 21 ? 'evening' : 'night';
-        
+
         // Shuffle and sample to keep prompt fresh
         const shuffledArtists = [...context.artists].sort(() => 0.5 - Math.random());
         const shuffledAlbums = [...context.albums].sort(() => 0.5 - Math.random());
@@ -389,7 +389,7 @@ Return an ARRAY of objects:
 ]
 `;
 
-        const userMessage = userPrompt 
+        const userMessage = userPrompt
             ? `USER REQUEST: "${userPrompt}". Generate matching categories using the library context.`
             : `Generate a random creative category based on the user's library and current time.`;
 
@@ -406,7 +406,7 @@ Return an ARRAY of objects:
 
         const text = response.choices[0]?.message?.content || "{}";
         const parsed = JSON.parse(text);
-        
+
         // Handle both single object and array return types from AI (just in case)
         let results = [];
         if (Array.isArray(parsed)) {
@@ -416,15 +416,15 @@ Return an ARRAY of objects:
         } else if (parsed.title && parsed.filter) {
             results = [parsed];
         } else {
-             // Try to find array in object keys if model wrapped it weirdly
-             const firstKeyArray = Object.values(parsed).find(v => Array.isArray(v));
-             if (firstKeyArray) {
-                 results = firstKeyArray as any[];
-             }
+            // Try to find array in object keys if model wrapped it weirdly
+            const firstKeyArray = Object.values(parsed).find(v => Array.isArray(v));
+            if (firstKeyArray) {
+                results = firstKeyArray as any[];
+            }
         }
-        
+
         if (results.length === 0) throw new Error("AI did not return any valid categories");
-        
+
         return results as AIFilterResult[];
 
     } catch (e: any) {
@@ -438,8 +438,9 @@ Return an ARRAY of objects:
     }
 }
 
+
 export const generateWrappedStory = async (period: string): Promise<any> => {
-     try {
+    try {
         const client = getAiClient();
         if (!client) throw new Error("No API Key");
 
@@ -454,24 +455,69 @@ export const generateWrappedStory = async (period: string): Promise<any> => {
                 "listeningMinutes": 12050
             }
         `;
-         
+
         const response = await client.chat.completions.create({
             model: "openai/gpt-oss-20b",
             messages: [{ role: "user", content: prompt }],
             response_format: { type: "json_object" },
             temperature: 0.7
         });
-        
+
         const text = response.choices[0]?.message?.content || "{}";
         return JSON.parse(text);
 
-     } catch (e) {
-         console.error("Groq Wrapped Error:", e);
-         return {
-             storyTitle: `Your ${period} Recap`,
-             storyText: "You listened to some great music!",
-             topGenre: "Mixed",
-             listeningMinutes: 0
-         }
-     }
+    } catch (e) {
+        console.error("Groq Wrapped Error:", e);
+        return {
+            storyTitle: `Your ${period} Recap`,
+            storyText: "You listened to some great music!",
+            topGenre: "Mixed",
+            listeningMinutes: 0
+        }
+    }
 }
+
+// Generate a creative title & description for a collection of songs (The "Twist")
+export const generateWrappedVibe = async (tracks: any[]): Promise<{ title: string, description: string }> => {
+    try {
+        const client = getAiClient();
+        // Fallback if no tracks
+        if (!tracks || tracks.length === 0) return { title: "The Sound of Silence", description: "You didn't listen to anything. That's a vibe I guess." };
+        if (!client) return { title: "Your Collection", description: "Here are your top tracks." };
+
+        const trackList = tracks.slice(0, 15).map(t => `${t.title} by ${t.artist}`).join('\n');
+
+        const prompt = `
+            Analyze this list of songs and create a creative, unique Category Title and a 1-sentence "Roast" or "Vibe Check" description.
+            
+            Songs:
+            ${trackList}
+
+            Examples:
+            - Title: "Sad Boi Hours", Description: "Who hurt you? This is a lot of minor keys."
+            - Title: "Main Character Energy", Description: "Walking down the street like you own it."
+            - Title: "The Time Calsule", Description: "Stuck in 2016 and refusing to leave."
+
+            Return JSON ONLY: { "title": "...", "description": "..." }
+        `;
+
+        const response = await client.chat.completions.create({
+            model: "moonshotai/kimi-k2-instruct-0905",
+            messages: [{ role: "system", content: "You are a witty music critic." }, { role: "user", content: prompt }],
+            response_format: { type: "json_object" },
+            temperature: 0.8
+        });
+
+        const text = response.choices[0]?.message?.content || "{}";
+        const result = JSON.parse(text);
+
+        return {
+            title: result.title || "Your Mix",
+            description: result.description || "A selection of your top tracks."
+        };
+
+    } catch (e) {
+        console.error("Vibe Check Error:", e);
+        return { title: "Top Tracks", description: "Your most played songs for this period." };
+    }
+};
