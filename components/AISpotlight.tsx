@@ -3,26 +3,27 @@ import { Card } from './UIComponents';
 // import { ActivityHeatmap } from './ActivityHeatmap';
 import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2 } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory } from '../services/geminiService';
-import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem } from '../services/dbService';
+import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { WrappedStory } from './WrappedStory';
 
 interface TopAIProps {
     token?: string | null;
     history?: any[];
-    contextData: { 
-        artists: string[], 
-        albums: string[], 
+    contextData: {
+        artists: string[],
+        albums: string[],
         songs: string[],
         userName?: string,
-        globalStats?: { 
-            weeklyTime: string, 
-            weeklyTrend: string, 
-            totalTracks: number, 
+        globalStats?: {
+            weeklyTime: string,
+            weeklyTrend: string,
+            totalTracks: number,
             totalMinutes?: number,
-            charts?: any[] 
+            charts?: any[]
         }
     };
     user?: any;
@@ -51,7 +52,7 @@ const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: 
             const dateValue = item.date || item.played_at || item.lastPlayed;
             if (dateValue) {
                 const d = new Date(dateValue);
-                return d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+                return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
             }
             if (item.year) return item.year;
         }
@@ -59,7 +60,7 @@ const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: 
             const durationValue = item.avgDurationMs ?? item.duration_ms ?? item.durationMs ?? null;
             return formatDuration(durationValue);
         }
-        
+
         // Smart Fallback hierarchy
         const mins = item.mins ?? item.totalMinutes ?? (item.timeStr ? parseInt(item.timeStr.replace(/[^0-9]/g, ''), 10) : null);
         if (mins) return `${mins}m`;
@@ -69,45 +70,45 @@ const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: 
     };
 
     return (
-    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
-        {/* Big Number Ranking */}
-        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40">
-            {rank}
-        </span>
-        
-        <div className="relative z-10 ml-10 md:ml-12">
-             {/* Image Container */}
-            <div className={`w-32 h-32 md:w-40 md:h-40 overflow-hidden bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative ${item.type === 'artist' ? 'rounded-full' : 'rounded-xl'}`}>
-                {/* Fallback & Image */}
-                <div className="absolute inset-0 flex items-center justify-center bg-[#1C1C1E]">
-                     <Music2 className="text-white/20" size={48} />
+        <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
+            {/* Big Number Ranking */}
+            <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40">
+                {rank}
+            </span>
+
+            <div className="relative z-10 ml-10 md:ml-12">
+                {/* Image Container */}
+                <div className={`w-32 h-32 md:w-40 md:h-40 overflow-hidden bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative ${item.type === 'artist' ? 'rounded-full' : 'rounded-xl'}`}>
+                    {/* Fallback & Image */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#1C1C1E]">
+                        <Music2 className="text-white/20" size={48} />
+                    </div>
+                    <img
+                        src={item.cover || item.image}
+                        alt={item.title}
+                        className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm"
+                        onError={(e) => e.currentTarget.style.opacity = '0'}
+                    />
+
+                    {/* Hover Overlay with Stats - Now Dynamic */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40 backdrop-blur-sm">
+                        <span className="text-white font-bold text-xl drop-shadow-md">
+                            {getDisplayValue() || `#${rank}`}
+                        </span>
+                    </div>
                 </div>
-                <img 
-                    src={item.cover || item.image} 
-                    alt={item.title} 
-                    className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm"
-                    onError={(e) => e.currentTarget.style.opacity = '0'}
-                />
-                
-                {/* Hover Overlay with Stats - Now Dynamic */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40 backdrop-blur-sm">
-                     <span className="text-white font-bold text-xl drop-shadow-md">
-                         {getDisplayValue() || `#${rank}`}
-                     </span>
+
+                {/* Text Details */}
+                <div className="mt-3 relative z-20">
+                    <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{item.name || item.title}</h3>
+                    {(item.artist || item.desc) && (
+                        <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">
+                            {item.artist || item.desc}
+                        </p>
+                    )}
                 </div>
-            </div>
-            
-            {/* Text Details */}
-            <div className="mt-3 relative z-20">
-                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{item.name || item.title}</h3>
-                {(item.artist || item.desc) && (
-                    <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">
-                        {item.artist || item.desc}
-                    </p>
-                )}
             </div>
         </div>
-    </div>
     );
 };
 
@@ -123,10 +124,10 @@ interface CategoryResult {
 
 export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history = [], user }) => {
     const [loading, setLoading] = useState(false);
-    
+
     // Store array of category results
     const [categoryResults, setCategoryResults] = useState<CategoryResult[]>([]);
-    
+
     // Global View Config for newly generated results
     const [viewMode, setViewMode] = useState<'standard' | 'ranked'>('standard');
     const [sortMode, setSortMode] = useState<'mins' | 'plays' | 'date' | 'length'>('mins');
@@ -134,6 +135,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const [insightMode, setInsightMode] = useState(false);
     const [insightData, setInsightData] = useState<any[]>([]);
     const [insightStep, setInsightStep] = useState(0);
+    const [wrappedData, setWrappedData] = useState<any>(null);
 
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [chatResponse, setChatResponse] = useState<string | null>(null);
@@ -159,13 +161,13 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 // Basic cleanup if it's wrapped in a weird structure, but usually it's array
                 // We'll trust basic JSON.parse first
                 const json = JSON.parse(text) as SpotifyHistoryItem[];
-                
+
                 if (!Array.isArray(json)) {
                     throw new Error("Invalid format: Expected an array.");
                 }
 
                 setChatResponse(`Processing ${json.length} items...`);
-                
+
                 const result = await uploadExtendedHistory(json, (percent) => {
                     setUploadProgress(percent);
                     setChatResponse(`Uploading: ${percent}%`);
@@ -174,12 +176,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 if (result.success) {
                     // Start image backfill
                     setChatResponse("✅ Upload complete! Fetching album covers from Spotify...");
-                    
+
                     if (token) {
                         const backfillResult = await backfillExtendedHistoryImages(token, (status) => {
                             setChatResponse(`✅ Upload complete! ${status}`);
                         });
-                        
+
                         if (backfillResult.success) {
                             setChatResponse(`✅ All done! ${backfillResult.message}`);
                         } else {
@@ -188,7 +190,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     } else {
                         setChatResponse("✅ Upload complete! (Could not fetch images - no Spotify token)");
                     }
-                    
+
                     setUserPrompt("");
                 } else {
                     setErrorMsg("Upload failed: " + result.message);
@@ -248,9 +250,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             const timer = setInterval(() => {
                 if (i < chatResponse.length) {
                     setDisplayedText((prev) => {
-                         // Simple protection against double-typing if effect re-runs
-                         if (prev.length >= chatResponse.length) return prev;
-                         return chatResponse.slice(0, prev.length + 1);
+                        // Simple protection against double-typing if effect re-runs
+                        if (prev.length >= chatResponse.length) return prev;
+                        return chatResponse.slice(0, prev.length + 1);
                     });
                     i++;
                 } else {
@@ -276,30 +278,30 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             setUserPrompt("");
             setLoading(true);
             setChatResponse("Fetching images from Spotify for extended history...");
-            
+
             if (!token) {
                 setErrorMsg("No Spotify token found. Please refresh the page and log in.");
                 setLoading(false);
                 return;
             }
-            
+
             const result = await backfillExtendedHistoryImages(token, (status) => {
                 setChatResponse(status);
             });
-            
+
             if (result.success) {
                 setChatResponse(`✅ ${result.message}`);
             } else {
                 setErrorMsg(result.message);
                 setChatResponse(null);
             }
-            
+
             setLoading(false);
             return;
         }
-        
+
         // Update input if manual
-        if(manualPrompt) setUserPrompt(manualPrompt);
+        if (manualPrompt) setUserPrompt(manualPrompt);
 
         setLoading(true);
         setErrorMsg(null);
@@ -307,55 +309,83 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         setDisplayedText("");
         setCategoryResults([]); // clear previous
         setInsightMode(false); // Reset insight mode
-        
+        setWrappedData(null); // Reset wrapped
+
         try {
-            // SPECIAL HANDLER: WEEKLY INSIGHT
-            if (manualPrompt === 'Weekly Insight') {
-                 setInsightMode(true);
-                 setInsightStep(0);
-                 const slides = await generateWeeklyInsightStory(contextData);
-                 setInsightData(slides);
-                 setLoading(false);
-                 return;
+            const lower = promptToUse.toLowerCase();
+
+            // SPECIAL HANDLER: WRAPPED (Daily, Weekly, Monthly)
+            // If user explicitly asks for "wrapped" or "recap"
+            if (lower.includes('wrapped') || lower.includes('recap')) {
+                let period: 'daily' | 'weekly' | 'monthly' = 'daily';
+                if (lower.includes('week')) period = 'weekly';
+                if (lower.includes('month')) period = 'monthly';
+                // If just "wrapped", maybe default to specific logic or ask? Defaulting to "weekly" or "daily"
+                // Let's default to weekly if vague
+                if (!lower.includes('day') && !lower.includes('week') && !lower.includes('month')) {
+                    period = 'weekly';
+                }
+
+                const stats = await getWrappedStats(period);
+                if (stats) {
+                    setWrappedData(stats);
+                    setLoading(false);
+                    setUserPrompt("");
+                    return;
+                } else {
+                    setErrorMsg(`No ${period} stats found. Start listening!`);
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            // SPECIAL HANDLER: WEEKLY INSIGHT (The AI Story Version)
+            if (manualPrompt === 'Weekly Insight' || lower.includes('insight story')) {
+                setInsightMode(true);
+                setInsightStep(0);
+                const slides = await generateWeeklyInsightStory(contextData);
+                setInsightData(slides);
+                setLoading(false);
+                return;
             }
 
             // Determine query type
             const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover', 'top', 'best', 'most', 'rank', 'chart', 'favorite', 'least', 'wrapped', 'gems', 'rewind', 'vibes', 'mix', 'weekly', 'insight', 'stats'];
             const isAnalysisQuery = analysisKeywords.some(k => promptToUse.toLowerCase().includes(k));
-            
+
             if (isAnalysisQuery || discoveryMode) {
                 // SQL Analysis Mode
                 setMode('discover');
                 // Pass discovery hint if enabled
-                const fullPrompt = discoveryMode 
-                    ? `${promptToUse} (Mode: FIND NEW SUGGESTIONS/DISCOVERY ON SPOTIFY)` 
+                const fullPrompt = discoveryMode
+                    ? `${promptToUse} (Mode: FIND NEW SUGGESTIONS/DISCOVERY ON SPOTIFY)`
                     : promptToUse;
 
                 const concepts = await generateDynamicCategoryQuery(contextData, fullPrompt);
-                
+
                 const newResults: CategoryResult[] = [];
-                
+
                 // Process all returned categories (Promise.all for speed)
                 await Promise.all(concepts.map(async (concept, idx) => {
                     if (concept && concept.filter) {
                         let data = [];
-                        
+
                         // Check if AI requested Spotify Discovery OR if we forced discovery mode but AI returned generic filter
                         if ((concept.filter.useSpotify || discoveryMode) && token) {
-                           // Use Spotify API
-                           if (concept.filter.spotifyQuery) {
-                               data = await searchSpotifyTracks(token, concept.filter.spotifyQuery);
-                           } else {
-                               // Fallback: Recommend based on top artist if no query
-                               const seeds = {
-                                   seed_artists: contextData.artists.slice(0, 2).map(a => a.split(' (')[0]), // Extract name
-                                   seed_genres: [] 
-                               };
-                               data = await fetchSpotifyRecommendations(token, seeds);
-                           }
+                            // Use Spotify API
+                            if (concept.filter.spotifyQuery) {
+                                data = await searchSpotifyTracks(token, concept.filter.spotifyQuery);
+                            } else {
+                                // Fallback: Recommend based on top artist if no query
+                                const seeds = {
+                                    seed_artists: contextData.artists.slice(0, 2).map(a => a.split(' (')[0]), // Extract name
+                                    seed_genres: []
+                                };
+                                data = await fetchSpotifyRecommendations(token, seeds);
+                            }
                         } else {
-                           // Use Local DB
-                           data = await fetchSmartPlaylist(concept);
+                            // Use Local DB
+                            data = await fetchSmartPlaylist(concept);
                         }
 
                         if (data.length > 0) {
@@ -403,9 +433,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                 // Sort by title or original order (concepts order matches index)
                 // But simplified: just use pushed order or sort by idx if needed.
-                // Since Promise.all runs in parallel, order might jumble slightly if not careful, 
+                // Since Promise.all runs in parallel, order might jumble slightly if not careful,
                 // but usually fine. For strict order we could map then filter.
-                
+
                 if (newResults.length === 0) {
                     setErrorMsg(`No results found for "${userPrompt}". Try a different query.`);
                 } else {
@@ -419,7 +449,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                         else if (sortBy === 'recency') setSortMode('date');
                         else if (sortBy === 'duration') setSortMode('length');
                     }
-                    
+
                     setCategoryResults(newResults);
                 }
 
@@ -434,44 +464,44 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         } catch (err: any) {
             setErrorMsg(`Error: ${err.message || 'Unknown'}`);
         }
-        
+
         setLoading(false);
-        if(!manualPrompt) setUserPrompt(""); 
+        if (!manualPrompt) setUserPrompt("");
     };
 
     return (
         <div className="scroll-mt-24" id="ai-spotlight" ref={sectionRef}>
             {/* Clean Centered Search Interface */}
             <div className="flex flex-col items-center justify-center mb-8 px-4 text-center">
-                
+
                 {/* Chat Display Area */}
                 {(displayedText || mode === 'chat' || loading) && (
                     <div className="w-full text-left mb-8 min-h-[60px] max-h-[400px] overflow-y-auto px-1 scrollbar-thin scrollbar-thumb-[#FA2D48] scrollbar-track-transparent max-w-2xl mx-auto">
-                         {loading ? (
+                        {loading ? (
                             <div className="flex items-center gap-3 text-[#FA2D48] font-mono text-sm">
                                 <div className="w-2 h-2 bg-[#FA2D48] rounded-full animate-ping"></div>
                                 <span className="animate-pulse">Analyzing your library...</span>
                             </div>
-                         ) : (
+                        ) : (
                             <div className="text-white text-lg font-medium leading-relaxed font-mono whitespace-pre-wrap markdown-container">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                     {typing ? displayedText : (chatResponse || "")}
                                 </ReactMarkdown>
                                 {typing && <span className="inline-block w-[3px] h-6 ml-1 bg-[#FA2D48] align-middle animate-pulse"></span>}
                             </div>
-                         )}
+                        )}
 
-                         {/* AI Suggestion Button - Centered & Clean */}
-                         {mode === 'chat' && !typing && !loading && categoryResults.length === 0 && (
+                        {/* AI Suggestion Button - Centered & Clean */}
+                        {mode === 'chat' && !typing && !loading && categoryResults.length === 0 && (
                             <div className="mt-8 flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full">
-                                <button 
+                                <button
                                     onClick={async () => {
                                         setLoading(true);
                                         const concepts = await generateDynamicCategoryQuery(contextData, `Create discovery categories based on: ${chatResponse}`);
-                                        
+
                                         const newResults: CategoryResult[] = [];
                                         await Promise.all(concepts.map(async (concept, idx) => {
-                                             if (concept.filter) {
+                                            if (concept.filter) {
                                                 const data = await fetchSmartPlaylist(concept);
                                                 if (data.length > 0) {
                                                     newResults.push({
@@ -482,7 +512,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                                         tracks: data
                                                     });
                                                 }
-                                             }
+                                            }
                                         }));
 
                                         // Fetch real images for artists if needed
@@ -512,8 +542,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                                 }
                                             }
                                         }
-                                        
-                                        if(newResults.length > 0) {
+
+                                        if (newResults.length > 0) {
                                             setCategoryResults(newResults);
                                             setMode('discover');
                                         }
@@ -526,27 +556,27 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                 </button>
                                 <p className="text-[#8E8E93] text-[11px]">Turn this conversation into a high-fidelity category.</p>
                             </div>
-                         )}
+                        )}
                     </div>
                 )}
-                
+
 
                 {/* Minimal Search Input - Line Style */}
                 <div className="w-full max-w-2xl mx-auto border border-white/10 bg-white/5 rounded-2xl p-2 focus-within:border-[#FA2D48]/50 focus-within:bg-black/40 transition-all backdrop-blur-md shadow-lg">
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleFileUpload} 
-                        className="hidden" 
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        className="hidden"
                         accept=".json"
                     />
                     <div className="relative flex items-center px-4">
-                        <input 
+                        <input
                             type="text"
                             value={userPrompt}
                             onChange={(e) => setUserPrompt(e.target.value)}
                             onKeyDown={(e) => {
-                                if(e.key === 'Enter') {
+                                if (e.key === 'Enter') {
                                     e.preventDefault();
                                     handleQuery();
                                 }
@@ -554,7 +584,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             placeholder={discoveryMode ? `Find something for ${userName}...` : `hey ${userName}, ask me something...`}
                             className="w-full bg-transparent py-3 text-[16px] font-medium text-white focus:outline-none placeholder:text-white/30"
                         />
-                        <button 
+                        <button
                             onClick={() => handleQuery()}
                             disabled={loading || !userPrompt.trim()}
                             className="text-[#FA2D48] disabled:text-white/10 transition-colors p-2 hover:scale-110 active:scale-95"
@@ -563,17 +593,17 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                         </button>
                     </div>
                 </div>
-                
+
                 {/* Discovery Toggle - Switch Style */}
                 <div className="flex justify-center mt-6">
                     <div className="flex items-center gap-3 bg-black/20 p-1.5 rounded-full border border-white/5 backdrop-blur-sm">
-                        <button 
+                        <button
                             onClick={() => setDiscoveryMode(false)}
                             className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all ${!discoveryMode ? 'bg-white text-black shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
                         >
                             Chat
                         </button>
-                        <button 
+                        <button
                             onClick={() => setDiscoveryMode(true)}
                             className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 ${discoveryMode ? 'bg-[#FA2D48] text-white shadow-[0_0_15px_rgba(250,45,72,0.4)]' : 'text-[#8E8E93] hover:text-white'}`}
                         >
@@ -594,203 +624,212 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 </div>
             )}
 
+
+            {/* WRAPPED STORY MODE */}
+            {wrappedData && (
+                <WrappedStory
+                    data={wrappedData}
+                    onClose={() => setWrappedData(null)}
+                />
+            )}
+
             {/* WEEKLY INSIGHT STORY MODE */}
             {insightMode && insightData.length > 0 && (
                 <div className="animate-in fade-in zoom-in duration-500 mb-10 w-full max-w-2xl mx-auto">
                     <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2C2C2E] border border-white/10 rounded-2xl p-8 min-h-[400px] flex flex-col justify-between shadow-2xl relative overflow-hidden">
-                         
-                         {/* Progress Bar */}
-                         <div className="flex gap-2 mb-6">
+
+                        {/* Progress Bar */}
+                        <div className="flex gap-2 mb-6">
                             {insightData.map((_, i) => (
                                 <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= insightStep ? 'bg-[#FA2D48]' : 'bg-white/10'}`} />
                             ))}
-                         </div>
-                         
-                         {/* Content */}
-                         <div className="flex-1 flex flex-col items-center justify-center text-center">
-                              <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">{insightData[insightStep].title}</h3>
-                              <p className="text-[#8E8E93] text-lg mb-8 max-w-md">{insightData[insightStep].content}</p>
+                        </div>
 
-                              {/* Visualization Area */}
-                              <div className="w-full flex justify-center items-center flex-1 min-h-[200px]">
-                                   {insightData[insightStep].type === 'text' && (
-                                       <div className="flex items-center justify-center animate-in zoom-in duration-500">
-                                            <Sparkles className="w-24 h-24 text-[#FA2D48] opacity-80 animate-pulse" />
-                                       </div>
-                                   )}
+                        {/* Content */}
+                        <div className="flex-1 flex flex-col items-center justify-center text-center">
+                            <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">{insightData[insightStep].title}</h3>
+                            <p className="text-[#8E8E93] text-lg mb-8 max-w-md">{insightData[insightStep].content}</p>
 
-                                   {insightData[insightStep].type === 'stat' && (
-                                       <div className="flex flex-col items-center animate-in zoom-in duration-300">
-                                            <span className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FA2D48] to-[#FF9F0A] drop-shadow-2xl">
-                                                {insightData[insightStep].data?.value}
-                                            </span>
-                                            <span className="text-white/60 font-mono mt-4 uppercase tracking-widest text-sm bg-white/5 px-4 py-1 rounded-full border border-white/10">
-                                                {insightData[insightStep].data?.subtext}
-                                            </span>
-                                       </div>
-                                   )}
+                            {/* Visualization Area */}
+                            <div className="w-full flex justify-center items-center flex-1 min-h-[200px]">
+                                {insightData[insightStep].type === 'text' && (
+                                    <div className="flex items-center justify-center animate-in zoom-in duration-500">
+                                        <Sparkles className="w-24 h-24 text-[#FA2D48] opacity-80 animate-pulse" />
+                                    </div>
+                                )}
 
-                                   {insightData[insightStep].type === 'quiz' && (
-                                       <div className="grid gap-3 w-full max-w-sm animate-in slide-in-from-right duration-500">
-                                            {insightData[insightStep].data?.options.map((opt: string, idx: number) => (
-                                                <button 
-                                                    key={idx}
-                                                    onClick={(e) => {
-                                                        const btn = e.currentTarget;
-                                                        const explanation = insightData[insightStep].data.explanation || "";
-                                                        
-                                                        // Reset all siblings
-                                                        const parent = btn.parentElement;
-                                                        if(parent) {
-                                                            Array.from(parent.children).forEach((child: any) => {
-                                                                child.style.opacity = '0.5';
-                                                                child.disabled = true;
-                                                            });
-                                                        }
-                                                        
-                                                        btn.style.opacity = '1';
-                                                        
-                                                        if (idx === insightData[insightStep].data.correctIndex) {
-                                                            btn.style.borderColor = '#22c55e';
-                                                            btn.style.backgroundColor = 'rgba(34, 197, 94, 0.2)';
-                                                            btn.innerHTML = `<span class='flex justify-between items-center'><span>${opt}</span> <span class='text-xs'>✅ Correct!</span></span>`;
-                                                        } else {
-                                                            btn.style.borderColor = '#ef4444';
-                                                            btn.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
-                                                            btn.innerHTML = `<span class='flex justify-between items-center'><span>${opt}</span> <span class='text-xs'>❌</span></span>`;
-                                                        }
-                                                        
-                                                        // Show explanation logic could go here, or just appended
-                                                        // For now simplified
-                                                    }}
-                                                    className="w-full text-left py-4 px-6 rounded-xl border border-white/10 bg-white/5 text-white font-bold hover:bg-white/10 hover:border-white/30 hover:scale-[1.02] transition-all"
-                                                >
-                                                    {opt}
-                                                </button>
-                                            ))}
-                                       </div>
-                                   )}
+                                {insightData[insightStep].type === 'stat' && (
+                                    <div className="flex flex-col items-center animate-in zoom-in duration-300">
+                                        <span className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FA2D48] to-[#FF9F0A] drop-shadow-2xl">
+                                            {insightData[insightStep].data?.value}
+                                        </span>
+                                        <span className="text-white/60 font-mono mt-4 uppercase tracking-widest text-sm bg-white/5 px-4 py-1 rounded-full border border-white/10">
+                                            {insightData[insightStep].data?.subtext}
+                                        </span>
+                                    </div>
+                                )}
 
-                                   {(insightData[insightStep].type === 'chart' || insightData[insightStep].type === 'bar_chart') && (
-                                       <div className="w-full max-w-sm space-y-4 animate-in slide-in-from-bottom duration-700 fade-in">
-                                           {insightData[insightStep].data?.points.map((p: any, idx: number) => (
-                                               <div key={idx} className="space-y-1">
-                                                   <div className="flex justify-between text-xs font-bold text-white uppercase">
-                                                       <span>{p.label}</span>
-                                                       <span>{p.value}</span>
-                                                   </div>
-                                                   <div className="h-3 w-full bg-white/10 rounded-full overflow-hidden">
-                                                       <div 
-                                                         style={{ width: `${Math.min(p.value, 100)}%` }} 
-                                                         className={`h-full ${idx % 2 === 0 ? 'bg-[#FA2D48]' : 'bg-[#FF9F0A]'} transition-all duration-1000 ease-out`} 
-                                                       />
-                                                   </div>
-                                               </div>
-                                           ))}
-                                       </div>
-                                   )}
-                                   
-                                   {insightData[insightStep].type === 'pie_chart' && (
-                                       <div className="relative w-full h-[300px] flex items-center justify-center animate-in zoom-in duration-700">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <PieChart>
-                                                    <Pie
-                                                        data={insightData[insightStep].data?.segments}
-                                                        cx="50%"
-                                                        cy="50%"
-                                                        innerRadius={60}
-                                                        outerRadius={100}
-                                                        paddingAngle={5}
-                                                        dataKey="value"
-                                                    >
-                                                        {insightData[insightStep].data?.segments.map((entry: any, index: number) => (
-                                                            <Cell key={`cell-${index}`} fill={entry.color || ['#FA2D48', '#FF9F0A', '#30D158', '#0A84FF', '#BF5AF2'][index % 5]} />
-                                                        ))}
-                                                    </Pie>
-                                                    <Tooltip 
-                                                        contentStyle={{ backgroundColor: '#1C1C1E', borderRadius: '12px', borderColor: 'rgba(255,255,255,0.1)', color: '#fff' }}
-                                                        itemStyle={{ color: '#fff' }}
-                                                        formatter={(value: any) => [`${value}%`, '']}
+                                {insightData[insightStep].type === 'quiz' && (
+                                    <div className="grid gap-3 w-full max-w-sm animate-in slide-in-from-right duration-500">
+                                        {insightData[insightStep].data?.options.map((opt: string, idx: number) => (
+                                            <button
+                                                key={idx}
+                                                onClick={(e) => {
+                                                    const btn = e.currentTarget;
+                                                    const explanation = insightData[insightStep].data.explanation || "";
+
+                                                    // Reset all siblings
+                                                    const parent = btn.parentElement;
+                                                    if (parent) {
+                                                        Array.from(parent.children).forEach((child: any) => {
+                                                            child.style.opacity = '0.5';
+                                                            child.disabled = true;
+                                                        });
+                                                    }
+
+                                                    btn.style.opacity = '1';
+
+                                                    if (idx === insightData[insightStep].data.correctIndex) {
+                                                        btn.style.borderColor = '#22c55e';
+                                                        btn.style.backgroundColor = 'rgba(34, 197, 94, 0.2)';
+                                                        btn.innerHTML = `<span class='flex justify-between items-center'><span>${opt}</span> <span class='text-xs'>✅ Correct!</span></span>`;
+                                                    } else {
+                                                        btn.style.borderColor = '#ef4444';
+                                                        btn.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                                                        btn.innerHTML = `<span class='flex justify-between items-center'><span>${opt}</span> <span class='text-xs'>❌</span></span>`;
+                                                    }
+
+                                                    // Show explanation logic could go here, or just appended
+                                                    // For now simplified
+                                                }}
+                                                className="w-full text-left py-4 px-6 rounded-xl border border-white/10 bg-white/5 text-white font-bold hover:bg-white/10 hover:border-white/30 hover:scale-[1.02] transition-all"
+                                            >
+                                                {opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {(insightData[insightStep].type === 'chart' || insightData[insightStep].type === 'bar_chart') && (
+                                    <div className="w-full max-w-sm space-y-4 animate-in slide-in-from-bottom duration-700 fade-in">
+                                        {insightData[insightStep].data?.points.map((p: any, idx: number) => (
+                                            <div key={idx} className="space-y-1">
+                                                <div className="flex justify-between text-xs font-bold text-white uppercase">
+                                                    <span>{p.label}</span>
+                                                    <span>{p.value}</span>
+                                                </div>
+                                                <div className="h-3 w-full bg-white/10 rounded-full overflow-hidden">
+                                                    <div
+                                                        style={{ width: `${Math.min(p.value, 100)}%` }}
+                                                        className={`h-full ${idx % 2 === 0 ? 'bg-[#FA2D48]' : 'bg-[#FF9F0A]'} transition-all duration-1000 ease-out`}
                                                     />
-                                                </PieChart>
-                                            </ResponsiveContainer>
-                                            
-                                            {/* Center Stats */}
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                                <span className="text-[10px] uppercase font-bold text-white/50 tracking-widest">Top Genre</span>
-                                                <span className="text-2xl font-black text-white drop-shadow-lg">
-                                                    {insightData[insightStep].data?.segments[0]?.label}
-                                                </span>
+                                                </div>
                                             </div>
+                                        ))}
+                                    </div>
+                                )}
 
-                                            {/* Legend */}
-                                            <div className="absolute bottom-0 w-full flex justify-center gap-4 flex-wrap">
-                                                {insightData[insightStep].data?.segments.slice(0, 3).map((s: any, i: number) => (
-                                                    <div key={i} className="flex items-center gap-2 text-xs text-white/80 bg-black/20 px-3 py-1 rounded-full border border-white/5">
-                                                        <span className="w-2 h-2 rounded-full" style={{ background: s.color || ['#FA2D48', '#FF9F0A', '#30D158'][i] }} />
-                                                        <span className="font-bold">{s.label}</span>
-                                                        <span className="opacity-60">{s.value}%</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                       </div>
-                                   )}
+                                {insightData[insightStep].type === 'pie_chart' && (
+                                    <div className="relative w-full h-[300px] flex items-center justify-center animate-in zoom-in duration-700">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={insightData[insightStep].data?.segments}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={60}
+                                                    outerRadius={100}
+                                                    paddingAngle={5}
+                                                    dataKey="value"
+                                                >
+                                                    {insightData[insightStep].data?.segments.map((entry: any, index: number) => (
+                                                        <Cell key={`cell-${index}`} fill={entry.color || ['#FA2D48', '#FF9F0A', '#30D158', '#0A84FF', '#BF5AF2'][index % 5]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip
+                                                    contentStyle={{ backgroundColor: '#1C1C1E', borderRadius: '12px', borderColor: 'rgba(255,255,255,0.1)', color: '#fff' }}
+                                                    itemStyle={{ color: '#fff' }}
+                                                    formatter={(value: any) => [`${value}%`, '']}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
 
-                                   {insightData[insightStep].type === 'race_chart' && (
-                                       <div className="w-full h-[300px] relative flex md:block items-center justify-center">
-                                            {/* Bubble Race Visualization */}
-                                            <div className="absolute inset-0 flex flex-wrap items-center justify-center content-center gap-4 p-4 animate-in fade-in duration-700">
-                                                {insightData[insightStep].data?.competitors.map((c: any, idx: number) => {
-                                                    // Dynamic Sizing based on score (max 100 usually)
-                                                    const baseSize = 80;
-                                                    const scale = Math.max(0.6, Math.min(1.5, c.score / 60)); 
-                                                    const size = baseSize * scale;
-                                                    
-                                                    return (
-                                                        <div 
-                                                            key={idx} 
-                                                            className="relative rounded-full border-4 border-[#2C2C2E] shadow-2xl overflow-hidden group transition-transform duration-500 hover:scale-110 hover:z-50 hover:border-[#FA2D48]"
-                                                            style={{
-                                                                width: `${size}px`,
-                                                                height: `${size}px`,
-                                                                order: idx % 2 === 0 ? 1 : 2 // Mix order slightly
-                                                            }}
-                                                        >
-                                                            {/* We don't have images in the chart data usually, use UI Avatar or passed context if we could map it. 
+                                        {/* Center Stats */}
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                            <span className="text-[10px] uppercase font-bold text-white/50 tracking-widest">Top Genre</span>
+                                            <span className="text-2xl font-black text-white drop-shadow-lg">
+                                                {insightData[insightStep].data?.segments[0]?.label}
+                                            </span>
+                                        </div>
+
+                                        {/* Legend */}
+                                        <div className="absolute bottom-0 w-full flex justify-center gap-4 flex-wrap">
+                                            {insightData[insightStep].data?.segments.slice(0, 3).map((s: any, i: number) => (
+                                                <div key={i} className="flex items-center gap-2 text-xs text-white/80 bg-black/20 px-3 py-1 rounded-full border border-white/5">
+                                                    <span className="w-2 h-2 rounded-full" style={{ background: s.color || ['#FA2D48', '#FF9F0A', '#30D158'][i] }} />
+                                                    <span className="font-bold">{s.label}</span>
+                                                    <span className="opacity-60">{s.value}%</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {insightData[insightStep].type === 'race_chart' && (
+                                    <div className="w-full h-[300px] relative flex md:block items-center justify-center">
+                                        {/* Bubble Race Visualization */}
+                                        <div className="absolute inset-0 flex flex-wrap items-center justify-center content-center gap-4 p-4 animate-in fade-in duration-700">
+                                            {insightData[insightStep].data?.competitors.map((c: any, idx: number) => {
+                                                // Dynamic Sizing based on score (max 100 usually)
+                                                const baseSize = 80;
+                                                const scale = Math.max(0.6, Math.min(1.5, c.score / 60));
+                                                const size = baseSize * scale;
+
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        className="relative rounded-full border-4 border-[#2C2C2E] shadow-2xl overflow-hidden group transition-transform duration-500 hover:scale-110 hover:z-50 hover:border-[#FA2D48]"
+                                                        style={{
+                                                            width: `${size}px`,
+                                                            height: `${size}px`,
+                                                            order: idx % 2 === 0 ? 1 : 2 // Mix order slightly
+                                                        }}
+                                                    >
+                                                        {/* We don't have images in the chart data usually, use UI Avatar or passed context if we could map it. 
                                                                 For now, generic or try to find match? 
                                                                 The specific instruction said "Each bubble should contain the artist's profile image". 
                                                                 The story generator likely doesn't send image URLs. 
                                                                 We'll use a gradient fallback + Name overlay. 
                                                             */}
-                                                            <div className="absolute inset-0 bg-gradient-to-br from-[#FA2D48] to-[#1C1C1E]">
-                                                                {/* Fallback pattern or initials */}
-                                                                <span className="absolute inset-0 flex items-center justify-center text-white/10 font-black text-4xl">
-                                                                    {c.name.substring(0,1)}
-                                                                </span>
-                                                            </div>
-                                                            
-                                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
-                                                            
-                                                            <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center">
-                                                                <span className="text-white font-bold drop-shadow-md leading-tight" style={{ fontSize: `${Math.max(10, size/5)}px` }}>
-                                                                    {c.name}
-                                                                </span>
-                                                                <span className="bg-white/20 px-2 rounded-full text-white font-mono font-bold mt-1 backdrop-blur-sm" style={{ fontSize: `${Math.max(8, size/8)}px` }}>
-                                                                    {c.score}
-                                                                </span>
-                                                            </div>
+                                                        <div className="absolute inset-0 bg-gradient-to-br from-[#FA2D48] to-[#1C1C1E]">
+                                                            {/* Fallback pattern or initials */}
+                                                            <span className="absolute inset-0 flex items-center justify-center text-white/10 font-black text-4xl">
+                                                                {c.name.substring(0, 1)}
+                                                            </span>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
-                                       </div>
-                                   )}
-                              </div>
-                         </div>
 
-                         {/* Navigation */}
-                         <div className="mt-8 flex justify-end">
-                             <button 
+                                                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center">
+                                                            <span className="text-white font-bold drop-shadow-md leading-tight" style={{ fontSize: `${Math.max(10, size / 5)}px` }}>
+                                                                {c.name}
+                                                            </span>
+                                                            <span className="bg-white/20 px-2 rounded-full text-white font-mono font-bold mt-1 backdrop-blur-sm" style={{ fontSize: `${Math.max(8, size / 8)}px` }}>
+                                                                {c.score}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Navigation */}
+                        <div className="mt-8 flex justify-end">
+                            <button
                                 onClick={() => {
                                     if (insightStep < insightData.length - 1) {
                                         setInsightStep(prev => prev + 1);
@@ -799,10 +838,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                     }
                                 }}
                                 className="flex items-center gap-2 px-6 py-2 bg-white text-black rounded-full font-bold hover:scale-105 transition-transform"
-                             >
+                            >
                                 {insightStep === insightData.length - 1 ? 'Finish' : 'Next'} <ChevronRight size={16} />
-                             </button>
-                         </div>
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -828,8 +867,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                         `}
                     </style>
                     {categoryResults.map((category, categoryIndex) => (
-                        <div 
-                            key={category.id} 
+                        <div
+                            key={category.id}
                             className="relative category-card opacity-0"
                             style={{ animationDelay: `${categoryIndex * 0.15}s` }}
                         >
@@ -854,16 +893,16 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                             </button>
                                         ))}
                                     </div>
-                                    
+
                                     {/* View Mode Toggle */}
-                                    <button 
+                                    <button
                                         onClick={() => setViewMode(prev => prev === 'standard' ? 'ranked' : 'standard')}
                                         className="bg-[#1C1C1E] border border-white/5 p-1.5 rounded-lg text-white/50 hover:text-white transition-colors"
                                         title="Toggle View"
                                     >
                                         {viewMode === 'standard' ? <Trophy size={14} /> : <BarChart3 size={14} />}
                                     </button>
-                                    
+
                                     {category.stats && (
                                         <div className="bg-white/10 backdrop-blur-md border border-white/5 px-3 py-1.5 rounded-full text-xs font-semibold text-white/90 mb-2">
                                             {category.stats}
@@ -876,7 +915,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-2 scroll-smooth gap-4 min-h-[280px]">
                                 {sortTracks(category.tracks).map((track, trackIndex) => (
                                     viewMode === 'ranked' ? (
-                                        <AI_RankedItem key={trackIndex} item={{...track}} rank={trackIndex + 1} displayMode={sortMode} />
+                                        <AI_RankedItem key={trackIndex} item={{ ...track }} rank={trackIndex + 1} displayMode={sortMode} />
                                     ) : (
                                         <div key={trackIndex} className="flex-shrink-0 relative flex flex-col items-center gap-2 group cursor-pointer w-[140px] snap-start">
                                             <div className="w-[140px] h-[140px] overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 relative">
@@ -884,9 +923,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                                 <div className="absolute inset-0 flex items-center justify-center bg-[#1C1C1E]">
                                                     <Music2 className="text-white/20" size={48} />
                                                 </div>
-                                                <img 
-                                                    src={track.cover || track.image} 
-                                                    alt={track.title} 
+                                                <img
+                                                    src={track.cover || track.image}
+                                                    alt={track.title}
                                                     className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
                                                     onError={(e) => e.currentTarget.style.opacity = '0'}
                                                 />
@@ -903,16 +942,16 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     ))}
                 </div>
             )}
-            
+
             {/* Loading Overlay for Category Build - Enhanced */}
             {loading && mode === 'discover' && categoryResults.length === 0 && (
                 <div className="relative h-[300px] flex flex-col items-center justify-center">
-                     <div className="relative">
-                         <div className="absolute inset-0 bg-[#FA2D48]/20 blur-2xl rounded-full animate-pulse"></div>
-                         <div className="w-16 h-16 border-2 border-[#FA2D48] border-t-transparent rounded-full animate-spin mb-4"></div>
-                     </div>
-                     <p className="text-white font-medium text-sm mt-4">Crafting your collection...</p>
-                     <p className="text-[#8E8E93] text-xs mt-1 animate-pulse">AI is curating something special</p>
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-[#FA2D48]/20 blur-2xl rounded-full animate-pulse"></div>
+                        <div className="w-16 h-16 border-2 border-[#FA2D48] border-t-transparent rounded-full animate-spin mb-4"></div>
+                    </div>
+                    <p className="text-white font-medium text-sm mt-4">Crafting your collection...</p>
+                    <p className="text-[#8E8E93] text-xs mt-1 animate-pulse">AI is curating something special</p>
                 </div>
             )}
         </div>

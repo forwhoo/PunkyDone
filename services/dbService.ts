@@ -3,15 +3,15 @@ import { supabase } from './supabaseClient';
 import { Song } from '../types';
 
 export interface HistoryItem {
-  spotify_id: string;
-  played_at: string;
-  track_name: string;
-  artist_name: string;
-  album_name: string;
-  album_cover: string;
-  duration_ms: number;
-  user_timezone?: string;
-  popularity?: number; // Requires extra fetch usually, but we can store if we had it
+    spotify_id: string;
+    played_at: string;
+    track_name: string;
+    artist_name: string;
+    album_name: string;
+    album_cover: string;
+    duration_ms: number;
+    user_timezone?: string;
+    popularity?: number; // Requires extra fetch usually, but we can store if we had it
 }
 
 // DYNAMIC CHART GENERATION (No Stored Table)
@@ -19,15 +19,15 @@ export interface HistoryItem {
 export const fetchCharts = async (period: 'daily' | 'weekly' | 'monthly' | 'all time' = 'weekly'): Promise<any[]> => {
     try {
         console.log("Fetching charts for", period);
-        
+
         // DISABLE RPC CALL due to "ambiguous column" error on server side
         // OLD: const { data, error } = await supabase.rpc('get_dynamic_chart', ...);
 
         // ALWAYS USE FALLBACK (Manual Calc) UNTIL RPC IS FIXED
         const dashboardStats = await fetchDashboardStats(
-           (period === 'all time' ? 'All Time' : period.charAt(0).toUpperCase() + period.slice(1)) as any
+            (period === 'all time' ? 'All Time' : period.charAt(0).toUpperCase() + period.slice(1)) as any
         );
-        
+
         // Convert dashboardStats.songs to chart format
         return (dashboardStats.songs || []).slice(0, 20).map((song: any, i: number) => ({
             id: song.id,
@@ -42,7 +42,7 @@ export const fetchCharts = async (period: 'daily' | 'weekly' | 'monthly' | 'all 
             streak: 1,
             trend: 'NEW'
         }));
-        
+
     } catch (err) {
         console.error("fetchCharts Exception:", err);
         return [];
@@ -56,7 +56,7 @@ const formatDuration = (ms: number) => {
 
 // Removed old ChartEntry interface to avoid confusion
 export interface ChartEntry {
-  // Placeholder if needed elsewhere
+    // Placeholder if needed elsewhere
 }
 
 // ... (Rest of file)
@@ -93,184 +93,184 @@ export const logSinglePlay = async (track: any, listenedMs: number, extraData: a
 let lastSyncedTime: string | null = null;
 
 export const syncRecentPlays = async (recentItems: any[], token?: string) => {
-  if (!recentItems || recentItems.length === 0) return;
+    if (!recentItems || recentItems.length === 0) return;
 
-  // If we haven't synced yet this session, look up the latest song in DB
-  if (!lastSyncedTime) {
-      const { data } = await supabase
-        .from('listening_history')
-        .select('played_at')
-        .order('played_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (data) {
-          lastSyncedTime = data.played_at;
-      }
-  }
+    // If we haven't synced yet this session, look up the latest song in DB
+    if (!lastSyncedTime) {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('played_at')
+            .order('played_at', { ascending: false })
+            .limit(1)
+            .single();
 
-  // Filter out songs we've already synced
-  // If lastSyncedTime is set, only keep items newer than it
-  const newItems = lastSyncedTime 
-    ? recentItems.filter(item => new Date(item.played_at) > new Date(lastSyncedTime!))
-    : recentItems;
-
-  if (newItems.length === 0) return;
-
-  const historyItems: HistoryItem[] = newItems.map(item => ({
-    spotify_id: item.track.id,
-    played_at: item.played_at,
-    track_name: item.track.name,
-    artist_name: item.track.artists[0].name,
-    album_name: item.track.album.name,
-    album_cover: item.track.album.images[0]?.url || '',
-    duration_ms: item.track.duration_ms
-  }));
-
-  const { error } = await supabase
-    .from('listening_history')
-    .upsert(historyItems, { onConflict: 'played_at' });
-
-  if (error) {
-    console.error('Error syncing history:', error);
-  } else {
-    // Update local cache of latest time
-    // Sort new items to find the latest
-    const latest = newItems.reduce((max, item) => 
-        new Date(item.played_at) > new Date(max.played_at) ? item : max
-    , newItems[0]);
-    
-    lastSyncedTime = latest.played_at;
-    
-    // Backfill missing artist images if token is available
-    if (token) {
-        // Get unique artists that need images
-        const artistsNeedingImages = [...new Set(
-            historyItems
-                .filter(item => !item.album_cover || item.album_cover === '')
-                .map(item => item.artist_name)
-        )];
-        
-        if (artistsNeedingImages.length > 0) {
-            console.log(`[syncRecentPlays] Fetching images for ${artistsNeedingImages.length} artists`);
-            try {
-                const { fetchArtistImages } = await import('./spotifyService');
-                const artistImages = await fetchArtistImages(token, artistsNeedingImages);
-                
-                // Update records with artist images
-                for (const [artistName, imageUrl] of Object.entries(artistImages)) {
-                    await supabase
-                        .from('listening_history')
-                        .update({ album_cover: imageUrl })
-                        .eq('artist_name', artistName)
-                        .or('album_cover.is.null,album_cover.eq.');
-                }
-            } catch (err) {
-                console.error('[syncRecentPlays] Failed to fetch artist images:', err);
-            }
+        if (data) {
+            lastSyncedTime = data.played_at;
         }
     }
-    
-    // console.log(`Synced ${historyItems.length} NEW items to Supabase`);
-  }
+
+    // Filter out songs we've already synced
+    // If lastSyncedTime is set, only keep items newer than it
+    const newItems = lastSyncedTime
+        ? recentItems.filter(item => new Date(item.played_at) > new Date(lastSyncedTime!))
+        : recentItems;
+
+    if (newItems.length === 0) return;
+
+    const historyItems: HistoryItem[] = newItems.map(item => ({
+        spotify_id: item.track.id,
+        played_at: item.played_at,
+        track_name: item.track.name,
+        artist_name: item.track.artists[0].name,
+        album_name: item.track.album.name,
+        album_cover: item.track.album.images[0]?.url || '',
+        duration_ms: item.track.duration_ms
+    }));
+
+    const { error } = await supabase
+        .from('listening_history')
+        .upsert(historyItems, { onConflict: 'played_at' });
+
+    if (error) {
+        console.error('Error syncing history:', error);
+    } else {
+        // Update local cache of latest time
+        // Sort new items to find the latest
+        const latest = newItems.reduce((max, item) =>
+            new Date(item.played_at) > new Date(max.played_at) ? item : max
+            , newItems[0]);
+
+        lastSyncedTime = latest.played_at;
+
+        // Backfill missing artist images if token is available
+        if (token) {
+            // Get unique artists that need images
+            const artistsNeedingImages = [...new Set(
+                historyItems
+                    .filter(item => !item.album_cover || item.album_cover === '')
+                    .map(item => item.artist_name)
+            )];
+
+            if (artistsNeedingImages.length > 0) {
+                console.log(`[syncRecentPlays] Fetching images for ${artistsNeedingImages.length} artists`);
+                try {
+                    const { fetchArtistImages } = await import('./spotifyService');
+                    const artistImages = await fetchArtistImages(token, artistsNeedingImages);
+
+                    // Update records with artist images
+                    for (const [artistName, imageUrl] of Object.entries(artistImages)) {
+                        await supabase
+                            .from('listening_history')
+                            .update({ album_cover: imageUrl })
+                            .eq('artist_name', artistName)
+                            .or('album_cover.is.null,album_cover.eq.');
+                    }
+                } catch (err) {
+                    console.error('[syncRecentPlays] Failed to fetch artist images:', err);
+                }
+            }
+        }
+
+        // console.log(`Synced ${historyItems.length} NEW items to Supabase`);
+    }
 };
 
 // removed syncCharts
 
 export const fetchListeningStats = async () => {
-  const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-  // Fetch data for the last 14 days to calculate current week vs last week
-  const { data, error } = await supabase
-    .from('listening_history')
-    .select('duration_ms, played_at')
-    .gte('played_at', fourteenDaysAgo.toISOString());
+    // Fetch data for the last 14 days to calculate current week vs last week
+    const { data, error } = await supabase
+        .from('listening_history')
+        .select('duration_ms, played_at')
+        .gte('played_at', fourteenDaysAgo.toISOString());
 
-  if (error || !data) return null;
+    if (error || !data) return null;
 
-  let currentWeekMs = 0;
-  let lastWeekMs = 0;
+    let currentWeekMs = 0;
+    let lastWeekMs = 0;
 
-  data.forEach(item => {
-    const playTime = new Date(item.played_at);
-    if (playTime >= sevenDaysAgo) {
-      currentWeekMs += item.duration_ms;
-    } else {
-      lastWeekMs += item.duration_ms;
+    data.forEach(item => {
+        const playTime = new Date(item.played_at);
+        if (playTime >= sevenDaysAgo) {
+            currentWeekMs += item.duration_ms;
+        } else {
+            lastWeekMs += item.duration_ms;
+        }
+    });
+
+    // Calculate detailed stats for AI (Longest Gap, etc.)
+    // Sort by time
+    data.sort((a, b) => new Date(a.played_at).getTime() - new Date(b.played_at).getTime());
+
+    let longestGapMs = 0;
+    let maxSessionMs = 0;
+    let currentSessionMs = 0;
+    let lastEndTime = 0;
+
+    if (data.length > 0) {
+        lastEndTime = new Date(data[0].played_at).getTime() + (data[0].duration_ms || 0);
+        currentSessionMs = (data[0].duration_ms || 0);
+
+        for (let i = 1; i < data.length; i++) {
+            const start = new Date(data[i].played_at).getTime();
+            const gap = start - lastEndTime;
+
+            if (gap > longestGapMs) longestGapMs = gap;
+
+            // Define session: breaks < 30 mins
+            if (gap < 30 * 60 * 1000) {
+                currentSessionMs += (data[i].duration_ms || 0);
+            } else {
+                if (currentSessionMs > maxSessionMs) maxSessionMs = currentSessionMs;
+                currentSessionMs = (data[i].duration_ms || 0);
+            }
+
+            lastEndTime = start + (data[i].duration_ms || 0);
+        }
+        if (currentSessionMs > maxSessionMs) maxSessionMs = currentSessionMs;
     }
-  });
 
-  // Calculate detailed stats for AI (Longest Gap, etc.)
-  // Sort by time
-  data.sort((a, b) => new Date(a.played_at).getTime() - new Date(b.played_at).getTime());
-  
-  let longestGapMs = 0;
-  let maxSessionMs = 0;
-  let currentSessionMs = 0;
-  let lastEndTime = 0;
+    const longestGapHours = (longestGapMs / (1000 * 60 * 60)).toFixed(1);
+    const longestSessionHours = (maxSessionMs / (1000 * 60 * 60)).toFixed(1);
 
-  if (data.length > 0) {
-      lastEndTime = new Date(data[0].played_at).getTime() + (data[0].duration_ms || 0);
-      currentSessionMs = (data[0].duration_ms || 0);
-      
-      for (let i = 1; i < data.length; i++) {
-          const start = new Date(data[i].played_at).getTime();
-          const gap = start - lastEndTime;
-          
-          if (gap > longestGapMs) longestGapMs = gap;
-          
-          // Define session: breaks < 30 mins
-          if (gap < 30 * 60 * 1000) {
-             currentSessionMs += (data[i].duration_ms || 0);
-          } else {
-             if (currentSessionMs > maxSessionMs) maxSessionMs = currentSessionMs;
-             currentSessionMs = (data[i].duration_ms || 0);
-          }
-          
-          lastEndTime = start + (data[i].duration_ms || 0);
-      }
-      if (currentSessionMs > maxSessionMs) maxSessionMs = currentSessionMs;
-  }
-  
-  const longestGapHours = (longestGapMs / (1000 * 60 * 60)).toFixed(1);
-  const longestSessionHours = (maxSessionMs / (1000 * 60 * 60)).toFixed(1);
+    const currentHours = Math.floor(currentWeekMs / (1000 * 60 * 60));
+    const currentMins = Math.floor((currentWeekMs % (1000 * 60 * 60)) / (1000 * 60));
 
-  const currentHours = Math.floor(currentWeekMs / (1000 * 60 * 60));
-  const currentMins = Math.floor((currentWeekMs % (1000 * 60 * 60)) / (1000 * 60));
-  
-  const lastHours = Math.floor(lastWeekMs / (1000 * 60 * 60));
-  
-  // Calculate trend
-  const hoursDiff = currentHours - (lastHours || 0);
-  const trendString = hoursDiff >= 0 ? `+${hoursDiff}h vs last week` : `${hoursDiff}h vs last week`;
+    const lastHours = Math.floor(lastWeekMs / (1000 * 60 * 60));
 
-  // Get total stats (overall history)
-  const { data: allData, count } = await supabase.from('listening_history').select('duration_ms', { count: 'exact' });
-  const totalMs = allData?.reduce((acc, item) => acc + (item.duration_ms || 0), 0) || 0;
-  const totalMinutes = Math.floor(totalMs / 60000);
+    // Calculate trend
+    const hoursDiff = currentHours - (lastHours || 0);
+    const trendString = hoursDiff >= 0 ? `+${hoursDiff}h vs last week` : `${hoursDiff}h vs last week`;
 
-  return {
-    weeklyTime: `${currentHours}h ${currentMins}m`,
-    weeklyTrend: trendString,
-    totalTracks: count || 0,
-    totalMinutes,
-    extraStats: {
-        longestGapHours,
-        longestSessionHours
-    }
-  };
+    // Get total stats (overall history)
+    const { data: allData, count } = await supabase.from('listening_history').select('duration_ms', { count: 'exact' });
+    const totalMs = allData?.reduce((acc, item) => acc + (item.duration_ms || 0), 0) || 0;
+    const totalMinutes = Math.floor(totalMs / 60000);
+
+    return {
+        weeklyTime: `${currentHours}h ${currentMins}m`,
+        weeklyTrend: trendString,
+        totalTracks: count || 0,
+        totalMinutes,
+        extraStats: {
+            longestGapHours,
+            longestSessionHours
+        }
+    };
 };
 
 export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Monthly' | 'All Time' = 'Weekly') => {
     console.log(`[dbService] 📊 fetchDashboardStats called with timeRange: ${timeRange}`);
     const functionStart = performance.now();
-    
+
     // Calculate date range based on timeRange selection
     const now = new Date();
     let startDate: Date;
-    
+
     if (timeRange === 'Daily') {
         // Get data from today (12:00 AM to now)
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
@@ -292,12 +292,12 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
     if (timeRange === 'All Time') {
         const startTime = performance.now();
         console.log("[dbService] ⏳ Fetching ALL TIME stats from RPC...");
-        
+
         const { data, error } = await supabase.rpc('get_all_time_stats');
-        
+
         const elapsed = Math.round(performance.now() - startTime);
         console.log(`[dbService] ⏱️ RPC completed in ${elapsed}ms`);
-        
+
         if (error) {
             console.error("[dbService] ❌ RPC Error:", error);
             console.log("[dbService] Returning empty fallback for All Time");
@@ -328,7 +328,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         const albumCount = data.albums?.length || 0;
         const totalMins = data.totals?.minutes || 0;
         const totalTracks = data.totals?.tracks || 0;
-        
+
         console.log(`[dbService] ✅ ALL TIME Stats Loaded:`);
         console.log(`   → ${artistCount} artists, ${songCount} songs, ${albumCount} albums`);
         console.log(`   → Total: ${totalMins} minutes listened, ${totalTracks} plays (>30s)`);
@@ -353,7 +353,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
             listens: s.listens || 0,
             timeStr: s.timeStr || '0m'
         }));
-         
+
         const albums = (data.albums || []).map((a: any, i: number) => ({
             id: `album-${i}`,
             title: a.title,
@@ -373,7 +373,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
             recentPlays: []
         };
     }
-    
+
     // 1. Fetch all data in a single optimized query
     const { data: historyData, error: historyError } = await supabase
         .from('listening_history')
@@ -387,7 +387,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
     }
 
     const allData = historyData || [];
-    
+
     // Use Maps for O(1) lookups - much faster than objects for large datasets
     const artistCounts = new Map<string, { count: number, time: number, image: string }>();
     const songCounts = new Map<string, { count: number, artist: string, cover: string, duration: number, totalTime: number }>();
@@ -433,7 +433,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
             if (!album.cover && item.album_cover) album.cover = item.album_cover;
         }
     }
-    
+
     // Convert Maps to sorted arrays
     const topArtists = Array.from(artistCounts.entries())
         .sort(([, a], [, b]) => b.time - a.time)
@@ -473,10 +473,10 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
             totalListens: info.count,
             timeStr: `${Math.floor(info.duration / 60000)}m`
         }));
-    
+
     // 4. Hourly Activity Graph (Today) - Use data we already have if today
     const today = new Date().toISOString().split('T')[0];
-    
+
     // Helper for American Time
     const formatTo12Hour = (hour: number) => {
         const h = hour % 12 || 12;
@@ -490,11 +490,11 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
 
     // Filter today's data from allData or fetch separately if needed
     const todayData = allData.filter(item => item.played_at?.startsWith(today));
-    
+
     for (const item of todayData) {
         const date = new Date(item.played_at);
         const hour = date.getHours();
-        
+
         hourlyMap[hour].min += ((item.duration_ms || 0) / 60000);
         hourlyMap[hour].count += 1;
         hourlyMap[hour].songs.push(item);
@@ -525,7 +525,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         return {
             time: formatTo12Hour(hour),
             hourNum: hour,
-            value: Math.round(data.min), 
+            value: Math.round(data.min),
             count: data.count,
             song: topSong?.track_name || 'No activity',
             artist: topSong?.artist_name || '---',
@@ -536,7 +536,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
     // 5. Recent Plays - Use allData instead of separate query (already sorted desc)
     const recentPlays = allData.slice(0, 2000).map((item: any) => ({
         ...item,
-        cover: item.album_cover 
+        cover: item.album_cover
     })) || [];
 
     const elapsed = Math.round(performance.now() - functionStart);
@@ -553,9 +553,9 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
 };
 
 const msToTime = (duration: number) => {
-  const minutes = Math.floor(duration / 60000);
-  const seconds = ((duration % 60000) / 1000).toFixed(0);
-  return minutes + ":" + (parseInt(seconds) < 10 ? '0' : '') + seconds;
+    const minutes = Math.floor(duration / 60000);
+    const seconds = ((duration % 60000) / 1000).toFixed(0);
+    return minutes + ":" + (parseInt(seconds) < 10 ? '0' : '') + seconds;
 };
 
 // Helper to get day of week (0-6)
@@ -593,7 +593,7 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
         const filter = concept.filter;
         const resultLimit = filter.limit || 20;
         const type = filter.type || 'song';
-        
+
         // Start with base query - get more data for better filtering
         let query = supabase
             .from('listening_history')
@@ -605,12 +605,12 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
         if (filter.field && filter.value) {
             query = query.ilike(filter.field, `%${filter.value}%`);
         }
-        
+
         // Apply contains filter (partial match across multiple fields)
         if (filter.contains) {
             query = query.or(`track_name.ilike.%${filter.contains}%,album_name.ilike.%${filter.contains}%,artist_name.ilike.%${filter.contains}%`);
         }
-        
+
         // Apply recent days filter at DB level
         if (filter.recentDays) {
             const cutoff = new Date();
@@ -638,7 +638,7 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
                 }
             });
         }
-        
+
         // Apply day of week filter
         if (filter.dayOfWeek) {
             const isWeekend = filter.dayOfWeek === 'weekend';
@@ -648,7 +648,7 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
                 return isWeekend ? itemIsWeekend : !itemIsWeekend;
             });
         }
-        
+
         // Apply duration filters
         if (filter.minDurationMs) {
             filtered = filtered.filter(item => (item.duration_ms || 0) >= filter.minDurationMs!);
@@ -671,7 +671,7 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
         }> = {};
 
         filtered.forEach((item: any) => {
-            let key = ''; 
+            let key = '';
             let title = '';
             let cover = item.album_cover || '';
             const artist = item.artist_name || 'Unknown';
@@ -681,7 +681,7 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
                 key = artist;
                 title = artist;
                 // Artist image not available in listening_history, handled in frontend or separate fetch
-                cover = ''; 
+                cover = '';
             } else if (type === 'album') {
                 key = `${album}|||${artist}`;
                 title = album;
@@ -712,14 +712,14 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
                 stats[key].lastPlayed = itemDate;
                 // Update cover to latest
                 if (type !== 'artist' && item.album_cover) {
-                     stats[key].cover = item.album_cover;
+                    stats[key].cover = item.album_cover;
                 }
             }
         });
 
         // Convert to array
         let results = Object.values(stats);
-        
+
         // Apply minPlays filter
         if (filter.minPlays) {
             results = results.filter(r => r.plays >= filter.minPlays!);
@@ -728,7 +728,7 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
         // Sort
         const ascending = filter.sortOrder === 'lowest';
         const sortField = filter.sortBy || 'plays';
-        
+
         if (sortField === 'minutes') {
             results.sort((a, b) => ascending ? a.totalMs - b.totalMs : b.totalMs - a.totalMs);
         } else if (sortField === 'duration') {
@@ -738,8 +738,8 @@ export const fetchSmartPlaylist = async (concept: { filter: AIFilter }) => {
                 return ascending ? avgA - avgB : avgB - avgA;
             });
         } else if (sortField === 'recency') {
-            results.sort((a, b) => ascending 
-                ? a.lastPlayed.getTime() - b.lastPlayed.getTime() 
+            results.sort((a, b) => ascending
+                ? a.lastPlayed.getTime() - b.lastPlayed.getTime()
                 : b.lastPlayed.getTime() - a.lastPlayed.getTime());
         } else {
             results.sort((a, b) => ascending ? a.plays - b.plays : b.plays - a.plays);
@@ -777,7 +777,7 @@ export const fetchArtistNetwork = async (limit = 1000) => {
         .select('artist_name, played_at, album_cover')
         .order('played_at', { ascending: false })
         .limit(limit);
-    
+
     if (error || !data) return { artistInfo: {}, pairs: {} };
 
     const pairs: Record<string, Record<string, number>> = {};
@@ -786,11 +786,11 @@ export const fetchArtistNetwork = async (limit = 1000) => {
     // First pass: gather info
     data.forEach(item => {
         if (!artistInfo[item.artist_name]) {
-            artistInfo[item.artist_name] = { 
+            artistInfo[item.artist_name] = {
                 id: item.artist_name,
-                name: item.artist_name, 
-                image: item.album_cover, 
-                count: 0 
+                name: item.artist_name,
+                image: item.album_cover,
+                count: 0
             };
         }
         artistInfo[item.artist_name].count++;
@@ -810,10 +810,10 @@ export const fetchArtistNetwork = async (limit = 1000) => {
             if (Math.abs(timeA - timeB) < 10 * 60 * 1000 && itemA.artist_name !== itemB.artist_name) {
                 const a = itemA.artist_name;
                 const b = itemB.artist_name;
-                
+
                 if (!pairs[a]) pairs[a] = {};
                 pairs[a][b] = (pairs[a][b] || 0) + 1;
-                
+
                 if (!pairs[b]) pairs[b] = {};
                 pairs[b][a] = (pairs[b][a] || 0) + 1;
             }
@@ -826,119 +826,119 @@ export const fetchArtistNetwork = async (limit = 1000) => {
 // --- Extended History Migration Types & Logic ---
 
 export interface SpotifyHistoryItem {
-  ts: string;
-  username: string;
-  platform: string;
-  ms_played: number;
-  conn_country: string;
-  ip_addr_decrypted?: string;
-  ip_addr?: string;
-  user_agent_decrypted?: string;
-  master_metadata_track_name: string | null;
-  master_metadata_album_artist_name: string | null;
-  master_metadata_album_album_name: string | null;
-  spotify_track_uri: string | null;
-  episode_name: string | null;
-  episode_show_name: string | null;
-  spotify_episode_uri: string | null;
-  reason_start: string;
-  reason_end: string;
-  shuffle: boolean | null;
-  skipped: boolean | null;
-  offline: boolean | null;
-  offline_timestamp: number | null;
-  incognito_mode: boolean | null;
-  [key: string]: any;
+    ts: string;
+    username: string;
+    platform: string;
+    ms_played: number;
+    conn_country: string;
+    ip_addr_decrypted?: string;
+    ip_addr?: string;
+    user_agent_decrypted?: string;
+    master_metadata_track_name: string | null;
+    master_metadata_album_artist_name: string | null;
+    master_metadata_album_album_name: string | null;
+    spotify_track_uri: string | null;
+    episode_name: string | null;
+    episode_show_name: string | null;
+    spotify_episode_uri: string | null;
+    reason_start: string;
+    reason_end: string;
+    shuffle: boolean | null;
+    skipped: boolean | null;
+    offline: boolean | null;
+    offline_timestamp: number | null;
+    incognito_mode: boolean | null;
+    [key: string]: any;
 }
 
 export const uploadExtendedHistory = async (
-  jsonData: SpotifyHistoryItem[],
-  onProgress: (percent: number) => void
+    jsonData: SpotifyHistoryItem[],
+    onProgress: (percent: number) => void
 ): Promise<{ success: boolean; message: string }> => {
-  const CHUNK_SIZE = 500;
-  const total = jsonData.length;
-  let processed = 0;
+    const CHUNK_SIZE = 500;
+    const total = jsonData.length;
+    let processed = 0;
 
-  // Helper to map JSON to our DB Schema (extended_streaming_history matching listening_history)
-  const mapToDbSchema = (item: any): any => {
-      // Skip items with no track name (podcasts usually, or errors) if you only want music
-      if (!item.master_metadata_track_name) return null;
+    // Helper to map JSON to our DB Schema (extended_streaming_history matching listening_history)
+    const mapToDbSchema = (item: any): any => {
+        // Skip items with no track name (podcasts usually, or errors) if you only want music
+        if (!item.master_metadata_track_name) return null;
 
-      return {
-        played_at: item.ts,
-        track_name: item.master_metadata_track_name,
-        artist_name: item.master_metadata_album_artist_name || 'Unknown Artist',
-        album_name: item.master_metadata_album_album_name || 'Unknown Album',
-        spotify_id: item.spotify_track_uri || item.spotify_episode_uri || 'unknown',
-        duration_ms: item.ms_played,
-        album_cover: null, // Will be backfilled after upload
-        user_timezone: 'UTC',
-        
-        // Optional extras
-        platform: item.platform,
-        conn_country: item.conn_country,
-        ip_addr_decrypted: item.ip_addr_decrypted || item.ip_addr,
-        reason_start: item.reason_start,
-        reason_end: item.reason_end,
-        shuffle: item.shuffle,
-        skipped: item.skipped
-      };
-  };
+        return {
+            played_at: item.ts,
+            track_name: item.master_metadata_track_name,
+            artist_name: item.master_metadata_album_artist_name || 'Unknown Artist',
+            album_name: item.master_metadata_album_album_name || 'Unknown Album',
+            spotify_id: item.spotify_track_uri || item.spotify_episode_uri || 'unknown',
+            duration_ms: item.ms_played,
+            album_cover: null, // Will be backfilled after upload
+            user_timezone: 'UTC',
 
-  try {
-    console.log('[uploadExtendedHistory] Starting upload of', total, 'records');
-    
-    for (let i = 0; i < total; i += CHUNK_SIZE) {
-      const rawChunk = jsonData.slice(i, i + CHUNK_SIZE);
-      // Map and filter out nulls (podcasts/bad data)
-      const chunk = rawChunk.map(mapToDbSchema).filter(x => x !== null);
-      
-      if (chunk.length === 0) {
-           processed += rawChunk.length;
-           continue; 
-      }
+            // Optional extras
+            platform: item.platform,
+            conn_country: item.conn_country,
+            ip_addr_decrypted: item.ip_addr_decrypted || item.ip_addr,
+            reason_start: item.reason_start,
+            reason_end: item.reason_end,
+            shuffle: item.shuffle,
+            skipped: item.skipped
+        };
+    };
 
-      const { error } = await supabase
-        .from('extended_streaming_history')
-        .upsert(chunk, { onConflict: 'played_at, track_name', ignoreDuplicates: true });
+    try {
+        console.log('[uploadExtendedHistory] Starting upload of', total, 'records');
 
-      if (error) {
-        console.error('Error uploading chunk:', error);
-        return { success: false, message: `Upload failed at index ${i}: ${error.message}` };
-      }
+        for (let i = 0; i < total; i += CHUNK_SIZE) {
+            const rawChunk = jsonData.slice(i, i + CHUNK_SIZE);
+            // Map and filter out nulls (podcasts/bad data)
+            const chunk = rawChunk.map(mapToDbSchema).filter(x => x !== null);
 
-      processed += rawChunk.length;
-      const percent = Math.min(Math.round((processed / total) * 100), 100);
-      onProgress(percent);
+            if (chunk.length === 0) {
+                processed += rawChunk.length;
+                continue;
+            }
+
+            const { error } = await supabase
+                .from('extended_streaming_history')
+                .upsert(chunk, { onConflict: 'played_at, track_name', ignoreDuplicates: true });
+
+            if (error) {
+                console.error('Error uploading chunk:', error);
+                return { success: false, message: `Upload failed at index ${i}: ${error.message}` };
+            }
+
+            processed += rawChunk.length;
+            const percent = Math.min(Math.round((processed / total) * 100), 100);
+            onProgress(percent);
+        }
+
+        console.log('[uploadExtendedHistory] Upload complete, starting image backfill...');
+        return { success: true, message: 'Upload complete - backfilling images...' };
+    } catch (err: any) {
+        return { success: false, message: err.message };
     }
-
-    console.log('[uploadExtendedHistory] Upload complete, starting image backfill...');
-    return { success: true, message: 'Upload complete - backfilling images...' };
-  } catch (err: any) {
-    return { success: false, message: err.message };
-  }
 };
 
 // Backfill images for extended_streaming_history after upload
 // Uses server-side RPC functions for reliable updates
 export const backfillExtendedHistoryImages = async (
-  token: string,
-  onProgress: (status: string) => void
+    token: string,
+    onProgress: (status: string) => void
 ): Promise<{ success: boolean; message: string }> => {
     try {
         console.log('[backfillImages] 🎨 Starting image backfill process...');
         onProgress('🔍 Checking current status...');
-        
+
         // STEP 0: Check how many need covers
         const { data: statusBefore, error: statusError } = await supabase.rpc('count_null_covers');
         if (statusError) {
             console.error('[backfillImages] ❌ count_null_covers not found. Run supabase_backfill_covers.sql first!');
             return { success: false, message: 'Please run supabase_backfill_covers.sql in Supabase SQL Editor first!' };
         }
-        
+
         console.log('[backfillImages] 📊 Status before:', statusBefore);
         onProgress(`📊 ${statusBefore.null_covers} records need covers (${statusBefore.percent_complete}% complete)`);
-        
+
         if (statusBefore.null_covers === 0) {
             onProgress('✅ All records already have covers!');
             return { success: true, message: 'All records already have covers!' };
@@ -947,9 +947,9 @@ export const backfillExtendedHistoryImages = async (
         // STEP 1: Borrow from listening_history (server-side)
         onProgress('📚 Step 1: Copying covers from listening_history...');
         console.log('[backfillImages] 📚 Calling backfill_covers_from_history RPC...');
-        
+
         const { data: borrowResult, error: borrowError } = await supabase.rpc('backfill_covers_from_history');
-        
+
         if (borrowError) {
             console.error('[backfillImages] ❌ Borrow error:', borrowError);
         } else {
@@ -960,23 +960,23 @@ export const backfillExtendedHistoryImages = async (
         // STEP 2: Get albums still needing covers (NOW INCLUDES RECORD IDS)
         onProgress('🎵 Step 2: Finding albums that still need covers...');
         console.log('[backfillImages] 🎵 Calling get_albums_needing_covers RPC...');
-        
+
         const { data: albumsNeeded, error: albumsError } = await supabase.rpc('get_albums_needing_covers', { max_results: 2000 });
-        
+
         if (albumsError) {
             console.error('[backfillImages] ❌ Albums error:', albumsError);
             return { success: false, message: 'Failed to get albums: ' + albumsError.message };
         }
-        
+
         console.log(`[backfillImages] 🎵 ${albumsNeeded?.length || 0} unique albums still need covers`);
         console.log('[backfillImages] 🎵 Sample album:', albumsNeeded?.[0]);
-        
+
         if (!albumsNeeded || albumsNeeded.length === 0) {
             const msg = `✅ Done! Borrowed ${borrowResult?.total_updated || 0} covers from history`;
             onProgress(msg);
             return { success: true, message: msg };
         }
-        
+
         onProgress(`🌐 Step 3: Fetching ${albumsNeeded.length} albums from Spotify...`);
 
         // STEP 3: Fetch album covers from Spotify AND update immediately
@@ -985,32 +985,32 @@ export const backfillExtendedHistoryImages = async (
         let fetched = 0;
         let found = 0;
         let totalUpdated = 0;
-        
+
         for (let i = 0; i < albumsNeeded.length; i += chunkSize) {
             const chunk = albumsNeeded.slice(i, i + chunkSize);
-            
+
             // Fetch covers for this chunk
             const coversToUpdate: { ids: number[]; cover: string }[] = [];
-            
+
             await Promise.all(chunk.map(async (item: { album_name: string; artist_name: string; sample_ids: number[] }) => {
                 try {
                     await delay(Math.random() * 100 + 50);
-                    
+
                     // Search for album by name + artist
                     const query = encodeURIComponent(`album:${item.album_name} artist:${item.artist_name}`);
                     const res = await fetch(`https://api.spotify.com/v1/search?q=${query}&type=album&limit=1`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
-                    
+
                     fetched++;
-                    
+
                     if (res.status === 429) {
                         console.warn('[backfillImages] ⚠️ Rate limit hit');
                         return;
                     }
-                    
+
                     if (!res.ok) return;
-                    
+
                     const data = await res.json();
                     const albumData = data.albums?.items[0];
                     if (albumData?.images?.[0]?.url && item.sample_ids?.length > 0) {
@@ -1024,14 +1024,14 @@ export const backfillExtendedHistoryImages = async (
                     console.error(`[backfillImages] ❌ Error fetching "${item.album_name}":`, e);
                 }
             }));
-            
+
             // Update this batch immediately using direct ID update
             for (const item of coversToUpdate) {
                 const { data: updated, error } = await supabase.rpc('update_covers_direct', {
                     record_ids: item.ids,
                     cover_url: item.cover
                 });
-                
+
                 if (!error && updated) {
                     totalUpdated += updated;
                     console.log(`[backfillImages] ✓ Updated ${updated} records`);
@@ -1039,29 +1039,110 @@ export const backfillExtendedHistoryImages = async (
                     console.error('[backfillImages] ❌ Update error:', error);
                 }
             }
-            
+
             const percent = Math.round(((i + chunk.length) / albumsNeeded.length) * 100);
             console.log(`[backfillImages] 🌐 ${percent}% - Fetched ${fetched}, found ${found}, updated ${totalUpdated}`);
             onProgress(`🌐 ${percent}% (found ${found}, saved ${totalUpdated} records)`);
-            
+
             if (i + chunkSize < albumsNeeded.length) await delay(300);
         }
-        
+
         console.log(`[backfillImages] 📥 Total: fetched ${fetched}, found ${found}, updated ${totalUpdated}`);
 
         // STEP 4: Check final status
         const { data: statusAfter } = await supabase.rpc('count_null_covers');
         console.log('[backfillImages] 📊 Status after:', statusAfter);
-        
+
         const finalMessage = `✅ Done! Borrowed ${borrowResult?.total_updated || 0} + Spotify ${totalUpdated} = ${statusAfter?.percent_complete || 0}% complete`;
         console.log(`[backfillImages] 🎉 ${finalMessage}`);
         onProgress(finalMessage);
-        
+
         return { success: true, message: finalMessage };
-        
+
     } catch (err: any) {
         console.error('[backfillImages] ❌ Error:', err);
         onProgress(`❌ Error: ${err.message}`);
         return { success: false, message: err.message };
     }
 };
+
+// FIXED: Fetch ALL history for heatmap (lightweight: just dates and duration)
+export const fetchHeatmapData = async () => {
+    // console.log("[dbService] Fetching full heat map data");
+    // We only need played_at and duration_ms to build the grid
+    const { data, error } = await supabase
+        .from('listening_history')
+        .select('played_at, duration_ms, track_name, artist_name, album_cover')
+        .order('played_at', { ascending: false }); // Newest first
+
+    if (error) {
+        console.error("Heatmap Fetch Error:", error);
+        return [];
+    }
+    return data || [];
+};
+
+// WRAPPED GENERATOR (Local Data Aggregation)
+export const getWrappedStats = async (period: 'daily' | 'weekly' | 'monthly' = 'daily') => {
+    const now = new Date();
+    let startDate: Date;
+    let label = '';
+
+    if (period === 'daily') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0); // Today 12AM
+        label = "Today's Wrapped";
+    } else if (period === 'weekly') {
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+        startDate = new Date(now.setDate(diff));
+        startDate.setHours(0, 0, 0, 0);
+        label = "This Week's Wrapped";
+    } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1); // 1st of Month
+        label = "Monthly Wrapped";
+    }
+
+    const { data: rawData, error } = await supabase
+        .from('listening_history')
+        .select('*')
+        .gte('played_at', startDate.toISOString());
+
+    if (error || !rawData || rawData.length === 0) {
+        return null; // No data
+    }
+
+    const totalMs = rawData.reduce((acc, curr) => acc + (curr.duration_ms || 0), 0);
+    const totalMinutes = Math.floor(totalMs / 60000);
+
+    // Top Artist
+    const artists: Record<string, { count: number, image: string }> = {};
+    const songs: Record<string, { count: number, cover: string, artist: string }> = {};
+
+    rawData.forEach(item => {
+        // Artist
+        if (item.artist_name) {
+            if (!artists[item.artist_name]) artists[item.artist_name] = { count: 0, image: item.album_cover || '' };
+            artists[item.artist_name].count++;
+            if (item.album_cover && !artists[item.artist_name].image) artists[item.artist_name].image = item.album_cover;
+        }
+        // Song
+        if (item.track_name) {
+            const key = item.track_name;
+            if (!songs[key]) songs[key] = { count: 0, cover: item.album_cover || '', artist: item.artist_name };
+            songs[key].count++;
+        }
+    });
+
+    const topArtistEntry = Object.entries(artists).sort((a, b) => b[1].count - a[1].count)[0];
+    const topSongEntry = Object.entries(songs).sort((a, b) => b[1].count - a[1].count)[0];
+
+    return {
+        type: 'WRAPPED',
+        period: period,
+        title: label,
+        totalMinutes,
+        topArtist: topArtistEntry ? { name: topArtistEntry[0], count: topArtistEntry[1].count, image: topArtistEntry[1].image } : null,
+        topSong: topSongEntry ? { title: topSongEntry[0], count: topSongEntry[1].count, cover: topSongEntry[1].cover, artist: topSongEntry[1].artist } : null,
+        totalTracks: rawData.length
+    };
+}
