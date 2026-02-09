@@ -22,6 +22,7 @@ body {
   width: 100vw;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
 }
 
 #root {
@@ -109,6 +110,27 @@ html {
   background: rgba(28, 28, 30, 0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+}
+
+.glass-morph {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.safe-area-x {
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+}
+
+.safe-area-top {
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+
+.safe-area-bottom {
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
 
 /* Gradient Text */
