@@ -33,7 +33,7 @@ const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
         </span>
         <div className="relative z-10 ml-10 md:ml-12">
             <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
-                <img src={album.cover} alt={album.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
+                <img src={album.cover} alt={album.title} loading="lazy" className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
                      <span className="text-white font-bold text-xl drop-shadow-md">{album.timeStr}</span>
@@ -61,6 +61,7 @@ const RankedArtist = ({ artist, rank, realImage, onClick }: { artist: Artist, ra
                 <img 
                     src={realImage || artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
                     alt={artist.name} 
+                    loading="lazy"
                     className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" 
                 />
                 {/* Hover Overlay */}
@@ -83,7 +84,7 @@ const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
         </span>
         <div className="relative z-10 ml-10 md:ml-12">
             <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
-                <img src={song.cover} alt={song.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
+                <img src={song.cover} alt={song.title} loading="lazy" className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
                      <span className="text-white font-bold text-xl drop-shadow-md">{song.timeStr}</span>
@@ -94,6 +95,49 @@ const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
                 <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">{song.artist} • <span className="text-white/60">{song.timeStr}</span></p>
             </div>
         </div>
+    </div>
+);
+
+const MobileHeroCard = ({ title, subtitle }: { title: string; subtitle: string }) => (
+    <div className="glass-morph rounded-[28px] p-5 shadow-2xl">
+        <p className="text-xs uppercase tracking-[0.2em] text-white/60 mb-2">Muse Analytics</p>
+        <h1 className="text-2xl font-semibold text-white leading-tight">{title}</h1>
+        <p className="text-sm text-white/70 mt-2">{subtitle}</p>
+    </div>
+);
+
+const MobileArtistCard = ({ artist, rank, image, onClick }: { artist: Artist; rank: number; image?: string; onClick?: () => void }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className="relative w-[210px] h-[270px] shrink-0 snap-start rounded-[28px] overflow-hidden shadow-2xl border border-white/10 bg-[#1C1C1E]/90"
+    >
+        <img
+            src={image || artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`}
+            alt={artist.name}
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/70" />
+        <div className="absolute top-3 left-3 text-white text-2xl font-semibold drop-shadow-lg">{rank}</div>
+        <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
+            <p className="text-lg font-semibold text-white leading-tight">{artist.name}</p>
+            <p className="text-sm text-white/70">{artist.timeStr}</p>
+        </div>
+    </button>
+);
+
+const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; cover: string; title: string; subtitle: string; meta?: string }) => (
+    <div className="flex items-center gap-3 py-2.5">
+        <div className="w-6 text-center text-sm font-semibold text-white/70">{rank}</div>
+        <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/10 flex-shrink-0">
+            <img src={cover} alt={title} loading="lazy" className="w-full h-full object-cover" />
+        </div>
+        <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white truncate">{title}</p>
+            <p className="text-xs text-white/60 truncate">{subtitle}</p>
+        </div>
+        {meta && <div className="text-xs text-white/50 whitespace-nowrap">{meta}</div>}
     </div>
 );
 
@@ -529,207 +573,364 @@ function App() {
   return (
     <>
     <Layout user={data.user} currentTrack={data.currentTrack}>
-        
-        {/* SECTION 1: AI DISCOVERY - Clean Centered Design */}
-        <div className="mb-24 mt-8">
-            <AISpotlight 
-                token={token}
-                history={safeRecent}
-                user={data.user}
-                contextData={{
-                    userName: data.user?.display_name,
-                    artists: safeArtists.map((a: Artist, idx: number) => {
-                        const time = String(a.timeStr || '');
-                        const mins = time.replace('m', '');
-                        // Include Rank for AI
-                        return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
-                    }),
-                    albums: safeAlbums.map((a: Album, idx: number) => {
-                        const time = String(a.timeStr || '');
-                        const mins = time.replace('m', '');
-                        return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
-                    }),
-                    songs: safeSongs.map((s: Song, idx: number) => {
-                        const time = String(s.timeStr || '');
-                        const mins = time.replace('m', '');
-                        return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
-                    }),
-                    globalStats: dbStats
-                }} 
-            />
-        </div>
-
-        {/* SECTION 2: TOP RANKINGS - Prominent Showcase */}
-        <div className="mb-20">
-            <div className="flex items-center justify-between mb-8 px-1">
-                <div>
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Your Top Charts</h2>
-                    <p className="text-[#8E8E93] text-sm mt-1">Your most played this {timeRange.toLowerCase()}</p>
+        <div className="md:hidden space-y-10 safe-area-bottom safe-area-top safe-area-x">
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-xs uppercase tracking-[0.25em] text-white/40">Mobile Wrapped</p>
+                        <h2 className="text-2xl font-semibold text-white">Hey {data.user?.display_name || 'there'}</h2>
+                    </div>
+                    {data.user?.images?.[0]?.url && (
+                        <div className="w-12 h-12 rounded-full overflow-hidden border border-white/15 shadow-lg">
+                            <img src={data.user.images[0].url} alt={data.user.display_name} loading="lazy" className="w-full h-full object-cover" />
+                        </div>
+                    )}
                 </div>
-                <div className="flex gap-2">
-                    {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
-                        <button 
-                            key={range}
-                            onClick={() => {
-                                setTimeRange(range);
-                                fetchDashboardStats(range).then(data => setDbUnifiedData(data));
-                            }}
-                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                                timeRange === range 
-                                    ? 'bg-white text-black' 
-                                    : 'bg-[#1C1C1E] text-[#8E8E93] hover:text-white border border-white/10'
-                            }`}
-                        >
-                            {range}
-                        </button>
-                    ))}
-                </div>
+                <MobileHeroCard
+                    title={`Your ${timeRange.toLowerCase()} pulse`}
+                    subtitle="Fresh stats, clean layouts, and a glassy glow built for mobile."
+                />
             </div>
-            
+
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
+                    <button
+                        key={range}
+                        onClick={() => {
+                            setTimeRange(range);
+                            fetchDashboardStats(range).then(data => setDbUnifiedData(data));
+                        }}
+                        className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                            timeRange === range
+                                ? 'bg-white text-black'
+                                : 'bg-white/10 text-white/70 border border-white/10'
+                        }`}
+                    >
+                        {range}
+                    </button>
+                ))}
+            </div>
+
             {showEmptyState ? (
-                <div className="flex flex-col items-center justify-center py-20 bg-[#1C1C1E] rounded-3xl border border-white/5 animate-in fade-in zoom-in-95 duration-500">
-                    <Music size={48} className="text-white/20 mb-4" />
-                    <h3 className="text-xl font-bold text-white">No data for this period</h3>
-                    <p className="text-[#8E8E93] max-w-sm text-center mt-2">
-                        Start listening to music to see your {timeRange.toLowerCase()} stats appear here!
+                <div className="flex flex-col items-center justify-center py-16 bg-[#1C1C1E] rounded-3xl border border-white/5 animate-in fade-in zoom-in-95 duration-500 text-center">
+                    <Music size={40} className="text-white/20 mb-3" />
+                    <h3 className="text-lg font-bold text-white">No data yet</h3>
+                    <p className="text-[#8E8E93] text-sm mt-2 px-6">
+                        Start listening to music to see your {timeRange.toLowerCase()} stats appear here.
                     </p>
                 </div>
             ) : (
-            <div key={timeRange} className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
-                {/* TOP ARTISTS */}
-                <div>
-                    <div className="flex justify-between items-center mb-6 px-1">
-                        <div className="flex items-center gap-3">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Artists</h3>
+                <>
+                    <section className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-white">Your Top Artists</h3>
+                            {safeArtists.length > 0 && (
+                                <button
+                                    onClick={() => setSeeAllModal({
+                                        isOpen: true,
+                                        title: 'Top Artists',
+                                        items: safeArtists,
+                                        type: 'artist'
+                                    })}
+                                    className="text-xs font-bold text-white/70 uppercase tracking-wider"
+                                >
+                                    See all
+                                </button>
+                            )}
                         </div>
-                        {safeArtists.length > 0 && (
-                        <button 
-                            onClick={() => setSeeAllModal({ 
-                                isOpen: true, 
-                                title: 'Top Artists', 
-                                items: safeArtists,
-                                type: 'artist' 
-                            })}
-                            className="text-xs font-bold text-white hover:text-white/70 transition-colors uppercase tracking-wider"
-                        >
-                            See All
-                        </button>
+                        {safeArtists.length > 0 ? (
+                            <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x">
+                                {safeArtists.slice(0, 6).map((artist: Artist, index: number) => (
+                                    <MobileArtistCard
+                                        key={artist.id}
+                                        artist={artist}
+                                        rank={index + 1}
+                                        image={artistImages[artist.name]}
+                                        onClick={() => setSelectedTopArtist(artist)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[#8E8E93] text-sm italic">Not enough data to rank artists yet.</p>
                         )}
-                    </div>
-                    {safeArtists.length > 0 ? (
-                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                            {safeArtists.slice(0, 8).map((artist: Artist, index: number) => (
-                                <RankedArtist 
-                                    key={artist.id} 
-                                    artist={artist} 
-                                    rank={index + 1} 
-                                    realImage={artistImages[artist.name]} 
-                                    onClick={() => setSelectedTopArtist(artist)}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank artists yet.</p>
-                    )}
-                </div>
+                    </section>
 
-                {/* TOP ALBUMS */}
-                <div>
-                    <div className="flex justify-between items-center mb-6 px-1">
-                        <div className="flex items-center gap-3">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
+                    <section className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-white">Top Songs</h3>
+                            {safeSongs.length > 0 && (
+                                <button
+                                    onClick={() => setSeeAllModal({
+                                        isOpen: true,
+                                        title: 'Top Songs',
+                                        items: safeSongs,
+                                        type: 'song'
+                                    })}
+                                    className="text-xs font-bold text-white/70 uppercase tracking-wider"
+                                >
+                                    See all
+                                </button>
+                            )}
                         </div>
-                        {safeAlbums.length > 0 && (
-                        <button 
-                            onClick={() => setSeeAllModal({ 
-                                isOpen: true, 
-                                title: 'Top Albums', 
-                                items: safeAlbums,
-                                type: 'album' 
-                            })}
-                            className="text-xs font-bold text-white hover:text-white/70 transition-colors uppercase tracking-wider"
-                        >
-                            See All
-                        </button>
+                        <div className="glass-morph rounded-[24px] px-4">
+                            {safeSongs.length > 0 ? (
+                                safeSongs.slice(0, 6).map((song: Song, index: number) => (
+                                    <MobileListRow
+                                        key={song.id}
+                                        rank={index + 1}
+                                        cover={song.cover}
+                                        title={song.title}
+                                        subtitle={song.artist}
+                                        meta={song.timeStr}
+                                    />
+                                ))
+                            ) : (
+                                <p className="text-[#8E8E93] text-sm py-6 text-center">Not enough data to rank songs yet.</p>
+                            )}
+                        </div>
+                    </section>
+
+                    <section className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-white">Top Albums</h3>
+                            {safeAlbums.length > 0 && (
+                                <button
+                                    onClick={() => setSeeAllModal({
+                                        isOpen: true,
+                                        title: 'Top Albums',
+                                        items: safeAlbums,
+                                        type: 'album'
+                                    })}
+                                    className="text-xs font-bold text-white/70 uppercase tracking-wider"
+                                >
+                                    See all
+                                </button>
+                            )}
+                        </div>
+                        {safeAlbums.length > 0 ? (
+                            <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x">
+                                {safeAlbums.slice(0, 6).map((album: Album, index: number) => (
+                                    <div key={album.id} className="w-[160px] shrink-0 snap-start">
+                                        <div className="relative w-full h-[160px] rounded-[24px] overflow-hidden shadow-xl border border-white/10">
+                                            <img src={album.cover} alt={album.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                                            <div className="absolute top-3 left-3 text-white text-lg font-semibold">{index + 1}</div>
+                                        </div>
+                                        <p className="mt-2 text-sm font-semibold text-white truncate">{album.title}</p>
+                                        <p className="text-xs text-white/60 truncate">{album.artist}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[#8E8E93] text-sm italic">Not enough data to rank albums yet.</p>
                         )}
-                    </div>
-                    {safeAlbums.length > 0 ? (
-                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                            {safeAlbums.slice(0, 8).map((album: Album, index: number) => (
-                                <RankedAlbum key={album.id} album={album} rank={index + 1} />
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank albums yet.</p>
-                    )}
-                </div>
-
-                {/* TOP SONGS */}
-                <div>
-                    <div className="flex justify-between items-center mb-6 px-1">
-                        <div className="flex items-center gap-3">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
-                        </div>
-                        {safeSongs.length > 0 && (
-                        <button 
-                            onClick={() => setSeeAllModal({ 
-                                isOpen: true, 
-                                title: 'Top Songs', 
-                                items: safeSongs,
-                                type: 'song' 
-                            })}
-                            className="text-xs font-bold text-white hover:text-white/70 transition-colors uppercase tracking-wider"
-                        >
-                            See All
-                        </button>
-                        )}
-                    </div>
-                    {safeSongs.length > 0 ? (
-                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                            {safeSongs.slice(0, 8).map((song: Song, index: number) => (
-                                <RankedSong key={song.id} song={song} rank={index + 1} />
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank songs yet.</p>
-                    )}
-                </div>
-
-                {/* UPCOMING ARTISTS */}
-                <UpcomingArtists 
-                    recentPlays={safeRecent} 
-                    topArtists={safeArtists} 
-                    artistImages={artistImages} 
-                />
-
-            </div>
+                    </section>
+                </>
             )}
         </div>
 
-        {/* SECTION 3: ORBIT + ANALYTICS DASHBOARD */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-20">
-            {/* LEFT: OBSESSION ORBIT */}
-            <div className="rounded-3xl p-6 relative overflow-hidden min-h-[600px] border-none bg-transparent">
-                
-                <TrendingArtists 
-                    artists={safeArtists}
-                    albums={safeAlbums}
-                    songs={safeSongs}
-                    recentPlays={safeRecent}
-                    artistImages={artistImages}
-                    timeRange={timeRange}
+        <div className="hidden md:block">
+            {/* SECTION 1: AI DISCOVERY - Clean Centered Design */}
+            <div className="mb-24 mt-8">
+                <AISpotlight 
+                    token={token}
+                    history={safeRecent}
+                    user={data.user}
+                    contextData={{
+                        userName: data.user?.display_name,
+                        artists: safeArtists.map((a: Artist, idx: number) => {
+                            const time = String(a.timeStr || '');
+                            const mins = time.replace('m', '');
+                            // Include Rank for AI
+                            return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
+                        }),
+                        albums: safeAlbums.map((a: Album, idx: number) => {
+                            const time = String(a.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
+                        }),
+                        songs: safeSongs.map((s: Song, idx: number) => {
+                            const time = String(s.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
+                        }),
+                        globalStats: dbStats
+                    }} 
                 />
             </div>
 
-            {/* RIGHT: CHARTS + ARCHIVE */}
-            <div className="space-y-8">
+            {/* SECTION 2: TOP RANKINGS - Prominent Showcase */}
+            <div className="mb-20">
+                <div className="flex items-center justify-between mb-8 px-1">
+                    <div>
+                        <h2 className="text-2xl font-bold text-white tracking-tight">Your Top Charts</h2>
+                        <p className="text-[#8E8E93] text-sm mt-1">Your most played this {timeRange.toLowerCase()}</p>
+                    </div>
+                    <div className="flex gap-2">
+                        {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
+                            <button 
+                                key={range}
+                                onClick={() => {
+                                    setTimeRange(range);
+                                    fetchDashboardStats(range).then(data => setDbUnifiedData(data));
+                                }}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                                    timeRange === range 
+                                        ? 'bg-white text-black' 
+                                        : 'bg-[#1C1C1E] text-[#8E8E93] hover:text-white border border-white/10'
+                                }`}
+                            >
+                                {range}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                
+                {showEmptyState ? (
+                    <div className="flex flex-col items-center justify-center py-20 bg-[#1C1C1E] rounded-3xl border border-white/5 animate-in fade-in zoom-in-95 duration-500">
+                        <Music size={48} className="text-white/20 mb-4" />
+                        <h3 className="text-xl font-bold text-white">No data for this period</h3>
+                        <p className="text-[#8E8E93] max-w-sm text-center mt-2">
+                            Start listening to music to see your {timeRange.toLowerCase()} stats appear here!
+                        </p>
+                    </div>
+                ) : (
+                <div key={timeRange} className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
+                    {/* TOP ARTISTS */}
+                    <div>
+                        <div className="flex justify-between items-center mb-6 px-1">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-[20px] font-bold text-white tracking-tight">Top Artists</h3>
+                            </div>
+                            {safeArtists.length > 0 && (
+                            <button 
+                                onClick={() => setSeeAllModal({ 
+                                    isOpen: true, 
+                                    title: 'Top Artists', 
+                                    items: safeArtists,
+                                    type: 'artist' 
+                                })}
+                                className="text-xs font-bold text-white hover:text-white/70 transition-colors uppercase tracking-wider"
+                            >
+                                See All
+                            </button>
+                            )}
+                        </div>
+                        {safeArtists.length > 0 ? (
+                            <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                                {safeArtists.slice(0, 8).map((artist: Artist, index: number) => (
+                                    <RankedArtist 
+                                        key={artist.id} 
+                                        artist={artist} 
+                                        rank={index + 1} 
+                                        realImage={artistImages[artist.name]} 
+                                        onClick={() => setSelectedTopArtist(artist)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank artists yet.</p>
+                        )}
+                    </div>
+
+                    {/* TOP ALBUMS */}
+                    <div>
+                        <div className="flex justify-between items-center mb-6 px-1">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
+                            </div>
+                            {safeAlbums.length > 0 && (
+                            <button 
+                                onClick={() => setSeeAllModal({ 
+                                    isOpen: true, 
+                                    title: 'Top Albums', 
+                                    items: safeAlbums,
+                                    type: 'album' 
+                                })}
+                                className="text-xs font-bold text-white hover:text-white/70 transition-colors uppercase tracking-wider"
+                            >
+                                See All
+                            </button>
+                            )}
+                        </div>
+                        {safeAlbums.length > 0 ? (
+                            <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                                {safeAlbums.slice(0, 8).map((album: Album, index: number) => (
+                                    <RankedAlbum key={album.id} album={album} rank={index + 1} />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank albums yet.</p>
+                        )}
+                    </div>
+
+                    {/* TOP SONGS */}
+                    <div>
+                        <div className="flex justify-between items-center mb-6 px-1">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
+                            </div>
+                            {safeSongs.length > 0 && (
+                            <button 
+                                onClick={() => setSeeAllModal({ 
+                                    isOpen: true, 
+                                    title: 'Top Songs', 
+                                    items: safeSongs,
+                                    type: 'song' 
+                                })}
+                                className="text-xs font-bold text-white hover:text-white/70 transition-colors uppercase tracking-wider"
+                            >
+                                See All
+                            </button>
+                            )}
+                        </div>
+                        {safeSongs.length > 0 ? (
+                            <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                                {safeSongs.slice(0, 8).map((song: Song, index: number) => (
+                                    <RankedSong key={song.id} song={song} rank={index + 1} />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank songs yet.</p>
+                        )}
+                    </div>
+
+                    {/* UPCOMING ARTISTS */}
+                    <UpcomingArtists 
+                        recentPlays={safeRecent} 
+                        topArtists={safeArtists} 
+                        artistImages={artistImages} 
+                    />
+
+                </div>
+                )}
+            </div>
+
+            {/* SECTION 3: ORBIT + ANALYTICS DASHBOARD */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-20">
+                {/* LEFT: OBSESSION ORBIT */}
+                <div className="rounded-3xl p-6 relative overflow-hidden min-h-[600px] border-none bg-transparent">
+                    
+                    <TrendingArtists 
+                        artists={safeArtists}
+                        albums={safeAlbums}
+                        songs={safeSongs}
+                        recentPlays={safeRecent}
+                        artistImages={artistImages}
+                        timeRange={timeRange}
+                    />
+                </div>
+
+                {/* RIGHT: CHARTS + ARCHIVE */}
+                <div className="space-y-8">
+                </div>
+                
             </div>
             
-        </div>
-        
-        {/* Activity Heatmap - Bottom */}
-        <div className="mb-24 px-1">
-             <ActivityHeatmap history={safeRecent} />
+            {/* Activity Heatmap - Bottom */}
+            <div className="mb-24 px-1">
+                 <ActivityHeatmap history={safeRecent} />
+            </div>
         </div>
 
     </Layout>
