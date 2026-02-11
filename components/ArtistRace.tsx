@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Crown, Sparkles, Music2 } from 'lucide-react';
 
+// Constants
+const AVATAR_POSITION_OFFSET = 8; // Offset percentage for avatar positioning
+
 interface RaceCompetitor {
     name: string;
     image: string;
@@ -38,6 +41,13 @@ export const ArtistRace: React.FC<ArtistRaceProps> = ({
             
             // Calculate final positions based on score (normalized to 100%)
             const maxScore = Math.max(...competitors.map(c => c.score));
+            
+            // Guard against division by zero
+            if (maxScore === 0) {
+                setPositions(competitors.map(() => 0));
+                return;
+            }
+            
             const finalPositions = competitors.map(c => (c.score / maxScore) * 100);
             
             // Animate to final positions
@@ -92,7 +102,7 @@ export const ArtistRace: React.FC<ArtistRaceProps> = ({
                                 {/* Competitor Avatar - Moves Along Track */}
                                 <motion.div
                                     initial={{ left: '0%' }}
-                                    animate={{ left: `${Math.max(0, progress - 8)}%` }}
+                                    animate={{ left: `${Math.max(0, progress - AVATAR_POSITION_OFFSET)}%` }}
                                     transition={{ 
                                         duration: 1.5,
                                         delay: idx * 0.1,

@@ -931,7 +931,7 @@ function App() {
                     </div>
 
                     {/* ARTIST RACE - Cool Animation showing top artists battle */}
-                    {safeArtists.length >= 3 && (
+                    {safeArtists.length >= 5 && (
                         <div className="mb-12">
                             <ArtistRace 
                                 competitors={safeArtists.slice(0, 5).map(artist => ({
