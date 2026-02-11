@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc } from 'lucide-react';
+import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Search } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
 import { Artist, Album, Song } from './types';
@@ -11,6 +11,7 @@ import { ArtistRace } from './components/ArtistRace';
 import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ChartSkeleton } from './components/LoadingSkeleton';
+import { WrappedModal } from './components/WrappedModal';
 
 // RANKED COMPONENT: Top Album (Standard)
 import { 
@@ -107,7 +108,6 @@ const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick
 
 const MobileHeroCard = ({ title, subtitle }: { title: string; subtitle: string }) => (
     <div className="glass-morph rounded-[24px] p-6 shadow-xl border border-white/[0.12]">
-        <p className="text-[10px] uppercase tracking-[0.25em] text-white/50 mb-2.5 font-bold">Muse Analytics</p>
         <h1 className="text-[22px] font-bold text-white leading-tight">{title}</h1>
         <p className="text-[13px] text-white/60 mt-2.5 leading-relaxed">{subtitle}</p>
     </div>
@@ -176,6 +176,10 @@ function App() {
       items: [],
       type: 'artist'
   });
+
+  // Mobile feature states
+  const [showWrapped, setShowWrapped] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch Artist Images when data loads
   useEffect(() => {
@@ -502,6 +506,33 @@ function App() {
                                                                           // User said "if it is daily and i did not lsisne song ... tell the user start listening"
                                                                           // So we should be strict.
 
+  // Filter data based on search query
+  const filteredArtists = useMemo(() => {
+      if (!searchQuery.trim()) return safeArtists;
+      const query = searchQuery.toLowerCase();
+      return safeArtists.filter((artist: Artist) => 
+          artist.name.toLowerCase().includes(query)
+      );
+  }, [safeArtists, searchQuery]);
+
+  const filteredSongs = useMemo(() => {
+      if (!searchQuery.trim()) return safeSongs;
+      const query = searchQuery.toLowerCase();
+      return safeSongs.filter((song: Song) => 
+          song.title.toLowerCase().includes(query) || 
+          song.artist.toLowerCase().includes(query)
+      );
+  }, [safeSongs, searchQuery]);
+
+  const filteredAlbums = useMemo(() => {
+      if (!searchQuery.trim()) return safeAlbums;
+      const query = searchQuery.toLowerCase();
+      return safeAlbums.filter((album: Album) => 
+          album.title.toLowerCase().includes(query) || 
+          album.artist.toLowerCase().includes(query)
+      );
+  }, [safeAlbums, searchQuery]);
+
   const selectedArtistStats = useMemo(() => {
       if (!selectedTopArtist) return null;
 
@@ -610,10 +641,10 @@ function App() {
     <Layout user={data.user} currentTrack={data.currentTrack}>
         <div className="md:hidden space-y-10 safe-area-bottom safe-area-top safe-area-x px-4">
             <div className="space-y-5">
-                <div className="flex items-center justify-between">
+                <div className="glass-morph rounded-[24px] p-5 border border-white/[0.12] flex items-center justify-between">
                     <div>
-                        <p className="text-[10px] uppercase tracking-[0.25em] text-white/40 font-bold">Mobile Wrapped</p>
-                        <h2 className="text-[26px] font-bold text-white mt-1">Hey {data.user?.display_name || 'there'}</h2>
+                        <h2 className="text-[26px] font-bold text-white">Hey {data.user?.display_name || 'there'}</h2>
+                        <p className="text-[13px] text-white/60 mt-1">Your music journey</p>
                     </div>
                     {data.user?.images?.[0]?.url && (
                         <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 shadow-xl">
@@ -646,6 +677,32 @@ function App() {
                 ))}
             </div>
 
+            {/* Search Bar & Wrapped Button */}
+            <div className="flex gap-3">
+                <div className="flex-1 glass-morph rounded-full px-4 py-3 flex items-center gap-2">
+                    <Search size={18} className="text-white/50" />
+                    <input
+                        type="text"
+                        placeholder="Search songs, artists, albums..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="flex-1 bg-transparent border-none outline-none text-white text-sm placeholder:text-white/40"
+                    />
+                    {searchQuery && (
+                        <button onClick={() => setSearchQuery('')} className="text-white/50 hover:text-white">
+                            <X size={16} />
+                        </button>
+                    )}
+                </div>
+                <button
+                    onClick={() => setShowWrapped(true)}
+                    className="glass-morph rounded-full px-5 py-3 flex items-center gap-2 hover:bg-white/20 transition-all active:scale-95"
+                >
+                    <Sparkles size={18} className="text-white" />
+                    <span className="text-sm font-semibold text-white">Wrapped</span>
+                </button>
+            </div>
+
             {showEmptyState ? (
                 <div className="flex flex-col items-center justify-center py-16 bg-[#1C1C1E] rounded-3xl border border-white/5 animate-in fade-in zoom-in-95 duration-500 text-center">
                     <Music size={40} className="text-white/20 mb-3" />
@@ -659,12 +716,12 @@ function App() {
                     <section className="space-y-5">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="text-lg font-bold text-white">Your Top Artists</h3>
-                            {safeArtists.length > 0 && (
+                            {filteredArtists.length > 0 && (
                                 <button
                                     onClick={() => setSeeAllModal({
                                         isOpen: true,
                                         title: 'Top Artists',
-                                        items: safeArtists,
+                                        items: filteredArtists,
                                         type: 'artist'
                                     })}
                                     className="text-xs font-bold text-white/60 uppercase tracking-wider hover:text-white transition-colors"
@@ -673,9 +730,9 @@ function App() {
                                 </button>
                             )}
                         </div>
-                        {safeArtists.length > 0 ? (
+                        {filteredArtists.length > 0 ? (
                             <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
-                                {safeArtists.slice(0, 6).map((artist: Artist, index: number) => (
+                                {filteredArtists.slice(0, 6).map((artist: Artist, index: number) => (
                                     <MobileArtistCard
                                         key={artist.id}
                                         artist={artist}
@@ -686,19 +743,19 @@ function App() {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-[#8E8E93] text-sm italic px-1">Not enough data to rank artists yet.</p>
+                            <p className="text-[#8E8E93] text-sm italic px-1">{searchQuery ? 'No artists found matching your search.' : 'Not enough data to rank artists yet.'}</p>
                         )}
                     </section>
 
                     <section className="space-y-5">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="text-lg font-bold text-white">Top Songs</h3>
-                            {safeSongs.length > 0 && (
+                            {filteredSongs.length > 0 && (
                                 <button
                                     onClick={() => setSeeAllModal({
                                         isOpen: true,
                                         title: 'Top Songs',
-                                        items: safeSongs,
+                                        items: filteredSongs,
                                         type: 'song'
                                     })}
                                     className="text-xs font-bold text-white/60 uppercase tracking-wider hover:text-white transition-colors"
@@ -708,8 +765,8 @@ function App() {
                             )}
                         </div>
                         <div className="glass-morph rounded-[24px] px-4 py-2">
-                            {safeSongs.length > 0 ? (
-                                safeSongs.slice(0, 6).map((song: Song, index: number) => (
+                            {filteredSongs.length > 0 ? (
+                                filteredSongs.slice(0, 6).map((song: Song, index: number) => (
                                     <div key={song.id} onClick={() => setSelectedTopSong(song)} className="cursor-pointer">
                                         <MobileListRow
                                             rank={index + 1}
@@ -721,7 +778,7 @@ function App() {
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-[#8E8E93] text-sm py-8 text-center italic">Not enough data to rank songs yet.</p>
+                                <p className="text-[#8E8E93] text-sm py-8 text-center italic">{searchQuery ? 'No songs found matching your search.' : 'Not enough data to rank songs yet.'}</p>
                             )}
                         </div>
                     </section>
@@ -729,12 +786,12 @@ function App() {
                     <section className="space-y-5">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="text-lg font-bold text-white">Top Albums</h3>
-                            {safeAlbums.length > 0 && (
+                            {filteredAlbums.length > 0 && (
                                 <button
                                     onClick={() => setSeeAllModal({
                                         isOpen: true,
                                         title: 'Top Albums',
-                                        items: safeAlbums,
+                                        items: filteredAlbums,
                                         type: 'album'
                                     })}
                                     className="text-xs font-bold text-white/70 uppercase tracking-wider"
@@ -743,9 +800,9 @@ function App() {
                                 </button>
                             )}
                         </div>
-                        {safeAlbums.length > 0 ? (
+                        {filteredAlbums.length > 0 ? (
                             <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
-                                {safeAlbums.slice(0, 6).map((album: Album, index: number) => (
+                                {filteredAlbums.slice(0, 6).map((album: Album, index: number) => (
                                     <div key={album.id} className="w-[140px] shrink-0 snap-start group cursor-pointer" onClick={() => setSelectedTopAlbum(album)}>
                                         <div className="relative w-full h-[140px] rounded-[20px] overflow-hidden shadow-xl border-2 border-white/[0.08] active:scale-95 transition-transform">
                                             <img src={album.cover} alt={album.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
@@ -758,8 +815,62 @@ function App() {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-[#8E8E93] text-sm italic px-1">Not enough data to rank albums yet.</p>
+                            <p className="text-[#8E8E93] text-sm italic px-1">{searchQuery ? 'No albums found matching your search.' : 'Not enough data to rank albums yet.'}</p>
                         )}
+                    </section>
+
+                    {/* AI Chat - Mobile */}
+                    <section className="space-y-5">
+                        <div className="flex items-center justify-between px-1">
+                            <h3 className="text-lg font-bold text-white">AI Music Discovery</h3>
+                        </div>
+                        <AISpotlight 
+                            token={token}
+                            history={safeRecent}
+                            user={data.user}
+                            contextData={{
+                                userName: data.user?.display_name,
+                                artists: safeArtists.map((a: Artist, idx: number) => {
+                                    const time = String(a.timeStr || '');
+                                    const mins = time.replace('m', '');
+                                    return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
+                                }),
+                                albums: safeAlbums.map((a: Album, idx: number) => {
+                                    const time = String(a.timeStr || '');
+                                    const mins = time.replace('m', '');
+                                    return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
+                                }),
+                                songs: safeSongs.map((s: Song, idx: number) => {
+                                    const time = String(s.timeStr || '');
+                                    const mins = time.replace('m', '');
+                                    return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
+                                }),
+                                globalStats: dbStats
+                            }} 
+                        />
+                    </section>
+
+                    {/* Obsession Orbit - Mobile */}
+                    <section className="space-y-5">
+                        <div className="flex items-center justify-between px-1">
+                            <h3 className="text-lg font-bold text-white">Obsession Orbit</h3>
+                        </div>
+                        <TrendingArtists 
+                            artists={safeArtists}
+                            albums={safeAlbums}
+                            songs={safeSongs}
+                            recentPlays={safeRecent}
+                            artistImages={artistImages}
+                            timeRange={timeRange}
+                        />
+                    </section>
+
+                    {/* Activity Heatmap - Mobile */}
+                    <section className="space-y-5">
+                        <div className="flex items-center justify-between px-1">
+                            <h3 className="text-lg font-bold text-white">Activity Heatmap</h3>
+                        </div>
+                        <ActivityHeatmap history={safeRecent} />
                     </section>
                 </>
             )}
@@ -1092,29 +1203,69 @@ function App() {
                          </h3>
                          
                          <div className="space-y-1.5">
-                            {(dbUnifiedData?.songs || [])
-                                .filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name)
-                                .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
-                                .slice(0, 5)
-                                .map((song: any, idx: number) => (
-                                    <div key={idx} className="flex items-center gap-3 p-2.5 md:p-3 hover:bg-white/5 rounded-xl transition-all group active:scale-[0.98]">
-                                        <div className="text-[#8E8E93] font-mono text-sm w-5 font-bold">{idx + 1}</div>
-                                        <div className="w-11 h-11 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 relative border border-white/5">
-                                            <img src={song.cover || song.album_cover} className="w-full h-full object-cover" alt={song.title} />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="text-[13px] md:text-sm font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
-                                                {song.track_name || song.title}
+                            {(() => {
+                                // Get all songs from both unified data and recent plays
+                                const allSongs = [
+                                    ...(dbUnifiedData?.songs || []),
+                                    ...(safeRecent || []).map((p: any) => ({
+                                        track_name: p.track_name,
+                                        title: p.track_name,
+                                        artist: p.artist_name,
+                                        artist_name: p.artist_name,
+                                        cover: p.album_cover,
+                                        album_cover: p.album_cover,
+                                        plays: 1,
+                                        listens: 1,
+                                        timeStr: '3m'
+                                    }))
+                                ];
+                                
+                                // Filter and aggregate tracks from this artist
+                                const artistTracks = allSongs
+                                    .filter((s: any) => {
+                                        const songArtist = (s.artist || s.artist_name || '').toLowerCase().trim();
+                                        const targetArtist = selectedTopArtist.name.toLowerCase().trim();
+                                        return songArtist === targetArtist;
+                                    })
+                                    .reduce((acc: any[], song: any) => {
+                                        const trackName = song.track_name || song.title;
+                                        const existing = acc.find(t => t.track_name === trackName);
+                                        if (existing) {
+                                            existing.plays += (song.plays || song.listens || 1);
+                                        } else {
+                                            acc.push({
+                                                track_name: trackName,
+                                                cover: song.cover || song.album_cover,
+                                                plays: song.plays || song.listens || 1,
+                                                timeStr: song.timeStr || '3m'
+                                            });
+                                        }
+                                        return acc;
+                                    }, [])
+                                    .sort((a: any, b: any) => b.plays - a.plays)
+                                    .slice(0, 5);
+
+                                return artistTracks.length > 0 ? (
+                                    artistTracks.map((song: any, idx: number) => (
+                                        <div key={idx} className="flex items-center gap-3 p-2.5 md:p-3 hover:bg-white/5 rounded-xl transition-all group active:scale-[0.98]">
+                                            <div className="text-[#8E8E93] font-mono text-sm w-5 font-bold">{idx + 1}</div>
+                                            <div className="w-11 h-11 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 relative border border-white/5">
+                                                <img src={song.cover} className="w-full h-full object-cover" alt={song.track_name} />
                                             </div>
-                                            <div className="text-[11px] text-[#8E8E93] font-medium">
-                                                    {song.listens || song.plays || 0} plays • {song.timeStr || '0m'}
+                                            <div className="min-w-0 flex-1">
+                                                <div className="text-[13px] md:text-sm font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
+                                                    {song.track_name}
+                                                </div>
+                                                <div className="text-[11px] text-[#8E8E93] font-medium">
+                                                    {song.plays} plays • {song.timeStr}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                            ))}
-                            {(dbUnifiedData?.songs || []).filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name).length === 0 && (
-                                <p className="text-[#8E8E93] text-sm text-center py-6 italic">No track data available for this artist.</p>
-                            )}
+                                    ))
+                                ) : (
+                                    <p className="text-[#8E8E93] text-sm text-center py-6 italic">No track data available for this artist.</p>
+                                );
+                            })()}
                         </div>
                     </motion.div>
                 </div>
@@ -1219,7 +1370,29 @@ function App() {
                             <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
                                 <Disc size={16} className="text-[#FA2D48] mb-1.5" />
                                 <span className="text-xl font-bold text-white">
-                                    {(dbUnifiedData?.songs || []).filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title) && (s.artist === selectedTopAlbum.artist || s.artist_name === selectedTopAlbum.artist)).length}
+                                    {(() => {
+                                        const allSongs = [
+                                            ...(dbUnifiedData?.songs || []),
+                                            ...(safeRecent || []).map((p: any) => ({
+                                                album: p.album_name,
+                                                album_name: p.album_name,
+                                                artist: p.artist_name,
+                                                artist_name: p.artist_name,
+                                                track_name: p.track_name
+                                            }))
+                                        ];
+                                        const uniqueTracks = new Set(
+                                            allSongs
+                                                .filter((s: any) => {
+                                                    const songAlbum = (s.album || s.album_name || '').toLowerCase().trim();
+                                                    const songArtist = (s.artist || s.artist_name || '').toLowerCase().trim();
+                                                    return songAlbum === selectedTopAlbum.title.toLowerCase().trim() && 
+                                                           songArtist === selectedTopAlbum.artist.toLowerCase().trim();
+                                                })
+                                                .map((s: any) => s.track_name)
+                                        );
+                                        return uniqueTracks.size;
+                                    })()}
                                 </span>
                                 <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Tracks</span>
                             </div>
@@ -1236,27 +1409,65 @@ function App() {
                                 <Music size={14} className="text-[#FA2D48]" /> Tracks from this album
                             </h3>
                             <div className="space-y-1">
-                                {(dbUnifiedData?.songs || [])
-                                    .filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title) && (s.artist === selectedTopAlbum.artist || s.artist_name === selectedTopAlbum.artist))
-                                    .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
-                                    .slice(0, 10)
-                                    .map((song: any, idx: number) => (
-                                        <div key={idx} className="flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl transition-all group">
-                                            <div className="text-[#8E8E93] font-mono text-sm w-5 font-bold">{idx + 1}</div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="text-[13px] font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
-                                                    {song.track_name || song.title}
-                                                </div>
-                                                <div className="text-[11px] text-[#8E8E93]">
-                                                    {song.listens || song.plays || 0} plays
+                                {(() => {
+                                    // Get all songs from both unified data and recent plays
+                                    const allSongs = [
+                                        ...(dbUnifiedData?.songs || []),
+                                        ...(safeRecent || []).map((p: any) => ({
+                                            track_name: p.track_name,
+                                            title: p.track_name,
+                                            album: p.album_name,
+                                            album_name: p.album_name,
+                                            artist: p.artist_name,
+                                            artist_name: p.artist_name,
+                                            plays: 1,
+                                            listens: 1
+                                        }))
+                                    ];
+                                    
+                                    // Filter and aggregate tracks from this album
+                                    const albumTracks = allSongs
+                                        .filter((s: any) => {
+                                            const songAlbum = (s.album || s.album_name || '').toLowerCase().trim();
+                                            const songArtist = (s.artist || s.artist_name || '').toLowerCase().trim();
+                                            const targetAlbum = selectedTopAlbum.title.toLowerCase().trim();
+                                            const targetArtist = selectedTopAlbum.artist.toLowerCase().trim();
+                                            return songAlbum === targetAlbum && songArtist === targetArtist;
+                                        })
+                                        .reduce((acc: any[], song: any) => {
+                                            const trackName = song.track_name || song.title;
+                                            const existing = acc.find(t => t.track_name === trackName);
+                                            if (existing) {
+                                                existing.plays += (song.plays || song.listens || 1);
+                                            } else {
+                                                acc.push({
+                                                    track_name: trackName,
+                                                    plays: song.plays || song.listens || 1
+                                                });
+                                            }
+                                            return acc;
+                                        }, [])
+                                        .sort((a: any, b: any) => b.plays - a.plays)
+                                        .slice(0, 10);
+
+                                    return albumTracks.length > 0 ? (
+                                        albumTracks.map((song: any, idx: number) => (
+                                            <div key={idx} className="flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl transition-all group">
+                                                <div className="text-[#8E8E93] font-mono text-sm w-5 font-bold">{idx + 1}</div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="text-[13px] font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
+                                                        {song.track_name}
+                                                    </div>
+                                                    <div className="text-[11px] text-[#8E8E93]">
+                                                        {song.plays} plays
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
-                                }
-                                {(dbUnifiedData?.songs || []).filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title)).length === 0 && (
-                                    <p className="text-[#8E8E93] text-sm text-center py-6 italic">No track data available.</p>
-                                )}
+                                        ))
+                                    ) : (
+                                        <p className="text-[#8E8E93] text-sm text-center py-6 italic">No track data available.</p>
+                                    );
+                                })()}
                             </div>
                         </motion.div>
                     </div>
@@ -1383,6 +1594,15 @@ function App() {
             </motion.div>
         )}
     </AnimatePresence>
+
+    {/* Wrapped Modal */}
+    <WrappedModal
+        isOpen={showWrapped}
+        onClose={() => setShowWrapped(false)}
+        period={timeRange}
+        userImage={data.user?.images?.[0]?.url}
+        userName={data.user?.display_name}
+    />
     </>
   );
 }
