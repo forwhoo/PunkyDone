@@ -1220,7 +1220,11 @@ export const getAlgorithmicWrappedStats = async (period: 'daily' | 'weekly' | 'm
 
     return {
         period,
-        totalMinutes: basicStats.albums.reduce((acc: number, a: any) => acc + (parseInt(a.timeStr) || 0), 0), // Rough calc from albums/artists if total not available directly
+        totalMinutes: basicStats.albums.reduce((acc: number, a: any) => {
+            const timeStr = a.timeStr || '0m';
+            const mins = parseInt(timeStr.replace('m', ''), 10) || 0;
+            return acc + mins;
+        }, 0), // Rough calc from albums/artists if total not available directly
         // Better to use fetchListeningStats for total minutes if needed, but basicStats might suffice
         topArtists: basicStats.artists,
         topSongs: basicStats.songs,

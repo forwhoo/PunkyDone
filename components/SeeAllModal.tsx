@@ -78,18 +78,21 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                         <div className="bg-[#2C2C2E]/80 backdrop-blur-md p-1 rounded-full flex border border-white/5 flex-1 sm:flex-initial">
                             <button 
                                 onClick={() => setSortBy('plays')}
+                                aria-label="Sort by plays"
                                 className={`px-2.5 md:px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1 md:gap-1.5 flex-1 sm:flex-initial justify-center ${sortBy === 'plays' ? 'bg-[#FA2D48] text-white shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
                             >
                                 <Play size={10} fill="currentColor" /> <span className="hidden sm:inline">Plays</span>
                             </button>
                             <button 
                                 onClick={() => setSortBy('time')}
+                                aria-label="Sort by time"
                                 className={`px-2.5 md:px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1 md:gap-1.5 flex-1 sm:flex-initial justify-center ${sortBy === 'time' ? 'bg-[#FA2D48] text-white shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
                             >
                                 <Clock size={10} /> <span className="hidden sm:inline">Time</span>
                             </button>
                             <button 
                                 onClick={() => setSortBy('name')}
+                                aria-label="Sort by name"
                                 className={`px-2.5 md:px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1 md:gap-1.5 flex-1 sm:flex-initial justify-center ${sortBy === 'name' ? 'bg-[#FA2D48] text-white shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
                             >
                                 <span className="text-[10px]">Az</span> <span className="hidden sm:inline">Name</span>

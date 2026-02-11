@@ -79,9 +79,11 @@ export const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, period = 'w
                         <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-none mb-6">
                             You listened<br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-                                {topArtists.reduce((acc: number, a: any) => acc + (Number(a.timeStr.replace('m', '')) || 0), 0) * 2}
-                                {/* Rough estimation or use real total if passed */}
-                                {/* Let's use specific song/artist sums for better visuals */}
+                                {topArtists.reduce((acc: number, a: any) => {
+                                    const timeStr = a.timeStr || '0m';
+                                    const mins = Number(timeStr.replace('m', '')) || 0;
+                                    return acc + mins;
+                                }, 0)}
                             </span> mins.
                         </h1>
                         <p className="text-xl text-white/60 max-w-md mx-auto">
