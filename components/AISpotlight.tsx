@@ -715,47 +715,111 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             )}
 
 
-            {/* WEEKLY INSIGHT STORY MODE */}
+            {/* WEEKLY INSIGHT STORY MODE - Apple Wrapped Style */}
             {insightMode && insightData.length > 0 && (
-                <div className="animate-in fade-in zoom-in duration-500 mb-10 w-full max-w-2xl mx-auto">
-                    <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2C2C2E] border border-white/10 rounded-2xl p-8 min-h-[400px] flex flex-col justify-between shadow-2xl relative overflow-hidden">
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mb-10 w-full max-w-3xl mx-auto"
+                >
+                    <div className="bg-gradient-to-br from-[#1C1C1E] via-[#2C2C2E] to-[#1C1C1E] border border-white/10 rounded-3xl p-10 min-h-[500px] flex flex-col justify-between shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                        
+                        {/* Animated Background Gradient */}
+                        <motion.div 
+                            className="absolute inset-0 opacity-20"
+                            animate={{
+                                background: [
+                                    'radial-gradient(circle at 20% 50%, #FA2D48 0%, transparent 50%)',
+                                    'radial-gradient(circle at 80% 50%, #FF9F0A 0%, transparent 50%)',
+                                    'radial-gradient(circle at 50% 80%, #FA2D48 0%, transparent 50%)',
+                                    'radial-gradient(circle at 20% 50%, #FA2D48 0%, transparent 50%)',
+                                ]
+                            }}
+                            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                        />
 
-                        {/* Progress Bar */}
-                        <div className="flex gap-2 mb-6">
+                        {/* Progress Bar - Larger and More Prominent */}
+                        <div className="flex gap-3 mb-8 relative z-10">
                             {insightData.map((_, i) => (
-                                <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= insightStep ? 'bg-[#FA2D48]' : 'bg-white/10'}`} />
+                                <motion.div 
+                                    key={i} 
+                                    initial={{ scaleX: 0 }}
+                                    animate={{ scaleX: 1 }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                                        i <= insightStep ? 'bg-[#FA2D48] shadow-lg shadow-[#FA2D48]/50' : 'bg-white/10'
+                                    }`} 
+                                />
                             ))}
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 flex flex-col items-center justify-center text-center">
-                            <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">{insightData[insightStep].title}</h3>
-                            <p className="text-[#8E8E93] text-lg mb-8 max-w-md">{insightData[insightStep].content}</p>
+                        <div className="flex-1 flex flex-col items-center justify-center text-center relative z-10">
+                            <motion.h3 
+                                key={`title-${insightStep}`}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-3xl md:text-4xl font-black text-white mb-6 tracking-tight leading-tight max-w-xl"
+                            >
+                                {insightData[insightStep].title}
+                            </motion.h3>
+                            <motion.p 
+                                key={`content-${insightStep}`}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.2 }}
+                                className="text-white/70 text-lg md:text-xl mb-10 max-w-lg font-medium leading-relaxed"
+                            >
+                                {insightData[insightStep].content}
+                            </motion.p>
 
-                            {/* Visualization Area */}
-                            <div className="w-full flex justify-center items-center flex-1 min-h-[200px]">
+                            {/* Visualization Area - Enhanced */}
+                            <div className="w-full flex justify-center items-center flex-1 min-h-[250px]">
                                 {insightData[insightStep].type === 'text' && (
-                                    <div className="flex items-center justify-center animate-in zoom-in duration-500">
-                                        <Sparkles className="w-24 h-24 text-[#FA2D48] opacity-80 animate-pulse" />
-                                    </div>
+                                    <motion.div 
+                                        initial={{ scale: 0, rotate: -180 }}
+                                        animate={{ scale: 1, rotate: 0 }}
+                                        transition={{ type: "spring", duration: 0.8 }}
+                                        className="flex items-center justify-center"
+                                    >
+                                        <Sparkles className="w-32 h-32 text-[#FA2D48] opacity-80 animate-pulse drop-shadow-2xl" />
+                                    </motion.div>
                                 )}
 
                                 {insightData[insightStep].type === 'stat' && (
-                                    <div className="flex flex-col items-center animate-in zoom-in duration-300">
-                                        <span className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FA2D48] to-[#FF9F0A] drop-shadow-2xl">
+                                    <motion.div 
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        transition={{ type: "spring", duration: 0.6 }}
+                                        className="flex flex-col items-center"
+                                    >
+                                        <motion.span 
+                                            animate={{ 
+                                                scale: [1, 1.05, 1],
+                                            }}
+                                            transition={{ 
+                                                duration: 2,
+                                                repeat: Infinity,
+                                                ease: "easeInOut"
+                                            }}
+                                            className="text-8xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FA2D48] via-[#FF6B35] to-[#FF9F0A] drop-shadow-2xl"
+                                        >
                                             {insightData[insightStep].data?.value}
-                                        </span>
-                                        <span className="text-white/60 font-mono mt-4 uppercase tracking-widest text-sm bg-white/5 px-4 py-1 rounded-full border border-white/10">
+                                        </motion.span>
+                                        <span className="text-white/70 font-semibold mt-6 uppercase tracking-[0.3em] text-base bg-white/5 px-6 py-2 rounded-full border border-white/10 backdrop-blur-md">
                                             {insightData[insightStep].data?.subtext}
                                         </span>
-                                    </div>
+                                    </motion.div>
                                 )}
 
                                 {insightData[insightStep].type === 'quiz' && (
-                                    <div className="grid gap-3 w-full max-w-sm animate-in slide-in-from-right duration-500">
+                                    <div className="grid gap-4 w-full max-w-md animate-in slide-in-from-right duration-500">
                                         {insightData[insightStep].data?.options.map((opt: string, idx: number) => (
-                                            <button
+                                            <motion.button
                                                 key={idx}
+                                                initial={{ opacity: 0, x: 50 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: idx * 0.1 }}
                                                 onClick={(e) => {
                                                     const btn = e.currentTarget;
                                                     const explanation = insightData[insightStep].data.explanation || "";
@@ -784,43 +848,53 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                                     // Show explanation logic could go here, or just appended
                                                     // For now simplified
                                                 }}
-                                                className="w-full text-left py-4 px-6 rounded-xl border border-white/10 bg-white/5 text-white font-bold hover:bg-white/10 hover:border-white/30 hover:scale-[1.02] transition-all"
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                className="w-full text-left py-5 px-7 rounded-2xl border border-white/10 bg-white/5 text-white text-lg font-bold hover:bg-white/10 hover:border-white/30 transition-all backdrop-blur-sm"
                                             >
                                                 {opt}
-                                            </button>
+                                            </motion.button>
                                         ))}
                                     </div>
                                 )}
 
                                 {(insightData[insightStep].type === 'chart' || insightData[insightStep].type === 'bar_chart') && (
-                                    <div className="w-full max-w-sm space-y-4 animate-in slide-in-from-bottom duration-700 fade-in">
+                                    <div className="w-full max-w-md space-y-5 animate-in slide-in-from-bottom duration-700 fade-in">
                                         {insightData[insightStep].data?.points.map((p: any, idx: number) => (
-                                            <div key={idx} className="space-y-1">
-                                                <div className="flex justify-between text-xs font-bold text-white uppercase">
-                                                    <span>{p.label}</span>
-                                                    <span>{p.value}</span>
+                                            <motion.div 
+                                                key={idx} 
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: idx * 0.1 }}
+                                                className="space-y-2"
+                                            >
+                                                <div className="flex justify-between text-sm font-bold text-white">
+                                                    <span className="text-base">{p.label}</span>
+                                                    <span className="text-[#FA2D48]">{p.value}</span>
                                                 </div>
-                                                <div className="h-3 w-full bg-white/10 rounded-full overflow-hidden">
-                                                    <div
-                                                        style={{ width: `${Math.min(p.value, 100)}%` }}
-                                                        className={`h-full ${idx % 2 === 0 ? 'bg-[#FA2D48]' : 'bg-[#FF9F0A]'} transition-all duration-1000 ease-out`}
+                                                <div className="h-4 w-full bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${Math.min(p.value, 100)}%` }}
+                                                        transition={{ duration: 1, delay: 0.5 + idx * 0.1, ease: "easeOut" }}
+                                                        className={`h-full rounded-full ${idx % 2 === 0 ? 'bg-gradient-to-r from-[#FA2D48] to-[#FF6B35]' : 'bg-gradient-to-r from-[#FF9F0A] to-[#FFD60A]'}`}
                                                     />
                                                 </div>
-                                            </div>
+                                            </motion.div>
                                         ))}
                                     </div>
                                 )}
 
                                 {insightData[insightStep].type === 'pie_chart' && (
-                                    <div className="relative w-full h-[300px] flex items-center justify-center animate-in zoom-in duration-700">
+                                    <div className="relative w-full h-[350px] flex items-center justify-center animate-in zoom-in duration-700">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <PieChart>
                                                 <Pie
                                                     data={insightData[insightStep].data?.segments}
                                                     cx="50%"
                                                     cy="50%"
-                                                    innerRadius={60}
-                                                    outerRadius={100}
+                                                    innerRadius={80}
+                                                    outerRadius={120}
                                                     paddingAngle={5}
                                                     dataKey="value"
                                                 >
@@ -829,8 +903,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                                     ))}
                                                 </Pie>
                                                 <Tooltip
-                                                    contentStyle={{ backgroundColor: '#1C1C1E', borderRadius: '12px', borderColor: 'rgba(255,255,255,0.1)', color: '#fff' }}
-                                                    itemStyle={{ color: '#fff' }}
+                                                    contentStyle={{ backgroundColor: '#1C1C1E', borderRadius: '16px', borderColor: 'rgba(255,255,255,0.1)', color: '#fff', padding: '12px' }}
+                                                    itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}
                                                     formatter={(value: any) => [`${value}%`, '']}
                                                 />
                                             </PieChart>
@@ -838,8 +912,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                                         {/* Center Stats */}
                                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                            <span className="text-[10px] uppercase font-bold text-white/50 tracking-widest">Top Genre</span>
-                                            <span className="text-2xl font-black text-white drop-shadow-lg">
+                                            <span className="text-xs uppercase font-bold text-white/50 tracking-widest mb-2">Top Genre</span>
+                                            <span className="text-3xl font-black text-white drop-shadow-lg">
                                                 {insightData[insightStep].data?.segments[0]?.label}
                                             </span>
                                         </div>
@@ -847,10 +921,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                         {/* Legend */}
                                         <div className="absolute bottom-0 w-full flex justify-center gap-4 flex-wrap">
                                             {insightData[insightStep].data?.segments.slice(0, 3).map((s: any, i: number) => (
-                                                <div key={i} className="flex items-center gap-2 text-xs text-white/80 bg-black/20 px-3 py-1 rounded-full border border-white/5">
-                                                    <span className="w-2 h-2 rounded-full" style={{ background: s.color || ['#FA2D48', '#FF9F0A', '#30D158'][i] }} />
+                                                <div key={i} className="flex items-center gap-2 text-sm text-white/90 bg-black/30 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md">
+                                                    <span className="w-3 h-3 rounded-full" style={{ background: s.color || ['#FA2D48', '#FF9F0A', '#30D158'][i] }} />
                                                     <span className="font-bold">{s.label}</span>
-                                                    <span className="opacity-60">{s.value}%</span>
+                                                    <span className="opacity-70">{s.value}%</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -858,49 +932,69 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                 )}
 
                                 {insightData[insightStep].type === 'race_chart' && (
-                                    <div className="w-full h-[300px] relative flex md:block items-center justify-center">
-                                        {/* Bubble Race Visualization */}
-                                        <div className="absolute inset-0 flex flex-wrap items-center justify-center content-center gap-4 p-4 animate-in fade-in duration-700">
+                                    <div className="w-full h-[350px] relative flex md:block items-center justify-center">
+                                        {/* Bubble Race Visualization - Enhanced */}
+                                        <div className="absolute inset-0 flex flex-wrap items-center justify-center content-center gap-6 p-4 animate-in fade-in duration-700">
                                             {insightData[insightStep].data?.competitors.map((c: any, idx: number) => {
                                                 // Dynamic Sizing based on score (max 100 usually)
-                                                const baseSize = 80;
+                                                const baseSize = 90;
                                                 const scale = Math.max(0.6, Math.min(1.5, c.score / 60));
                                                 const size = baseSize * scale;
 
                                                 return (
-                                                    <div
+                                                    <motion.div
                                                         key={idx}
-                                                        className="relative rounded-full border-4 border-[#2C2C2E] shadow-2xl overflow-hidden group transition-transform duration-500 hover:scale-110 hover:z-50 hover:border-[#FA2D48]"
+                                                        initial={{ scale: 0, rotate: -180 }}
+                                                        animate={{ scale: 1, rotate: 0 }}
+                                                        transition={{ 
+                                                            delay: idx * 0.15,
+                                                            type: "spring",
+                                                            duration: 0.8
+                                                        }}
+                                                        whileHover={{ scale: 1.15, zIndex: 50 }}
+                                                        className={`relative rounded-full border-4 border-[#2C2C2E] shadow-2xl overflow-hidden cursor-pointer transition-all ${
+                                                            idx === 0 ? 'border-[#FA2D48] shadow-[#FA2D48]/50' : ''
+                                                        }`}
                                                         style={{
                                                             width: `${size}px`,
                                                             height: `${size}px`,
-                                                            order: idx % 2 === 0 ? 1 : 2 // Mix order slightly
                                                         }}
                                                     >
-                                                        {/* We don't have images in the chart data usually, use UI Avatar or passed context if we could map it. 
-                                                                For now, generic or try to find match? 
-                                                                The specific instruction said "Each bubble should contain the artist's profile image". 
-                                                                The story generator likely doesn't send image URLs. 
-                                                                We'll use a gradient fallback + Name overlay. 
-                                                            */}
-                                                        <div className="absolute inset-0 bg-gradient-to-br from-[#FA2D48] to-[#1C1C1E]">
-                                                            {/* Fallback pattern or initials */}
-                                                            <span className="absolute inset-0 flex items-center justify-center text-white/10 font-black text-4xl">
+                                                        {/* Gradient Background */}
+                                                        <div className={`absolute inset-0 ${
+                                                            idx === 0 
+                                                                ? 'bg-gradient-to-br from-[#FA2D48] to-[#FF6B35]'
+                                                                : 'bg-gradient-to-br from-[#2C2C2E] to-[#1C1C1E]'
+                                                        }`}>
+                                                            {/* Fallback initials */}
+                                                            <span className="absolute inset-0 flex items-center justify-center text-white/10 font-black text-5xl">
                                                                 {c.name.substring(0, 1)}
                                                             </span>
                                                         </div>
 
-                                                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                                                        {/* Winner Crown */}
+                                                        {idx === 0 && (
+                                                            <motion.div
+                                                                initial={{ scale: 0 }}
+                                                                animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
+                                                                transition={{ delay: 0.5, repeat: Infinity, repeatDelay: 1 }}
+                                                                className="absolute -top-2 -right-2 bg-[#FFD60A] rounded-full p-2 shadow-lg z-20"
+                                                            >
+                                                                <Sparkles size={16} className="text-black" fill="black" />
+                                                            </motion.div>
+                                                        )}
 
-                                                        <div className="absolute inset-0 flex flex-col items-center justify-center p-1 text-center">
-                                                            <span className="text-white font-bold drop-shadow-md leading-tight" style={{ fontSize: `${Math.max(10, size / 5)}px` }}>
+                                                        {/* Content */}
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center">
+                                                            <span className="text-white font-bold drop-shadow-md leading-tight" style={{ fontSize: `${Math.max(11, size / 5)}px` }}>
                                                                 {c.name}
                                                             </span>
-                                                            <span className="bg-white/20 px-2 rounded-full text-white font-mono font-bold mt-1 backdrop-blur-sm" style={{ fontSize: `${Math.max(8, size / 8)}px` }}>
+                                                            <span className="bg-white/20 px-3 py-1 rounded-full text-white font-mono font-bold mt-2 backdrop-blur-sm" style={{ fontSize: `${Math.max(9, size / 8)}px` }}>
                                                                 {c.score}
                                                             </span>
                                                         </div>
-                                                    </div>
+                                                    </motion.div>
                                                 );
                                             })}
                                         </div>
@@ -909,9 +1003,32 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             </div>
                         </div>
 
-                        {/* Navigation */}
-                        <div className="mt-8 flex justify-end">
-                            <button
+                        {/* Navigation - Apple Style */}
+                        <div className="mt-10 flex justify-between items-center relative z-10">
+                            {/* Back Button */}
+                            {insightStep > 0 && (
+                                <motion.button
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    onClick={() => setInsightStep(prev => Math.max(0, prev - 1))}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="flex items-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-semibold transition-all backdrop-blur-md border border-white/10"
+                                >
+                                    <ChevronLeft size={18} />
+                                    Back
+                                </motion.button>
+                            )}
+                            
+                            {/* Step indicator */}
+                            <span className="text-white/50 text-sm font-medium">
+                                {insightStep + 1} of {insightData.length}
+                            </span>
+                            
+                            {/* Next/Finish Button */}
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={() => {
                                     if (insightStep < insightData.length - 1) {
                                         setInsightStep(prev => prev + 1);
@@ -919,13 +1036,14 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                         setInsightMode(false); // End story
                                     }
                                 }}
-                                className="flex items-center gap-2 px-6 py-2 bg-white text-black rounded-full font-bold hover:scale-105 transition-transform"
+                                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#FA2D48] to-[#FF6B35] text-white rounded-full font-bold shadow-lg shadow-[#FA2D48]/30 hover:shadow-xl hover:shadow-[#FA2D48]/50 transition-all"
                             >
-                                {insightStep === insightData.length - 1 ? 'Finish' : 'Next'} <ChevronRight size={16} />
-                            </button>
+                                {insightStep === insightData.length - 1 ? 'Finish' : 'Next'} 
+                                {insightStep === insightData.length - 1 ? <Sparkles size={18} /> : <ChevronRight size={18} />}
+                            </motion.button>
                         </div>
                     </div>
-                </div>
+                </motion.div>
             )}
 
             {/* WRAPPED IMMERSIVE MODE */}
