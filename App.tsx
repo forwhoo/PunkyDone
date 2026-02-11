@@ -26,8 +26,11 @@ import { generateMusicInsight, generateRankingInsights } from './services/gemini
 import { supabase } from './services/supabaseClient';
 
 // RANKED COMPONENT: Top Album (Standard)
-const RankedAlbum = ({ album, rank }: { album: Album, rank: number }) => (
-    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
+const RankedAlbum = ({ album, rank, onClick }: { album: Album, rank: number, onClick?: () => void }) => (
+    <div 
+        className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]"
+        onClick={onClick}
+    >
         <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-white/5">
             {rank}
         </span>
@@ -76,8 +79,11 @@ const RankedArtist = ({ artist, rank, realImage, onClick }: { artist: Artist, ra
 );
 
 // RANKED COMPONENT: Top Song (Ranked Album Style)
-const RankedSong = ({ song, rank }: { song: Song, rank: number }) => (
-    <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
+const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick?: () => void }) => (
+    <div 
+        className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]"
+        onClick={onClick}
+    >
         <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-white/5">
             {rank}
         </span>
@@ -113,8 +119,10 @@ function App() {
       } catch (e) { return {}; }
   });
 
-  // Top Artist Side Modal State
+  // Top Artist/Album/Song Modal States
   const [selectedTopArtist, setSelectedTopArtist] = useState<Artist | null>(null);
+  const [selectedTopAlbum, setSelectedTopAlbum] = useState<Album | null>(null);
+  const [selectedTopSong, setSelectedTopSong] = useState<Song | null>(null);
 
   // See All Modal State
   const [seeAllModal, setSeeAllModal] = useState<{ isOpen: boolean; title: string; items: any[]; type: 'artist' | 'album' | 'song' }>({

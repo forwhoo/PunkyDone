@@ -319,50 +319,89 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         try {
             const lower = promptToUse.toLowerCase();
 
-            // SPECIAL HANDLER: WRAPPED (Daily, Weekly, Monthly) -> NOW WITH TOOL CALLS & IMMERSIVE UI
+            // SPECIAL HANDLER: WRAPPED (Daily, Weekly, Monthly) -> MULTIPLE AI CATEGORIES
             if (lower.includes('wrapped') || lower.includes('recap')) {
                 let period: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly';
                 if (lower.includes('day') || lower.includes('today')) period = 'daily';
                 if (lower.includes('month')) period = 'monthly';
                 if (lower.includes('year')) period = 'yearly';
 
-                setChatResponse("✨ Generating your Wrapped experience...");
+                setChatResponse("✨ Generating your Wrapped experience with multiple categories...");
+                setMode('discover');
 
-                // Try the new tool-calling wrapped generator
-                const wrappedResult = await generateWrappedWithTools(period, getWrappedStats);
-
-                if (wrappedResult && wrappedResult.slides.length > 0) {
-                    setWrappedSlides(wrappedResult.slides);
-                    setWrappedStats(wrappedResult.stats);
-                    setWrappedStep(0);
-                    setWrappedMode(true);
-                    setChatResponse(null);
+                // Get stats first
+                const stats = await getWrappedStats(period === 'yearly' ? 'monthly' : period);
+                if (!stats || !stats.topTracks || stats.topTracks.length === 0) {
+                    setErrorMsg(`No ${period} stats found. Start listening!`);
                     setLoading(false);
-                    setUserPrompt("");
                     return;
                 }
 
-                // Fallback to simple category view if tool calling fails
-                const stats = await getWrappedStats(period === 'yearly' ? 'monthly' : period);
-                if (stats && stats.topTracks && stats.topTracks.length > 0) {
-                    const vibe = await generateWrappedVibe(stats.topTracks);
+                // Generate multiple themed categories using AI
+                const wrappedPrompt = `Create 4-5 creative music categories for a ${period} wrapped based on the user's listening data. 
+                Make them diverse: mood-based, time-based, genre-based, energy-based, etc. 
+                Examples: "Morning Coffee", "Late Night Drives", "Workout Bangers", "Sad Boi Hours", "Main Character Energy"`;
 
-                    const wrappedCategory: CategoryResult = {
-                        id: `wrapped-${Date.now()}`,
-                        title: `✨ ${vibe.title}`,
-                        description: `AI Vibe Check: "${vibe.description}"`,
-                        stats: `${stats.totalMinutes} mins • ${stats.totalTracks} tracks`,
-                        tracks: stats.topTracks,
-                        viewMode: 'ranked'
-                    };
+                const concepts = await generateDynamicCategoryQuery(contextData, wrappedPrompt);
+                const newResults: CategoryResult[] = [];
 
-                    setCategoryResults([wrappedCategory]);
-                    setMode('discover');
+                // Process all categories
+                await Promise.all(concepts.map(async (concept, idx) => {
+                    if (concept && concept.filter) {
+                        const data = await fetchSmartPlaylist(concept);
+                        if (data.length > 0) {
+                            // Get vibe check for this category
+                            const vibe = await generateWrappedVibe(data.slice(0, 10));
+                            newResults.push({
+                                id: `wrapped-cat-${Date.now()}-${idx}`,
+                                title: vibe.title || concept.title,
+                                description: vibe.description || concept.description,
+                                stats: `${data.length} tracks`,
+                                tracks: data
+                            });
+                        }
+                    }
+                }));
+
+                // Fetch real images for artists if needed
+                if (token && newResults.length > 0) {
+                    const artistNames = new Set<string>();
+                    newResults.forEach(cat => {
+                        cat.tracks.forEach(t => {
+                            if (t.type === 'artist' && !t.cover) {
+                                artistNames.add(t.title);
+                            }
+                        });
+                    });
+
+                    if (artistNames.size > 0) {
+                        try {
+                            const images = await fetchArtistImages(token, Array.from(artistNames));
+                            newResults.forEach(cat => {
+                                cat.tracks.forEach(t => {
+                                    if (t.type === 'artist' && !t.cover && images[t.title]) {
+                                        t.cover = images[t.title];
+                                    }
+                                });
+                            });
+                        } catch (e) {
+                            console.error("Failed to load artist images", e);
+                        }
+                    }
+                }
+
+                if (newResults.length > 0) {
+                    setCategoryResults(newResults);
                     setViewMode('ranked');
                     setSortMode('plays');
-                    setLoading(false);
-                    setUserPrompt("");
-                    return;
+                } else {
+                    setErrorMsg("Could not generate wrapped categories. Try again!");
+                }
+
+                setLoading(false);
+                setUserPrompt("");
+                return;
+            }
                 } else {
                     setErrorMsg(`No ${period} stats found. Start listening!`);
                     setLoading(false);
@@ -625,20 +664,20 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     </div>
                 </div>
 
-                {/* Discovery Toggle - Switch Style */}
+                {/* Discovery Toggle - Match Search Bar Style */}
                 <div className="flex justify-center mt-6">
-                    <div className="flex items-center gap-3 bg-black/20 p-1.5 rounded-full border border-white/5 backdrop-blur-sm">
+                    <div className="flex items-center gap-0 border border-white/10 bg-white/5 rounded-2xl p-1.5 backdrop-blur-md">
                         <button
                             onClick={() => setDiscoveryMode(false)}
-                            className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all ${!discoveryMode ? 'bg-white text-black shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
+                            className={`px-5 py-2 rounded-xl text-[12px] font-semibold transition-all ${!discoveryMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
                         >
                             Chat
                         </button>
                         <button
                             onClick={() => setDiscoveryMode(true)}
-                            className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 ${discoveryMode ? 'bg-[#FA2D48] text-white shadow-[0_0_15px_rgba(250,45,72,0.4)]' : 'text-[#8E8E93] hover:text-white'}`}
+                            className={`px-5 py-2 rounded-xl text-[12px] font-semibold transition-all flex items-center gap-1.5 ${discoveryMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
                         >
-                            <Zap size={10} className={discoveryMode ? "fill-current" : ""} />
+                            <Zap size={12} />
                             Discovery
                         </button>
                     </div>
