@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from './UIComponents';
 // import { ActivityHeatmap } from './ActivityHeatmap';
-import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2 } from 'lucide-react';
-import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory, generateWrappedVibe } from '../services/geminiService';
+import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2, Gift, ChevronLeft } from 'lucide-react';
+import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory, generateWrappedVibe, generateWrappedWithTools, WrappedSlide } from '../services/geminiService';
 import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface TopAIProps {
     token?: string | null;
@@ -134,7 +135,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const [insightMode, setInsightMode] = useState(false);
     const [insightData, setInsightData] = useState<any[]>([]);
     const [insightStep, setInsightStep] = useState(0);
-    // const [wrappedData, setWrappedData] = useState<any>(null); // Removed
+    
+    // Wrapped Mode State
+    const [wrappedMode, setWrappedMode] = useState(false);
+    const [wrappedSlides, setWrappedSlides] = useState<WrappedSlide[]>([]);
+    const [wrappedStep, setWrappedStep] = useState(0);
+    const [wrappedStats, setWrappedStats] = useState<any>(null);
 
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [chatResponse, setChatResponse] = useState<string | null>(null);
@@ -308,44 +314,96 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         setDisplayedText("");
         setCategoryResults([]); // clear previous
         setInsightMode(false); // Reset insight mode
-        // setWrappedData(null); // REMOVED
+        setWrappedMode(false); // Reset wrapped mode
 
         try {
             const lower = promptToUse.toLowerCase();
 
-            // SPECIAL HANDLER: WRAPPED (Daily, Weekly, Monthly) -> NOW WITH VIBE CHECK
+            // SPECIAL HANDLER: WRAPPED (Daily, Weekly, Monthly) -> MULTIPLE AI CATEGORIES
             if (lower.includes('wrapped') || lower.includes('recap')) {
-                let period: 'daily' | 'weekly' | 'monthly' = 'daily';
-                if (lower.includes('week')) period = 'weekly';
+                let period: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly';
+                if (lower.includes('day') || lower.includes('today')) period = 'daily';
                 if (lower.includes('month')) period = 'monthly';
-                if (!lower.includes('day') && !lower.includes('week') && !lower.includes('month')) period = 'weekly';
+                if (lower.includes('year')) period = 'yearly';
 
-                // 1. Get stats + top tracks
-                const stats = await getWrappedStats(period);
-                if (stats && stats.topTracks && stats.topTracks.length > 0) {
-                    // 2. Generate Twist using AI
-                    const vibe = await generateWrappedVibe(stats.topTracks);
+                setChatResponse("✨ Generating your Wrapped experience with multiple categories...");
+                setMode('discover');
 
-                    // 3. Create a Category Result
-                    const wrappedCategory: CategoryResult = {
-                        id: `wrapped - ${Date.now()} `,
-                        title: `✨ ${vibe.title} `,
-                        description: `AI Vibe Check: "${vibe.description}"`,
-                        stats: `${stats.totalMinutes} mins • ${stats.totalTracks} tracks`,
-                        tracks: stats.topTracks,
-                        viewMode: 'ranked'
-                    };
+                // Get stats first
+                const stats = await getWrappedStats(period === 'yearly' ? 'monthly' : period);
+                if (!stats || !stats.topTracks || stats.topTracks.length === 0) {
+                    setErrorMsg(`No ${period} stats found. Start listening!`);
+                    setLoading(false);
+                    return;
+                }
 
-                    setCategoryResults([wrappedCategory]);
-                    setMode('discover');
+                // Generate multiple themed categories using AI
+                const wrappedPrompt = `Create 4-5 creative music categories for a ${period} wrapped based on the user's listening data. 
+                Make them diverse: mood-based, time-based, genre-based, energy-based, etc. 
+                Examples: "Morning Coffee", "Late Night Drives", "Workout Bangers", "Sad Boi Hours", "Main Character Energy"`;
+
+                const concepts = await generateDynamicCategoryQuery(contextData, wrappedPrompt);
+                const newResults: CategoryResult[] = [];
+
+                // Process all categories
+                await Promise.all(concepts.map(async (concept, idx) => {
+                    if (concept && concept.filter) {
+                        const data = await fetchSmartPlaylist(concept);
+                        if (data.length > 0) {
+                            // Get vibe check for this category
+                            const vibe = await generateWrappedVibe(data.slice(0, 10));
+                            newResults.push({
+                                id: `wrapped-cat-${Date.now()}-${idx}`,
+                                title: vibe.title || concept.title,
+                                description: vibe.description || concept.description,
+                                stats: `${data.length} tracks`,
+                                tracks: data
+                            });
+                        }
+                    }
+                }));
+
+                // Fetch real images for artists if needed
+                if (token && newResults.length > 0) {
+                    const artistNames = new Set<string>();
+                    newResults.forEach(cat => {
+                        cat.tracks.forEach(t => {
+                            if (t.type === 'artist' && !t.cover) {
+                                artistNames.add(t.title);
+                            }
+                        });
+                    });
+
+                    if (artistNames.size > 0) {
+                        try {
+                            const images = await fetchArtistImages(token, Array.from(artistNames));
+                            newResults.forEach(cat => {
+                                cat.tracks.forEach(t => {
+                                    if (t.type === 'artist' && !t.cover && images[t.title]) {
+                                        t.cover = images[t.title];
+                                    }
+                                });
+                            });
+                        } catch (e) {
+                            console.error("Failed to load artist images", e);
+                        }
+                    }
+                }
+
+                if (newResults.length > 0) {
+                    setCategoryResults(newResults);
                     setViewMode('ranked');
                     setSortMode('plays');
-                    setLoading(false);
-                    setUserPrompt("");
-                    return;
-
                 } else {
-                    setErrorMsg(`No ${period} stats found.Start listening!`);
+                    setErrorMsg("Could not generate wrapped categories. Try again!");
+                }
+
+                setLoading(false);
+                setUserPrompt("");
+                return;
+            }
+                } else {
+                    setErrorMsg(`No ${period} stats found. Start listening!`);
                     setLoading(false);
                     return;
                 }
@@ -606,20 +664,20 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     </div>
                 </div>
 
-                {/* Discovery Toggle - Switch Style */}
+                {/* Discovery Toggle - Match Search Bar Style */}
                 <div className="flex justify-center mt-6">
-                    <div className="flex items-center gap-3 bg-black/20 p-1.5 rounded-full border border-white/5 backdrop-blur-sm">
+                    <div className="flex items-center gap-0 border border-white/10 bg-white/5 rounded-2xl p-1.5 backdrop-blur-md">
                         <button
                             onClick={() => setDiscoveryMode(false)}
-                            className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all ${!discoveryMode ? 'bg-white text-black shadow-lg' : 'text-[#8E8E93] hover:text-white'}`}
+                            className={`px-5 py-2 rounded-xl text-[12px] font-semibold transition-all ${!discoveryMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
                         >
                             Chat
                         </button>
                         <button
                             onClick={() => setDiscoveryMode(true)}
-                            className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 ${discoveryMode ? 'bg-[#FA2D48] text-white shadow-[0_0_15px_rgba(250,45,72,0.4)]' : 'text-[#8E8E93] hover:text-white'}`}
+                            className={`px-5 py-2 rounded-xl text-[12px] font-semibold transition-all flex items-center gap-1.5 ${discoveryMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
                         >
-                            <Zap size={10} className={discoveryMode ? "fill-current" : ""} />
+                            <Zap size={12} />
                             Discovery
                         </button>
                     </div>
@@ -875,6 +933,126 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     </div>
                 </div>
             )}
+
+            {/* WRAPPED IMMERSIVE MODE */}
+            <AnimatePresence>
+                {wrappedMode && wrappedSlides.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-black"
+                    >
+                        {/* Background Gradient */}
+                        <div className={`absolute inset-0 bg-gradient-to-br ${wrappedSlides[wrappedStep]?.gradient || 'from-purple-900 to-black'} opacity-80 transition-all duration-700`} />
+                        
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setWrappedMode(false)}
+                            className="absolute top-4 right-4 z-50 p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all border border-white/10"
+                        >
+                            <ChevronLeft size={18} />
+                        </button>
+
+                        {/* Progress Dots */}
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex gap-1.5">
+                            {wrappedSlides.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setWrappedStep(i)}
+                                    className={`h-1 rounded-full transition-all ${i === wrappedStep ? 'w-6 bg-white' : 'w-1.5 bg-white/30'}`}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Slide Content */}
+                        <motion.div
+                            key={wrappedStep}
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                            transition={{ duration: 0.4 }}
+                            className="relative h-full flex flex-col items-center justify-center px-6 text-center"
+                        >
+                            {/* Image if available */}
+                            {wrappedSlides[wrappedStep]?.image && (
+                                <motion.div
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.1, type: "spring" }}
+                                    className="mb-6"
+                                >
+                                    <div className={`w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 overflow-hidden shadow-2xl ${wrappedSlides[wrappedStep]?.type === 'top_artist' ? 'rounded-full' : 'rounded-2xl'}`}>
+                                        <img
+                                            src={wrappedSlides[wrappedStep].image}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* Title */}
+                            <motion.h2
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.15 }}
+                                className="text-sm sm:text-base uppercase tracking-[0.2em] text-white/60 font-semibold mb-2"
+                            >
+                                {wrappedSlides[wrappedStep]?.title}
+                            </motion.h2>
+
+                            {/* Value */}
+                            {wrappedSlides[wrappedStep]?.value && (
+                                <motion.div
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                                    className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-4 leading-tight"
+                                >
+                                    {wrappedSlides[wrappedStep].value}
+                                </motion.div>
+                            )}
+
+                            {/* Subtitle */}
+                            {wrappedSlides[wrappedStep]?.subtitle && (
+                                <motion.p
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.25 }}
+                                    className="text-base sm:text-lg text-white/80 max-w-md"
+                                >
+                                    {wrappedSlides[wrappedStep].subtitle}
+                                </motion.p>
+                            )}
+                        </motion.div>
+
+                        {/* Navigation */}
+                        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-4 px-6">
+                            {wrappedStep > 0 && (
+                                <button
+                                    onClick={() => setWrappedStep(prev => prev - 1)}
+                                    className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-semibold transition-all border border-white/10 flex items-center gap-2"
+                                >
+                                    <ChevronLeft size={16} /> Back
+                                </button>
+                            )}
+                            <button
+                                onClick={() => {
+                                    if (wrappedStep < wrappedSlides.length - 1) {
+                                        setWrappedStep(prev => prev + 1);
+                                    } else {
+                                        setWrappedMode(false);
+                                    }
+                                }}
+                                className="px-8 py-3 bg-white text-black rounded-full font-bold hover:scale-105 transition-transform flex items-center gap-2"
+                            >
+                                {wrappedStep === wrappedSlides.length - 1 ? 'Done' : 'Next'} <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Discovery Results - Multiple Categories Support */}
             {mode === 'discover' && categoryResults.length > 0 && (

@@ -521,3 +521,310 @@ export const generateWrappedVibe = async (tracks: any[]): Promise<{ title: strin
         return { title: "Top Tracks", description: "Your most played songs for this period." };
     }
 };
+
+// WRAPPED TOOL CALLING - AI generates wrapped using function calls
+export interface WrappedToolResult {
+    slides: WrappedSlide[];
+    stats: {
+        totalMinutes: number;
+        totalTracks: number;
+        topArtist: { name: string; plays: number; image: string } | null;
+        topSong: { title: string; artist: string; plays: number; cover: string } | null;
+        topAlbum: { title: string; artist: string; plays: number; cover: string } | null;
+        peakHour: string;
+        topGenreGuess: string;
+    };
+}
+
+export interface WrappedSlide {
+    id: string;
+    type: 'intro' | 'stat' | 'top_artist' | 'top_song' | 'top_album' | 'listening_time' | 'peak_hour' | 'vibe' | 'outro';
+    title: string;
+    subtitle?: string;
+    value?: string | number;
+    image?: string;
+    gradient?: string;
+}
+
+const WRAPPED_TOOLS = [
+    {
+        type: "function" as const,
+        function: {
+            name: "get_wrapped_stats",
+            description: "Get the user's listening statistics for their Wrapped summary. Returns top artists, songs, albums, total minutes, and listening patterns.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: {
+                        type: "string",
+                        enum: ["daily", "weekly", "monthly", "yearly"],
+                        description: "The time period for the wrapped stats"
+                    }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function" as const,
+        function: {
+            name: "generate_vibe_check",
+            description: "Generate a creative 'vibe check' title and description based on the user's top tracks",
+            parameters: {
+                type: "object",
+                properties: {
+                    tracks: {
+                        type: "array",
+                        items: { type: "string" },
+                        description: "List of track names with artists (e.g., 'Song Title by Artist')"
+                    }
+                },
+                required: ["tracks"]
+            }
+        }
+    },
+    {
+        type: "function" as const,
+        function: {
+            name: "build_wrapped_slides",
+            description: "Build the final wrapped presentation slides",
+            parameters: {
+                type: "object",
+                properties: {
+                    slides: {
+                        type: "array",
+                        items: {
+                            type: "object",
+                            properties: {
+                                type: { type: "string", enum: ["intro", "stat", "top_artist", "top_song", "top_album", "listening_time", "peak_hour", "vibe", "outro"] },
+                                title: { type: "string" },
+                                subtitle: { type: "string" },
+                                value: { type: "string" }
+                            },
+                            required: ["type", "title"]
+                        },
+                        description: "Array of slide objects for the wrapped presentation"
+                    }
+                },
+                required: ["slides"]
+            }
+        }
+    }
+];
+
+export const generateWrappedWithTools = async (
+    period: 'daily' | 'weekly' | 'monthly' | 'yearly',
+    fetchStats: (period: string) => Promise<any>
+): Promise<WrappedToolResult | null> => {
+    try {
+        const client = getAiClient();
+        if (!client) return null;
+
+        // Step 1: Let AI decide what to fetch
+        const initialMessages: any[] = [
+            {
+                role: "system",
+                content: `You are the Wrapped Generator AI. Your job is to create an engaging, personalized music wrapped experience.
+                
+                WORKFLOW:
+                1. First call get_wrapped_stats to fetch the user's listening data
+                2. Then call generate_vibe_check with their top tracks to get a creative title
+                3. Finally call build_wrapped_slides to create the presentation
+                
+                Be creative with slide titles! Make them fun and personalized.`
+            },
+            {
+                role: "user",
+                content: `Create a ${period} wrapped experience for me. Start by fetching my stats.`
+            }
+        ];
+
+        let messages = [...initialMessages];
+        let finalSlides: WrappedSlide[] = [];
+        let stats: any = null;
+        let vibeResult: { title: string; description: string } | null = null;
+        let iterations = 0;
+        const MAX_ITERATIONS = 5;
+
+        // Tool execution loop
+        while (iterations < MAX_ITERATIONS) {
+            iterations++;
+
+            const response = await client.chat.completions.create({
+                model: "moonshotai/kimi-k2-instruct-0905",
+                messages,
+                tools: WRAPPED_TOOLS,
+                tool_choice: "auto"
+            });
+
+            const assistantMessage = response.choices[0]?.message;
+            if (!assistantMessage) break;
+
+            messages.push(assistantMessage);
+
+            // Check if AI wants to call tools
+            if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+                for (const toolCall of assistantMessage.tool_calls) {
+                    const funcName = toolCall.function.name;
+                    const funcArgs = JSON.parse(toolCall.function.arguments || "{}");
+
+                    let toolResult: any = {};
+
+                    if (funcName === "get_wrapped_stats") {
+                        // Execute the stats fetch
+                        stats = await fetchStats(funcArgs.period || period);
+                        toolResult = {
+                            success: !!stats,
+                            totalMinutes: stats?.totalMinutes || 0,
+                            totalTracks: stats?.totalTracks || 0,
+                            topArtist: stats?.topArtist || null,
+                            topSong: stats?.topSong || null,
+                            topTracks: stats?.topTracks?.slice(0, 10).map((t: any) => `${t.title} by ${t.artist}`) || []
+                        };
+                    } else if (funcName === "generate_vibe_check") {
+                        // Generate vibe from tracks
+                        const tracks = funcArgs.tracks || [];
+                        if (tracks.length > 0) {
+                            vibeResult = await generateWrappedVibe(
+                                tracks.map((t: string) => {
+                                    const parts = t.split(' by ');
+                                    return { title: parts[0], artist: parts[1] || 'Unknown' };
+                                })
+                            );
+                        }
+                        toolResult = vibeResult || { title: "Your Vibe", description: "Music that defines you." };
+                    } else if (funcName === "build_wrapped_slides") {
+                        // Build final slides with data
+                        const rawSlides = funcArgs.slides || [];
+                        finalSlides = rawSlides.map((s: any, idx: number) => ({
+                            id: `slide-${idx}`,
+                            type: s.type || 'stat',
+                            title: s.title || '',
+                            subtitle: s.subtitle || '',
+                            value: s.value || '',
+                            image: s.type === 'top_artist' ? stats?.topArtist?.image : 
+                                   s.type === 'top_song' ? stats?.topSong?.cover :
+                                   s.type === 'top_album' ? stats?.topAlbum?.cover : undefined,
+                            gradient: getGradientForSlide(s.type)
+                        }));
+                        toolResult = { slides_created: finalSlides.length };
+                    }
+
+                    messages.push({
+                        role: "tool",
+                        tool_call_id: toolCall.id,
+                        content: JSON.stringify(toolResult)
+                    });
+                }
+            } else {
+                // No more tool calls, we're done
+                break;
+            }
+        }
+
+        // Ensure we have slides
+        if (finalSlides.length === 0 && stats) {
+            // Fallback: build default slides
+            finalSlides = buildDefaultWrappedSlides(stats, vibeResult, period);
+        }
+
+        return {
+            slides: finalSlides,
+            stats: {
+                totalMinutes: stats?.totalMinutes || 0,
+                totalTracks: stats?.totalTracks || 0,
+                topArtist: stats?.topArtist || null,
+                topSong: stats?.topSong || null,
+                topAlbum: null,
+                peakHour: "Evening",
+                topGenreGuess: vibeResult?.title || "Mixed"
+            }
+        };
+
+    } catch (e) {
+        console.error("Wrapped Tool Calling Error:", e);
+        return null;
+    }
+};
+
+function getGradientForSlide(type: string): string {
+    const gradients: Record<string, string> = {
+        intro: 'from-purple-600 via-pink-500 to-red-500',
+        top_artist: 'from-green-600 via-emerald-500 to-teal-500',
+        top_song: 'from-blue-600 via-indigo-500 to-purple-500',
+        top_album: 'from-orange-600 via-amber-500 to-yellow-500',
+        listening_time: 'from-cyan-600 via-blue-500 to-indigo-500',
+        stat: 'from-rose-600 via-pink-500 to-fuchsia-500',
+        vibe: 'from-violet-600 via-purple-500 to-indigo-500',
+        peak_hour: 'from-amber-600 via-orange-500 to-red-500',
+        outro: 'from-gray-800 via-gray-700 to-gray-600'
+    };
+    return gradients[type] || 'from-gray-700 to-gray-900';
+}
+
+function buildDefaultWrappedSlides(stats: any, vibe: any, period: string): WrappedSlide[] {
+    const slides: WrappedSlide[] = [
+        {
+            id: 'intro',
+            type: 'intro',
+            title: `Your ${period.charAt(0).toUpperCase() + period.slice(1)} Wrapped`,
+            subtitle: "Let's see what you've been listening to",
+            gradient: getGradientForSlide('intro')
+        }
+    ];
+
+    if (stats?.totalMinutes) {
+        slides.push({
+            id: 'time',
+            type: 'listening_time',
+            title: 'Minutes of Music',
+            value: stats.totalMinutes.toLocaleString(),
+            subtitle: `That's ${Math.round(stats.totalMinutes / 60)} hours of vibes`,
+            gradient: getGradientForSlide('listening_time')
+        });
+    }
+
+    if (stats?.topArtist) {
+        slides.push({
+            id: 'artist',
+            type: 'top_artist',
+            title: 'Your #1 Artist',
+            value: stats.topArtist.name,
+            subtitle: `${stats.topArtist.count} plays`,
+            image: stats.topArtist.image,
+            gradient: getGradientForSlide('top_artist')
+        });
+    }
+
+    if (stats?.topSong) {
+        slides.push({
+            id: 'song',
+            type: 'top_song',
+            title: 'Most Played Track',
+            value: stats.topSong.title,
+            subtitle: `by ${stats.topSong.artist} • ${stats.topSong.count} plays`,
+            image: stats.topSong.cover,
+            gradient: getGradientForSlide('top_song')
+        });
+    }
+
+    if (vibe) {
+        slides.push({
+            id: 'vibe',
+            type: 'vibe',
+            title: vibe.title,
+            subtitle: vibe.description,
+            gradient: getGradientForSlide('vibe')
+        });
+    }
+
+    slides.push({
+        id: 'outro',
+        type: 'outro',
+        title: 'Keep Listening',
+        subtitle: 'Your next wrapped is already in the making',
+        gradient: getGradientForSlide('outro')
+    });
+
+    return slides;
+}

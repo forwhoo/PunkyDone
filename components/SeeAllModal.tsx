@@ -92,20 +92,19 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                 onClick={() => setSortBy('name')}
                                 className={`px-3 md:px-4 py-2 rounded-full text-[11px] md:text-xs font-bold transition-all flex items-center gap-1.5 ${sortBy === 'name' ? 'bg-white text-black shadow-xl scale-105' : 'text-[#8E8E93] hover:text-white active:scale-95'}`}
                             >
-                                <span className="text-[10px]">Az</span> Name
+                                A-Z
                             </button>
                         </div>
                         
-                        <div className="w-px h-6 bg-white/10 mx-2 hidden md:block" />
-
                         <button 
                             onClick={onClose}
                             className="bg-[#3A3A3C] hover:bg-[#48484A] text-white rounded-full p-2.5 transition-all hover:scale-105 active:scale-95 border border-white/[0.08] shadow-lg"
                         >
                             <X size={18} />
                         </button>
-                     </div>
+                    </div>
                 </div>
+            </div>
 
                 {/* Scrollable Layout - Added top padding for header */}
                 <div className="flex-1 overflow-y-auto px-4 md:px-8 pt-36 md:pt-40 pb-12 scrollbar-thin scrollbar-thumb-[#333] scrollbar-track-transparent">
@@ -117,9 +116,9 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                     <div className="relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl z-10 cursor-pointer border-2 border-white/[0.08] group-hover:border-white/30 group-active:scale-105">
                                         {/* Artist Image */}
                                         <img 
-                                            src={item.cover || item.image || item.art || `https://ui-avatars.com/api/?name=${item.name}&background=1DB954&color=fff`} 
+                                            src={item.cover || item.image || item.art || `https://ui-avatars.com/api/?name=${item.name}&background=1C1C1E&color=fff`} 
                                             alt={item.name} 
-                                            className="w-full h-full object-cover rounded-full"
+                                            className="w-full h-full object-cover"
                                         />
 
                                         {/* Gradient for text readability */}
@@ -137,6 +136,8 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                             <span className="text-[11px] md:text-xs font-bold text-black bg-white px-2.5 py-1 rounded-full shadow-lg">{item.timeStr || '0m'}</span>
                                         </div>
                                     </div>
+                                    <h3 className="text-xs sm:text-sm font-semibold text-white truncate w-full px-1">{item.name}</h3>
+                                    <p className="text-[10px] sm:text-xs text-[#8E8E93]">{item.timeStr || '0m'}</p>
                                 </div>
                             ))}
                         </div>
@@ -154,7 +155,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                         <img 
                                             src={item.cover || item.image || item.art} 
                                             alt={item.title || item.name} 
-                                            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110" 
+                                            className="w-full h-full object-cover" 
                                         />
                                         
                                         {/* Permanent Gradient Overlay for Text Readability - Stronger at bottom */}
@@ -181,6 +182,8 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                             </div>
                                         </div>
                                     </div>
+                                    <h3 className="text-xs sm:text-sm font-semibold text-white truncate">{item.title || item.name}</h3>
+                                    <p className="text-[10px] sm:text-xs text-[#8E8E93] truncate">{item.artist} • {item.timeStr || '0m'}</p>
                                 </div>
                             ))}
                         </div>
