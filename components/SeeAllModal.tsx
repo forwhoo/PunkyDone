@@ -100,16 +100,14 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                             onClick={onClose}
                             className="bg-[#3A3A3C] hover:bg-[#48484A] text-white rounded-full p-2.5 transition-all hover:scale-105 active:scale-95 border border-white/[0.08] shadow-lg"
                         >
-                            <X size={18} />
+                        <X size={18} />
                         </button>
                     </div>
                 </div>
-            </div>
 
                 {/* Scrollable Layout - Added top padding for header */}
                 <div className="flex-1 overflow-y-auto px-4 md:px-8 pt-36 md:pt-40 pb-12 scrollbar-thin scrollbar-thumb-[#333] scrollbar-track-transparent">
                     {type === 'artist' ? (
-                        // CIRCULAR ARTIST GRID LAYOUT
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-y-10 md:gap-y-12 gap-x-4 md:gap-x-6 p-2 md:p-4">
                             {sortedItems.map((item, index) => (
                                 <div key={index} className="group relative flex flex-col items-center">
@@ -142,7 +140,6 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                             ))}
                         </div>
                     ) : (
-                        // SQUARE STACK LAYOUT (Albums/Songs)
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-y-8 md:gap-y-10 gap-x-4 md:gap-x-6 p-2 md:p-4">
                             {sortedItems.map((item, index) => (
                                 <div key={index} className="group relative cursor-pointer">
