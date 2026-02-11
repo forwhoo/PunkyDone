@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from './UIComponents';
 // import { ActivityHeatmap } from './ActivityHeatmap';
-import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2 } from 'lucide-react';
-import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory, generateWrappedVibe } from '../services/geminiService';
+import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2, Gift, ChevronLeft } from 'lucide-react';
+import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory, generateWrappedVibe, generateWrappedWithTools, WrappedSlide } from '../services/geminiService';
 import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface TopAIProps {
     token?: string | null;
@@ -134,7 +135,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const [insightMode, setInsightMode] = useState(false);
     const [insightData, setInsightData] = useState<any[]>([]);
     const [insightStep, setInsightStep] = useState(0);
-    // const [wrappedData, setWrappedData] = useState<any>(null); // Removed
+    
+    // Wrapped Mode State
+    const [wrappedMode, setWrappedMode] = useState(false);
+    const [wrappedSlides, setWrappedSlides] = useState<WrappedSlide[]>([]);
+    const [wrappedStep, setWrappedStep] = useState(0);
+    const [wrappedStats, setWrappedStats] = useState<any>(null);
 
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [chatResponse, setChatResponse] = useState<string | null>(null);
@@ -308,28 +314,42 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         setDisplayedText("");
         setCategoryResults([]); // clear previous
         setInsightMode(false); // Reset insight mode
-        // setWrappedData(null); // REMOVED
+        setWrappedMode(false); // Reset wrapped mode
 
         try {
             const lower = promptToUse.toLowerCase();
 
-            // SPECIAL HANDLER: WRAPPED (Daily, Weekly, Monthly) -> NOW WITH VIBE CHECK
+            // SPECIAL HANDLER: WRAPPED (Daily, Weekly, Monthly) -> NOW WITH TOOL CALLS & IMMERSIVE UI
             if (lower.includes('wrapped') || lower.includes('recap')) {
-                let period: 'daily' | 'weekly' | 'monthly' = 'daily';
-                if (lower.includes('week')) period = 'weekly';
+                let period: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly';
+                if (lower.includes('day') || lower.includes('today')) period = 'daily';
                 if (lower.includes('month')) period = 'monthly';
-                if (!lower.includes('day') && !lower.includes('week') && !lower.includes('month')) period = 'weekly';
+                if (lower.includes('year')) period = 'yearly';
 
-                // 1. Get stats + top tracks
-                const stats = await getWrappedStats(period);
+                setChatResponse("✨ Generating your Wrapped experience...");
+
+                // Try the new tool-calling wrapped generator
+                const wrappedResult = await generateWrappedWithTools(period, getWrappedStats);
+
+                if (wrappedResult && wrappedResult.slides.length > 0) {
+                    setWrappedSlides(wrappedResult.slides);
+                    setWrappedStats(wrappedResult.stats);
+                    setWrappedStep(0);
+                    setWrappedMode(true);
+                    setChatResponse(null);
+                    setLoading(false);
+                    setUserPrompt("");
+                    return;
+                }
+
+                // Fallback to simple category view if tool calling fails
+                const stats = await getWrappedStats(period === 'yearly' ? 'monthly' : period);
                 if (stats && stats.topTracks && stats.topTracks.length > 0) {
-                    // 2. Generate Twist using AI
                     const vibe = await generateWrappedVibe(stats.topTracks);
 
-                    // 3. Create a Category Result
                     const wrappedCategory: CategoryResult = {
-                        id: `wrapped - ${Date.now()} `,
-                        title: `✨ ${vibe.title} `,
+                        id: `wrapped-${Date.now()}`,
+                        title: `✨ ${vibe.title}`,
                         description: `AI Vibe Check: "${vibe.description}"`,
                         stats: `${stats.totalMinutes} mins • ${stats.totalTracks} tracks`,
                         tracks: stats.topTracks,
@@ -343,9 +363,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     setLoading(false);
                     setUserPrompt("");
                     return;
-
                 } else {
-                    setErrorMsg(`No ${period} stats found.Start listening!`);
+                    setErrorMsg(`No ${period} stats found. Start listening!`);
                     setLoading(false);
                     return;
                 }

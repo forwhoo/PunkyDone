@@ -561,12 +561,12 @@ function App() {
 
         {/* SECTION 2: TOP RANKINGS - Prominent Showcase */}
         <div className="mb-20">
-            <div className="flex items-center justify-between mb-8 px-1">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 px-1">
                 <div>
                     <h2 className="text-2xl font-bold text-white tracking-tight">Your Top Charts</h2>
                     <p className="text-[#8E8E93] text-sm mt-1">Your most played this {timeRange.toLowerCase()}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-1">
                     {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
                         <button 
                             key={range}
@@ -574,13 +574,13 @@ function App() {
                                 setTimeRange(range);
                                 fetchDashboardStats(range).then(data => setDbUnifiedData(data));
                             }}
-                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                            className={`px-3 sm:px-4 py-2 rounded-full text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
                                 timeRange === range 
-                                    ? 'bg-white text-black' 
-                                    : 'bg-[#1C1C1E] text-[#8E8E93] hover:text-white border border-white/10'
+                                    ? 'bg-white text-black shadow-lg shadow-white/10' 
+                                    : 'bg-[#1C1C1E] text-[#8E8E93] hover:text-white border border-white/10 hover:border-white/20'
                             }`}
                         >
-                            {range}
+                            {range === 'All Time' ? 'All' : range}
                         </button>
                     ))}
                 </div>
@@ -743,132 +743,150 @@ function App() {
         type={seeAllModal.type}
     />
 
-    {/* Artist Side Modal (Orbit Style) */}
+    {/* Artist Detail Modal - Apple Music Style */}
     <AnimatePresence>
         {selectedTopArtist && (
             <motion.div 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-3xl bg-black/80"
+                className="fixed inset-0 z-[100] bg-black"
                 onClick={() => setSelectedTopArtist(null)}
             >
-                <div 
-                    className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto no-scrollbar flex flex-col items-center" 
+                {/* Background Image with Blur */}
+                <div className="absolute inset-0 overflow-hidden">
+                    <img 
+                        src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || ''} 
+                        className="w-full h-full object-cover scale-110 blur-3xl opacity-30"
+                        alt=""
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
+                </div>
+
+                {/* Content */}
+                <motion.div 
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 50, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="relative h-full overflow-y-auto no-scrollbar"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Close Button */}
                     <button 
                         onClick={() => setSelectedTopArtist(null)}
-                        className="absolute top-0 right-4 lg:right-0 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50"
+                        className="fixed top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/10"
                     >
-                        <X size={20} />
+                        <X size={18} />
                     </button>
 
-                    {/* Artist Spotlight Image (Unblurred & Centered) */}
-                    <motion.div 
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                        className="relative z-10 mb-8 group"
-                    >
-                        <div className="w-56 h-56 md:w-72 md:h-72 rounded-full p-2 border border-white/10 bg-black shadow-2xl relative overflow-visible">
-                            <div className="absolute inset-0 rounded-full bg-white blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-500"></div>
-                            <img 
-                                src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${selectedTopArtist.name}`} 
-                                className="w-full h-full object-cover rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-[#1C1C1E]" 
-                                alt={selectedTopArtist.name}
-                            />
-                            
-                            {/* Rank Badge */}
-                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white text-black px-6 py-1.5 rounded-full font-bold text-sm shadow-xl border border-white/20 whitespace-nowrap">
-                                Rank #{safeArtists.findIndex((a: Artist) => a.id === selectedTopArtist.id) + 1 || '?'}
+                    {/* Hero Section */}
+                    <div className="flex flex-col items-center pt-16 sm:pt-20 pb-8 px-4">
+                        {/* Artist Image */}
+                        <motion.div 
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
+                            className="relative mb-6"
+                        >
+                            <div className="w-36 h-36 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-full overflow-hidden ring-4 ring-white/10 shadow-2xl">
+                                <img 
+                                    src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${selectedTopArtist.name}&background=1C1C1E&color=fff`} 
+                                    className="w-full h-full object-cover" 
+                                    alt={selectedTopArtist.name}
+                                />
                             </div>
-                        </div>
-                    </motion.div>
+                            {/* Rank Badge */}
+                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 rounded-full font-bold text-xs shadow-xl">
+                                #{safeArtists.findIndex((a: Artist) => a.id === selectedTopArtist.id) + 1 || '?'}
+                            </div>
+                        </motion.div>
 
-                    {/* Artist Name */}
-                    <motion.h2 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="text-4xl md:text-5xl font-black text-white text-center mb-10 tracking-tight"
-                    >
-                        {selectedTopArtist.name}
-                    </motion.h2>
+                        {/* Artist Name */}
+                        <motion.h1 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.15 }}
+                            className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight mb-2"
+                        >
+                            {selectedTopArtist.name}
+                        </motion.h1>
 
-                    {/* Stats Grid */}
+                        {/* Time Spent Badge */}
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.2 }}
+                            className="flex items-center gap-2 text-[#FA2D48] text-sm font-semibold"
+                        >
+                            <Clock size={14} />
+                            <span>{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', ' minutes') : '0 minutes'}</span>
+                        </motion.div>
+                    </div>
+
+                    {/* Stats Cards */}
                     <motion.div 
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-3xl mb-12"
+                        transition={{ delay: 0.25 }}
+                        className="grid grid-cols-3 gap-2 sm:gap-3 px-4 sm:px-6 max-w-lg mx-auto mb-8"
                     >
-                        <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-5 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-colors">
-                            <TrendingUp size={20} className="text-white mb-2" />
-                            <span className="text-2xl font-bold text-white mb-1">{selectedTopArtist.totalListens || 0}</span>
-                            <span className="text-[10px] uppercase tracking-widest text-[#8E8E93]">Total Plays</span>
+                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-col items-center text-center">
+                            <TrendingUp size={16} className="text-[#FA2D48] mb-1.5" />
+                            <span className="text-lg sm:text-xl font-bold text-white">{selectedTopArtist.totalListens || 0}</span>
+                            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#8E8E93]">Plays</span>
                         </div>
-                        <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-5 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-colors">
-                            <Clock size={20} className="text-white mb-2" />
-                            <span className="text-2xl font-bold text-white mb-1">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
-                            <span className="text-[10px] uppercase tracking-widest text-[#8E8E93]">Minutes</span>
+                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-col items-center text-center">
+                            <Calendar size={16} className="text-[#FA2D48] mb-1.5" />
+                            <span className="text-lg sm:text-xl font-bold text-white">{selectedArtistStats?.peakDay || '—'}</span>
+                            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#8E8E93]">Peak</span>
                         </div>
-                        <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-5 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-colors">
-                            <Calendar size={20} className="text-white mb-2" />
-                            <span className="text-2xl font-bold text-white mb-1">{selectedArtistStats?.peakDay || '—'}</span>
-                            <span className="text-[10px] uppercase tracking-widest text-[#8E8E93]">Peak Day</span>
-                        </div>
-                        <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-5 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-colors">
-                            <Sparkles size={20} className="text-white mb-2" />
-                            <span className="text-2xl font-bold text-white mb-1">{selectedArtistStats?.popularityScore || 0}%</span>
-                            <span className="text-[10px] uppercase tracking-widest text-[#8E8E93]">Popularity Score</span>
+                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-col items-center text-center">
+                            <Sparkles size={16} className="text-[#FA2D48] mb-1.5" />
+                            <span className="text-lg sm:text-xl font-bold text-white">{selectedArtistStats?.popularityScore || 0}%</span>
+                            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#8E8E93]">Share</span>
                         </div>
                     </motion.div>
 
-                    {/* Top Tracks List */}
+                    {/* Top Tracks Section */}
                     <motion.div 
                         initial={{ opacity: 0, y: 40 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="w-full max-w-2xl bg-[#1C1C1E] border border-white/5 rounded-3xl p-6 md:p-8"
+                        className="px-4 sm:px-6 pb-20 max-w-2xl mx-auto"
                     >
-                         <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <Disc size={18} className="text-white" /> Top Tracks
-                         </h3>
+                        <h3 className="text-sm font-bold text-[#8E8E93] uppercase tracking-wider mb-4 flex items-center gap-2">
+                            <Disc size={14} /> Top Tracks
+                        </h3>
                          
-                         <div className="space-y-2">
+                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5">
                             {(dbUnifiedData?.songs || [])
                                 .filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name)
                                 .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
                                 .slice(0, 5)
                                 .map((song: any, idx: number) => (
-                                    <div key={idx} className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-xl transition-colors group">
-                                        <div className="text-[#8E8E93] font-mono text-sm w-4">{idx + 1}</div>
-                                        <div className="w-10 h-10 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 relative">
+                                    <div key={idx} className="flex items-center gap-3 p-3 sm:p-4 hover:bg-white/5 transition-colors">
+                                        <span className="text-[#8E8E93] font-mono text-xs w-5 text-center">{idx + 1}</span>
+                                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0">
                                             <img src={song.cover || song.album_cover} className="w-full h-full object-cover" alt={song.title} />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <div className="text-sm font-bold text-white truncate">
+                                            <div className="text-sm font-semibold text-white truncate">
                                                 {song.track_name || song.title}
                                             </div>
                                             <div className="text-xs text-[#8E8E93]">
-                                                    {song.listens || song.plays || 0} plays • {song.timeStr || '0m'}
+                                                {song.listens || song.plays || 0} plays
                                             </div>
                                         </div>
-                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                             <div className="p-2 rounded-full bg-white text-black">
-                                                <div className="w-0.5 h-0.5 bg-black"></div>
-                                             </div>
-                                        </div>
+                                        <span className="text-xs text-[#8E8E93] font-medium">{song.timeStr || '0m'}</span>
                                     </div>
                             ))}
-                            {(dbUnifiedData?.songs || []).filter((s: any) => s.artist_name === selectedTopArtist.name).length === 0 && (
-                                <p className="text-[#8E8E93] text-sm text-center py-4 italic">No track data available for this artist in this period.</p>
+                            {(dbUnifiedData?.songs || []).filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name).length === 0 && (
+                                <p className="text-[#8E8E93] text-sm text-center py-8">No tracks for this period</p>
                             )}
                         </div>
                     </motion.div>
-                </div>
+                </motion.div>
             </motion.div>
         )}
     </AnimatePresence>
