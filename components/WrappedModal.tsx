@@ -6,9 +6,11 @@ interface WrappedModalProps {
     isOpen: boolean;
     onClose: () => void;
     period?: string; // 'Day', 'Week', 'Month'
+    userImage?: string;
+    userName?: string;
 }
 
-export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, period = "Week" }) => {
+export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, period = "Week", userImage, userName }) => {
     const [story, setStory] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -37,10 +39,18 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                 {/* Header Section */}
                 <div className="flex flex-col mb-10">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-[#FA2D48]/10 flex items-center justify-center">
-                            <Sparkles className="w-5 h-5 text-[#FA2D48]" />
-                        </div>
-                        <span className="text-[#8E8E93] font-bold uppercase tracking-[0.2em] text-[10px]">Muse Analytics Report</span>
+                        {userImage ? (
+                            <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 flex-shrink-0">
+                                <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+                            </div>
+                        ) : (
+                            <div className="w-10 h-10 rounded-full bg-[#FA2D48]/10 flex items-center justify-center">
+                                <Sparkles className="w-5 h-5 text-[#FA2D48]" />
+                            </div>
+                        )}
+                        <span className="text-[#8E8E93] font-bold uppercase tracking-[0.2em] text-[10px]">
+                            {userName ? `${userName}'s Report` : 'Muse Analytics Report'}
+                        </span>
                     </div>
                     <h2 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-none">
                         Your {period} <span className="text-[#FA2D48]">Wrapped</span>

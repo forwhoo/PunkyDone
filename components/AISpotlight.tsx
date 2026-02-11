@@ -78,14 +78,14 @@ const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: 
 
             <div className="relative z-10 ml-10 md:ml-12">
                 {/* Image Container */}
-                <div className={`w - 32 h - 32 md: w - 40 md: h - 40 overflow - hidden bg - [#2C2C2E] shadow - 2xl border border - white / 5 group - hover: border - white / 20 transition - all duration - 300 group - hover: -translate - y - 2 relative ${item.type === 'artist' ? 'rounded-full' : 'rounded-xl'} `}>
+                <div className={`w-32 h-32 md:w-40 md:h-40 overflow-hidden bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative ${item.type === 'artist' ? 'rounded-full' : 'rounded-xl'}`}>
                     {/* Fallback & Image */}
                     <div className="absolute inset-0 flex items-center justify-center bg-[#1C1C1E]">
                         <Music2 className="text-white/20" size={48} />
                     </div>
                     <img
-                        src={item.cover || item.image}
-                        alt={item.title}
+                        src={item.cover || item.image || item.album_cover}
+                        alt={item.title || item.name}
                         className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm"
                         onError={(e) => e.currentTarget.style.opacity = '0'}
                     />
@@ -363,24 +363,30 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     }
                 }));
 
-                // Fetch real images for artists if needed
+                // Fetch real images for tracks if needed
                 if (token && newResults.length > 0) {
                     const artistNames = new Set<string>();
                     newResults.forEach(cat => {
                         cat.tracks.forEach(t => {
-                            if (t.type === 'artist' && !t.cover) {
-                                artistNames.add(t.title);
+                            const hasCover = t.cover || t.image || t.album_cover;
+                            if (!hasCover && (t.artist || t.artist_name || t.title)) {
+                                artistNames.add(t.type === 'artist' ? t.title : (t.artist || t.artist_name || ''));
                             }
                         });
                     });
 
                     if (artistNames.size > 0) {
                         try {
-                            const images = await fetchArtistImages(token, Array.from(artistNames));
+                            const images = await fetchArtistImages(token, Array.from(artistNames).filter(Boolean));
                             newResults.forEach(cat => {
                                 cat.tracks.forEach(t => {
-                                    if (t.type === 'artist' && !t.cover && images[t.title]) {
-                                        t.cover = images[t.title];
+                                    const hasCover = t.cover || t.image || t.album_cover;
+                                    if (!hasCover) {
+                                        const artistKey = t.type === 'artist' ? t.title : (t.artist || t.artist_name || '');
+                                        if (images[artistKey]) {
+                                            t.cover = images[artistKey];
+                                            t.image = images[artistKey];
+                                        }
                                     }
                                 });
                             });
@@ -454,7 +460,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                         if (data.length > 0) {
                             newResults.push({
-                                id: `cat - ${Date.now()} -${idx} `,
+                                id: `cat-${Date.now()}-${idx}`,
                                 title: concept.title,
                                 description: concept.description,
                                 stats: `${data.length} items`,
@@ -464,27 +470,32 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     }
                 }));
 
-                // Fetch real images for artists if needed
+                // Fetch real images for tracks/artists if needed
                 if (token && newResults.length > 0) {
                     const artistNames = new Set<string>();
                     newResults.forEach(cat => {
                         cat.tracks.forEach(t => {
-                            if (t.type === 'artist' && !t.cover) {
-                                artistNames.add(t.title);
+                            // Collect artist names for items that don't have covers
+                            const hasCover = t.cover || t.image || t.album_cover;
+                            if (!hasCover && (t.artist || t.artist_name || t.title)) {
+                                artistNames.add(t.type === 'artist' ? t.title : (t.artist || t.artist_name || ''));
                             }
                         });
                     });
 
                     if (artistNames.size > 0) {
                         try {
-                            const images = await fetchArtistImages(token, Array.from(artistNames));
+                            const images = await fetchArtistImages(token, Array.from(artistNames).filter(Boolean));
                             newResults.forEach(cat => {
                                 cat.tracks.forEach(t => {
-                                    if (t.type === 'artist' && !t.cover) {
-                                        if (images[t.title]) {
-                                            t.cover = images[t.title];
+                                    const hasCover = t.cover || t.image || t.album_cover;
+                                    if (!hasCover) {
+                                        const artistKey = t.type === 'artist' ? t.title : (t.artist || t.artist_name || '');
+                                        if (images[artistKey]) {
+                                            t.cover = images[artistKey];
+                                            t.image = images[artistKey];
                                         } else {
-                                            t.cover = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.title)}&background=1DB954&color=fff&length=1`;
+                                            t.cover = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.title || t.name || artistKey)}&background=1C1C1E&color=fff&length=1`;
                                         }
                                     }
                                 });
@@ -579,25 +590,32 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                             }
                                         }));
 
-                                        // Fetch real images for artists if needed
+                                        // Fetch real images for tracks if needed
                                         if (token && newResults.length > 0) {
                                             const artistNames = new Set<string>();
                                             newResults.forEach(cat => {
                                                 cat.tracks.forEach(t => {
-                                                    if (t.type === 'artist' && !t.cover) {
-                                                        artistNames.add(t.title);
+                                                    const hasCover = t.cover || t.image || t.album_cover;
+                                                    if (!hasCover && (t.artist || t.artist_name || t.title)) {
+                                                        artistNames.add(t.type === 'artist' ? t.title : (t.artist || t.artist_name || ''));
                                                     }
                                                 });
                                             });
 
                                             if (artistNames.size > 0) {
                                                 try {
-                                                    const images = await fetchArtistImages(token, Array.from(artistNames));
+                                                    const images = await fetchArtistImages(token, Array.from(artistNames).filter(Boolean));
                                                     newResults.forEach(cat => {
                                                         cat.tracks.forEach(t => {
-                                                            if (t.type === 'artist' && !t.cover) {
-                                                                if (images[t.title]) t.cover = images[t.title];
-                                                                else t.cover = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.title)}&background=1DB954&color=fff&length=1`;
+                                                            const hasCover = t.cover || t.image || t.album_cover;
+                                                            if (!hasCover) {
+                                                                const artistKey = t.type === 'artist' ? t.title : (t.artist || t.artist_name || '');
+                                                                if (images[artistKey]) {
+                                                                    t.cover = images[artistKey];
+                                                                    t.image = images[artistKey];
+                                                                } else {
+                                                                    t.cover = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.title || t.name || artistKey)}&background=1C1C1E&color=fff&length=1`;
+                                                                }
                                                             }
                                                         });
                                                     });
@@ -1244,8 +1262,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                                     <Music2 className="text-white/20" size={48} />
                                                 </div>
                                                 <img
-                                                    src={track.cover || track.image}
-                                                    alt={track.title}
+                                                    src={track.cover || track.image || track.album_cover}
+                                                    alt={track.title || track.name}
                                                     className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
                                                     onError={(e) => e.currentTarget.style.opacity = '0'}
                                                 />
