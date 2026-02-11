@@ -1147,7 +1147,7 @@ export const getWrappedStats = async (period: 'daily' | 'weekly' | 'monthly' = '
             cover: data.cover,
             plays: data.count,
             type: 'song'
-        };
+        }));
 }
 
 // ALGORITHMIC WRAPPED STATS (Non-AI)

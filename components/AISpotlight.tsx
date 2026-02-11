@@ -324,6 +324,87 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 return;
             }
 
+            // SPECIAL HANDLER: WRAPPED (AI-Powered Summary)
+            if (lower.includes('wrapped') || lower.includes('recap')) {
+                setInsightMode(false);
+                setMode('discover');
+                
+                // Fetch wrapped data from DB
+                const wrappedStats = await getWrappedStats('weekly'); // Use weekly by default
+                
+                if (!wrappedStats) {
+                    setErrorMsg('Not enough data to generate a wrapped summary yet. Try again after listening to more music!');
+                    setLoading(false);
+                    return;
+                }
+
+                // Generate multiple wrapped-style categories using AI
+                const wrappedPrompt = `Generate a "Wrapped" style summary with 4-5 distinct categories. Use creative titles and focus on different aspects: top artist, top song, listening patterns, time of day preferences, genre distribution, etc. Make it feel like a personalized year-in-review.`;
+                
+                const concepts = await generateDynamicCategoryQuery(contextData, wrappedPrompt);
+
+                const newResults: CategoryResult[] = [];
+
+                // Process all returned categories
+                await Promise.all(concepts.map(async (concept, idx) => {
+                    if (concept && concept.filter) {
+                        const data = await fetchSmartPlaylist(concept);
+                        
+                        if (data.length > 0) {
+                            newResults.push({
+                                id: `wrapped-${Date.now()}-${idx}`,
+                                title: concept.title,
+                                description: concept.description,
+                                stats: `${data.length} items`,
+                                tracks: data
+                            });
+                        }
+                    }
+                }));
+
+                // Fetch real images for artists if needed
+                if (token && newResults.length > 0) {
+                    const artistNames = new Set<string>();
+                    newResults.forEach(cat => {
+                        cat.tracks.forEach(t => {
+                            if (t.type === 'artist' && !t.cover) {
+                                artistNames.add(t.title);
+                            }
+                        });
+                    });
+
+                    if (artistNames.size > 0) {
+                        try {
+                            const images = await fetchArtistImages(token, Array.from(artistNames));
+                            newResults.forEach(cat => {
+                                cat.tracks.forEach(t => {
+                                    if (t.type === 'artist' && !t.cover) {
+                                        if (images[t.title]) {
+                                            t.cover = images[t.title];
+                                        } else {
+                                            t.cover = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.title)}&background=1DB954&color=fff&length=1`;
+                                        }
+                                    }
+                                });
+                            });
+                        } catch (e) {
+                            console.error("Failed to load artist images", e);
+                        }
+                    }
+                }
+
+                if (newResults.length === 0) {
+                    setErrorMsg('Could not generate wrapped summary. Please try again.');
+                } else {
+                    setViewMode('ranked'); // Use ranked view for wrapped
+                    setSortMode('plays');
+                    setCategoryResults(newResults);
+                }
+                
+                setLoading(false);
+                return;
+            }
+
             // Determine query type
             const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover', 'top', 'best', 'most', 'rank', 'chart', 'favorite', 'least', 'wrapped', 'gems', 'rewind', 'vibes', 'mix', 'weekly', 'insight', 'stats'];
             const isAnalysisQuery = analysisKeywords.some(k => promptToUse.toLowerCase().includes(k));
@@ -586,6 +667,19 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             Discovery
                         </button>
                     </div>
+                </div>
+
+                {/* Quick Action: Wrapped Button */}
+                <div className="flex justify-center mt-4">
+                    <button
+                        onClick={() => handleQuery('wrapped')}
+                        disabled={loading}
+                        className="group relative px-6 py-2.5 bg-gradient-to-r from-[#FA2D48] to-[#FF6B6B] text-white rounded-full font-bold text-sm uppercase tracking-wider hover:shadow-[0_0_25px_rgba(250,45,72,0.5)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                        <Trophy size={16} className="group-hover:rotate-12 transition-transform" />
+                        My Wrapped
+                        <Sparkles size={14} className="animate-pulse" />
+                    </button>
                 </div>
 
                 {/* Quick Feature Suggestions Removed via user request */}

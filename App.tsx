@@ -103,57 +103,14 @@ import { SeeAllModal } from './components/SeeAllModal';
 
 function App() {
     const [token, setToken] = useState<string | null>(localStorage.getItem('spotify_token'));
-    // ... existing state
     const [showWrapped, setShowWrapped] = useState(false);
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [dbStats, setDbStats] = useState<any>(null);
     const [dbUnifiedData, setDbUnifiedData] = useState<any>(null);
-    // ... (keep all hooks and effects same)
 
-    // ... inside render ...
-
-    {/* SECTION 1: AI DISCOVERY - Clean Centered Design */ }
-    <div className="mb-24 mt-8 relative">
-        {/* Punky Wrapped Button overlay or integration */}
-        <div className="absolute top-0 right-0 z-20">
-            <button
-                onClick={() => setShowWrapped(true)}
-                className="group relative overflow-hidden bg-black border border-white/20 text-white font-black uppercase text-xs tracking-[0.2em] px-6 py-3 rounded-full hover:border-white/50 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(255,255,255,0.2)]"
-            >
-                <span className="relative z-10 group-hover:opacity-0 transition-opacity duration-300">Punky Wrapped</span>
-                <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-bold italic bg-white text-black translate-y-full group-hover:translate-y-0 transition-transform">
-                    Arrived
-                </span>
-                {/* Shine Effect */}
-                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shine" />
-            </button>
-        </div>
-
-        <AISpotlight
-            token={token}
-            history={safeRecent}
-// ...
-        </div>
-
-    {/* SECTION 2: TOP RANKINGS - Prominent Showcase */ }
-    // ...
-    // ... at the end of return ...
-
-    {/* Global Modals - Moved Outside Layout to fix positioning context */ }
-    <AnimatePresence>
-        {showWrapped && (
-            <PunkyWrapped 
-                period={timeRange === 'Daily' ? 'daily' : timeRange === 'All Time' ? 'all time' : 'weekly'} 
-                onClose={() => setShowWrapped(false)} 
-            />
-        )}
-    </AnimatePresence>
-
-    <SeeAllModal 
-// ...
-  // Persist images to prevent reloading glitches
-  const [artistImages, setArtistImages] = useState<Record<string, string>>(() => {
+    // Persist images to prevent reloading glitches
+    const [artistImages, setArtistImages] = useState<Record<string, string>>(() => {
         try {
             const saved = localStorage.getItem('artist_images_cache');
             return saved ? JSON.parse(saved) : {};
