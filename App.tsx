@@ -107,7 +107,6 @@ const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick
 
 const MobileHeroCard = ({ title, subtitle }: { title: string; subtitle: string }) => (
     <div className="glass-morph rounded-[24px] p-6 shadow-xl border border-white/[0.12]">
-        <p className="text-[10px] uppercase tracking-[0.25em] text-white/50 mb-2.5 font-bold">Muse Analytics</p>
         <h1 className="text-[22px] font-bold text-white leading-tight">{title}</h1>
         <p className="text-[13px] text-white/60 mt-2.5 leading-relaxed">{subtitle}</p>
     </div>
@@ -149,6 +148,7 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 );
 
 import { SeeAllModal } from './components/SeeAllModal';
+import { WrappedModal } from './components/WrappedModal';
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('spotify_token'));
@@ -175,6 +175,12 @@ function App() {
       title: '',
       items: [],
       type: 'artist'
+  });
+
+  // Wrapped Modal State
+  const [wrappedModal, setWrappedModal] = useState<{ isOpen: boolean; period: string }>({
+      isOpen: false,
+      period: 'Weekly'
   });
 
   // Fetch Artist Images when data loads
@@ -627,6 +633,27 @@ function App() {
                 />
             </div>
 
+            {/* Mobile Search & AI Chat */}
+            <div className="space-y-3">
+                <button
+                    onClick={() => {
+                        const aiSection = document.getElementById('mobile-ai-chat');
+                        if (aiSection) {
+                            aiSection.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }}
+                    className="w-full glass-morph rounded-[20px] px-5 py-4 flex items-center gap-3 active:scale-[0.98] transition-transform border border-white/10"
+                >
+                    <div className="w-10 h-10 rounded-full bg-[#FA2D48]/10 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-5 h-5 text-[#FA2D48]" />
+                    </div>
+                    <div className="flex-1 text-left">
+                        <p className="text-[14px] font-bold text-white">AI Chat</p>
+                        <p className="text-[11px] text-white/60">Ask about your music</p>
+                    </div>
+                </button>
+            </div>
+
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
                 {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
                     <button
@@ -760,6 +787,92 @@ function App() {
                         ) : (
                             <p className="text-[#8E8E93] text-sm italic px-1">Not enough data to rank albums yet.</p>
                         )}
+                    </section>
+
+                    {/* Mobile Wrapped Button */}
+                    <section className="space-y-5">
+                        <button
+                            onClick={() => {
+                                // Open Wrapped modal
+                                if (safeArtists.length > 0 || safeSongs.length > 0 || safeAlbums.length > 0) {
+                                    setWrappedModal({ isOpen: true, period: timeRange });
+                                }
+                            }}
+                            className="w-full glass-morph rounded-[24px] p-6 shadow-xl border border-white/[0.12] active:scale-[0.98] transition-all"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="text-left">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Sparkles className="w-5 h-5 text-[#FA2D48]" />
+                                        <h3 className="text-[18px] font-bold text-white">Your Wrapped</h3>
+                                    </div>
+                                    <p className="text-[13px] text-white/60">View your personalized music story</p>
+                                </div>
+                                <div className="w-12 h-12 rounded-full bg-[#FA2D48]/10 flex items-center justify-center">
+                                    <Calendar className="w-6 h-6 text-[#FA2D48]" />
+                                </div>
+                            </div>
+                        </button>
+                    </section>
+
+                    {/* Mobile Obsession Orbit */}
+                    <section className="space-y-5">
+                        <div className="flex items-center justify-between px-1">
+                            <h3 className="text-lg font-bold text-white">Obsession Orbit</h3>
+                        </div>
+                        <div className="glass-morph rounded-[24px] p-4 overflow-hidden">
+                            <TrendingArtists 
+                                artists={safeArtists}
+                                albums={safeAlbums}
+                                songs={safeSongs}
+                                recentPlays={safeRecent}
+                                artistImages={artistImages}
+                                timeRange={timeRange}
+                            />
+                        </div>
+                    </section>
+
+                    {/* Mobile Activity Heatmap */}
+                    <section className="space-y-5">
+                        <div className="flex items-center justify-between px-1">
+                            <h3 className="text-lg font-bold text-white">Activity Heatmap</h3>
+                        </div>
+                        <div className="glass-morph rounded-[24px] p-4 overflow-hidden">
+                            <ActivityHeatmap history={safeRecent} />
+                        </div>
+                    </section>
+
+                    {/* Mobile AI Chat Section */}
+                    <section className="space-y-5" id="mobile-ai-chat">
+                        <div className="flex items-center justify-between px-1">
+                            <h3 className="text-lg font-bold text-white">AI Discovery</h3>
+                        </div>
+                        <div className="glass-morph rounded-[24px] p-5">
+                            <AISpotlight 
+                                token={token}
+                                history={safeRecent}
+                                user={data.user}
+                                contextData={{
+                                    userName: data.user?.display_name,
+                                    artists: safeArtists.map((a: Artist, idx: number) => {
+                                        const time = String(a.timeStr || '');
+                                        const mins = time.replace('m', '');
+                                        return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
+                                    }),
+                                    albums: safeAlbums.map((a: Album, idx: number) => {
+                                        const time = String(a.timeStr || '');
+                                        const mins = time.replace('m', '');
+                                        return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
+                                    }),
+                                    songs: safeSongs.map((s: Song, idx: number) => {
+                                        const time = String(s.timeStr || '');
+                                        const mins = time.replace('m', '');
+                                        return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
+                                    }),
+                                    globalStats: dbStats
+                                }} 
+                            />
+                        </div>
                     </section>
                 </>
             )}
@@ -1237,7 +1350,15 @@ function App() {
                             </h3>
                             <div className="space-y-1">
                                 {(dbUnifiedData?.songs || [])
-                                    .filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title) && (s.artist === selectedTopAlbum.artist || s.artist_name === selectedTopAlbum.artist))
+                                    .filter((s: any) => {
+                                        const songAlbum = s.album || s.album_name || '';
+                                        const songArtist = s.artist || s.artist_name || '';
+                                        const albumTitle = selectedTopAlbum.title || '';
+                                        const albumArtist = selectedTopAlbum.artist || '';
+                                        
+                                        return songAlbum.toLowerCase().trim() === albumTitle.toLowerCase().trim() && 
+                                               songArtist.toLowerCase().trim() === albumArtist.toLowerCase().trim();
+                                    })
                                     .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
                                     .slice(0, 10)
                                     .map((song: any, idx: number) => (
@@ -1254,9 +1375,16 @@ function App() {
                                         </div>
                                     ))
                                 }
-                                {(dbUnifiedData?.songs || []).filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title)).length === 0 && (
-                                    <p className="text-[#8E8E93] text-sm text-center py-6 italic">No track data available.</p>
-                                )}
+                                {(() => {
+                                    const filteredTracks = (dbUnifiedData?.songs || []).filter((s: any) => {
+                                        const songAlbum = s.album || s.album_name || '';
+                                        const albumTitle = selectedTopAlbum.title || '';
+                                        return songAlbum.toLowerCase().trim() === albumTitle.toLowerCase().trim();
+                                    });
+                                    return filteredTracks.length === 0 ? (
+                                        <p className="text-[#8E8E93] text-sm text-center py-6 italic">No track data available for this album.</p>
+                                    ) : null;
+                                })()}
                             </div>
                         </motion.div>
                     </div>
@@ -1383,6 +1511,15 @@ function App() {
             </motion.div>
         )}
     </AnimatePresence>
+
+    {/* Wrapped Modal */}
+    <WrappedModal
+        isOpen={wrappedModal.isOpen}
+        onClose={() => setWrappedModal({ ...wrappedModal, isOpen: false })}
+        period={wrappedModal.period}
+        userImage={data?.user?.images?.[0]?.url}
+        userName={data?.user?.display_name}
+    />
     </>
   );
 }
