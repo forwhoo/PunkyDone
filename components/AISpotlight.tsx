@@ -352,7 +352,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             }
 
             // SPECIAL HANDLER: WEEKLY INSIGHT (The AI Story Version)
-            if (manualPrompt === 'Weekly Insight' || lower.includes('insight story')) {
+            if (lower.includes('weekly insight') || lower.includes('insight story')) {
                 setInsightMode(true);
                 setInsightStep(0);
                 const slides = await generateWeeklyInsightStory(contextData);
@@ -625,7 +625,33 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     </div>
                 </div>
 
-                {/* Quick Feature Suggestions Removed via user request */}
+                {/* Quick Feature Suggestions */}
+                <div className="flex flex-wrap gap-2 justify-center mt-4">
+                    <button
+                        onClick={() => handleQuery("weekly wrapped")}
+                        disabled={loading}
+                        className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-white text-[11px] font-bold uppercase tracking-wider hover:from-purple-500/30 hover:to-pink-500/30 transition-all flex items-center gap-2 shadow-lg active:scale-95 disabled:opacity-50"
+                    >
+                        <Sparkles className="w-3 h-3" />
+                        Weekly Wrapped
+                    </button>
+                    <button
+                        onClick={() => handleQuery("monthly wrapped")}
+                        disabled={loading}
+                        className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30 text-white text-[11px] font-bold uppercase tracking-wider hover:from-blue-500/30 hover:to-cyan-500/30 transition-all flex items-center gap-2 shadow-lg active:scale-95 disabled:opacity-50"
+                    >
+                        <Trophy className="w-3 h-3" />
+                        Monthly Wrapped
+                    </button>
+                    <button
+                        onClick={() => handleQuery("weekly insight")}
+                        disabled={loading}
+                        className="px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-500/30 text-white text-[11px] font-bold uppercase tracking-wider hover:from-orange-500/30 hover:to-yellow-500/30 transition-all flex items-center gap-2 shadow-lg active:scale-95 disabled:opacity-50"
+                    >
+                        <BarChart3 className="w-3 h-3" />
+                        Weekly Insight
+                    </button>
+                </div>
             </div>
 
             {/* Error Messages */}
