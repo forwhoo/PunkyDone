@@ -70,7 +70,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                 <div className="absolute top-0 left-0 right-0 z-50 px-4 md:px-8 py-6 md:py-8 flex flex-col md:flex-row justify-between items-start md:items-center bg-gradient-to-b from-[#1C1C1E] via-[#1C1C1E]/95 to-transparent pb-16">
                      <div>
                         <h2 className="text-[28px] md:text-4xl font-bold text-white tracking-tight">{title}</h2>
-                        <p className="text-[#8E8E93] text-xs md:text-sm mt-1.5">{items.length} items • Sorted by {sortBy}</p>
+                        <p className="text-[#8E8E93] text-xs md:text-sm mt-1.5">{items.length} items • Sorted by {sortBy === 'plays' ? 'Plays' : sortBy === 'time' ? 'Time Listened' : 'Name'}</p>
                      </div>
 
                      <div className="flex items-center gap-2 mt-4 md:mt-0">

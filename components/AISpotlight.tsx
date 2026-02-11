@@ -352,7 +352,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             }
 
             // SPECIAL HANDLER: WEEKLY INSIGHT (The AI Story Version)
-            if (manualPrompt === 'Weekly Insight' || lower.includes('insight story')) {
+            if (lower.includes('weekly insight') || lower.includes('insight story')) {
                 setInsightMode(true);
                 setInsightStep(0);
                 const slides = await generateWeeklyInsightStory(contextData);
@@ -644,7 +644,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                         Monthly Wrapped
                     </button>
                     <button
-                        onClick={() => handleQuery("Weekly Insight")}
+                        onClick={() => handleQuery("weekly insight")}
                         disabled={loading}
                         className="px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-500/30 text-white text-[11px] font-bold uppercase tracking-wider hover:from-orange-500/30 hover:to-yellow-500/30 transition-all flex items-center gap-2 shadow-lg active:scale-95 disabled:opacity-50"
                     >
