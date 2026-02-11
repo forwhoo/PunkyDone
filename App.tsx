@@ -891,7 +891,7 @@ function App() {
                         {safeAlbums.length > 0 ? (
                             <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
                                 {safeAlbums.slice(0, 8).map((album: Album, index: number) => (
-                                    <RankedAlbum key={album.id} album={album} rank={index + 1} />
+                                    <RankedAlbum key={album.id} album={album} rank={index + 1} onClick={() => setSelectedTopAlbum(album)} />
                                 ))}
                             </div>
                         ) : (
@@ -922,7 +922,7 @@ function App() {
                         {safeSongs.length > 0 ? (
                             <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
                                 {safeSongs.slice(0, 8).map((song: Song, index: number) => (
-                                    <RankedSong key={song.id} song={song} rank={index + 1} />
+                                    <RankedSong key={song.id} song={song} rank={index + 1} onClick={() => setSelectedTopSong(song)} />
                                 ))}
                             </div>
                         ) : (
@@ -996,28 +996,28 @@ function App() {
                     {/* Close Button */}
                     <button 
                         onClick={() => setSelectedTopArtist(null)}
-                        className="absolute top-2 right-2 md:top-0 md:right-0 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/[0.08]"
+                        className="absolute top-2 right-2 md:top-0 md:right-0 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/[0.08] hover:scale-105 active:scale-95"
                     >
                         <X size={18} />
                     </button>
 
-                    {/* Artist Spotlight Image (Unblurred & Centered) */}
+                    {/* Artist Spotlight Image */}
                     <motion.div 
                         initial={{ scale: 0.85, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ type: "spring", stiffness: 220, damping: 22 }}
-                        className="relative z-10 mb-10 group"
+                        className="relative z-10 mb-8 group"
                     >
-                        <div className="w-48 h-48 md:w-64 md:h-64 rounded-full p-2 border-2 border-white/[0.12] bg-black shadow-2xl relative overflow-visible">
-                            <div className="absolute inset-0 rounded-full bg-white blur-3xl opacity-10 group-hover:opacity-25 transition-opacity duration-700"></div>
+                        <div className="w-40 h-40 md:w-56 md:h-56 rounded-full p-1.5 border-2 border-white/[0.12] bg-black shadow-2xl relative overflow-visible">
+                            <div className="absolute inset-0 rounded-full bg-[#FA2D48] blur-3xl opacity-[0.08] group-hover:opacity-[0.15] transition-opacity duration-700"></div>
                             <img 
-                                src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${selectedTopArtist.name}`} 
+                                src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedTopArtist.name)}&background=1C1C1E&color=fff`} 
                                 className="w-full h-full object-cover rounded-full shadow-[0_30px_60px_rgba(0,0,0,0.6)] bg-[#1C1C1E]" 
                                 alt={selectedTopArtist.name}
                             />
                             
                             {/* Rank Badge */}
-                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white text-black px-5 py-1.5 rounded-full font-black text-sm shadow-xl border-2 border-black/10 whitespace-nowrap">
+                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 rounded-full font-black text-xs shadow-xl border-2 border-black/10 whitespace-nowrap">
                                 #{safeArtists.findIndex((a: Artist) => a.id === selectedTopArtist.id) + 1 || '?'}
                             </div>
                         </div>
@@ -1028,37 +1028,45 @@ function App() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="text-3xl md:text-4xl font-black text-white text-center mb-8 tracking-tight px-4"
+                        className="text-2xl md:text-4xl font-black text-white text-center mb-2 tracking-tight px-4"
                     >
                         {selectedTopArtist.name}
                     </motion.h2>
+                    <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.12 }}
+                        className="text-[#8E8E93] text-sm mb-8"
+                    >
+                        {selectedTopArtist.timeStr || '0m'} listened
+                    </motion.p>
 
-                    {/* Stats Cards */}
+                    {/* Stats Cards - Apple Style */}
                     <motion.div 
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
-                        className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-2xl mb-10 px-3"
+                        className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-2xl mb-8 px-3"
                     >
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-all hover:scale-105 active:scale-95">
-                            <TrendingUp size={18} className="text-white mb-2 opacity-80" />
-                            <span className="text-xl md:text-2xl font-black text-white mb-0.5">{selectedTopArtist.totalListens || 0}</span>
-                            <span className="text-[9px] uppercase tracking-[0.1em] text-[#8E8E93] font-bold">Total Plays</span>
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
+                            <TrendingUp size={16} className="text-[#FA2D48] mb-2" />
+                            <span className="text-2xl font-black text-white mb-0.5">{selectedTopArtist.totalListens || 0}</span>
+                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Total Plays</span>
                         </div>
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-all hover:scale-105 active:scale-95">
-                            <Clock size={18} className="text-white mb-2 opacity-80" />
-                            <span className="text-xl md:text-2xl font-black text-white mb-0.5">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
-                            <span className="text-[9px] uppercase tracking-[0.1em] text-[#8E8E93] font-bold">Minutes</span>
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
+                            <Clock size={16} className="text-[#FA2D48] mb-2" />
+                            <span className="text-2xl font-black text-white mb-0.5">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
+                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Minutes</span>
                         </div>
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-all hover:scale-105 active:scale-95">
-                            <Calendar size={18} className="text-white mb-2 opacity-80" />
-                            <span className="text-xl md:text-2xl font-black text-white mb-0.5">{selectedArtistStats?.peakDay || '—'}</span>
-                            <span className="text-[9px] uppercase tracking-[0.1em] text-[#8E8E93] font-bold">Peak Day</span>
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
+                            <Calendar size={16} className="text-[#FA2D48] mb-2" />
+                            <span className="text-lg font-black text-white mb-0.5">{selectedArtistStats?.peakDay || '—'}</span>
+                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Peak Day</span>
                         </div>
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-all hover:scale-105 active:scale-95">
-                            <Sparkles size={18} className="text-white mb-2 opacity-80" />
-                            <span className="text-xl md:text-2xl font-black text-white mb-0.5">{selectedArtistStats?.popularityScore || 0}%</span>
-                            <span className="text-[9px] uppercase tracking-[0.1em] text-[#8E8E93] font-bold">Popularity</span>
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
+                            <Sparkles size={16} className="text-[#FA2D48] mb-2" />
+                            <span className="text-2xl font-black text-white mb-0.5">{selectedArtistStats?.popularityScore || 0}%</span>
+                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Your Share</span>
                         </div>
                     </motion.div>
 
@@ -1070,7 +1078,7 @@ function App() {
                         className="w-full max-w-2xl bg-gradient-to-b from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-3xl p-5 md:p-7 mx-3"
                     >
                          <h3 className="text-base md:text-lg font-bold text-white mb-5 flex items-center gap-2">
-                            <Disc size={16} className="text-white opacity-80" /> Top Tracks
+                            <Disc size={16} className="text-[#FA2D48]" /> Top Tracks
                          </h3>
                          
                          <div className="space-y-1.5">
@@ -1079,13 +1087,13 @@ function App() {
                                 .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
                                 .slice(0, 5)
                                 .map((song: any, idx: number) => (
-                                    <div key={idx} className="flex items-center gap-3 p-2.5 md:p-3 hover:bg-white/5 rounded-xl transition-all group active:scale-98">
+                                    <div key={idx} className="flex items-center gap-3 p-2.5 md:p-3 hover:bg-white/5 rounded-xl transition-all group active:scale-[0.98]">
                                         <div className="text-[#8E8E93] font-mono text-sm w-5 font-bold">{idx + 1}</div>
                                         <div className="w-11 h-11 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 relative border border-white/5">
                                             <img src={song.cover || song.album_cover} className="w-full h-full object-cover" alt={song.title} />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <div className="text-[13px] md:text-sm font-bold text-white truncate">
+                                            <div className="text-[13px] md:text-sm font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
                                                 {song.track_name || song.title}
                                             </div>
                                             <div className="text-[11px] text-[#8E8E93] font-medium">
@@ -1094,12 +1102,155 @@ function App() {
                                         </div>
                                     </div>
                             ))}
-                            {(dbUnifiedData?.songs || []).filter((s: any) => s.artist_name === selectedTopArtist.name).length === 0 && (
+                            {(dbUnifiedData?.songs || []).filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name).length === 0 && (
                                 <p className="text-[#8E8E93] text-sm text-center py-6 italic">No track data available for this artist.</p>
                             )}
                         </div>
                     </motion.div>
                 </div>
+            </motion.div>
+        )}
+    </AnimatePresence>
+
+    {/* Album Detail Modal - Apple Music Style */}
+    <AnimatePresence>
+        {selectedTopAlbum && (
+            <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] bg-black"
+                onClick={() => setSelectedTopAlbum(null)}
+            >
+                <div className="absolute inset-0 overflow-hidden">
+                    <img 
+                        src={selectedTopAlbum.cover} 
+                        className="w-full h-full object-cover scale-110 blur-3xl opacity-20"
+                        alt=""
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
+                </div>
+
+                <motion.div 
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 50, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="relative h-full overflow-y-auto no-scrollbar px-4 py-16"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <button 
+                        onClick={() => setSelectedTopAlbum(null)}
+                        className="fixed top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/10 hover:scale-105 active:scale-95"
+                    >
+                        <X size={18} />
+                    </button>
+
+                    <div className="flex flex-col items-center max-w-2xl mx-auto">
+                        <motion.div 
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
+                            className="relative mb-6"
+                        >
+                            <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl overflow-hidden ring-4 ring-white/10 shadow-2xl">
+                                <img 
+                                    src={selectedTopAlbum.cover} 
+                                    className="w-full h-full object-cover" 
+                                    alt={selectedTopAlbum.title}
+                                />
+                            </div>
+                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 rounded-full font-bold text-xs shadow-xl">
+                                #{safeAlbums.findIndex((a: Album) => a.id === selectedTopAlbum.id) + 1 || '?'}
+                            </div>
+                        </motion.div>
+
+                        <motion.h1 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.15 }}
+                            className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight mb-1"
+                        >
+                            {selectedTopAlbum.title}
+                        </motion.h1>
+                        <motion.p 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.2 }}
+                            className="text-lg text-white/70 mb-2"
+                        >
+                            {selectedTopAlbum.artist}
+                        </motion.p>
+                        <motion.p 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.22 }}
+                            className="text-sm text-[#FA2D48] font-medium mb-6"
+                        >
+                            {selectedTopAlbum.timeStr || '0m'} listened
+                        </motion.p>
+
+                        <motion.div 
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.25 }}
+                            className="grid grid-cols-3 gap-3 w-full max-w-lg mb-8"
+                        >
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                                <TrendingUp size={16} className="text-[#FA2D48] mb-1.5" />
+                                <span className="text-xl font-bold text-white">{selectedTopAlbum.totalListens || selectedTopAlbum.listens || 0}</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Plays</span>
+                            </div>
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                                <Clock size={16} className="text-[#FA2D48] mb-1.5" />
+                                <span className="text-xl font-bold text-white">{selectedTopAlbum.timeStr ? String(selectedTopAlbum.timeStr).replace('m', '') : '0'}</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Minutes</span>
+                            </div>
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                                <Disc size={16} className="text-[#FA2D48] mb-1.5" />
+                                <span className="text-xl font-bold text-white">
+                                    {(dbUnifiedData?.songs || []).filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title) && (s.artist === selectedTopAlbum.artist || s.artist_name === selectedTopAlbum.artist)).length}
+                                </span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Tracks</span>
+                            </div>
+                        </motion.div>
+
+                        {/* Album Tracks */}
+                        <motion.div 
+                            initial={{ opacity: 0, y: 40 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="w-full max-w-lg bg-gradient-to-b from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-3xl p-5 md:p-7"
+                        >
+                            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+                                <Music size={14} className="text-[#FA2D48]" /> Tracks from this album
+                            </h3>
+                            <div className="space-y-1">
+                                {(dbUnifiedData?.songs || [])
+                                    .filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title) && (s.artist === selectedTopAlbum.artist || s.artist_name === selectedTopAlbum.artist))
+                                    .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
+                                    .slice(0, 10)
+                                    .map((song: any, idx: number) => (
+                                        <div key={idx} className="flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl transition-all group">
+                                            <div className="text-[#8E8E93] font-mono text-sm w-5 font-bold">{idx + 1}</div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="text-[13px] font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
+                                                    {song.track_name || song.title}
+                                                </div>
+                                                <div className="text-[11px] text-[#8E8E93]">
+                                                    {song.listens || song.plays || 0} plays
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                }
+                                {(dbUnifiedData?.songs || []).filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title)).length === 0 && (
+                                    <p className="text-[#8E8E93] text-sm text-center py-6 italic">No track data available.</p>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                </motion.div>
             </motion.div>
         )}
     </AnimatePresence>
@@ -1133,7 +1284,7 @@ function App() {
                 >
                     <button 
                         onClick={() => setSelectedTopSong(null)}
-                        className="fixed top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/10"
+                        className="fixed top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/10 hover:scale-105 active:scale-95"
                     >
                         <X size={18} />
                     </button>

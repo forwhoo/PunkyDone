@@ -10,6 +10,8 @@ interface WrappedStoryProps {
         totalTracks: number;
         topArtist?: { name: string; count: number; image: string };
         topSong?: { title: string; count: number; cover: string; artist: string };
+        userImage?: string;
+        userName?: string;
     };
     onClose: () => void;
 }
@@ -89,14 +91,24 @@ export const WrappedStory: React.FC<WrappedStoryProps> = ({ data, onClose }) => 
                                     initial={{ y: 20, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
                                     transition={{ delay: 0.2 }}
-                                    className="w-24 h-24 bg-[#FA2D48] rounded-full flex items-center justify-center mb-8 shadow-[0_0_60px_rgba(250,45,72,0.4)]"
+                                    className="relative mb-8"
                                 >
-                                    <Play size={40} className="fill-white text-white ml-2" />
+                                    {data.userImage ? (
+                                        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 shadow-[0_0_60px_rgba(250,45,72,0.3)]">
+                                            <img src={data.userImage} alt={data.userName} className="w-full h-full object-cover" />
+                                        </div>
+                                    ) : (
+                                        <div className="w-24 h-24 bg-[#FA2D48] rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(250,45,72,0.4)]">
+                                            <Play size={40} className="fill-white text-white ml-2" />
+                                        </div>
+                                    )}
                                 </motion.div>
                                 <h1 className="text-4xl font-black text-white mb-2 uppercase tracking-tighter">
                                     {data.title}
                                 </h1>
-                                <p className="text-xl text-[#8E8E93] font-medium">Ready to see your stats?</p>
+                                <p className="text-xl text-[#8E8E93] font-medium">
+                                    {data.userName ? `Hey ${data.userName}, ready to see your stats?` : 'Ready to see your stats?'}
+                                </p>
                             </Slide>
                         )}
 
@@ -122,21 +134,21 @@ export const WrappedStory: React.FC<WrappedStoryProps> = ({ data, onClose }) => 
                                 {data.topArtist ? (
                                     <>
                                         <div className="relative mb-8">
-                                            <div className="absolute inset-0 bg-white blur-3xl opacity-20 animate-pulse"></div>
+                                            <div className="absolute inset-0 bg-white blur-3xl opacity-15 animate-pulse rounded-full"></div>
                                             <img
-                                                src={data.topArtist.image}
+                                                src={data.topArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.topArtist.name)}&background=1C1C1E&color=fff`}
                                                 alt={data.topArtist.name}
-                                                className="w-64 h-64 rounded-full object-cover border-4 border-white/10 shadow-2xl relative z-10"
+                                                className="w-52 h-52 sm:w-64 sm:h-64 rounded-full object-cover border-4 border-white/10 shadow-2xl relative z-10"
                                             />
-                                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white text-black font-black px-6 py-2 rounded-full z-20 whitespace-nowrap shadow-xl">
+                                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white text-black font-black px-6 py-2 rounded-full z-20 whitespace-nowrap shadow-xl text-sm">
                                                 #1 Artist
                                             </div>
                                         </div>
-                                        <h2 className="text-4xl font-black text-white mb-2">{data.topArtist.name}</h2>
+                                        <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">{data.topArtist.name}</h2>
                                         <p className="text-white/60 mb-6">{data.topArtist.count} plays</p>
                                     </>
                                 ) : (
-                                    <p>No Top Artist found</p>
+                                    <p className="text-white/40">No Top Artist found</p>
                                 )}
                             </Slide>
                         )}

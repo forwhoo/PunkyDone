@@ -168,6 +168,7 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history: propH
                                                 setSelectedYear(year);
                                                 setShowYearDropdown(false);
                                                 setSelectedDate(null);
+                                                setSelectedTracks([]);
                                             }}
                                             className={`w-full px-4 py-2 text-left text-[12px] font-medium flex items-center justify-between gap-2 hover:bg-white/5 transition-colors ${year === selectedYear ? 'text-white bg-white/5' : 'text-[#8E8E93]'
                                                 }`}
@@ -210,6 +211,15 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history: propH
                             <span>More</span>
                         </div>
                     </div>
+
+                    {/* Empty State */}
+                    {totalPlays === 0 && fullHistory.length > 0 && (
+                        <div className="flex flex-col items-center justify-center py-8 mt-4 bg-[#1C1C1E]/50 rounded-2xl border border-white/5 animate-in fade-in duration-500">
+                            <Music className="w-6 h-6 text-white/20 mb-2" />
+                            <p className="text-white/40 text-sm font-medium">No listening data for {selectedYear}</p>
+                            <p className="text-white/20 text-xs mt-1">Try selecting a different year</p>
+                        </div>
+                    )}
                 </div>
             </div>
 

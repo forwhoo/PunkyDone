@@ -260,15 +260,19 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                 recencyWeightedPlays += Math.exp(-(now - play) / halfLifeMs);
             }
 
-            // Score components
-            const volumeScore = Math.log1p(totalPlays) * 28;
-            const consistencyScore = Math.min(1, consistency) * 40;
-            const intensityScore = Math.min(1.5, playsPerDay / 3) * 22;
-            const focusScore = Math.min(1.5, sessionIntensity / 4) * 18;
-            const recencyScore = Math.min(1.5, recencyFactor * 1.5) * 20;
-            const momentumScore = recencyWeightedPlays * 6;
+            // Score components - Normalized to 0-100 scale
+            // Volume: How much you listen (log scale for diminishing returns) - Max ~25
+            const volumeScore = Math.min(25, Math.log1p(totalPlays) * 6);
+            // Consistency: How regularly you listen (ratio of active days) - Max 25
+            const consistencyScore = Math.min(25, consistency * 25);
+            // Intensity: Average plays per active day - Max 20
+            const intensityScore = Math.min(20, Math.min(1, playsPerDay / 5) * 20);
+            // Focus: Plays per session (high = obsessed in a session) - Max 15
+            const focusScore = Math.min(15, Math.min(1, sessionIntensity / 6) * 15);
+            // Recency: How recently you listened - Max 15
+            const recencyScore = Math.min(15, recencyFactor * 15);
 
-            const score = volumeScore + consistencyScore + intensityScore + focusScore + recencyScore + momentumScore;
+            const score = volumeScore + consistencyScore + intensityScore + focusScore + recencyScore;
 
             const finalImage = data.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(key)}&background=random`;
             
@@ -375,6 +379,13 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                 </div>
 
                 {/* MAIN ORBIT VIEW */}
+                {trendingItems.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-500">
+                        <Music className="w-10 h-10 text-white/10 mb-4" />
+                        <p className="text-white/30 text-sm font-medium">No data for {selectedYear}</p>
+                        <p className="text-white/15 text-xs mt-1">Try selecting a different year</p>
+                    </div>
+                ) : (
                 <motion.div 
                     layout
                     className="relative w-full max-w-[480px] mx-auto aspect-square select-none scale-[0.65] sm:scale-75 md:scale-100 origin-center md:origin-top mt-[-40px] md:mt-0"
@@ -482,6 +493,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                     <div className="absolute inset-0 rounded-full border border-white/5 opacity-40 scale-[0.96] pointer-events-none"></div>
                     <div className="absolute inset-0 rounded-full border border-white/5 opacity-30 scale-[0.82] pointer-events-none"></div>
                 </motion.div>
+                )}
             </div>
             
             {/* SIDE PANEL VIEW (Replaces Modal) */}

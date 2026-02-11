@@ -1,21 +1,26 @@
 import React from 'react';
-import { Share2, Music, TrendingUp, Clock, Calendar } from 'lucide-react';
+import { Share2, Music, TrendingUp, Clock, Calendar, X, Mic2, Disc } from 'lucide-react';
 
 interface WrappedCardProps {
     data: any[];
     title: string;
     description: string;
     userName?: string;
+    userImage?: string;
     onClose: () => void;
 }
 
-export const WrappedView: React.FC<WrappedCardProps> = ({ data, title, description, userName, onClose }) => {
+export const WrappedView: React.FC<WrappedCardProps> = ({ data, title, description, userName, userImage, onClose }) => {
     // Determine stats from data
-    const totalMins = Math.round(data.reduce((acc, curr) => acc + (curr.totalMinutes || curr.timeStr?.replace('m','')*1 || 0), 0));
+    const totalMins = Math.round(data.reduce((acc, curr) => acc + (curr.totalMinutes || (curr.timeStr ? parseInt(String(curr.timeStr).replace(/[^0-9]/g, ''), 10) : 0) || 0), 0));
     const topItem = data[0];
+    const totalTracks = data.length;
     
     // Determine Type of Wrapped based on data content
-    const isArtistWrapped = data[0]?.type === 'artist' || data[0]?.artist === data[0]?.title;
+    const isArtistWrapped = data[0]?.type === 'artist' || data[0]?.artist === data[0]?.title || data[0]?.artist === data[0]?.name;
+
+    // Get image from item safely
+    const getItemImage = (item: any) => item?.cover || item?.image || item?.album_cover || '';
     
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
@@ -31,89 +36,100 @@ export const WrappedView: React.FC<WrappedCardProps> = ({ data, title, descripti
                 {/* Close Button */}
                 <button 
                     onClick={onClose}
-                    className="absolute top-8 right-6 z-30 text-white/50 hover:text-white p-2"
+                    className="absolute top-8 right-6 z-30 bg-white/10 hover:bg-white/20 rounded-full p-2 text-white/60 hover:text-white transition-all"
                 >
-                    ✕
+                    <X size={16} />
                 </button>
 
                 {/* Content Container */}
-                <div className="flex-1 flex flex-col relative p-8">
+                <div className="flex-1 flex flex-col relative p-6 sm:p-8 overflow-y-auto no-scrollbar">
                     
-                    {/* Header */}
-                    <div className="mt-12 mb-8">
-                        <span className="text-white font-bold tracking-widest text-xs uppercase mb-2 block animate-in slide-in-from-left duration-700">Punky Wrapped</span>
-                        <h1 className="text-4xl font-black text-white leading-tight mb-4 animate-in slide-in-from-bottom duration-700 delay-100">
+                    {/* Header with Profile */}
+                    <div className="mt-10 mb-6">
+                        <div className="flex items-center gap-3 mb-4 animate-in slide-in-from-left duration-700">
+                            {userImage && (
+                                <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20 flex-shrink-0">
+                                    <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+                                </div>
+                            )}
+                            <span className="text-white/60 font-bold tracking-widest text-[10px] uppercase">
+                                {userName ? `${userName}'s Wrapped` : 'Your Wrapped'}
+                            </span>
+                        </div>
+                        <h1 className="text-3xl sm:text-4xl font-black text-white leading-tight mb-3 animate-in slide-in-from-bottom duration-700 delay-100">
                             {title}
                         </h1>
-                        <p className="text-white/60 text-lg font-medium leading-relaxed animate-in slide-in-from-bottom duration-700 delay-200">
+                        <p className="text-white/50 text-base font-medium leading-relaxed animate-in slide-in-from-bottom duration-700 delay-200">
                             {description}
                         </p>
                     </div>
 
-                    {/* Main Visual / Chart */}
-                    <div className="flex-1 flex flex-col items-center justify-center mb-8 relative">
+                    {/* Main Visual */}
+                    <div className="flex flex-col items-center justify-center mb-6 relative">
                          {/* Background Glow */}
-                         <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent blur-3xl opacity-30"></div>
+                         <div className="absolute inset-0 bg-gradient-to-t from-white/5 to-transparent blur-3xl opacity-20"></div>
                          
                          {topItem && (
-                            <div className="relative w-64 h-64 mb-8 group animate-in zoom-in duration-1000 delay-300">
-                                <div className="absolute inset-0 bg-white rounded-full blur-2xl opacity-10 group-hover:opacity-30 transition-opacity"></div>
+                            <div className="relative w-48 h-48 sm:w-56 sm:h-56 mb-10 group animate-in zoom-in duration-1000 delay-300">
+                                <div className={`absolute inset-0 bg-white ${isArtistWrapped ? 'rounded-full' : 'rounded-2xl'} blur-2xl opacity-10 group-hover:opacity-20 transition-opacity`}></div>
                                 <img 
-                                    src={topItem.cover || topItem.image} 
+                                    src={getItemImage(topItem)} 
                                     className={`w-full h-full object-cover shadow-2xl border-2 border-white/10 ${isArtistWrapped ? 'rounded-full' : 'rounded-2xl'}`}
-                                    alt="Top Item"
+                                    alt={topItem.title || topItem.name || 'Top Item'}
                                 />
-                                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-white text-black font-black px-6 py-2 rounded-full text-xl shadow-xl whitespace-nowrap">
-                                    #1 {isArtistWrapped ? topItem.title : 'Track'}
+                                <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-white text-black font-black px-5 py-1.5 rounded-full text-sm shadow-xl whitespace-nowrap">
+                                    #1 {isArtistWrapped ? (topItem.title || topItem.name) : 'Track'}
                                 </div>
                             </div>
                          )}
                          
                          {/* Stats Grid */}
-                         <div className="grid grid-cols-2 gap-4 w-full animate-in slide-in-from-bottom duration-700 delay-500">
-                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
-                                <div className="flex items-center gap-2 text-white mb-1">
-                                    <Clock className="w-4 h-4" />
-                                    <span className="text-xs font-bold uppercase">Time</span>
-                                </div>
-                                <span className="text-2xl font-bold text-white">{totalMins}m</span>
+                         <div className="grid grid-cols-3 gap-3 w-full animate-in slide-in-from-bottom duration-700 delay-500">
+                            <div className="bg-white/5 p-3 rounded-2xl border border-white/5 backdrop-blur-sm text-center">
+                                <Clock className="w-4 h-4 text-[#FA2D48] mx-auto mb-1.5" />
+                                <span className="text-xl font-black text-white block">{totalMins}</span>
+                                <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold">Minutes</span>
                             </div>
-                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-sm">
-                                <div className="flex items-center gap-2 text-white mb-1">
-                                    <TrendingUp className="w-4 h-4" />
-                                    <span className="text-xs font-bold uppercase">Top Genre</span>
-                                </div>
-                                <span className="text-lg font-bold text-white truncate w-full block">Pop</span> 
-                                {/* Placeholder for genre as it's not in track stats usually */}
+                            <div className="bg-white/5 p-3 rounded-2xl border border-white/5 backdrop-blur-sm text-center">
+                                <Disc className="w-4 h-4 text-[#FA2D48] mx-auto mb-1.5" />
+                                <span className="text-xl font-black text-white block">{totalTracks}</span>
+                                <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold">Tracks</span>
+                            </div>
+                            <div className="bg-white/5 p-3 rounded-2xl border border-white/5 backdrop-blur-sm text-center">
+                                <Mic2 className="w-4 h-4 text-[#FA2D48] mx-auto mb-1.5" />
+                                <span className="text-xl font-black text-white block">{new Set(data.map(d => d.artist)).size}</span>
+                                <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold">Artists</span>
                             </div>
                          </div>
                     </div>
 
                     {/* List */}
-                    <div className="space-y-3 pb-8 animate-in slide-in-from-bottom duration-700 delay-700">
-                        {data.slice(0, 3).map((item, idx) => (
-                            <div key={idx} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/5">
-                                <span className="font-bold text-white/30 text-lg w-4 text-center">{idx + 1}</span>
-                                <img src={item.cover} className="w-10 h-10 rounded-md object-cover bg-black/50" />
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-white font-bold text-sm truncate">{item.title}</h3>
-                                    <p className="text-white/50 text-xs truncate">{item.artist}</p>
+                    <div className="space-y-2 pb-4 animate-in slide-in-from-bottom duration-700 delay-700">
+                        {data.slice(0, 5).map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/5">
+                                <span className="font-black text-white/20 text-sm w-5 text-center flex-shrink-0">{idx + 1}</span>
+                                <div className={`w-10 h-10 ${isArtistWrapped ? 'rounded-full' : 'rounded-lg'} overflow-hidden bg-[#2C2C2E] flex-shrink-0`}>
+                                    <img src={getItemImage(item)} className="w-full h-full object-cover" alt={item.title || item.name} />
                                 </div>
-                                <span className="text-white/70 text-xs font-mono">{item.timeStr || item.listens}</span>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-white font-semibold text-[13px] truncate">{item.title || item.name}</h3>
+                                    <p className="text-white/40 text-[11px] truncate">{item.artist}</p>
+                                </div>
+                                <span className="text-white/50 text-[11px] font-medium flex-shrink-0">{item.timeStr || `${item.listens || item.totalListens || 0}p`}</span>
                             </div>
                         ))}
                     </div>
 
                 </div>
 
-                {/* Footer / postcard action */}
-                <div className="p-6 bg-[#111] border-t border-white/5 flex gap-3 animate-in fade-in duration-1000 delay-1000">
-                    <button className="flex-1 py-4 rounded-xl bg-white text-black font-bold text-sm tracking-widest uppercase hover:bg-gray-200 transition-all active:scale-95 flex items-center justify-center gap-2">
-                        <Share2 className="w-4 h-4" />
-                        Share Postcard
+                {/* Footer */}
+                <div className="p-5 bg-[#111] border-t border-white/5 flex gap-3 animate-in fade-in duration-1000 delay-1000 flex-shrink-0">
+                    <button className="flex-1 py-3.5 rounded-2xl bg-white text-black font-bold text-xs tracking-widest uppercase hover:bg-gray-200 transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <Share2 className="w-3.5 h-3.5" />
+                        Share
                     </button>
-                    <button onClick={onClose} className="px-6 py-4 rounded-xl bg-white/10 text-white font-bold text-sm tracking-widest uppercase hover:bg-white/20 transition-all">
-                        Skip
+                    <button onClick={onClose} className="px-5 py-3.5 rounded-2xl bg-white/10 text-white font-bold text-xs tracking-widest uppercase hover:bg-white/20 transition-all">
+                        Close
                     </button>
                 </div>
             </div>
