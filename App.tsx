@@ -37,7 +37,7 @@ const RankedAlbum = ({ album, rank, onClick }: { album: Album, rank: number, onC
         </span>
         <div className="relative z-10 ml-10 md:ml-12">
             <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
-                <img src={album.cover} alt={album.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
+                <img src={album.cover} alt={album.title} loading="lazy" className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
                      <span className="text-white font-bold text-xl drop-shadow-md">{album.timeStr}</span>
@@ -65,6 +65,7 @@ const RankedArtist = ({ artist, rank, realImage, onClick }: { artist: Artist, ra
                 <img 
                     src={realImage || artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
                     alt={artist.name} 
+                    loading="lazy"
                     className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" 
                 />
                 {/* Hover Overlay */}
@@ -90,7 +91,7 @@ const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick
         </span>
         <div className="relative z-10 ml-10 md:ml-12">
             <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
-                <img src={song.cover} alt={song.title} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
+                <img src={song.cover} alt={song.title} loading="lazy" className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
                      <span className="text-white font-bold text-xl drop-shadow-md">{song.timeStr}</span>
@@ -101,6 +102,49 @@ const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick
                 <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">{song.artist} • <span className="text-white/60">{song.timeStr}</span></p>
             </div>
         </div>
+    </div>
+);
+
+const MobileHeroCard = ({ title, subtitle }: { title: string; subtitle: string }) => (
+    <div className="glass-morph rounded-[24px] p-6 shadow-xl border border-white/[0.12]">
+        <p className="text-[10px] uppercase tracking-[0.25em] text-white/50 mb-2.5 font-bold">Muse Analytics</p>
+        <h1 className="text-[22px] font-bold text-white leading-tight">{title}</h1>
+        <p className="text-[13px] text-white/60 mt-2.5 leading-relaxed">{subtitle}</p>
+    </div>
+);
+
+const MobileArtistCard = ({ artist, rank, image, onClick }: { artist: Artist; rank: number; image?: string; onClick?: () => void }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className="relative w-[210px] h-[270px] shrink-0 snap-start rounded-[28px] overflow-hidden shadow-2xl border border-white/10 bg-[#1C1C1E]/90"
+    >
+        <img
+            src={image || artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`}
+            alt={artist.name}
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/70" />
+        <div className="absolute top-3 left-3 text-white text-2xl font-semibold drop-shadow-lg">{rank}</div>
+        <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
+            <p className="text-lg font-semibold text-white leading-tight">{artist.name}</p>
+            <p className="text-sm text-white/70">{artist.timeStr}</p>
+        </div>
+    </button>
+);
+
+const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; cover: string; title: string; subtitle: string; meta?: string }) => (
+    <div className="flex items-center gap-3 py-3 active:bg-white/5 transition-colors rounded-xl px-1">
+        <div className="w-7 text-center text-sm font-bold text-white/60 flex-shrink-0">{rank}</div>
+        <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/10 flex-shrink-0 shadow-md">
+            <img src={cover} alt={title} loading="lazy" className="w-full h-full object-cover" />
+        </div>
+        <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-semibold text-white truncate leading-tight">{title}</p>
+            <p className="text-xs text-white/50 truncate mt-0.5">{subtitle}</p>
+        </div>
+        {meta && <div className="text-[11px] text-white/40 whitespace-nowrap font-medium flex-shrink-0">{meta}</div>}
     </div>
 );
 
@@ -564,217 +608,364 @@ function App() {
   return (
     <>
     <Layout user={data.user} currentTrack={data.currentTrack}>
-        
-        {/* SECTION 1: AI DISCOVERY - Clean Centered Design */}
-        <div className="mb-24 mt-8">
-            <AISpotlight 
-                token={token}
-                history={safeRecent}
-                user={data.user}
-                contextData={{
-                    userName: data.user?.display_name,
-                    artists: safeArtists.map((a: Artist, idx: number) => {
-                        const time = String(a.timeStr || '');
-                        const mins = time.replace('m', '');
-                        // Include Rank for AI
-                        return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
-                    }),
-                    albums: safeAlbums.map((a: Album, idx: number) => {
-                        const time = String(a.timeStr || '');
-                        const mins = time.replace('m', '');
-                        return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
-                    }),
-                    songs: safeSongs.map((s: Song, idx: number) => {
-                        const time = String(s.timeStr || '');
-                        const mins = time.replace('m', '');
-                        return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
-                    }),
-                    globalStats: dbStats
-                }} 
-            />
-        </div>
-
-        {/* SECTION 2: TOP RANKINGS - Prominent Showcase */}
-        <div className="mb-20">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 px-1">
-                <div>
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Your Top Charts</h2>
-                    <p className="text-[#8E8E93] text-sm mt-1">Your most played this {timeRange.toLowerCase()}</p>
+        <div className="md:hidden space-y-10 safe-area-bottom safe-area-top safe-area-x px-4">
+            <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-[10px] uppercase tracking-[0.25em] text-white/40 font-bold">Mobile Wrapped</p>
+                        <h2 className="text-[26px] font-bold text-white mt-1">Hey {data.user?.display_name || 'there'}</h2>
+                    </div>
+                    {data.user?.images?.[0]?.url && (
+                        <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 shadow-xl">
+                            <img src={data.user.images[0].url} alt={data.user.display_name} loading="lazy" className="w-full h-full object-cover" />
+                        </div>
+                    )}
                 </div>
-                <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-1">
-                    {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
-                        <button 
-                            key={range}
-                            onClick={() => {
-                                setTimeRange(range);
-                                fetchDashboardStats(range).then(data => setDbUnifiedData(data));
-                            }}
-                            className={`px-3 sm:px-4 py-2 rounded-full text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
-                                timeRange === range 
-                                    ? 'bg-white text-black shadow-lg shadow-white/10' 
-                                    : 'bg-[#1C1C1E] text-[#8E8E93] hover:text-white border border-white/10 hover:border-white/20'
-                            }`}
-                        >
-                            {range === 'All Time' ? 'All' : range}
-                        </button>
-                    ))}
-                </div>
+                <MobileHeroCard
+                    title={`Your ${timeRange.toLowerCase()} pulse`}
+                    subtitle="Fresh stats, clean layouts, and a glassy glow built for mobile."
+                />
             </div>
-            
+
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
+                    <button
+                        key={range}
+                        onClick={() => {
+                            setTimeRange(range);
+                            fetchDashboardStats(range).then(data => setDbUnifiedData(data));
+                        }}
+                        className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                            timeRange === range
+                                ? 'bg-white text-black'
+                                : 'bg-white/10 text-white/70 border border-white/10'
+                        }`}
+                    >
+                        {range}
+                    </button>
+                ))}
+            </div>
+
             {showEmptyState ? (
-                <div className="flex flex-col items-center justify-center py-20 bg-[#1C1C1E] rounded-3xl border border-white/5 animate-in fade-in zoom-in-95 duration-500">
-                    <Music size={48} className="text-white/20 mb-4" />
-                    <h3 className="text-xl font-bold text-white">No data for this period</h3>
-                    <p className="text-[#8E8E93] max-w-sm text-center mt-2">
-                        Start listening to music to see your {timeRange.toLowerCase()} stats appear here!
+                <div className="flex flex-col items-center justify-center py-16 bg-[#1C1C1E] rounded-3xl border border-white/5 animate-in fade-in zoom-in-95 duration-500 text-center">
+                    <Music size={40} className="text-white/20 mb-3" />
+                    <h3 className="text-lg font-bold text-white">No data yet</h3>
+                    <p className="text-[#8E8E93] text-sm mt-2 px-6">
+                        Start listening to music to see your {timeRange.toLowerCase()} stats appear here.
                     </p>
                 </div>
             ) : (
-            <div key={timeRange} className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
-                {/* TOP ARTISTS */}
-                <div>
-                    <div className="flex justify-between items-center mb-6 px-1">
-                        <div className="flex items-center gap-3">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Artists</h3>
+                <>
+                    <section className="space-y-5">
+                        <div className="flex items-center justify-between px-1">
+                            <h3 className="text-lg font-bold text-white">Your Top Artists</h3>
+                            {safeArtists.length > 0 && (
+                                <button
+                                    onClick={() => setSeeAllModal({
+                                        isOpen: true,
+                                        title: 'Top Artists',
+                                        items: safeArtists,
+                                        type: 'artist'
+                                    })}
+                                    className="text-xs font-bold text-white/60 uppercase tracking-wider hover:text-white transition-colors"
+                                >
+                                    See all
+                                </button>
+                            )}
                         </div>
-                        {safeArtists.length > 0 && (
-                        <button 
-                            onClick={() => setSeeAllModal({ 
-                                isOpen: true, 
-                                title: 'Top Artists', 
-                                items: safeArtists,
-                                type: 'artist' 
-                            })}
-                            className="text-xs font-bold text-white hover:text-white/70 transition-colors uppercase tracking-wider"
-                        >
-                            See All
-                        </button>
+                        {safeArtists.length > 0 ? (
+                            <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
+                                {safeArtists.slice(0, 6).map((artist: Artist, index: number) => (
+                                    <MobileArtistCard
+                                        key={artist.id}
+                                        artist={artist}
+                                        rank={index + 1}
+                                        image={artistImages[artist.name]}
+                                        onClick={() => setSelectedTopArtist(artist)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[#8E8E93] text-sm italic px-1">Not enough data to rank artists yet.</p>
                         )}
-                    </div>
-                    {safeArtists.length > 0 ? (
-                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                            {safeArtists.slice(0, 8).map((artist: Artist, index: number) => (
-                                <RankedArtist 
-                                    key={artist.id} 
-                                    artist={artist} 
-                                    rank={index + 1} 
-                                    realImage={artistImages[artist.name]} 
-                                    onClick={() => setSelectedTopArtist(artist)}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank artists yet.</p>
-                    )}
-                </div>
+                    </section>
 
-                {/* TOP ALBUMS */}
-                <div>
-                    <div className="flex justify-between items-center mb-6 px-1">
-                        <div className="flex items-center gap-3">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
+                    <section className="space-y-5">
+                        <div className="flex items-center justify-between px-1">
+                            <h3 className="text-lg font-bold text-white">Top Songs</h3>
+                            {safeSongs.length > 0 && (
+                                <button
+                                    onClick={() => setSeeAllModal({
+                                        isOpen: true,
+                                        title: 'Top Songs',
+                                        items: safeSongs,
+                                        type: 'song'
+                                    })}
+                                    className="text-xs font-bold text-white/60 uppercase tracking-wider hover:text-white transition-colors"
+                                >
+                                    See all
+                                </button>
+                            )}
                         </div>
-                        {safeAlbums.length > 0 && (
-                        <button 
-                            onClick={() => setSeeAllModal({ 
-                                isOpen: true, 
-                                title: 'Top Albums', 
-                                items: safeAlbums,
-                                type: 'album' 
-                            })}
-                            className="text-xs font-bold text-white hover:text-white/70 transition-colors uppercase tracking-wider"
-                        >
-                            See All
-                        </button>
+                        <div className="glass-morph rounded-[24px] px-4 py-2">
+                            {safeSongs.length > 0 ? (
+                                safeSongs.slice(0, 6).map((song: Song, index: number) => (
+                                    <MobileListRow
+                                        key={song.id}
+                                        rank={index + 1}
+                                        cover={song.cover}
+                                        title={song.title}
+                                        subtitle={song.artist}
+                                        meta={song.timeStr}
+                                    />
+                                ))
+                            ) : (
+                                <p className="text-[#8E8E93] text-sm py-8 text-center italic">Not enough data to rank songs yet.</p>
+                            )}
+                        </div>
+                    </section>
+
+                    <section className="space-y-5">
+                        <div className="flex items-center justify-between px-1">
+                            <h3 className="text-lg font-bold text-white">Top Albums</h3>
+                            {safeAlbums.length > 0 && (
+                                <button
+                                    onClick={() => setSeeAllModal({
+                                        isOpen: true,
+                                        title: 'Top Albums',
+                                        items: safeAlbums,
+                                        type: 'album'
+                                    })}
+                                    className="text-xs font-bold text-white/70 uppercase tracking-wider"
+                                >
+                                    See all
+                                </button>
+                            )}
+                        </div>
+                        {safeAlbums.length > 0 ? (
+                            <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
+                                {safeAlbums.slice(0, 6).map((album: Album, index: number) => (
+                                    <div key={album.id} className="w-[140px] shrink-0 snap-start group">
+                                        <div className="relative w-full h-[140px] rounded-[20px] overflow-hidden shadow-xl border-2 border-white/[0.08] active:scale-95 transition-transform">
+                                            <img src={album.cover} alt={album.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                            <div className="absolute top-2.5 left-2.5 text-white text-base font-bold bg-black/40 backdrop-blur-sm w-7 h-7 rounded-full flex items-center justify-center">{index + 1}</div>
+                                        </div>
+                                        <p className="mt-2.5 text-[13px] font-semibold text-white truncate">{album.title}</p>
+                                        <p className="text-[11px] text-white/50 truncate">{album.artist}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[#8E8E93] text-sm italic px-1">Not enough data to rank albums yet.</p>
                         )}
-                    </div>
-                    {safeAlbums.length > 0 ? (
-                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                            {safeAlbums.slice(0, 8).map((album: Album, index: number) => (
-                                <RankedAlbum 
-                                    key={album.id} 
-                                    album={album} 
-                                    rank={index + 1} 
-                                    onClick={() => setSelectedTopAlbum(album)}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank albums yet.</p>
-                    )}
-                </div>
-
-                {/* TOP SONGS */}
-                <div>
-                    <div className="flex justify-between items-center mb-6 px-1">
-                        <div className="flex items-center gap-3">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
-                        </div>
-                        {safeSongs.length > 0 && (
-                        <button 
-                            onClick={() => setSeeAllModal({ 
-                                isOpen: true, 
-                                title: 'Top Songs', 
-                                items: safeSongs,
-                                type: 'song' 
-                            })}
-                            className="text-xs font-bold text-white hover:text-white/70 transition-colors uppercase tracking-wider"
-                        >
-                            See All
-                        </button>
-                        )}
-                    </div>
-                    {safeSongs.length > 0 ? (
-                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                            {safeSongs.slice(0, 8).map((song: Song, index: number) => (
-                                <RankedSong 
-                                    key={song.id} 
-                                    song={song} 
-                                    rank={index + 1} 
-                                    onClick={() => setSelectedTopSong(song)}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank songs yet.</p>
-                    )}
-                </div>
-
-                {/* UPCOMING ARTISTS */}
-                <UpcomingArtists 
-                    recentPlays={safeRecent} 
-                    topArtists={safeArtists} 
-                    artistImages={artistImages} 
-                />
-
-            </div>
+                    </section>
+                </>
             )}
         </div>
 
-        {/* SECTION 3: ORBIT + ANALYTICS DASHBOARD */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-20">
-            {/* LEFT: OBSESSION ORBIT */}
-            <div className="rounded-3xl p-6 relative overflow-hidden min-h-[600px] border-none bg-transparent">
-                
-                <TrendingArtists 
-                    artists={safeArtists}
-                    albums={safeAlbums}
-                    songs={safeSongs}
-                    recentPlays={safeRecent}
-                    artistImages={artistImages}
-                    timeRange={timeRange}
+        <div className="hidden md:block">
+            {/* SECTION 1: AI DISCOVERY - Clean Centered Design */}
+            <div className="mb-24 mt-8">
+                <AISpotlight 
+                    token={token}
+                    history={safeRecent}
+                    user={data.user}
+                    contextData={{
+                        userName: data.user?.display_name,
+                        artists: safeArtists.map((a: Artist, idx: number) => {
+                            const time = String(a.timeStr || '');
+                            const mins = time.replace('m', '');
+                            // Include Rank for AI
+                            return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
+                        }),
+                        albums: safeAlbums.map((a: Album, idx: number) => {
+                            const time = String(a.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
+                        }),
+                        songs: safeSongs.map((s: Song, idx: number) => {
+                            const time = String(s.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
+                        }),
+                        globalStats: dbStats
+                    }} 
                 />
             </div>
 
-            {/* RIGHT: CHARTS + ARCHIVE */}
-            <div className="space-y-8">
+            {/* SECTION 2: TOP RANKINGS - Prominent Showcase */}
+            <div className="mb-20">
+                <div className="flex items-center justify-between mb-8 px-1">
+                    <div>
+                        <h2 className="text-2xl font-bold text-white tracking-tight">Your Top Charts</h2>
+                        <p className="text-[#8E8E93] text-sm mt-1">Your most played this {timeRange.toLowerCase()}</p>
+                    </div>
+                    <div className="flex gap-2">
+                        {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
+                            <button 
+                                key={range}
+                                onClick={() => {
+                                    setTimeRange(range);
+                                    fetchDashboardStats(range).then(data => setDbUnifiedData(data));
+                                }}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                                    timeRange === range 
+                                        ? 'bg-white text-black' 
+                                        : 'bg-[#1C1C1E] text-[#8E8E93] hover:text-white border border-white/10'
+                                }`}
+                            >
+                                {range}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                
+                {showEmptyState ? (
+                    <div className="flex flex-col items-center justify-center py-20 bg-[#1C1C1E] rounded-3xl border border-white/5 animate-in fade-in zoom-in-95 duration-500">
+                        <Music size={48} className="text-white/20 mb-4" />
+                        <h3 className="text-xl font-bold text-white">No data for this period</h3>
+                        <p className="text-[#8E8E93] max-w-sm text-center mt-2">
+                            Start listening to music to see your {timeRange.toLowerCase()} stats appear here!
+                        </p>
+                    </div>
+                ) : (
+                <div key={timeRange} className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
+                    {/* TOP ARTISTS */}
+                    <div>
+                        <div className="flex justify-between items-center mb-6 px-1">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-[20px] font-bold text-white tracking-tight">Top Artists</h3>
+                            </div>
+                            {safeArtists.length > 0 && (
+                            <button 
+                                onClick={() => setSeeAllModal({ 
+                                    isOpen: true, 
+                                    title: 'Top Artists', 
+                                    items: safeArtists,
+                                    type: 'artist' 
+                                })}
+                                className="text-xs font-bold text-white hover:text-white/70 transition-colors uppercase tracking-wider"
+                            >
+                                See All
+                            </button>
+                            )}
+                        </div>
+                        {safeArtists.length > 0 ? (
+                            <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                                {safeArtists.slice(0, 8).map((artist: Artist, index: number) => (
+                                    <RankedArtist 
+                                        key={artist.id} 
+                                        artist={artist} 
+                                        rank={index + 1} 
+                                        realImage={artistImages[artist.name]} 
+                                        onClick={() => setSelectedTopArtist(artist)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank artists yet.</p>
+                        )}
+                    </div>
+
+                    {/* TOP ALBUMS */}
+                    <div>
+                        <div className="flex justify-between items-center mb-6 px-1">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
+                            </div>
+                            {safeAlbums.length > 0 && (
+                            <button 
+                                onClick={() => setSeeAllModal({ 
+                                    isOpen: true, 
+                                    title: 'Top Albums', 
+                                    items: safeAlbums,
+                                    type: 'album' 
+                                })}
+                                className="text-xs font-bold text-white hover:text-white/70 transition-colors uppercase tracking-wider"
+                            >
+                                See All
+                            </button>
+                            )}
+                        </div>
+                        {safeAlbums.length > 0 ? (
+                            <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                                {safeAlbums.slice(0, 8).map((album: Album, index: number) => (
+                                    <RankedAlbum key={album.id} album={album} rank={index + 1} />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank albums yet.</p>
+                        )}
+                    </div>
+
+                    {/* TOP SONGS */}
+                    <div>
+                        <div className="flex justify-between items-center mb-6 px-1">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
+                            </div>
+                            {safeSongs.length > 0 && (
+                            <button 
+                                onClick={() => setSeeAllModal({ 
+                                    isOpen: true, 
+                                    title: 'Top Songs', 
+                                    items: safeSongs,
+                                    type: 'song' 
+                                })}
+                                className="text-xs font-bold text-white hover:text-white/70 transition-colors uppercase tracking-wider"
+                            >
+                                See All
+                            </button>
+                            )}
+                        </div>
+                        {safeSongs.length > 0 ? (
+                            <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                                {safeSongs.slice(0, 8).map((song: Song, index: number) => (
+                                    <RankedSong key={song.id} song={song} rank={index + 1} />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank songs yet.</p>
+                        )}
+                    </div>
+
+                    {/* UPCOMING ARTISTS */}
+                    <UpcomingArtists 
+                        recentPlays={safeRecent} 
+                        topArtists={safeArtists} 
+                        artistImages={artistImages} 
+                    />
+
+                </div>
+                )}
+            </div>
+
+            {/* SECTION 3: ORBIT + ANALYTICS DASHBOARD */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-20">
+                {/* LEFT: OBSESSION ORBIT */}
+                <div className="rounded-3xl p-6 relative overflow-hidden min-h-[600px] border-none bg-transparent">
+                    
+                    <TrendingArtists 
+                        artists={safeArtists}
+                        albums={safeAlbums}
+                        songs={safeSongs}
+                        recentPlays={safeRecent}
+                        artistImages={artistImages}
+                        timeRange={timeRange}
+                    />
+                </div>
+
+                {/* RIGHT: CHARTS + ARCHIVE */}
+                <div className="space-y-8">
+                </div>
+                
             </div>
             
-        </div>
-        
-        {/* Activity Heatmap - Bottom */}
-        <div className="mb-24 px-1">
-             <ActivityHeatmap history={safeRecent} />
+            {/* Activity Heatmap - Bottom */}
+            <div className="mb-24 px-1">
+                 <ActivityHeatmap history={safeRecent} />
+            </div>
         </div>
 
     </Layout>
@@ -795,101 +986,79 @@ function App() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] bg-black"
+                className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-6 backdrop-blur-3xl bg-black/90"
                 onClick={() => setSelectedTopArtist(null)}
             >
-                {/* Background Image with Blur */}
-                <div className="absolute inset-0 overflow-hidden">
-                    <img 
-                        src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || ''} 
-                        className="w-full h-full object-cover scale-110 blur-3xl opacity-30"
-                        alt=""
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
-                </div>
-
-                {/* Content */}
-                <motion.div 
-                    initial={{ y: 50, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 50, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="relative h-full overflow-y-auto no-scrollbar"
+                <div 
+                    className="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto no-scrollbar flex flex-col items-center" 
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Close Button */}
                     <button 
                         onClick={() => setSelectedTopArtist(null)}
-                        className="fixed top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/10"
+                        className="absolute top-2 right-2 md:top-0 md:right-0 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/[0.08]"
                     >
                         <X size={18} />
                     </button>
 
-                    {/* Hero Section */}
-                    <div className="flex flex-col items-center pt-16 sm:pt-20 pb-8 px-4">
-                        {/* Artist Image */}
-                        <motion.div 
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
-                            className="relative mb-6"
-                        >
-                            <div className="w-36 h-36 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-full overflow-hidden ring-4 ring-white/10 shadow-2xl">
-                                <img 
-                                    src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${selectedTopArtist.name}&background=1C1C1E&color=fff`} 
-                                    className="w-full h-full object-cover" 
-                                    alt={selectedTopArtist.name}
-                                />
-                            </div>
+                    {/* Artist Spotlight Image (Unblurred & Centered) */}
+                    <motion.div 
+                        initial={{ scale: 0.85, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", stiffness: 220, damping: 22 }}
+                        className="relative z-10 mb-10 group"
+                    >
+                        <div className="w-48 h-48 md:w-64 md:h-64 rounded-full p-2 border-2 border-white/[0.12] bg-black shadow-2xl relative overflow-visible">
+                            <div className="absolute inset-0 rounded-full bg-white blur-3xl opacity-10 group-hover:opacity-25 transition-opacity duration-700"></div>
+                            <img 
+                                src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${selectedTopArtist.name}`} 
+                                className="w-full h-full object-cover rounded-full shadow-[0_30px_60px_rgba(0,0,0,0.6)] bg-[#1C1C1E]" 
+                                alt={selectedTopArtist.name}
+                            />
+                            
                             {/* Rank Badge */}
-                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 rounded-full font-bold text-xs shadow-xl">
+                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white text-black px-5 py-1.5 rounded-full font-black text-sm shadow-xl border-2 border-black/10 whitespace-nowrap">
                                 #{safeArtists.findIndex((a: Artist) => a.id === selectedTopArtist.id) + 1 || '?'}
                             </div>
-                        </motion.div>
+                        </div>
+                    </motion.div>
 
-                        {/* Artist Name */}
-                        <motion.h1 
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.15 }}
-                            className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight mb-2"
-                        >
-                            {selectedTopArtist.name}
-                        </motion.h1>
-
-                        {/* Time Spent Badge */}
-                        <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="flex items-center gap-2 text-[#FA2D48] text-sm font-semibold"
-                        >
-                            <Clock size={14} />
-                            <span>{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', ' minutes') : '0 minutes'}</span>
-                        </motion.div>
-                    </div>
+                    {/* Artist Name */}
+                    <motion.h2 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="text-3xl md:text-4xl font-black text-white text-center mb-8 tracking-tight px-4"
+                    >
+                        {selectedTopArtist.name}
+                    </motion.h2>
 
                     {/* Stats Cards */}
                     <motion.div 
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.25 }}
-                        className="grid grid-cols-3 gap-2 sm:gap-3 px-4 sm:px-6 max-w-lg mx-auto mb-8"
+                        transition={{ delay: 0.15 }}
+                        className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-2xl mb-10 px-3"
                     >
-                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-col items-center text-center">
-                            <TrendingUp size={16} className="text-[#FA2D48] mb-1.5" />
-                            <span className="text-lg sm:text-xl font-bold text-white">{selectedTopArtist.totalListens || 0}</span>
-                            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#8E8E93]">Plays</span>
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-all hover:scale-105 active:scale-95">
+                            <TrendingUp size={18} className="text-white mb-2 opacity-80" />
+                            <span className="text-xl md:text-2xl font-black text-white mb-0.5">{selectedTopArtist.totalListens || 0}</span>
+                            <span className="text-[9px] uppercase tracking-[0.1em] text-[#8E8E93] font-bold">Total Plays</span>
                         </div>
-                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-col items-center text-center">
-                            <Calendar size={16} className="text-[#FA2D48] mb-1.5" />
-                            <span className="text-lg sm:text-xl font-bold text-white">{selectedArtistStats?.peakDay || '—'}</span>
-                            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#8E8E93]">Peak</span>
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-all hover:scale-105 active:scale-95">
+                            <Clock size={18} className="text-white mb-2 opacity-80" />
+                            <span className="text-xl md:text-2xl font-black text-white mb-0.5">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
+                            <span className="text-[9px] uppercase tracking-[0.1em] text-[#8E8E93] font-bold">Minutes</span>
                         </div>
-                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-col items-center text-center">
-                            <Sparkles size={16} className="text-[#FA2D48] mb-1.5" />
-                            <span className="text-lg sm:text-xl font-bold text-white">{selectedArtistStats?.popularityScore || 0}%</span>
-                            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#8E8E93]">Share</span>
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-all hover:scale-105 active:scale-95">
+                            <Calendar size={18} className="text-white mb-2 opacity-80" />
+                            <span className="text-xl md:text-2xl font-black text-white mb-0.5">{selectedArtistStats?.peakDay || '—'}</span>
+                            <span className="text-[9px] uppercase tracking-[0.1em] text-[#8E8E93] font-bold">Peak Day</span>
+                        </div>
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:bg-[#2C2C2E] transition-all hover:scale-105 active:scale-95">
+                            <Sparkles size={18} className="text-white mb-2 opacity-80" />
+                            <span className="text-xl md:text-2xl font-black text-white mb-0.5">{selectedArtistStats?.popularityScore || 0}%</span>
+                            <span className="text-[9px] uppercase tracking-[0.1em] text-[#8E8E93] font-bold">Popularity</span>
                         </div>
                     </motion.div>
 
@@ -897,178 +1066,36 @@ function App() {
                     <motion.div 
                         initial={{ opacity: 0, y: 40 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="px-4 sm:px-6 pb-20 max-w-2xl mx-auto"
+                        transition={{ delay: 0.2 }}
+                        className="w-full max-w-2xl bg-gradient-to-b from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-3xl p-5 md:p-7 mx-3"
                     >
-                        <h3 className="text-sm font-bold text-[#8E8E93] uppercase tracking-wider mb-4 flex items-center gap-2">
-                            <Disc size={14} /> Top Tracks
-                        </h3>
+                         <h3 className="text-base md:text-lg font-bold text-white mb-5 flex items-center gap-2">
+                            <Disc size={16} className="text-white opacity-80" /> Top Tracks
+                         </h3>
                          
-                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5">
+                         <div className="space-y-1.5">
                             {(dbUnifiedData?.songs || [])
                                 .filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name)
                                 .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
                                 .slice(0, 5)
                                 .map((song: any, idx: number) => (
-                                    <div key={idx} className="flex items-center gap-3 p-3 sm:p-4 hover:bg-white/5 transition-colors">
-                                        <span className="text-[#8E8E93] font-mono text-xs w-5 text-center">{idx + 1}</span>
-                                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0">
+                                    <div key={idx} className="flex items-center gap-3 p-2.5 md:p-3 hover:bg-white/5 rounded-xl transition-all group active:scale-98">
+                                        <div className="text-[#8E8E93] font-mono text-sm w-5 font-bold">{idx + 1}</div>
+                                        <div className="w-11 h-11 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 relative border border-white/5">
                                             <img src={song.cover || song.album_cover} className="w-full h-full object-cover" alt={song.title} />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <div className="text-sm font-semibold text-white truncate">
+                                            <div className="text-[13px] md:text-sm font-bold text-white truncate">
                                                 {song.track_name || song.title}
                                             </div>
-                                            <div className="text-xs text-[#8E8E93]">
-                                                {song.listens || song.plays || 0} plays
+                                            <div className="text-[11px] text-[#8E8E93] font-medium">
+                                                    {song.listens || song.plays || 0} plays • {song.timeStr || '0m'}
                                             </div>
                                         </div>
-                                        <span className="text-xs text-[#8E8E93] font-medium">{song.timeStr || '0m'}</span>
                                     </div>
                             ))}
-                            {(dbUnifiedData?.songs || []).filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name).length === 0 && (
-                                <p className="text-[#8E8E93] text-sm text-center py-8">No tracks for this period</p>
-                            )}
-                        </div>
-                    </motion.div>
-                </motion.div>
-            </motion.div>
-        )}
-    </AnimatePresence>
-
-    {/* Album Detail Modal */}
-    <AnimatePresence>
-        {selectedTopAlbum && (
-            <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] bg-black"
-                onClick={() => setSelectedTopAlbum(null)}
-            >
-                <div className="absolute inset-0 overflow-hidden">
-                    <img 
-                        src={selectedTopAlbum.cover} 
-                        className="w-full h-full object-cover scale-110 blur-3xl opacity-30"
-                        alt=""
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
-                </div>
-
-                <motion.div 
-                    initial={{ y: 50, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 50, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="relative h-full overflow-y-auto no-scrollbar"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <button 
-                        onClick={() => setSelectedTopAlbum(null)}
-                        className="fixed top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/10"
-                    >
-                        <X size={18} />
-                    </button>
-
-                    <div className="flex flex-col items-center pt-16 sm:pt-20 pb-8 px-4">
-                        <motion.div 
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
-                            className="relative mb-6"
-                        >
-                            <div className="w-36 h-36 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden ring-4 ring-white/10 shadow-2xl">
-                                <img 
-                                    src={selectedTopAlbum.cover} 
-                                    className="w-full h-full object-cover" 
-                                    alt={selectedTopAlbum.title}
-                                />
-                            </div>
-                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 rounded-full font-bold text-xs shadow-xl">
-                                #{safeAlbums.findIndex((a: Album) => a.id === selectedTopAlbum.id) + 1 || '?'}
-                            </div>
-                        </motion.div>
-
-                        <motion.h1 
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.15 }}
-                            className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight mb-1"
-                        >
-                            {selectedTopAlbum.title}
-                        </motion.h1>
-                        <motion.p 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="text-lg text-white/70 mb-2"
-                        >
-                            {selectedTopAlbum.artist}
-                        </motion.p>
-                        <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="flex items-center gap-2 text-[#FA2D48] text-sm font-semibold"
-                        >
-                            <Disc size={14} />
-                            <span>{selectedTopAlbum.timeStr ? String(selectedTopAlbum.timeStr).replace('m', ' minutes') : '0 minutes'}</span>
-                        </motion.div>
-                    </div>
-
-                    <motion.div 
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.25 }}
-                        className="grid grid-cols-3 gap-2 sm:gap-3 px-4 sm:px-6 max-w-lg mx-auto mb-8"
-                    >
-                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-col items-center text-center">
-                            <TrendingUp size={16} className="text-[#FA2D48] mb-1.5" />
-                            <span className="text-lg sm:text-xl font-bold text-white">{selectedTopAlbum.totalListens || 0}</span>
-                            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#8E8E93]">Plays</span>
-                        </div>
-                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-col items-center text-center">
-                            <Calendar size={16} className="text-[#FA2D48] mb-1.5" />
-                            <span className="text-lg sm:text-xl font-bold text-white">{selectedTopAlbum.year || '—'}</span>
-                            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#8E8E93]">Year</span>
-                        </div>
-                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-col items-center text-center">
-                            <Music size={16} className="text-[#FA2D48] mb-1.5" />
-                            <span className="text-lg sm:text-xl font-bold text-white">
-                                {(dbUnifiedData?.songs || []).filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title)).length || '?'}
-                            </span>
-                            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#8E8E93]">Tracks</span>
-                        </div>
-                    </motion.div>
-
-                    <motion.div 
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="px-4 sm:px-6 pb-20 max-w-2xl mx-auto"
-                    >
-                        <h3 className="text-sm font-bold text-[#8E8E93] uppercase tracking-wider mb-4">Album Tracks</h3>
-                         
-                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5">
-                            {(dbUnifiedData?.songs || [])
-                                .filter((s: any) => s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title)
-                                .slice(0, 10)
-                                .map((song: any, idx: number) => (
-                                    <div key={idx} className="flex items-center gap-3 p-3 sm:p-4 hover:bg-white/5 transition-colors">
-                                        <span className="text-[#8E8E93] font-mono text-xs w-5 text-center">{idx + 1}</span>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="text-sm font-semibold text-white truncate">
-                                                {song.track_name || song.title}
-                                            </div>
-                                            <div className="text-xs text-[#8E8E93]">
-                                                {song.listens || song.plays || 0} plays
-                                            </div>
-                                        </div>
-                                        <span className="text-xs text-[#8E8E93] font-medium">{song.timeStr || song.duration || '0m'}</span>
-                                    </div>
-                            ))}
-                            {(dbUnifiedData?.songs || []).filter((s: any) => s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title).length === 0 && (
-                                <p className="text-[#8E8E93] text-sm text-center py-8">No tracks from this album in this period</p>
+                            {(dbUnifiedData?.songs || []).filter((s: any) => s.artist_name === selectedTopArtist.name).length === 0 && (
+                                <p className="text-[#8E8E93] text-sm text-center py-6 italic">No track data available for this artist.</p>
                             )}
                         </div>
                     </motion.div>
