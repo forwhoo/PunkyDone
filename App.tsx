@@ -643,7 +643,7 @@ function App() {
             <div className="space-y-5">
                 <div className="glass-morph rounded-[24px] p-5 border border-white/[0.12] flex items-center justify-between">
                     <div>
-                        <h2 className="text-[26px] font-bold text-white">Hey {data.user?.display_name || 'there'}</h2>
+                        <h2 className="text-[26px] font-bold text-white">Hey, {data.user?.display_name || 'there'}</h2>
                         <p className="text-[13px] text-white/60 mt-1">Your music journey</p>
                     </div>
                     {data.user?.images?.[0]?.url && (
@@ -1230,13 +1230,14 @@ function App() {
                                     .reduce((acc: any[], song: any) => {
                                         const trackName = song.track_name || song.title;
                                         const existing = acc.find(t => t.track_name === trackName);
+                                        const playCount = song.plays || song.listens || 0;
                                         if (existing) {
-                                            existing.plays += (song.plays || song.listens || 1);
+                                            existing.plays += playCount;
                                         } else {
                                             acc.push({
                                                 track_name: trackName,
                                                 cover: song.cover || song.album_cover,
-                                                plays: song.plays || song.listens || 1,
+                                                plays: playCount,
                                                 timeStr: song.timeStr || '3m'
                                             });
                                         }
@@ -1437,12 +1438,13 @@ function App() {
                                         .reduce((acc: any[], song: any) => {
                                             const trackName = song.track_name || song.title;
                                             const existing = acc.find(t => t.track_name === trackName);
+                                            const playCount = song.plays || song.listens || 0;
                                             if (existing) {
-                                                existing.plays += (song.plays || song.listens || 1);
+                                                existing.plays += playCount;
                                             } else {
                                                 acc.push({
                                                     track_name: trackName,
-                                                    plays: song.plays || song.listens || 1
+                                                    plays: playCount
                                                 });
                                             }
                                             return acc;
