@@ -47,7 +47,17 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
     const topTracks = stats?.topTracks || [];
     const totalMinutes = stats?.totalMinutes || story?.listeningMinutes || 0;
     const totalTracks = stats?.totalTracks || story?.totalTracks || 0;
+    const totalHours = Math.round(totalMinutes / 60);
     const topGenre = story?.topGenre || 'Mixed';
+
+    const avatarFallback = (name: string) =>
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1C1C1E&color=fff`;
+
+    const getProgressWidth = (index: number) => {
+        if (index < currentSlide) return "100%";
+        if (index === currentSlide) return "100%";
+        return "0%";
+    };
 
     const totalSlides = 5;
 
@@ -75,7 +85,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                             {isOpen && (
                                 <motion.div
                                     initial={{ width: "0%" }}
-                                    animate={{ width: i < currentSlide ? "100%" : i === currentSlide ? "100%" : "0%" }}
+                                    animate={{ width: getProgressWidth(i) }}
                                     transition={{ duration: i === currentSlide ? 6 : 0.3, ease: "linear" }}
                                     className="h-full bg-white rounded-full"
                                 />
@@ -191,7 +201,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                     <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">tracks</span>
                                                 </div>
                                                 <div className="bg-white/5 border border-white/5 px-5 py-3 rounded-2xl">
-                                                    <span className="text-2xl font-black text-white block">{Math.round(totalMinutes / 60)}</span>
+                                                    <span className="text-2xl font-black text-white block">{totalHours}</span>
                                                     <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">hours</span>
                                                 </div>
                                             </div>
@@ -231,7 +241,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                 >
                                                     <div className="absolute inset-0 bg-white/10 blur-3xl rounded-full animate-pulse" />
                                                     <img
-                                                        src={topArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(topArtist.name)}&background=1C1C1E&color=fff`}
+                                                        src={topArtist.image || avatarFallback(topArtist.name)}
                                                         alt={topArtist.name}
                                                         className="w-48 h-48 sm:w-56 sm:h-56 rounded-full object-cover border-[3px] border-white/10 shadow-2xl relative z-10"
                                                     />
@@ -299,7 +309,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                 >
                                                     <div className="absolute inset-0 bg-white/10 blur-3xl rounded-2xl animate-pulse" />
                                                     <img
-                                                        src={topSong.cover || `https://ui-avatars.com/api/?name=${encodeURIComponent(topSong.title)}&background=1C1C1E&color=fff`}
+                                                        src={topSong.cover || avatarFallback(topSong.title)}
                                                         alt={topSong.title}
                                                         className="w-48 h-48 sm:w-56 sm:h-56 rounded-2xl object-cover border-[3px] border-white/10 shadow-2xl relative z-10"
                                                     />
@@ -382,7 +392,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                         >
                                             <div className="bg-white/5 p-3 rounded-2xl border border-white/5 text-center">
                                                 <Clock className="w-4 h-4 text-[#FA2D48] mx-auto mb-1" />
-                                                <span className="text-lg font-black text-white block">{Math.round(totalMinutes / 60)}h</span>
+                                                <span className="text-lg font-black text-white block">{totalHours}h</span>
                                                 <span className="text-[9px] uppercase tracking-wider text-white/40 font-semibold">Time</span>
                                             </div>
                                             <div className="bg-white/5 p-3 rounded-2xl border border-white/5 text-center">
@@ -428,7 +438,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                             <h4 className="text-white font-semibold text-[13px] truncate">{track.title}</h4>
                                                             <p className="text-white/40 text-[11px] truncate">{track.artist}</p>
                                                         </div>
-                                                        <span className="text-white/30 text-[11px] font-medium flex-shrink-0">{track.plays}p</span>
+                                                        <span className="text-white/30 text-[11px] font-medium flex-shrink-0">{track.plays} plays</span>
                                                     </motion.div>
                                                 ))}
                                             </motion.div>
