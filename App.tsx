@@ -7,7 +7,7 @@ import { Artist, Album, Song } from './types';
 import { RankingWidget } from './components/RankingWidget';
 import { AISpotlight } from './components/AISpotlight';
 import { TrendingArtists } from './components/TrendingArtists';
-import { UpcomingArtists } from './components/UpcomingArtists';
+import { ArtistRace } from './components/ArtistRace';
 import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ChartSkeleton } from './components/LoadingSkeleton';
@@ -930,12 +930,21 @@ function App() {
                         )}
                     </div>
 
-                    {/* UPCOMING ARTISTS */}
-                    <UpcomingArtists 
-                        recentPlays={safeRecent} 
-                        topArtists={safeArtists} 
-                        artistImages={artistImages} 
-                    />
+                    {/* ARTIST RACE - Cool Animation showing top artists battle */}
+                    {safeArtists.length >= 3 && (
+                        <div className="mb-12">
+                            <ArtistRace 
+                                competitors={safeArtists.slice(0, 5).map(artist => ({
+                                    name: artist.name,
+                                    image: artistImages[artist.name] || artist.image || '',
+                                    score: artist.plays || 0,
+                                    type: 'artist' as const
+                                }))}
+                                title="Top Artists Battle"
+                                subtitle="Watch your favorite artists race to the top!"
+                            />
+                        </div>
+                    )}
 
                 </div>
                 )}
