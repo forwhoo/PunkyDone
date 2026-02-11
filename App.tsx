@@ -106,9 +106,9 @@ const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick
 );
 
 const MobileHeroCard = ({ title, subtitle }: { title: string; subtitle: string }) => (
-    <div className="glass-morph rounded-[24px] p-6 shadow-xl border border-white/[0.12]">
-        <h1 className="text-[22px] font-bold text-white leading-tight">{title}</h1>
-        <p className="text-[13px] text-white/60 mt-2.5 leading-relaxed">{subtitle}</p>
+    <div className="glass-morph rounded-[28px] p-7 shadow-xl border border-white/[0.15]">
+        <h1 className="text-[26px] font-bold text-white leading-tight tracking-tight">{title}</h1>
+        <p className="text-[14px] text-white/70 mt-3 leading-relaxed font-medium">{subtitle}</p>
     </div>
 );
 
@@ -116,7 +116,7 @@ const MobileArtistCard = ({ artist, rank, image, onClick }: { artist: Artist; ra
     <button
         type="button"
         onClick={onClick}
-        className="relative w-[210px] h-[270px] shrink-0 snap-start rounded-[28px] overflow-hidden shadow-2xl border border-white/10 bg-[#1C1C1E]/90"
+        className="relative w-[220px] h-[280px] shrink-0 snap-start rounded-[32px] overflow-hidden shadow-2xl border border-white/[0.12] bg-[#1C1C1E]/90 active:scale-[0.97] transition-transform"
     >
         <img
             src={image || artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`}
@@ -124,26 +124,26 @@ const MobileArtistCard = ({ artist, rank, image, onClick }: { artist: Artist; ra
             loading="lazy"
             className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/70" />
-        <div className="absolute top-3 left-3 text-white text-2xl font-semibold drop-shadow-lg">{rank}</div>
-        <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
-            <p className="text-lg font-semibold text-white leading-tight">{artist.name}</p>
-            <p className="text-sm text-white/70">{artist.timeStr}</p>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/75" />
+        <div className="absolute top-4 left-4 text-white text-[28px] font-bold drop-shadow-2xl number-display">{rank}</div>
+        <div className="absolute bottom-0 left-0 right-0 p-5 text-left">
+            <p className="text-[19px] font-bold text-white leading-tight tracking-tight drop-shadow-lg">{artist.name}</p>
+            <p className="text-[14px] text-white/80 mt-1 font-medium">{artist.timeStr}</p>
         </div>
     </button>
 );
 
 const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; cover: string; title: string; subtitle: string; meta?: string }) => (
     <div className="flex items-center gap-3 py-3 active:bg-white/5 transition-colors rounded-xl px-1">
-        <div className="w-7 text-center text-sm font-bold text-white/60 flex-shrink-0">{rank}</div>
+        <div className="w-8 text-center text-[15px] font-semibold text-white/50 flex-shrink-0 number-display">{rank}</div>
         <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/10 flex-shrink-0 shadow-md">
             <img src={cover} alt={title} loading="lazy" className="w-full h-full object-cover" />
         </div>
         <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-semibold text-white truncate leading-tight">{title}</p>
-            <p className="text-xs text-white/50 truncate mt-0.5">{subtitle}</p>
+            <p className="text-[15px] font-semibold text-white truncate leading-tight tracking-tight">{title}</p>
+            <p className="text-[13px] text-white/60 truncate mt-0.5 font-medium">{subtitle}</p>
         </div>
-        {meta && <div className="text-[11px] text-white/40 whitespace-nowrap font-medium flex-shrink-0">{meta}</div>}
+        {meta && <div className="text-[12px] text-white/50 whitespace-nowrap font-medium flex-shrink-0 number-display">{meta}</div>}
     </div>
 );
 
@@ -642,14 +642,14 @@ function App() {
                             aiSection.scrollIntoView({ behavior: 'smooth' });
                         }
                     }}
-                    className="w-full glass-morph rounded-[20px] px-5 py-4 flex items-center gap-3 active:scale-[0.98] transition-transform border border-white/10"
+                    className="w-full glass-morph rounded-[24px] px-6 py-5 flex items-center gap-4 active:scale-[0.98] transition-transform border border-white/[0.15] shadow-xl"
                 >
-                    <div className="w-10 h-10 rounded-full bg-[#FA2D48]/10 flex items-center justify-center flex-shrink-0">
-                        <Sparkles className="w-5 h-5 text-[#FA2D48]" />
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FA2D48] to-[#FF6B82] flex items-center justify-center flex-shrink-0 shadow-lg">
+                        <Sparkles className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1 text-left">
-                        <p className="text-[14px] font-bold text-white">AI Chat</p>
-                        <p className="text-[11px] text-white/60">Ask about your music</p>
+                        <p className="text-[15px] font-bold text-white tracking-tight">AI Discovery</p>
+                        <p className="text-[12px] text-white/70 mt-0.5 font-medium">Ask about your music</p>
                     </div>
                 </button>
             </div>
@@ -685,7 +685,7 @@ function App() {
                 <>
                     <section className="space-y-5">
                         <div className="flex items-center justify-between px-1">
-                            <h3 className="text-lg font-bold text-white">Your Top Artists</h3>
+                            <h3 className="text-[20px] font-bold text-white tracking-tight">Your Top Artists</h3>
                             {safeArtists.length > 0 && (
                                 <button
                                     onClick={() => setSeeAllModal({
@@ -694,7 +694,7 @@ function App() {
                                         items: safeArtists,
                                         type: 'artist'
                                     })}
-                                    className="text-xs font-bold text-white/60 uppercase tracking-wider hover:text-white transition-colors"
+                                    className="text-[12px] font-bold text-white/60 uppercase tracking-wider hover:text-white transition-colors"
                                 >
                                     See all
                                 </button>
@@ -719,7 +719,7 @@ function App() {
 
                     <section className="space-y-5">
                         <div className="flex items-center justify-between px-1">
-                            <h3 className="text-lg font-bold text-white">Top Songs</h3>
+                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
                             {safeSongs.length > 0 && (
                                 <button
                                     onClick={() => setSeeAllModal({
@@ -728,13 +728,13 @@ function App() {
                                         items: safeSongs,
                                         type: 'song'
                                     })}
-                                    className="text-xs font-bold text-white/60 uppercase tracking-wider hover:text-white transition-colors"
+                                    className="text-[12px] font-bold text-white/60 uppercase tracking-wider hover:text-white transition-colors"
                                 >
                                     See all
                                 </button>
                             )}
                         </div>
-                        <div className="glass-morph rounded-[24px] px-4 py-2">
+                        <div className="glass-morph rounded-[28px] px-5 py-3 border border-white/[0.15]">
                             {safeSongs.length > 0 ? (
                                 safeSongs.slice(0, 6).map((song: Song, index: number) => (
                                     <div key={song.id} onClick={() => setSelectedTopSong(song)} className="cursor-pointer">
@@ -755,7 +755,7 @@ function App() {
 
                     <section className="space-y-5">
                         <div className="flex items-center justify-between px-1">
-                            <h3 className="text-lg font-bold text-white">Top Albums</h3>
+                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
                             {safeAlbums.length > 0 && (
                                 <button
                                     onClick={() => setSeeAllModal({
@@ -764,7 +764,7 @@ function App() {
                                         items: safeAlbums,
                                         type: 'album'
                                     })}
-                                    className="text-xs font-bold text-white/70 uppercase tracking-wider"
+                                    className="text-[12px] font-bold text-white/60 uppercase tracking-wider hover:text-white transition-colors"
                                 >
                                     See all
                                 </button>
@@ -773,14 +773,14 @@ function App() {
                         {safeAlbums.length > 0 ? (
                             <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
                                 {safeAlbums.slice(0, 6).map((album: Album, index: number) => (
-                                    <div key={album.id} className="w-[140px] shrink-0 snap-start group cursor-pointer" onClick={() => setSelectedTopAlbum(album)}>
-                                        <div className="relative w-full h-[140px] rounded-[20px] overflow-hidden shadow-xl border-2 border-white/[0.08] active:scale-95 transition-transform">
+                                    <div key={album.id} className="w-[150px] shrink-0 snap-start group cursor-pointer" onClick={() => setSelectedTopAlbum(album)}>
+                                        <div className="relative w-full h-[150px] rounded-[24px] overflow-hidden shadow-xl border-2 border-white/[0.1] active:scale-95 transition-transform">
                                             <img src={album.cover} alt={album.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                                            <div className="absolute top-2.5 left-2.5 text-white text-base font-bold bg-black/40 backdrop-blur-sm w-7 h-7 rounded-full flex items-center justify-center">{index + 1}</div>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                                            <div className="absolute top-3 left-3 text-white text-[17px] font-bold bg-black/50 backdrop-blur-md w-8 h-8 rounded-full flex items-center justify-center shadow-lg number-display">{index + 1}</div>
                                         </div>
-                                        <p className="mt-2.5 text-[13px] font-semibold text-white truncate">{album.title}</p>
-                                        <p className="text-[11px] text-white/50 truncate">{album.artist}</p>
+                                        <p className="mt-3 text-[14px] font-semibold text-white truncate tracking-tight">{album.title}</p>
+                                        <p className="text-[12px] text-white/60 truncate mt-0.5 font-medium">{album.artist}</p>
                                     </div>
                                 ))}
                             </div>
@@ -798,19 +798,19 @@ function App() {
                                     setWrappedModal({ isOpen: true, period: timeRange });
                                 }
                             }}
-                            className="w-full glass-morph rounded-[24px] p-6 shadow-xl border border-white/[0.12] active:scale-[0.98] transition-all"
+                            className="w-full glass-morph rounded-[28px] p-7 shadow-xl border border-white/[0.15] active:scale-[0.98] transition-all"
                         >
                             <div className="flex items-center justify-between">
                                 <div className="text-left">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Sparkles className="w-5 h-5 text-[#FA2D48]" />
-                                        <h3 className="text-[18px] font-bold text-white">Your Wrapped</h3>
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FA2D48] to-[#FF6B82] flex items-center justify-center shadow-lg">
+                                            <Sparkles className="w-5 h-5 text-white" />
+                                        </div>
+                                        <h3 className="text-[20px] font-bold text-white tracking-tight">Your Wrapped</h3>
                                     </div>
-                                    <p className="text-[13px] text-white/60">View your personalized music story</p>
+                                    <p className="text-[14px] text-white/70 font-medium">View your personalized music story</p>
                                 </div>
-                                <div className="w-12 h-12 rounded-full bg-[#FA2D48]/10 flex items-center justify-center">
-                                    <Calendar className="w-6 h-6 text-[#FA2D48]" />
-                                </div>
+                                <Calendar className="w-8 h-8 text-[#FA2D48] flex-shrink-0" />
                             </div>
                         </button>
                     </section>
@@ -818,9 +818,9 @@ function App() {
                     {/* Mobile Obsession Orbit */}
                     <section className="space-y-5">
                         <div className="flex items-center justify-between px-1">
-                            <h3 className="text-lg font-bold text-white">Obsession Orbit</h3>
+                            <h3 className="text-[20px] font-bold text-white tracking-tight">Obsession Orbit</h3>
                         </div>
-                        <div className="glass-morph rounded-[24px] p-4 overflow-hidden">
+                        <div className="glass-morph rounded-[28px] p-5 overflow-hidden border border-white/[0.15] shadow-xl">
                             <TrendingArtists 
                                 artists={safeArtists}
                                 albums={safeAlbums}
@@ -835,9 +835,9 @@ function App() {
                     {/* Mobile Activity Heatmap */}
                     <section className="space-y-5">
                         <div className="flex items-center justify-between px-1">
-                            <h3 className="text-lg font-bold text-white">Activity Heatmap</h3>
+                            <h3 className="text-[20px] font-bold text-white tracking-tight">Activity Heatmap</h3>
                         </div>
-                        <div className="glass-morph rounded-[24px] p-4 overflow-hidden">
+                        <div className="glass-morph rounded-[28px] p-5 overflow-hidden border border-white/[0.15] shadow-xl">
                             <ActivityHeatmap history={safeRecent} />
                         </div>
                     </section>
@@ -845,9 +845,9 @@ function App() {
                     {/* Mobile AI Chat Section */}
                     <section className="space-y-5" id="mobile-ai-chat">
                         <div className="flex items-center justify-between px-1">
-                            <h3 className="text-lg font-bold text-white">AI Discovery</h3>
+                            <h3 className="text-[20px] font-bold text-white tracking-tight">AI Discovery</h3>
                         </div>
-                        <div className="glass-morph rounded-[24px] p-5">
+                        <div className="glass-morph rounded-[28px] p-6 border border-white/[0.15] shadow-xl">
                             <AISpotlight 
                                 token={token}
                                 history={safeRecent}
