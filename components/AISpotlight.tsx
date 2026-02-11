@@ -869,6 +869,126 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 </div>
             )}
 
+            {/* WRAPPED IMMERSIVE MODE */}
+            <AnimatePresence>
+                {wrappedMode && wrappedSlides.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-black"
+                    >
+                        {/* Background Gradient */}
+                        <div className={`absolute inset-0 bg-gradient-to-br ${wrappedSlides[wrappedStep]?.gradient || 'from-purple-900 to-black'} opacity-80 transition-all duration-700`} />
+                        
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setWrappedMode(false)}
+                            className="absolute top-4 right-4 z-50 p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all border border-white/10"
+                        >
+                            <ChevronLeft size={18} />
+                        </button>
+
+                        {/* Progress Dots */}
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex gap-1.5">
+                            {wrappedSlides.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setWrappedStep(i)}
+                                    className={`h-1 rounded-full transition-all ${i === wrappedStep ? 'w-6 bg-white' : 'w-1.5 bg-white/30'}`}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Slide Content */}
+                        <motion.div
+                            key={wrappedStep}
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                            transition={{ duration: 0.4 }}
+                            className="relative h-full flex flex-col items-center justify-center px-6 text-center"
+                        >
+                            {/* Image if available */}
+                            {wrappedSlides[wrappedStep]?.image && (
+                                <motion.div
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.1, type: "spring" }}
+                                    className="mb-6"
+                                >
+                                    <div className={`w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 overflow-hidden shadow-2xl ${wrappedSlides[wrappedStep]?.type === 'top_artist' ? 'rounded-full' : 'rounded-2xl'}`}>
+                                        <img
+                                            src={wrappedSlides[wrappedStep].image}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* Title */}
+                            <motion.h2
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.15 }}
+                                className="text-sm sm:text-base uppercase tracking-[0.2em] text-white/60 font-semibold mb-2"
+                            >
+                                {wrappedSlides[wrappedStep]?.title}
+                            </motion.h2>
+
+                            {/* Value */}
+                            {wrappedSlides[wrappedStep]?.value && (
+                                <motion.div
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                                    className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-4 leading-tight"
+                                >
+                                    {wrappedSlides[wrappedStep].value}
+                                </motion.div>
+                            )}
+
+                            {/* Subtitle */}
+                            {wrappedSlides[wrappedStep]?.subtitle && (
+                                <motion.p
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.25 }}
+                                    className="text-base sm:text-lg text-white/80 max-w-md"
+                                >
+                                    {wrappedSlides[wrappedStep].subtitle}
+                                </motion.p>
+                            )}
+                        </motion.div>
+
+                        {/* Navigation */}
+                        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-4 px-6">
+                            {wrappedStep > 0 && (
+                                <button
+                                    onClick={() => setWrappedStep(prev => prev - 1)}
+                                    className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-semibold transition-all border border-white/10 flex items-center gap-2"
+                                >
+                                    <ChevronLeft size={16} /> Back
+                                </button>
+                            )}
+                            <button
+                                onClick={() => {
+                                    if (wrappedStep < wrappedSlides.length - 1) {
+                                        setWrappedStep(prev => prev + 1);
+                                    } else {
+                                        setWrappedMode(false);
+                                    }
+                                }}
+                                className="px-8 py-3 bg-white text-black rounded-full font-bold hover:scale-105 transition-transform flex items-center gap-2"
+                            >
+                                {wrappedStep === wrappedSlides.length - 1 ? 'Done' : 'Next'} <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Discovery Results - Multiple Categories Support */}
             {mode === 'discover' && categoryResults.length > 0 && (
                 <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
