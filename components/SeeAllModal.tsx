@@ -1,6 +1,14 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { X, Play, Clock, TrendingUp, Mic2, Disc, Music } from 'lucide-react';
 
+const getItemImage = (item: any) => item.cover || item.image || item.art || item.album_cover || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name || item.title || '')}&background=1C1C1E&color=fff`;
+
+const getTypeIcon = (type: string) => {
+    if (type === 'artist') return <Mic2 size={14} className="text-[#FA2D48]" />;
+    if (type === 'album') return <Disc size={14} className="text-[#FA2D48]" />;
+    return <Music size={14} className="text-[#FA2D48]" />;
+};
+
 interface SeeAllModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -54,14 +62,6 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
 
     if (!isOpen) return null;
 
-    const getImage = (item: any) => item.cover || item.image || item.art || item.album_cover || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name || item.title || '')}&background=1C1C1E&color=fff`;
-    
-    const getTypeIcon = () => {
-        if (type === 'artist') return <Mic2 size={14} className="text-[#FA2D48]" />;
-        if (type === 'album') return <Disc size={14} className="text-[#FA2D48]" />;
-        return <Music size={14} className="text-[#FA2D48]" />;
-    };
-
     // Summary stats
     const totalPlays = items.reduce((sum, item) => sum + (item.totalListens || item.listens || 0), 0);
     const totalTime = items.reduce((sum, item) => sum + (parseInt(String(item.timeStr || '0').replace(/[^0-9]/g, ''), 10) || 0), 0);
@@ -82,7 +82,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                     <div className="flex items-start justify-between mb-4">
                         <div>
                             <div className="flex items-center gap-2 mb-1.5">
-                                {getTypeIcon()}
+                                {getTypeIcon(type)}
                                 <span className="text-[10px] font-bold text-[#8E8E93] uppercase tracking-[0.2em]">{type === 'artist' ? 'Artists' : type === 'album' ? 'Albums' : 'Songs'}</span>
                             </div>
                             <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">{title}</h2>
@@ -156,7 +156,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                     {/* Image */}
                                     <div className={`relative z-10 w-12 h-12 ${type === 'artist' ? 'rounded-full' : 'rounded-lg'} overflow-hidden bg-[#1C1C1E] flex-shrink-0 border border-white/[0.08] group-hover:border-white/[0.15] transition-all`}>
                                         <img 
-                                            src={getImage(item)} 
+                                            src={getItemImage(item)} 
                                             alt={item.name || item.title} 
                                             className="w-full h-full object-cover" 
                                         />

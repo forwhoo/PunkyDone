@@ -266,11 +266,11 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             // Consistency: How regularly you listen (ratio of active days) - Max 25
             const consistencyScore = Math.min(25, consistency * 25);
             // Intensity: Average plays per active day - Max 20
-            const intensityScore = Math.min(20, Math.min(1, playsPerDay / 5) * 20);
+            const intensityScore = Math.min(1, playsPerDay / 5) * 20;
             // Focus: Plays per session (high = obsessed in a session) - Max 15
-            const focusScore = Math.min(15, Math.min(1, sessionIntensity / 6) * 15);
+            const focusScore = Math.min(1, sessionIntensity / 6) * 15;
             // Recency: How recently you listened - Max 15
-            const recencyScore = Math.min(15, recencyFactor * 15);
+            const recencyScore = recencyFactor * 15;
 
             const score = volumeScore + consistencyScore + intensityScore + focusScore + recencyScore;
 

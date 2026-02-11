@@ -11,10 +11,20 @@ interface WrappedCardProps {
 }
 
 export const WrappedView: React.FC<WrappedCardProps> = ({ data, title, description, userName, userImage, onClose }) => {
-    // Determine stats from data
-    const totalMins = Math.round(data.reduce((acc, curr) => acc + (curr.totalMinutes || (curr.timeStr ? parseInt(String(curr.timeStr).replace(/[^0-9]/g, ''), 10) : 0) || 0), 0));
+    // Parse time from item safely
+    const parseItemTime = (item: any): number => {
+        if (item.totalMinutes) return item.totalMinutes;
+        if (item.timeStr) {
+            const parsed = parseInt(String(item.timeStr).replace(/[^0-9]/g, ''), 10);
+            return isNaN(parsed) ? 0 : parsed;
+        }
+        return 0;
+    };
+
+    const totalMins = Math.round(data.reduce((acc, curr) => acc + parseItemTime(curr), 0));
     const topItem = data[0];
     const totalTracks = data.length;
+    const uniqueArtists = new Set(data.map(d => d.artist)).size;
     
     // Determine Type of Wrapped based on data content
     const isArtistWrapped = data[0]?.type === 'artist' || data[0]?.artist === data[0]?.title || data[0]?.artist === data[0]?.name;
@@ -97,7 +107,7 @@ export const WrappedView: React.FC<WrappedCardProps> = ({ data, title, descripti
                             </div>
                             <div className="bg-white/5 p-3 rounded-2xl border border-white/5 backdrop-blur-sm text-center">
                                 <Mic2 className="w-4 h-4 text-[#FA2D48] mx-auto mb-1.5" />
-                                <span className="text-xl font-black text-white block">{new Set(data.map(d => d.artist)).size}</span>
+                                <span className="text-xl font-black text-white block">{uniqueArtists}</span>
                                 <span className="text-[9px] uppercase tracking-wider text-white/40 font-bold">Artists</span>
                             </div>
                          </div>
