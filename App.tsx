@@ -1169,24 +1169,24 @@ function App() {
                         transition={{ delay: 0.15 }}
                         className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-2xl mb-8 px-3"
                     >
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all backdrop-blur-xl">
                             <TrendingUp size={16} className="text-[#FA2D48] mb-2" />
-                            <span className="text-2xl font-black text-white mb-0.5">{selectedTopArtist.totalListens || 0}</span>
+                            <span className="text-3xl font-black text-white mb-0.5 tabular-nums tracking-tight">{selectedTopArtist.totalListens || 0}</span>
                             <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Total Plays</span>
                         </div>
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all backdrop-blur-xl">
                             <Clock size={16} className="text-[#FA2D48] mb-2" />
-                            <span className="text-2xl font-black text-white mb-0.5">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
+                            <span className="text-3xl font-black text-white mb-0.5 tabular-nums tracking-tight">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
                             <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Minutes</span>
                         </div>
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all backdrop-blur-xl">
                             <Calendar size={16} className="text-[#FA2D48] mb-2" />
-                            <span className="text-lg font-black text-white mb-0.5">{selectedArtistStats?.peakDay || '—'}</span>
+                            <span className="text-lg font-black text-white mb-0.5 tracking-tight">{selectedArtistStats?.peakDay || '—'}</span>
                             <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Peak Day</span>
                         </div>
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all backdrop-blur-xl">
                             <Sparkles size={16} className="text-[#FA2D48] mb-2" />
-                            <span className="text-2xl font-black text-white mb-0.5">{selectedArtistStats?.popularityScore || 0}%</span>
+                            <span className="text-3xl font-black text-white mb-0.5 tabular-nums tracking-tight">{selectedArtistStats?.popularityScore || 0}%</span>
                             <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Your Share</span>
                         </div>
                     </motion.div>
@@ -1357,19 +1357,19 @@ function App() {
                             transition={{ delay: 0.25 }}
                             className="grid grid-cols-3 gap-3 w-full max-w-lg mb-8"
                         >
-                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/[0.08] transition-all">
                                 <TrendingUp size={16} className="text-[#FA2D48] mb-1.5" />
-                                <span className="text-xl font-bold text-white">{selectedTopAlbum.totalListens || selectedTopAlbum.listens || 0}</span>
-                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Plays</span>
+                                <span className="text-2xl font-black text-white tabular-nums tracking-tight">{selectedTopAlbum.totalListens || selectedTopAlbum.listens || 0}</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold">Plays</span>
                             </div>
-                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/[0.08] transition-all">
                                 <Clock size={16} className="text-[#FA2D48] mb-1.5" />
-                                <span className="text-xl font-bold text-white">{selectedTopAlbum.timeStr ? String(selectedTopAlbum.timeStr).replace('m', '') : '0'}</span>
-                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Minutes</span>
+                                <span className="text-2xl font-black text-white tabular-nums tracking-tight">{selectedTopAlbum.timeStr ? String(selectedTopAlbum.timeStr).replace('m', '') : '0'}</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold">Minutes</span>
                             </div>
-                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/[0.08] transition-all">
                                 <Disc size={16} className="text-[#FA2D48] mb-1.5" />
-                                <span className="text-xl font-bold text-white">
+                                <span className="text-2xl font-black text-white tabular-nums tracking-tight">
                                     {(() => {
                                         const allSongs = [
                                             ...(dbUnifiedData?.songs || []),
@@ -1394,7 +1394,7 @@ function App() {
                                         return uniqueTracks.size;
                                     })()}
                                 </span>
-                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Tracks</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold">Tracks</span>
                             </div>
                         </motion.div>
 
@@ -1571,22 +1571,22 @@ function App() {
                             transition={{ delay: 0.3 }}
                             className="grid grid-cols-3 gap-3 w-full max-w-lg mb-8"
                         >
-                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/[0.08] transition-all">
                                 <TrendingUp size={16} className="text-[#FA2D48] mb-1.5" />
-                                <span className="text-xl font-bold text-white">{selectedTopSong.listens || 0}</span>
-                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Plays</span>
+                                <span className="text-2xl font-black text-white tabular-nums tracking-tight">{selectedTopSong.listens || 0}</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold">Plays</span>
                             </div>
-                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/[0.08] transition-all">
                                 <Clock size={16} className="text-[#FA2D48] mb-1.5" />
-                                <span className="text-xl font-bold text-white">{selectedTopSong.timeStr ? String(selectedTopSong.timeStr).replace('m', '') : '0'}</span>
-                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Minutes</span>
+                                <span className="text-2xl font-black text-white tabular-nums tracking-tight">{selectedTopSong.timeStr ? String(selectedTopSong.timeStr).replace('m', '') : '0'}</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold">Minutes</span>
                             </div>
-                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/[0.08] transition-all">
                                 <Sparkles size={16} className="text-[#FA2D48] mb-1.5" />
-                                <span className="text-xl font-bold text-white">
+                                <span className="text-2xl font-black text-white tabular-nums tracking-tight">
                                     {selectedTopSong.listens ? Math.round((selectedTopSong.listens / (safeRecent.length || 1)) * 100) : 0}%
                                 </span>
-                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Share</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold">Share</span>
                             </div>
                         </motion.div>
                     </div>
