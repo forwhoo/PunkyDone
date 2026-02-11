@@ -1349,41 +1349,37 @@ function App() {
                                 <Music size={14} className="text-[#FA2D48]" /> Tracks from this album
                             </h3>
                             <div className="space-y-1">
-                                {(dbUnifiedData?.songs || [])
-                                    .filter((s: any) => {
-                                        const songAlbum = s.album || s.album_name || '';
-                                        const songArtist = s.artist || s.artist_name || '';
-                                        const albumTitle = selectedTopAlbum.title || '';
-                                        const albumArtist = selectedTopAlbum.artist || '';
-                                        
-                                        return songAlbum.toLowerCase().trim() === albumTitle.toLowerCase().trim() && 
-                                               songArtist.toLowerCase().trim() === albumArtist.toLowerCase().trim();
-                                    })
-                                    .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
-                                    .slice(0, 10)
-                                    .map((song: any, idx: number) => (
-                                        <div key={idx} className="flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl transition-all group">
-                                            <div className="text-[#8E8E93] font-mono text-sm w-5 font-bold">{idx + 1}</div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="text-[13px] font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
-                                                    {song.track_name || song.title}
-                                                </div>
-                                                <div className="text-[11px] text-[#8E8E93]">
-                                                    {song.listens || song.plays || 0} plays
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                }
                                 {(() => {
-                                    const filteredTracks = (dbUnifiedData?.songs || []).filter((s: any) => {
-                                        const songAlbum = s.album || s.album_name || '';
-                                        const albumTitle = selectedTopAlbum.title || '';
-                                        return songAlbum.toLowerCase().trim() === albumTitle.toLowerCase().trim();
-                                    });
+                                    // Normalize album/artist once to avoid repeated operations
+                                    const normalizedAlbumTitle = (selectedTopAlbum.title || '').toLowerCase().trim();
+                                    const normalizedAlbumArtist = (selectedTopAlbum.artist || '').toLowerCase().trim();
+                                    
+                                    const filteredTracks = (dbUnifiedData?.songs || [])
+                                        .filter((s: any) => {
+                                            const songAlbum = (s.album || s.album_name || '').toLowerCase().trim();
+                                            const songArtist = (s.artist || s.artist_name || '').toLowerCase().trim();
+                                            return songAlbum === normalizedAlbumTitle && songArtist === normalizedAlbumArtist;
+                                        })
+                                        .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
+                                        .slice(0, 10);
+                                    
                                     return filteredTracks.length === 0 ? (
                                         <p className="text-[#8E8E93] text-sm text-center py-6 italic">No track data available for this album.</p>
-                                    ) : null;
+                                    ) : (
+                                        filteredTracks.map((song: any, idx: number) => (
+                                            <div key={idx} className="flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl transition-all group">
+                                                <div className="text-[#8E8E93] font-mono text-sm w-5 font-bold">{idx + 1}</div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="text-[13px] font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
+                                                        {song.track_name || song.title}
+                                                    </div>
+                                                    <div className="text-[11px] text-[#8E8E93]">
+                                                        {song.listens || song.plays || 0} plays
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    );
                                 })()}
                             </div>
                         </motion.div>
