@@ -313,43 +313,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         try {
             const lower = promptToUse.toLowerCase();
 
-            // SPECIAL HANDLER: WRAPPED (Daily, Weekly, Monthly) -> NOW WITH VIBE CHECK
-            if (lower.includes('wrapped') || lower.includes('recap')) {
-                let period: 'daily' | 'weekly' | 'monthly' = 'daily';
-                if (lower.includes('week')) period = 'weekly';
-                if (lower.includes('month')) period = 'monthly';
-                if (!lower.includes('day') && !lower.includes('week') && !lower.includes('month')) period = 'weekly';
-
-                // 1. Get stats + top tracks
-                const stats = await getWrappedStats(period);
-                if (stats && stats.topTracks && stats.topTracks.length > 0) {
-                    // 2. Generate Twist using AI
-                    const vibe = await generateWrappedVibe(stats.topTracks);
-
-                    // 3. Create a Category Result
-                    const wrappedCategory: CategoryResult = {
-                        id: `wrapped - ${Date.now()} `,
-                        title: `✨ ${vibe.title} `,
-                        description: `AI Vibe Check: "${vibe.description}"`,
-                        stats: `${stats.totalMinutes} mins • ${stats.totalTracks} tracks`,
-                        tracks: stats.topTracks,
-                        viewMode: 'ranked'
-                    };
-
-                    setCategoryResults([wrappedCategory]);
-                    setMode('discover');
-                    setViewMode('ranked');
-                    setSortMode('plays');
-                    setLoading(false);
-                    setUserPrompt("");
-                    return;
-
-                } else {
-                    setErrorMsg(`No ${period} stats found.Start listening!`);
-                    setLoading(false);
-                    return;
-                }
-            }
 
             // SPECIAL HANDLER: WEEKLY INSIGHT (The AI Story Version)
             if (manualPrompt === 'Weekly Insight' || lower.includes('insight story')) {

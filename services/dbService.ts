@@ -1147,16 +1147,86 @@ export const getWrappedStats = async (period: 'daily' | 'weekly' | 'monthly' = '
             cover: data.cover,
             plays: data.count,
             type: 'song'
-        }));
+        };
+}
+
+// ALGORITHMIC WRAPPED STATS (Non-AI)
+export const getAlgorithmicWrappedStats = async (period: 'daily' | 'weekly' | 'monthly' | 'all time' = 'weekly') => {
+    // Reuse the dashboard stats logic to get basic data
+    const basicStats = await fetchDashboardStats(period === 'all time' ? 'All Time' : period.charAt(0).toUpperCase() + period.slice(1) as any);
+    const history = basicStats.recentPlays || [];
+
+    // 1. Calculate "Lowest Gap" (Obsession)
+    // Find the song with the shortest average time between listens (minimum 3 listens)
+    const songTimestamps: Record<string, number[]> = {};
+    const songDetails: Record<string, any> = {};
+
+    history.forEach((item: any) => {
+        const key = item.track_name;
+        if (!songTimestamps[key]) {
+            songTimestamps[key] = [];
+            songDetails[key] = item;
+        }
+        songTimestamps[key].push(new Date(item.played_at).getTime());
+    });
+
+    let obsessionSong = null;
+    let minGap = Infinity;
+
+    Object.entries(songTimestamps).forEach(([key, timestamps]) => {
+        if (timestamps.length < 3) return; // Need at least 3 plays to form a pattern
+        timestamps.sort((a, b) => a - b);
+
+        let totalGap = 0;
+        for (let i = 1; i < timestamps.length; i++) {
+            totalGap += (timestamps[i] - timestamps[i - 1]);
+        }
+        const avgGap = totalGap / (timestamps.length - 1);
+
+        if (avgGap < minGap) {
+            minGap = avgGap;
+            obsessionSong = {
+                ...songDetails[key],
+                avgGapMinutes: Math.round(avgGap / 60000),
+                playCount: timestamps.length
+            };
+        }
+    });
+
+    // 2. Calculate "Song at this Time" (Anthem)
+    // Find the most played song for the current hour block (e.g. 9PM - 10PM) across the period
+    const currentHour = new Date().getHours();
+    const anthemCounts: Record<string, number> = {};
+    const anthemDetails: Record<string, any> = {};
+
+    history.forEach((item: any) => {
+        const h = new Date(item.played_at).getHours();
+        if (h === currentHour) { // Strict hour match
+            const key = item.track_name;
+            anthemCounts[key] = (anthemCounts[key] || 0) + 1;
+            anthemDetails[key] = item;
+        }
+    });
+
+    const sortedAnthems = Object.entries(anthemCounts).sort((a, b) => b[1] - a[1]);
+    const hourlyAnthem = sortedAnthems.length > 0 ? {
+        ...anthemDetails[sortedAnthems[0][0]],
+        count: sortedAnthems[0][1],
+        hour: currentHour
+    } : null;
+
+    // 3. Obsession Orbit (Top 5 Artists)
+    const orbitArtists = basicStats.artists.slice(0, 5);
 
     return {
-        type: 'WRAPPED',
-        period: period,
-        title: label,
-        totalMinutes,
-        topArtist: topArtistEntry ? { name: topArtistEntry[0], count: topArtistEntry[1].count, image: topArtistEntry[1].image } : null,
-        topSong: topSongEntry ? { title: topSongEntry[0], count: topSongEntry[1].count, cover: topSongEntry[1].cover, artist: topSongEntry[1].artist } : null,
-        topTracks: topTracks, // Now returning the list!
-        totalTracks: rawData.length
+        period,
+        totalMinutes: basicStats.albums.reduce((acc: number, a: any) => acc + (parseInt(a.timeStr) || 0), 0), // Rough calc from albums/artists if total not available directly
+        // Better to use fetchListeningStats for total minutes if needed, but basicStats might suffice
+        topArtists: basicStats.artists,
+        topSongs: basicStats.songs,
+        topAlbums: basicStats.albums,
+        obsession: obsessionSong,
+        hourlyAnthem: hourlyAnthem,
+        orbit: orbitArtists
     };
-}
+};
