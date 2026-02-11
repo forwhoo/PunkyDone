@@ -1,24 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { X, Share2, Sparkles, Music2, Calendar, Headphones, Clock, TrendingUp, Mic2, Disc } from 'lucide-react';
+import { X, Share2, Sparkles, Music2, Headphones, Clock, TrendingUp, Mic2, Disc, ChevronRight, ChevronLeft, Play } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { generateWrappedStory } from '../services/geminiService';
+import { getWrappedStats } from '../services/dbService';
 
 interface WrappedModalProps {
     isOpen: boolean;
     onClose: () => void;
-    period?: string; // 'Day', 'Week', 'Month'
+    period?: string;
     userImage?: string;
     userName?: string;
 }
 
-export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, period = "Week", userImage, userName }) => {
+export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, period = "Weekly", userImage, userName }) => {
     const [story, setStory] = useState<any>(null);
+    const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [currentSlide, setCurrentSlide] = useState(0);
+
+    const mapPeriod = (p: string): 'daily' | 'weekly' | 'monthly' => {
+        const lower = p.toLowerCase();
+        if (lower.includes('day') || lower.includes('daily')) return 'daily';
+        if (lower.includes('month')) return 'monthly';
+        return 'weekly';
+    };
 
     useEffect(() => {
         if (isOpen) {
             setLoading(true);
-            generateWrappedStory(period).then(data => {
-                setStory(data);
+            setCurrentSlide(0);
+            Promise.all([
+                generateWrappedStory(period),
+                getWrappedStats(mapPeriod(period))
+            ]).then(([storyData, statsData]) => {
+                setStory(storyData);
+                setStats(statsData);
                 setLoading(false);
             });
         }
@@ -26,137 +42,432 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
 
     if (!isOpen) return null;
 
+    const topArtist = stats?.topArtist;
+    const topSong = stats?.topSong;
+    const topTracks = stats?.topTracks || [];
+    const totalMinutes = stats?.totalMinutes || story?.listeningMinutes || 0;
+    const totalTracks = stats?.totalTracks || story?.totalTracks || 0;
+    const topGenre = story?.topGenre || 'Mixed';
+
+    const totalSlides = 5;
+
+    const handleNext = () => setCurrentSlide(prev => Math.min(totalSlides - 1, prev + 1));
+    const handlePrev = () => setCurrentSlide(prev => Math.max(0, prev - 1));
+
+    const handleTap = (e: React.MouseEvent) => {
+        const width = e.currentTarget.clientWidth;
+        const x = e.nativeEvent.offsetX;
+        if (x < width / 3) {
+            handlePrev();
+        } else {
+            handleNext();
+        }
+    };
+
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/99 backdrop-blur-xl animate-in fade-in duration-300">
-            <button 
-                onClick={onClose} 
-                className="absolute top-6 right-6 p-2 bg-white/10 rounded-full hover:bg-[#FA2D48] z-[110] transition-all hover:scale-110 active:scale-95"
-            >
-                <X className="text-white w-6 h-6" />
-            </button>
-            
-            <div className="w-full h-full sm:h-auto sm:max-w-4xl max-h-[95vh] bg-[#0A0A0A] sm:rounded-[40px] overflow-y-auto no-scrollbar relative shadow-[0_0_100px_rgba(250,45,72,0.2)] border border-white/5 flex flex-col p-6 sm:p-12">
-                {/* Header Section */}
-                <div className="flex flex-col mb-10">
-                    <div className="flex items-center gap-3 mb-2">
-                        {userImage ? (
-                            <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 flex-shrink-0">
-                                <img src={userImage} alt={userName} className="w-full h-full object-cover" />
-                            </div>
-                        ) : (
-                            <div className="w-10 h-10 rounded-full bg-[#FA2D48]/10 flex items-center justify-center">
-                                <Sparkles className="w-5 h-5 text-[#FA2D48]" />
-                            </div>
-                        )}
-                        <span className="text-[#8E8E93] font-bold uppercase tracking-[0.2em] text-[10px]">
-                            {userName ? `${userName}'s Report` : 'Muse Analytics Report'}
-                        </span>
-                    </div>
-                    <h2 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-none">
-                        Your {period} <span className="text-[#FA2D48]">Wrapped</span>
-                    </h2>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl">
+            <div className="relative w-full max-w-md h-[100dvh] md:h-[90vh] md:rounded-[32px] overflow-hidden bg-[#0A0A0A] shadow-2xl flex flex-col border border-white/5">
+
+                {/* Progress Bars */}
+                <div className="absolute top-4 left-4 right-4 flex gap-1.5 z-50">
+                    {Array.from({ length: totalSlides }).map((_, i) => (
+                        <div key={i} className="h-[3px] flex-1 bg-white/15 rounded-full overflow-hidden">
+                            {isOpen && (
+                                <motion.div
+                                    initial={{ width: "0%" }}
+                                    animate={{ width: i < currentSlide ? "100%" : i === currentSlide ? "100%" : "0%" }}
+                                    transition={{ duration: i === currentSlide ? 6 : 0.3, ease: "linear" }}
+                                    className="h-full bg-white rounded-full"
+                                />
+                            )}
+                        </div>
+                    ))}
                 </div>
 
+                {/* Close Button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-10 right-4 z-50 text-white/50 hover:text-white p-2 rounded-full bg-white/10 backdrop-blur-md transition-all hover:bg-white/20"
+                >
+                    <X size={18} />
+                </button>
+
                 {loading ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-6 py-24">
+                    <div className="flex-1 flex flex-col items-center justify-center gap-6">
                         <div className="relative">
-                            <div className="w-20 h-20 border-4 border-[#FA2D48]/10 border-t-[#FA2D48] rounded-full animate-spin" />
+                            <div className="w-20 h-20 border-[3px] border-white/10 border-t-[#FA2D48] rounded-full animate-spin" />
                             <Headphones className="absolute inset-0 m-auto w-8 h-8 text-[#FA2D48] animate-pulse" />
                         </div>
-                        <p className="text-white/40 font-bold uppercase tracking-widest text-xs animate-pulse">De-coding your musical DNA...</p>
+                        <p className="text-white/40 font-semibold text-xs tracking-widest uppercase animate-pulse">Building your wrapped...</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 auto-rows-fr">
-                        {/* Summary Bento Card - Large */}
-                        <div className="md:col-span-2 md:row-span-2 rounded-[32px] bg-gradient-to-br from-[#1C1C1E] to-[#0A0A0A] p-8 sm:p-10 border border-white/5 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-80 h-80 bg-[#FA2D48] rounded-full blur-[120px] opacity-[0.05] group-hover:opacity-[0.1] transition-opacity duration-1000" />
-                            
-                            <div className="relative z-10 h-full flex flex-col justify-between">
-                                <div>
-                                    <div className="flex items-center gap-2 text-[#FA2D48] mb-8">
-                                        <Music2 size={16} />
-                                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">The Insight</span>
-                                    </div>
-                                    <h3 className="text-3xl sm:text-4xl font-bold text-white mb-8 leading-tight tracking-tight">
-                                        {story?.storyText || "You explored new horizons, blending diverse sounds into a unique profile."}
-                                    </h3>
-                                </div>
-                                
-                                <div className="flex items-end justify-between">
-                                    <div className="space-y-1">
-                                        <p className="text-white/30 text-[9px] font-bold uppercase tracking-[0.2em]">Primary Genre</p>
-                                        <div className="flex items-center gap-3">
-                                            <Disc className="text-[#FA2D48]" size={24} />
-                                            <span className="text-3xl font-black text-white uppercase italic tracking-tighter">{story?.topGenre || "Pop/Rock"}</span>
-                                        </div>
-                                    </div>
-                                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center hover:bg-white/10 transition-colors group cursor-pointer shadow-xl">
-                                        <Share2 className="text-white/40 group-hover:text-white transition-colors" size={20} />
-                                    </div>
-                                </div>
-                            </div>
+                    <>
+                        {/* Main Content Area */}
+                        <div className="flex-1 relative cursor-pointer overflow-hidden" onClick={handleTap}>
+                            <AnimatePresence mode="wait">
+
+                                {/* SLIDE 0: INTRO */}
+                                {currentSlide === 0 && (
+                                    <motion.div
+                                        key="intro"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
+                                    >
+                                        <div className="absolute inset-0 bg-[#0A0A0A]" />
+                                        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-64 h-64 bg-[#FA2D48] rounded-full blur-[100px] opacity-[0.15]" />
+                                        
+                                        <motion.div
+                                            initial={{ y: 20, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.2 }}
+                                            className="relative z-10 mb-8"
+                                        >
+                                            {userImage ? (
+                                                <div className="w-24 h-24 rounded-full overflow-hidden border-[3px] border-white/20 shadow-[0_0_60px_rgba(250,45,72,0.3)]">
+                                                    <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+                                                </div>
+                                            ) : (
+                                                <div className="w-24 h-24 bg-[#FA2D48] rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(250,45,72,0.4)]">
+                                                    <Play size={36} className="fill-white text-white ml-1" />
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                        <motion.h1
+                                            initial={{ y: 20, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.35 }}
+                                            className="relative z-10 text-4xl font-black text-white mb-3 tracking-tight"
+                                        >
+                                            Your {period} <span className="text-[#FA2D48]">Wrapped</span>
+                                        </motion.h1>
+                                        <motion.p
+                                            initial={{ y: 20, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.5 }}
+                                            className="relative z-10 text-lg text-[#8E8E93] font-medium"
+                                        >
+                                            {userName ? `Hey ${userName}, let's dive in` : "Let's dive into your stats"}
+                                        </motion.p>
+                                    </motion.div>
+                                )}
+
+                                {/* SLIDE 1: TOTAL LISTENING TIME */}
+                                {currentSlide === 1 && (
+                                    <motion.div
+                                        key="time"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
+                                    >
+                                        <div className="absolute inset-0 bg-[#0A0A0A]" />
+                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FA2D48] rounded-full blur-[120px] opacity-[0.1]" />
+                                        
+                                        <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                                            className="relative z-10"
+                                        >
+                                            <span className="text-sm font-bold text-[#FA2D48] uppercase tracking-widest mb-6 block">Total Listening Time</span>
+                                            <div className="flex items-baseline justify-center gap-3 mb-4">
+                                                <motion.span
+                                                    initial={{ scale: 0.5, opacity: 0 }}
+                                                    animate={{ scale: 1, opacity: 1 }}
+                                                    transition={{ delay: 0.4, type: "spring" }}
+                                                    className="text-[100px] leading-none font-black text-white tracking-tighter"
+                                                >
+                                                    {totalMinutes}
+                                                </motion.span>
+                                            </div>
+                                            <p className="text-xl text-white/60 font-semibold">minutes listened</p>
+                                            <div className="mt-8 flex items-center justify-center gap-6">
+                                                <div className="bg-white/5 border border-white/5 px-5 py-3 rounded-2xl">
+                                                    <span className="text-2xl font-black text-white block">{totalTracks}</span>
+                                                    <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">tracks</span>
+                                                </div>
+                                                <div className="bg-white/5 border border-white/5 px-5 py-3 rounded-2xl">
+                                                    <span className="text-2xl font-black text-white block">{Math.round(totalMinutes / 60)}</span>
+                                                    <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">hours</span>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    </motion.div>
+                                )}
+
+                                {/* SLIDE 2: TOP ARTIST */}
+                                {currentSlide === 2 && (
+                                    <motion.div
+                                        key="artist"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
+                                    >
+                                        <div className="absolute inset-0 bg-[#0A0A0A]" />
+                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 bg-[#FA2D48] rounded-full blur-[100px] opacity-[0.12]" />
+                                        
+                                        <motion.span
+                                            initial={{ y: -10, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.1 }}
+                                            className="relative z-10 text-sm font-bold text-[#FA2D48] uppercase tracking-widest mb-6"
+                                        >
+                                            Your #1 Artist
+                                        </motion.span>
+
+                                        {topArtist && (
+                                            <>
+                                                <motion.div
+                                                    initial={{ scale: 0.8, opacity: 0 }}
+                                                    animate={{ scale: 1, opacity: 1 }}
+                                                    transition={{ delay: 0.2, type: "spring" }}
+                                                    className="relative z-10 mb-6"
+                                                >
+                                                    <div className="absolute inset-0 bg-white/10 blur-3xl rounded-full animate-pulse" />
+                                                    <img
+                                                        src={topArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(topArtist.name)}&background=1C1C1E&color=fff`}
+                                                        alt={topArtist.name}
+                                                        className="w-48 h-48 sm:w-56 sm:h-56 rounded-full object-cover border-[3px] border-white/10 shadow-2xl relative z-10"
+                                                    />
+                                                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black font-black px-5 py-1.5 rounded-full z-20 whitespace-nowrap shadow-xl text-sm">
+                                                        #1 Artist
+                                                    </div>
+                                                </motion.div>
+                                                <motion.h2
+                                                    initial={{ y: 20, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: 0.4 }}
+                                                    className="relative z-10 text-3xl sm:text-4xl font-black text-white mb-2"
+                                                >
+                                                    {topArtist.name}
+                                                </motion.h2>
+                                                <motion.p
+                                                    initial={{ y: 20, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: 0.5 }}
+                                                    className="relative z-10 text-white/50 text-lg"
+                                                >
+                                                    {topArtist.count} plays
+                                                </motion.p>
+                                            </>
+                                        )}
+
+                                        {!topArtist && (
+                                            <div className="relative z-10 text-white/40">
+                                                <Mic2 size={64} className="mx-auto mb-4 opacity-30" />
+                                                <p>Not enough listening data yet</p>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+
+                                {/* SLIDE 3: TOP SONG */}
+                                {currentSlide === 3 && (
+                                    <motion.div
+                                        key="song"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
+                                    >
+                                        <div className="absolute inset-0 bg-[#0A0A0A]" />
+                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 bg-[#FA2D48] rounded-full blur-[100px] opacity-[0.12]" />
+                                        
+                                        <motion.span
+                                            initial={{ y: -10, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.1 }}
+                                            className="relative z-10 text-sm font-bold text-[#FA2D48] uppercase tracking-widest mb-6"
+                                        >
+                                            Your #1 Song
+                                        </motion.span>
+
+                                        {topSong && (
+                                            <>
+                                                <motion.div
+                                                    initial={{ scale: 0.8, opacity: 0, rotate: -5 }}
+                                                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                                                    transition={{ delay: 0.2, type: "spring" }}
+                                                    className="relative z-10 mb-6"
+                                                >
+                                                    <div className="absolute inset-0 bg-white/10 blur-3xl rounded-2xl animate-pulse" />
+                                                    <img
+                                                        src={topSong.cover || `https://ui-avatars.com/api/?name=${encodeURIComponent(topSong.title)}&background=1C1C1E&color=fff`}
+                                                        alt={topSong.title}
+                                                        className="w-48 h-48 sm:w-56 sm:h-56 rounded-2xl object-cover border-[3px] border-white/10 shadow-2xl relative z-10"
+                                                    />
+                                                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black font-black px-5 py-1.5 rounded-full z-20 whitespace-nowrap shadow-xl text-sm">
+                                                        #1 Song
+                                                    </div>
+                                                </motion.div>
+                                                <motion.h2
+                                                    initial={{ y: 20, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: 0.4 }}
+                                                    className="relative z-10 text-2xl sm:text-3xl font-black text-white mb-1"
+                                                >
+                                                    {topSong.title}
+                                                </motion.h2>
+                                                <motion.p
+                                                    initial={{ y: 20, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: 0.45 }}
+                                                    className="relative z-10 text-white/60 text-base mb-1"
+                                                >
+                                                    {topSong.artist}
+                                                </motion.p>
+                                                <motion.p
+                                                    initial={{ y: 20, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: 0.5 }}
+                                                    className="relative z-10 text-white/40 text-sm"
+                                                >
+                                                    {topSong.count} plays
+                                                </motion.p>
+                                            </>
+                                        )}
+
+                                        {!topSong && (
+                                            <div className="relative z-10 text-white/40">
+                                                <Music2 size={64} className="mx-auto mb-4 opacity-30" />
+                                                <p>Not enough listening data yet</p>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+
+                                {/* SLIDE 4: SUMMARY + TOP TRACKS */}
+                                {currentSlide === 4 && (
+                                    <motion.div
+                                        key="summary"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="absolute inset-0 flex flex-col p-6 pt-14 overflow-y-auto no-scrollbar"
+                                    >
+                                        <div className="absolute inset-0 bg-[#0A0A0A] -z-10" />
+                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-40 bg-[#FA2D48] rounded-full blur-[100px] opacity-[0.08] -z-10" />
+
+                                        <motion.h2
+                                            initial={{ y: 10, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.1 }}
+                                            className="text-2xl font-black text-white mb-2 mt-4"
+                                        >
+                                            Your {period} <span className="text-[#FA2D48]">Recap</span>
+                                        </motion.h2>
+                                        <motion.p
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 0.2 }}
+                                            className="text-white/50 text-sm mb-6 leading-relaxed"
+                                        >
+                                            {story?.storyText || "You explored new horizons this period."}
+                                        </motion.p>
+
+                                        {/* Stats Row */}
+                                        <motion.div
+                                            initial={{ y: 10, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.3 }}
+                                            className="grid grid-cols-3 gap-3 mb-6"
+                                        >
+                                            <div className="bg-white/5 p-3 rounded-2xl border border-white/5 text-center">
+                                                <Clock className="w-4 h-4 text-[#FA2D48] mx-auto mb-1" />
+                                                <span className="text-lg font-black text-white block">{Math.round(totalMinutes / 60)}h</span>
+                                                <span className="text-[9px] uppercase tracking-wider text-white/40 font-semibold">Time</span>
+                                            </div>
+                                            <div className="bg-white/5 p-3 rounded-2xl border border-white/5 text-center">
+                                                <Disc className="w-4 h-4 text-[#FA2D48] mx-auto mb-1" />
+                                                <span className="text-lg font-black text-white block">{totalTracks}</span>
+                                                <span className="text-[9px] uppercase tracking-wider text-white/40 font-semibold">Plays</span>
+                                            </div>
+                                            <div className="bg-white/5 p-3 rounded-2xl border border-white/5 text-center">
+                                                <TrendingUp className="w-4 h-4 text-[#FA2D48] mx-auto mb-1" />
+                                                <span className="text-lg font-black text-white block">{topGenre}</span>
+                                                <span className="text-[9px] uppercase tracking-wider text-white/40 font-semibold">Genre</span>
+                                            </div>
+                                        </motion.div>
+
+                                        {/* Top Tracks List */}
+                                        {topTracks.length > 0 && (
+                                            <motion.div
+                                                initial={{ y: 10, opacity: 0 }}
+                                                animate={{ y: 0, opacity: 1 }}
+                                                transition={{ delay: 0.4 }}
+                                                className="space-y-2 pb-4"
+                                            >
+                                                <h3 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">Top Tracks</h3>
+                                                {topTracks.slice(0, 5).map((track: any, idx: number) => (
+                                                    <motion.div
+                                                        key={idx}
+                                                        initial={{ x: 20, opacity: 0 }}
+                                                        animate={{ x: 0, opacity: 1 }}
+                                                        transition={{ delay: 0.5 + idx * 0.08 }}
+                                                        className="flex items-center gap-3 p-2.5 rounded-xl bg-white/5 border border-white/5"
+                                                    >
+                                                        <span className="font-black text-white/20 text-sm w-5 text-center flex-shrink-0">{idx + 1}</span>
+                                                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#1C1C1E] flex-shrink-0">
+                                                            {track.cover ? (
+                                                                <img src={track.cover} className="w-full h-full object-cover" alt={track.title} />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center">
+                                                                    <Music2 className="w-4 h-4 text-white/20" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <h4 className="text-white font-semibold text-[13px] truncate">{track.title}</h4>
+                                                            <p className="text-white/40 text-[11px] truncate">{track.artist}</p>
+                                                        </div>
+                                                        <span className="text-white/30 text-[11px] font-medium flex-shrink-0">{track.plays}p</span>
+                                                    </motion.div>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </motion.div>
+                                )}
+
+                            </AnimatePresence>
                         </div>
 
-                        {/* Time Card */}
-                        <div className="rounded-[32px] bg-[#111] p-8 border border-white/5 flex flex-col justify-between relative overflow-hidden group">
-                             <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-[#FA2D48] rounded-full blur-3xl opacity-[0.05]" />
-                             <div className="relative z-10">
-                                <Clock className="text-[#FA2D48] mb-6" size={28} />
-                                <p className="text-white/30 text-[9px] font-bold uppercase tracking-[0.2em] mb-2">Total Focus</p>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl font-black text-white tracking-tighter">{Math.round((story?.listeningMinutes || 0) / 60)}</span>
-                                    <span className="text-[#FA2D48] font-black text-xl italic uppercase">Hours</span>
-                                </div>
-                             </div>
-                             <p className="text-[10px] text-white/40 mt-6 leading-relaxed font-bold uppercase tracking-widest italic flex items-center gap-2">
-                                <div className="w-1 h-3 bg-[#FA2D48]" />
-                                Dedicated Listening
-                             </p>
-                        </div>
-
-                        {/* Tier Card */}
-                        <div className="rounded-[32px] bg-[#111] border border-white/5 p-8 flex flex-col justify-between group overflow-hidden">
-                             <TrendingUp className="text-emerald-500 mb-6" size={28} />
-                             <div className="relative z-10">
-                                <p className="text-white/30 text-[9px] font-bold uppercase tracking-[0.2em] mb-2">Listener Profile</p>
-                                <span className="text-3xl font-black text-white italic uppercase tracking-tighter leading-tight">Elite Explorer</span>
-                             </div>
-                             <div className="mt-8 flex items-center gap-2">
-                                <div className="flex -space-x-3">
-                                    {[1,2,3].map(i => (
-                                        <div key={i} className="w-7 h-7 rounded-full border-2 border-[#111] bg-gradient-to-br from-white/10 to-transparent" />
-                                    ))}
-                                </div>
-                                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest pl-2">Top 1.2%</span>
-                             </div>
-                        </div>
-
-                        {/* Full Width Banner */}
-                        <div className="md:col-span-3 rounded-[32px] bg-[#FA2D48] p-[1px] mt-4">
-                            <div className="bg-[#0A0A0A] rounded-[31px] px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-8">
-                                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-10">
-                                    <div className="text-center sm:text-left">
-                                        <p className="text-[9px] font-bold text-[#FA2D48] uppercase tracking-[0.3em] mb-2">Discoveries</p>
-                                        <div className="flex items-center gap-2">
-                                            <Mic2 size={18} className="text-white/40" />
-                                            <p className="text-3xl font-black text-white tabular-nums">{story?.uniqueArtists || 142}</p>
-                                        </div>
-                                    </div>
-                                    <div className="w-px h-12 bg-white/5 hidden sm:block" />
-                                    <div className="text-center sm:text-left">
-                                        <p className="text-[9px] font-bold text-[#FA2D48] uppercase tracking-[0.3em] mb-2">Total Plays</p>
-                                        <div className="flex items-center gap-2">
-                                            <Headphones size={18} className="text-white/40" />
-                                            <p className="text-3xl font-black text-white tabular-nums">{story?.totalTracks || 642}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button className="px-10 py-4 rounded-2xl bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#FA2D48] hover:text-white transition-all shadow-2xl active:scale-95">
-                                    Export Analysis
+                        {/* Footer Navigation */}
+                        <div className="p-4 bg-[#0A0A0A] border-t border-white/5 flex gap-3 flex-shrink-0">
+                            {currentSlide > 0 && (
+                                <button
+                                    onClick={handlePrev}
+                                    className="px-5 py-3 rounded-2xl bg-white/10 text-white font-semibold text-xs tracking-wider uppercase hover:bg-white/15 transition-all flex items-center gap-1.5 active:scale-95"
+                                >
+                                    <ChevronLeft size={14} />
+                                    Back
                                 </button>
-                            </div>
+                            )}
+                            <button
+                                onClick={currentSlide === totalSlides - 1 ? onClose : handleNext}
+                                className="flex-1 py-3.5 rounded-2xl bg-white text-black font-bold text-xs tracking-wider uppercase hover:bg-gray-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                {currentSlide === totalSlides - 1 ? (
+                                    <>
+                                        <Share2 className="w-3.5 h-3.5" />
+                                        Done
+                                    </>
+                                ) : (
+                                    <>
+                                        Next
+                                        <ChevronRight size={14} />
+                                    </>
+                                )}
+                            </button>
                         </div>
-                    </div>
+                    </>
                 )}
             </div>
         </div>

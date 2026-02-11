@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc } from 'lucide-react';
+import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, MessageSquare } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
 import { Artist, Album, Song } from './types';
@@ -182,6 +182,9 @@ function App() {
       isOpen: false,
       period: 'Weekly'
   });
+
+  // AI Discovery Modal State
+  const [aiModalOpen, setAiModalOpen] = useState(false);
 
   // Fetch Artist Images when data loads
   useEffect(() => {
@@ -803,14 +806,14 @@ function App() {
                             <div className="flex items-center justify-between">
                                 <div className="text-left">
                                     <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FA2D48] to-[#FF6B82] flex items-center justify-center shadow-lg">
-                                            <Sparkles className="w-5 h-5 text-white" />
+                                        <div className="w-10 h-10 rounded-full bg-[#1C1C1E] flex items-center justify-center border border-white/10">
+                                            <Sparkles className="w-5 h-5 text-[#FA2D48]" />
                                         </div>
                                         <h3 className="text-[20px] font-bold text-white tracking-tight">Your Wrapped</h3>
                                     </div>
                                     <p className="text-[14px] text-white/70 font-medium">View your personalized music story</p>
                                 </div>
-                                <Calendar className="w-8 h-8 text-[#FA2D48] flex-shrink-0" />
+                                <Calendar className="w-7 h-7 text-[#FA2D48] flex-shrink-0" />
                             </div>
                         </button>
                     </section>
@@ -842,70 +845,50 @@ function App() {
                         </div>
                     </section>
 
-                    {/* Mobile AI Chat Section */}
+                    {/* Mobile AI Discovery Button */}
                     <section className="space-y-5" id="mobile-ai-chat">
-                        <div className="flex items-center justify-between px-1">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">AI Discovery</h3>
-                        </div>
-                        <div className="glass-morph rounded-[28px] p-6 border border-white/[0.15] shadow-xl">
-                            <AISpotlight 
-                                token={token}
-                                history={safeRecent}
-                                user={data.user}
-                                contextData={{
-                                    userName: data.user?.display_name,
-                                    artists: safeArtists.map((a: Artist, idx: number) => {
-                                        const time = String(a.timeStr || '');
-                                        const mins = time.replace('m', '');
-                                        return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
-                                    }),
-                                    albums: safeAlbums.map((a: Album, idx: number) => {
-                                        const time = String(a.timeStr || '');
-                                        const mins = time.replace('m', '');
-                                        return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
-                                    }),
-                                    songs: safeSongs.map((s: Song, idx: number) => {
-                                        const time = String(s.timeStr || '');
-                                        const mins = time.replace('m', '');
-                                        return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
-                                    }),
-                                    globalStats: dbStats
-                                }} 
-                            />
-                        </div>
+                        <button
+                            onClick={() => setAiModalOpen(true)}
+                            className="w-full glass-morph rounded-[28px] p-7 shadow-xl border border-white/[0.15] active:scale-[0.98] transition-all"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="text-left">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-10 h-10 rounded-full bg-[#1C1C1E] flex items-center justify-center border border-white/10">
+                                            <Sparkles className="w-5 h-5 text-[#FA2D48]" />
+                                        </div>
+                                        <h3 className="text-[20px] font-bold text-white tracking-tight">AI Discovery</h3>
+                                    </div>
+                                    <p className="text-[14px] text-white/70 font-medium">Ask questions about your music</p>
+                                </div>
+                                <MessageSquare className="w-7 h-7 text-[#FA2D48] flex-shrink-0" />
+                            </div>
+                        </button>
                     </section>
                 </>
             )}
         </div>
 
         <div className="hidden md:block">
-            {/* SECTION 1: AI DISCOVERY - Clean Centered Design */}
-            <div className="mb-24 mt-8">
-                <AISpotlight 
-                    token={token}
-                    history={safeRecent}
-                    user={data.user}
-                    contextData={{
-                        userName: data.user?.display_name,
-                        artists: safeArtists.map((a: Artist, idx: number) => {
-                            const time = String(a.timeStr || '');
-                            const mins = time.replace('m', '');
-                            // Include Rank for AI
-                            return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
-                        }),
-                        albums: safeAlbums.map((a: Album, idx: number) => {
-                            const time = String(a.timeStr || '');
-                            const mins = time.replace('m', '');
-                            return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
-                        }),
-                        songs: safeSongs.map((s: Song, idx: number) => {
-                            const time = String(s.timeStr || '');
-                            const mins = time.replace('m', '');
-                            return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
-                        }),
-                        globalStats: dbStats
-                    }} 
-                />
+            {/* SECTION 1: AI DISCOVERY - Button to Open Modal */}
+            <div className="mb-16 mt-8">
+                <button
+                    onClick={() => setAiModalOpen(true)}
+                    className="w-full bg-[#1C1C1E] rounded-[24px] p-8 border border-white/10 hover:border-white/20 transition-all group cursor-pointer active:scale-[0.99]"
+                >
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-5">
+                            <div className="w-14 h-14 rounded-2xl bg-[#FA2D48]/10 flex items-center justify-center group-hover:bg-[#FA2D48]/20 transition-colors">
+                                <Sparkles className="w-7 h-7 text-[#FA2D48]" />
+                            </div>
+                            <div className="text-left">
+                                <h2 className="text-xl font-bold text-white tracking-tight mb-1">AI Discovery</h2>
+                                <p className="text-[#8E8E93] text-sm font-medium">Ask questions, discover patterns, and explore your music</p>
+                            </div>
+                        </div>
+                        <MessageSquare className="w-6 h-6 text-[#8E8E93] group-hover:text-[#FA2D48] transition-colors flex-shrink-0" />
+                    </div>
+                </button>
             </div>
 
             {/* SECTION 2: TOP RANKINGS - Prominent Showcase */}
@@ -1516,6 +1499,70 @@ function App() {
         userImage={data?.user?.images?.[0]?.url}
         userName={data?.user?.display_name}
     />
+
+    {/* AI Discovery Modal */}
+    <AnimatePresence>
+        {aiModalOpen && (
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 backdrop-blur-xl"
+            >
+                <motion.div
+                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                    transition={{ duration: 0.3 }}
+                    className="relative w-full max-w-3xl h-[90vh] md:h-[85vh] bg-[#0A0A0A] md:rounded-[32px] overflow-hidden border border-white/5 shadow-2xl flex flex-col"
+                >
+                    {/* Modal Header */}
+                    <div className="flex items-center justify-between p-5 border-b border-white/5 flex-shrink-0">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-[#FA2D48]/10 flex items-center justify-center">
+                                <Sparkles className="w-4 h-4 text-[#FA2D48]" />
+                            </div>
+                            <h2 className="text-lg font-bold text-white tracking-tight">AI Discovery</h2>
+                        </div>
+                        <button
+                            onClick={() => setAiModalOpen(false)}
+                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/50 hover:text-white transition-all"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+
+                    {/* AI Spotlight Content */}
+                    <div className="flex-1 overflow-y-auto no-scrollbar p-6">
+                        <AISpotlight
+                            token={token}
+                            history={safeRecent}
+                            user={data.user}
+                            contextData={{
+                                userName: data.user?.display_name,
+                                artists: safeArtists.map((a: Artist, idx: number) => {
+                                    const time = String(a.timeStr || '');
+                                    const mins = time.replace('m', '');
+                                    return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
+                                }),
+                                albums: safeAlbums.map((a: Album, idx: number) => {
+                                    const time = String(a.timeStr || '');
+                                    const mins = time.replace('m', '');
+                                    return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
+                                }),
+                                songs: safeSongs.map((s: Song, idx: number) => {
+                                    const time = String(s.timeStr || '');
+                                    const mins = time.replace('m', '');
+                                    return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
+                                }),
+                                globalStats: dbStats
+                            }}
+                        />
+                    </div>
+                </motion.div>
+            </motion.div>
+        )}
+    </AnimatePresence>
     </>
   );
 }
