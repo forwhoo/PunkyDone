@@ -402,12 +402,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 setUserPrompt("");
                 return;
             }
-                } else {
-                    setErrorMsg(`No ${period} stats found. Start listening!`);
-                    setLoading(false);
-                    return;
-                }
-            }
 
             // SPECIAL HANDLER: WEEKLY INSIGHT (The AI Story Version)
             if (lower.includes('weekly insight') || lower.includes('insight story')) {
