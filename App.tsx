@@ -710,14 +710,15 @@ function App() {
                         <div className="glass-morph rounded-[24px] px-4 py-2">
                             {safeSongs.length > 0 ? (
                                 safeSongs.slice(0, 6).map((song: Song, index: number) => (
-                                    <MobileListRow
-                                        key={song.id}
-                                        rank={index + 1}
-                                        cover={song.cover}
-                                        title={song.title}
-                                        subtitle={song.artist}
-                                        meta={song.timeStr}
-                                    />
+                                    <div key={song.id} onClick={() => setSelectedTopSong(song)} className="cursor-pointer">
+                                        <MobileListRow
+                                            rank={index + 1}
+                                            cover={song.cover}
+                                            title={song.title}
+                                            subtitle={song.artist}
+                                            meta={song.timeStr}
+                                        />
+                                    </div>
                                 ))
                             ) : (
                                 <p className="text-[#8E8E93] text-sm py-8 text-center italic">Not enough data to rank songs yet.</p>
@@ -745,7 +746,7 @@ function App() {
                         {safeAlbums.length > 0 ? (
                             <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
                                 {safeAlbums.slice(0, 6).map((album: Album, index: number) => (
-                                    <div key={album.id} className="w-[140px] shrink-0 snap-start group">
+                                    <div key={album.id} className="w-[140px] shrink-0 snap-start group cursor-pointer" onClick={() => setSelectedTopAlbum(album)}>
                                         <div className="relative w-full h-[140px] rounded-[20px] overflow-hidden shadow-xl border-2 border-white/[0.08] active:scale-95 transition-transform">
                                             <img src={album.cover} alt={album.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
