@@ -708,22 +708,22 @@ function App() {
                             )}
                         </div>
                         {safeAlbums.length > 0 ? (
-                            <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x">
+                            <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
                                 {safeAlbums.slice(0, 6).map((album: Album, index: number) => (
-                                    <div key={album.id} className="w-[160px] shrink-0 snap-start">
-                                        <div className="relative w-full h-[160px] rounded-[24px] overflow-hidden shadow-xl border border-white/10">
+                                    <div key={album.id} className="w-[140px] shrink-0 snap-start group">
+                                        <div className="relative w-full h-[140px] rounded-[20px] overflow-hidden shadow-xl border-2 border-white/[0.08] active:scale-95 transition-transform">
                                             <img src={album.cover} alt={album.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                                            <div className="absolute top-3 left-3 text-white text-lg font-semibold">{index + 1}</div>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                            <div className="absolute top-2.5 left-2.5 text-white text-base font-bold bg-black/40 backdrop-blur-sm w-7 h-7 rounded-full flex items-center justify-center">{index + 1}</div>
                                         </div>
-                                        <p className="mt-2 text-sm font-semibold text-white truncate">{album.title}</p>
-                                        <p className="text-xs text-white/60 truncate">{album.artist}</p>
+                                        <p className="mt-2.5 text-[13px] font-semibold text-white truncate">{album.title}</p>
+                                        <p className="text-[11px] text-white/50 truncate">{album.artist}</p>
                                     </div>
-                                ))
-                            ) : (
-                                <p className="text-[#8E8E93] text-sm italic px-1">Not enough data to rank albums yet.</p>
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[#8E8E93] text-sm italic px-1">Not enough data to rank albums yet.</p>
+                        )}
                     </section>
                 </>
             )}
