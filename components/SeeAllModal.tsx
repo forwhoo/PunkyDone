@@ -78,7 +78,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
             <div className="relative bg-[#0A0A0A] w-full max-w-5xl h-full md:h-[90vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col border border-white/[0.06] animate-in slide-in-from-bottom-10 fade-in duration-500">
                 
                 {/* Header */}
-                <div className="flex-shrink-0 px-5 md:px-8 pt-6 md:pt-8 pb-4 bg-[#0A0A0A] border-b border-white/[0.06]">
+                <div className="flex-shrink-0 px-5 md:px-8 pt-6 md:pt-8 pb-4 bg-[#0A0A0A]/95 backdrop-blur-xl border-b border-white/[0.06] sticky top-0 z-10">
                     <div className="flex items-start justify-between mb-4">
                         <div>
                             <div className="flex items-center gap-2 mb-1.5">

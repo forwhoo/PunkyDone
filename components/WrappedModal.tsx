@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { X, Share2, Sparkles, Music2, Headphones, Clock, TrendingUp, Mic2, Disc, ChevronRight, ChevronLeft, Play, Sun, Moon, Sunset, Sunrise, Zap } from 'lucide-react';
+import { X, Share2, Sparkles, Music2, Headphones, Clock, TrendingUp, Mic2, Disc, ChevronRight, ChevronLeft, Play, Sun, Moon, Sunset, Sunrise, Zap, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateWrappedStory, generateWrappedVibe } from '../services/geminiService';
 import { getWrappedStats, getPeakListeningHour, getRadarArtists } from '../services/dbService';
+import { ArtistRace } from './ArtistRace';
 
 interface WrappedModalProps {
     isOpen: boolean;
@@ -83,7 +84,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
         return "0%";
     };
 
-    const totalSlides = 9;
+    const totalSlides = 10;
 
     const handleNext = () => setCurrentSlide(prev => Math.min(totalSlides - 1, prev + 1));
     const handlePrev = () => setCurrentSlide(prev => Math.max(0, prev - 1));
@@ -310,8 +311,43 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     </motion.div>
                                 )}
 
-                                {/* SLIDE 3: TOP SONG */}
+                                {/* SLIDE 3: ARTIST RACE */}
                                 {currentSlide === 3 && (
+                                    <motion.div
+                                        key="race"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="absolute inset-0 flex flex-col items-center justify-center p-6 overflow-y-auto no-scrollbar"
+                                    >
+                                        <div className="absolute inset-0 bg-[#0A0A0A]" />
+                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FA2D48] rounded-full blur-[120px] opacity-[0.08]" />
+                                        
+                                        <div className="relative z-10 w-full max-w-sm">
+                                            {topTracks.length >= 2 ? (
+                                                <ArtistRace
+                                                    competitors={topTracks.slice(0, 5).map((track: any) => ({
+                                                        name: track.artist || track.title,
+                                                        image: track.cover || '',
+                                                        score: track.plays || 0,
+                                                        type: 'artist' as const
+                                                    }))}
+                                                    title="Artist Battle"
+                                                    subtitle="Who dominated your playlist?"
+                                                />
+                                            ) : (
+                                                <div className="text-center">
+                                                    <Trophy size={48} className="text-[#FA2D48] mx-auto mb-4 opacity-50" />
+                                                    <p className="text-white/40">Not enough data for the race yet</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {/* SLIDE 4: TOP SONG */}
+                                {currentSlide === 4 && (
                                     <motion.div
                                         key="song"
                                         initial={{ opacity: 0, scale: 0.95 }}
@@ -386,8 +422,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     </motion.div>
                                 )}
 
-                                {/* SLIDE 4: RADAR / NEW DISCOVERIES */}
-                                {currentSlide === 4 && (
+                                {/* SLIDE 5: RADAR / NEW DISCOVERIES */}
+                                {currentSlide === 5 && (
                                     <motion.div
                                         key="radar"
                                         initial={{ opacity: 0, scale: 0.95 }}
@@ -445,8 +481,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     </motion.div>
                                 )}
 
-                                {/* SLIDE 5: PEAK LISTENING TIME */}
-                                {currentSlide === 5 && (
+                                {/* SLIDE 6: PEAK LISTENING TIME */}
+                                {currentSlide === 6 && (
                                     <motion.div
                                         key="peak"
                                         initial={{ opacity: 0, scale: 0.95 }}
@@ -495,8 +531,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     </motion.div>
                                 )}
 
-                                {/* SLIDE 6: AI VIBE CHECK */}
-                                {currentSlide === 6 && (
+                                {/* SLIDE 7: AI VIBE CHECK */}
+                                {currentSlide === 7 && (
                                     <motion.div
                                         key="vibe"
                                         initial={{ opacity: 0, scale: 0.95 }}
@@ -550,8 +586,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     </motion.div>
                                 )}
 
-                                {/* SLIDE 7: SUMMARY + TOP TRACKS */}
-                                {currentSlide === 7 && (
+                                {/* SLIDE 8: SUMMARY + TOP TRACKS */}
+                                {currentSlide === 8 && (
                                     <motion.div
                                         key="summary"
                                         initial={{ opacity: 0, scale: 0.95 }}
@@ -643,8 +679,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     </motion.div>
                                 )}
 
-                                {/* SLIDE 8: RECAP CARD */}
-                                {currentSlide === 8 && (
+                                {/* SLIDE 9: RECAP CARD */}
+                                {currentSlide === 9 && (
                                     <motion.div
                                         key="recap"
                                         initial={{ opacity: 0, scale: 0.95 }}
