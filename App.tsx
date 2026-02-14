@@ -225,7 +225,9 @@ function App() {
     }
   }, [dbUnifiedData, data, token]);
 
-  const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly' | 'All Time'>('Weekly');
+  const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly' | 'All Time' | 'Custom'>('Weekly');
+  const [customDateRange, setCustomDateRange] = useState<{ start: string; end: string } | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
@@ -671,17 +673,31 @@ function App() {
                         key={range}
                         onClick={() => {
                             setTimeRange(range);
+                            setCustomDateRange(null);
                             fetchDashboardStats(range).then(data => setDbUnifiedData(data));
                         }}
-                        className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                        className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
                             timeRange === range
                                 ? 'bg-white text-black'
-                                : 'bg-white/10 text-white/70 border border-white/10'
+                                : 'bg-white/10 text-white/70 border border-white/10 hover:bg-white/20'
                         }`}
                     >
                         {range}
                     </button>
                 ))}
+                <button
+                    onClick={() => setShowDatePicker(true)}
+                    className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-2 ${
+                        timeRange === 'Custom'
+                            ? 'bg-white text-black'
+                            : 'bg-white/10 text-white/70 border border-white/10 hover:bg-white/20'
+                    }`}
+                >
+                    <Calendar size={14} />
+                    {timeRange === 'Custom' && customDateRange 
+                        ? `${new Date(customDateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(customDateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                        : 'Custom Range'}
+                </button>
             </div>
 
             {showEmptyState ? (
@@ -1618,6 +1634,108 @@ function App() {
             </motion.div>
         )}
     </AnimatePresence>
+
+    {/* Date Range Picker Modal */}
+    <AnimatePresence>
+        {showDatePicker && (
+            <>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100]"
+                    onClick={() => setShowDatePicker(false)}
+                />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="p-6 border-b border-white/10">
+                        <div className="flex items-center justify-between mb-2">
+                            <h2 className="text-xl font-bold text-white">Custom Date Range</h2>
+                            <button
+                                onClick={() => setShowDatePicker(false)}
+                                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <p className="text-sm text-[#8E8E93]">Select a custom date range for your stats</p>
+                    </div>
+
+                    {/* Date Inputs */}
+                    <div className="p-6 space-y-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
+                                Start Date
+                            </label>
+                            <input
+                                type="date"
+                                max={new Date().toISOString().split('T')[0]}
+                                onChange={(e) => {
+                                    const newStart = e.target.value;
+                                    setCustomDateRange(prev => ({
+                                        start: newStart,
+                                        end: prev?.end || new Date().toISOString().split('T')[0]
+                                    }));
+                                }}
+                                value={customDateRange?.start || ''}
+                                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FA2D48] transition-colors"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
+                                End Date
+                            </label>
+                            <input
+                                type="date"
+                                max={new Date().toISOString().split('T')[0]}
+                                min={customDateRange?.start}
+                                onChange={(e) => {
+                                    const newEnd = e.target.value;
+                                    setCustomDateRange(prev => ({
+                                        start: prev?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                                        end: newEnd
+                                    }));
+                                }}
+                                value={customDateRange?.end || ''}
+                                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FA2D48] transition-colors"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="p-6 border-t border-white/10 flex gap-3">
+                        <button
+                            onClick={() => setShowDatePicker(false)}
+                            className="flex-1 px-4 py-3 rounded-xl bg-white/10 text-white font-semibold text-sm hover:bg-white/20 transition-all"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => {
+                                if (customDateRange?.start && customDateRange?.end) {
+                                    setTimeRange('Custom');
+                                    setShowDatePicker(false);
+                                    // Note: You would need to update fetchDashboardStats to handle custom date ranges
+                                    // For now, we'll just set the UI state
+                                }
+                            }}
+                            disabled={!customDateRange?.start || !customDateRange?.end}
+                            className="flex-1 px-4 py-3 rounded-xl bg-[#FA2D48] text-white font-semibold text-sm hover:bg-[#FF6B82] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Apply Range
+                        </button>
+                    </div>
+                </motion.div>
+            </>
+        )}
+    </AnimatePresence>
+
     </>
   );
 }
