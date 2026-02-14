@@ -222,6 +222,7 @@ const Particles = ({
       if (container.contains(gl.canvas)) {
         container.removeChild(gl.canvas);
       }
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
   }, [particleCount, particleSpread, speed, moveParticlesOnHover, particleHoverFactor, alphaParticles, particleBaseSize, sizeRandomness, cameraDistance, disableRotation]);
 

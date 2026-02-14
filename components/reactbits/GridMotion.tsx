@@ -103,17 +103,19 @@ const GridMotion = ({ items = [], gradientColor = 'black' }: GridMotionProps) =>
                       color: 'white',
                       fontSize: '1.5rem'
                     }}>
-                      {typeof content === 'string' && content.startsWith('http') ? (
-                        <div style={{
-                          width: '100%',
-                          height: '100%',
-                          backgroundSize: 'cover',
-                          backgroundPosition: '50% 50%',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          backgroundImage: `url(${content})`
-                        }} />
+                      {typeof content === 'string' && (content.startsWith('https://') || content.startsWith('http://')) ? (
+                        <img
+                          src={content}
+                          alt=""
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                          }}
+                        />
                       ) : (
                         <div style={{ padding: '1rem', textAlign: 'center', zIndex: 1 }}>{content}</div>
                       )}
