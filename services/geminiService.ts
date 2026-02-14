@@ -524,6 +524,81 @@ export const generateWrappedVibe = async (tracks: any[]): Promise<{ title: strin
     }
 };
 
+export interface QuizQuestion {
+    question: string;
+    choices: string[];
+    correctIndex: number;
+}
+
+export const generateWrappedQuiz = async (stats: {
+    topArtist?: string;
+    topSong?: string;
+    topAlbum?: string;
+    totalMinutes?: number;
+    totalTracks?: number;
+    peakHour?: string;
+}): Promise<QuizQuestion> => {
+    try {
+        const client = getAiClient();
+        if (!client) {
+            return {
+                question: `How many minutes did you listen this period?`,
+                choices: [
+                    `${Math.round((stats.totalMinutes || 100) * 0.5)}`,
+                    `${stats.totalMinutes || 100}`,
+                    `${Math.round((stats.totalMinutes || 100) * 1.5)}`,
+                    `${Math.round((stats.totalMinutes || 100) * 2)}`
+                ],
+                correctIndex: 1
+            };
+        }
+
+        const prompt = `
+            Generate a fun music trivia question for a user's listening wrapped/recap.
+            Use these stats to create a question about their listening habits:
+            - Top Artist: ${stats.topArtist || 'Unknown'}
+            - Top Song: ${stats.topSong || 'Unknown'}  
+            - Total Minutes: ${stats.totalMinutes || 0}
+            - Total Tracks: ${stats.totalTracks || 0}
+            - Peak Listening Hour: ${stats.peakHour || 'Unknown'}
+
+            Create a multiple choice question with 4 choices. One must be correct based on the data.
+            Make it fun and engaging.
+
+            Return JSON ONLY: { "question": "...", "choices": ["A", "B", "C", "D"], "correctIndex": 0 }
+            correctIndex is 0-based index of the correct answer.
+        `;
+
+        const response = await client.chat.completions.create({
+            model: "moonshotai/kimi-k2-instruct-0905",
+            messages: [{ role: "system", content: "You are a fun music quiz host." }, { role: "user", content: prompt }],
+            response_format: { type: "json_object" },
+            temperature: 0.7
+        });
+
+        const text = response.choices[0]?.message?.content || "{}";
+        const result = JSON.parse(text);
+
+        return {
+            question: result.question || "How well do you know your music?",
+            choices: result.choices || ["A", "B", "C", "D"],
+            correctIndex: typeof result.correctIndex === 'number' ? result.correctIndex : 0
+        };
+    } catch (e) {
+        console.error("Quiz Generation Error:", e);
+        return {
+            question: `Who was your #1 most played artist?`,
+            choices: [
+                stats.topArtist || 'Artist A',
+                'Taylor Swift',
+                'Drake',
+                'The Weeknd'
+            ].sort(() => Math.random() - 0.5),
+            correctIndex: 0
+        };
+    }
+};
+
 // WRAPPED TOOL CALLING - AI generates wrapped using function calls
 export interface WrappedToolResult {
     slides: WrappedSlide[];

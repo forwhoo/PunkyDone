@@ -1117,6 +1117,7 @@ export const getWrappedStats = async (period: 'daily' | 'weekly' | 'monthly' = '
     // Top Artist
     const artists: Record<string, { count: number, image: string }> = {};
     const songs: Record<string, { count: number, cover: string, artist: string }> = {};
+    const albums: Record<string, { count: number, cover: string, artist: string }> = {};
 
     rawData.forEach(item => {
         // Artist
@@ -1131,23 +1132,33 @@ export const getWrappedStats = async (period: 'daily' | 'weekly' | 'monthly' = '
             if (!songs[key]) songs[key] = { count: 0, cover: item.album_cover || '', artist: item.artist_name };
             songs[key].count++;
         }
+        // Album
+        if (item.album_name) {
+            const albumKey = item.album_name;
+            if (!albums[albumKey]) albums[albumKey] = { count: 0, cover: item.album_cover || '', artist: item.artist_name };
+            albums[albumKey].count++;
+        }
     });
 
 
     const topArtistEntry = Object.entries(artists).sort((a, b) => b[1].count - a[1].count)[0];
     const topSongEntry = Object.entries(songs).sort((a, b) => b[1].count - a[1].count)[0];
+    const topAlbumEntry = Object.entries(albums).sort((a, b) => b[1].count - a[1].count)[0];
 
     // Sort all songs for the "Vibe Check" list
     const topTracks = Object.entries(songs)
         .sort((a, b) => b[1].count - a[1].count)
         .slice(0, 50)
         .map(([key, data]) => ({
-            title: key, // title is the key in our simple map
+            title: key,
             artist: data.artist,
             cover: data.cover,
             plays: data.count,
             type: 'song'
         }));
+
+    // All album covers for grid background
+    const albumCovers = [...new Set(rawData.map(item => item.album_cover).filter(Boolean))];
 
     return {
         type: 'WRAPPED',
@@ -1156,8 +1167,10 @@ export const getWrappedStats = async (period: 'daily' | 'weekly' | 'monthly' = '
         totalMinutes,
         topArtist: topArtistEntry ? { name: topArtistEntry[0], count: topArtistEntry[1].count, image: topArtistEntry[1].image } : null,
         topSong: topSongEntry ? { title: topSongEntry[0], count: topSongEntry[1].count, cover: topSongEntry[1].cover, artist: topSongEntry[1].artist } : null,
-        topTracks: topTracks, // Now returning the list!
-        totalTracks: rawData.length
+        topAlbum: topAlbumEntry ? { title: topAlbumEntry[0], count: topAlbumEntry[1].count, cover: topAlbumEntry[1].cover, artist: topAlbumEntry[1].artist } : null,
+        topTracks: topTracks,
+        totalTracks: rawData.length,
+        albumCovers: albumCovers
     };
 }
 
