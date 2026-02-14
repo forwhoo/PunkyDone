@@ -1232,7 +1232,7 @@ function App() {
                             <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 w-48">
                                 <div className="bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2 shadow-xl">
                                     <p className="text-[10px] text-white/80 text-center leading-relaxed">
-                                        This artist represents this percentage of your total plays across all artists in the current time range
+                                        This artist represents this percentage of your total plays across all artists in the current time range.
                                     </p>
                                 </div>
                             </div>
@@ -1550,7 +1550,7 @@ function App() {
                                 <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 w-48">
                                     <div className="bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2 shadow-xl">
                                         <p className="text-[10px] text-white/80 text-center leading-relaxed">
-                                            This song represents this percentage of your total listening activity in the current time range
+                                            This song represents this percentage of your total listening activity in the current time range.
                                         </p>
                                     </div>
                                 </div>
