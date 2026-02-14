@@ -78,7 +78,7 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[9999] bg-[#0a0a0a]"
+                        className="fixed inset-0 z-[9999] bg-[#0a0a0a] flex flex-col h-screen"
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
@@ -97,7 +97,7 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                         </div>
 
                         {/* Content */}
-                        <div className="h-[calc(100vh-57px)]">
+                        <div className="flex-1 overflow-hidden">
                             <AISpotlight
                                 token={token}
                                 history={history}

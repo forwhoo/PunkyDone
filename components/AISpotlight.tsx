@@ -122,6 +122,20 @@ interface CategoryResult {
     viewMode?: 'standard' | 'ranked';
 }
 
+interface ChatMessage {
+    role: 'user' | 'ai';
+    text: string;
+    timestamp: Date;
+}
+
+const LoadingDots = ({ color = 'bg-white/40', size = 'w-2 h-2' }: { color?: string; size?: string }) => (
+    <div className="flex items-center gap-1.5">
+        <span className={`${size} ${color} rounded-full animate-bounce`} style={{ animationDelay: '0ms' }}></span>
+        <span className={`${size} ${color} rounded-full animate-bounce`} style={{ animationDelay: '150ms' }}></span>
+        <span className={`${size} ${color} rounded-full animate-bounce`} style={{ animationDelay: '300ms' }}></span>
+    </div>
+);
+
 export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history = [], user }) => {
     const [loading, setLoading] = useState(false);
 
@@ -217,7 +231,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const sectionRef = useRef<HTMLDivElement>(null);
 
     // Chat message history
-    const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'ai'; text: string; timestamp: Date }>>([]);
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Scroll to bottom when new messages arrive
@@ -630,11 +644,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             className="flex justify-start"
                         >
                             <div className="bg-[#2d2d2d] rounded-2xl rounded-bl-md px-5 py-4">
-                                <div className="flex items-center gap-1.5">
-                                    <span className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                                    <span className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                                    <span className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                                </div>
+                                <LoadingDots />
                             </div>
                         </motion.div>
                     )}
@@ -1280,11 +1290,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 {/* Loading Overlay for Discovery - Minimal */}
                 {loading && mode === 'discover' && categoryResults.length === 0 && (
                     <div className="relative h-[200px] flex flex-col items-center justify-center">
-                        <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 bg-[#FA2D48] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                            <span className="w-2.5 h-2.5 bg-[#FA2D48] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                            <span className="w-2.5 h-2.5 bg-[#FA2D48] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                        </div>
+                        <LoadingDots color="bg-[#FA2D48]" size="w-2.5 h-2.5" />
                     </div>
                 )}
             </div>
