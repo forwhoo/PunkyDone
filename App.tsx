@@ -1505,22 +1505,22 @@ function App() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 backdrop-blur-xl"
+                className="fixed inset-0 z-[9999] bg-[#0a0a0a]"
             >
                 <motion.div
-                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.3 }}
-                    className="relative w-full max-w-3xl h-[90vh] md:h-[85vh] bg-[#0A0A0A] md:rounded-[32px] overflow-hidden border border-white/5 shadow-2xl flex flex-col"
+                    className="relative w-full h-full flex flex-col"
                 >
                     {/* Modal Header */}
-                    <div className="flex items-center justify-between p-5 border-b border-white/5 flex-shrink-0">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-[#FA2D48]/10 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-lg bg-[#FA2D48]/10 flex items-center justify-center">
                                 <Sparkles className="w-4 h-4 text-[#FA2D48]" />
                             </div>
-                            <h2 className="text-lg font-bold text-white tracking-tight">AI Discovery</h2>
+                            <h2 className="text-base font-bold text-white tracking-tight">AI Discovery</h2>
                         </div>
                         <button
                             onClick={() => setAiModalOpen(false)}
@@ -1531,7 +1531,7 @@ function App() {
                     </div>
 
                     {/* AI Spotlight Content */}
-                    <div className="flex-1 overflow-y-auto no-scrollbar p-6">
+                    <div className="flex-1 overflow-hidden">
                         <AISpotlight
                             token={token}
                             history={safeRecent}
