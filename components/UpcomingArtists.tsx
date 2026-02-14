@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, Disc, Info } from 'lucide-react';
+import { ArrowUpRight, Disc, Info, X, TrendingUp, Calendar } from 'lucide-react';
 import { Artist } from '../types';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface UpcomingArtistsProps {
     recentPlays: any[];
@@ -10,6 +11,7 @@ interface UpcomingArtistsProps {
 
 export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, topArtists, artistImages }) => {
     const [showTooltip, setShowTooltip] = useState(false);
+    const [selectedArtist, setSelectedArtist] = useState<any>(null);
     
     // Logic: distinct artists in recentPlays who are NOT in topArtists (Top 20)
     // This simulates "New Discoveries"
@@ -67,7 +69,11 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
 
             <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
                 {upcoming.map((artist, idx) => (
-                    <div key={artist.name} className="flex-shrink-0 relative flex items-center snap-start group cursor-default w-[180px] md:w-[220px]">
+                    <div 
+                        key={artist.name} 
+                        className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]"
+                        onClick={() => setSelectedArtist(artist)}
+                    >
                         <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-white/5">
                             {idx + 1}
                         </span>
@@ -94,6 +100,84 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                     </div>
                 ))}
             </div>
+
+            {/* Modal for Selected Artist */}
+            <AnimatePresence>
+                {selectedArtist && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100]"
+                            onClick={() => setSelectedArtist(null)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Close Button */}
+                            <button
+                                onClick={() => setSelectedArtist(null)}
+                                className="absolute top-4 right-4 z-10 bg-black/40 hover:bg-black/60 rounded-full p-2 text-white transition-all"
+                            >
+                                <X size={18} />
+                            </button>
+
+                            {/* Header */}
+                            <div className="relative h-48 overflow-hidden">
+                                <img
+                                    src={selectedArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtist.name)}&background=1DB954&color=fff`}
+                                    alt={selectedArtist.name}
+                                    className="w-full h-full object-cover blur-sm scale-110"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1E] to-transparent"></div>
+                                <div className="absolute bottom-4 left-6 right-6">
+                                    <h2 className="text-2xl font-black text-white mb-2 drop-shadow-lg">{selectedArtist.name}</h2>
+                                    <div className="inline-flex items-center gap-2 bg-blue-500/20 border border-blue-400/30 px-3 py-1 rounded-full">
+                                        <TrendingUp size={12} className="text-blue-400" />
+                                        <span className="text-xs font-semibold text-blue-300">Upcoming Artist</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-6 space-y-4">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                        <p className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold mb-1">Total Plays</p>
+                                        <p className="text-2xl font-black text-white">{selectedArtist.plays}</p>
+                                    </div>
+                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                        <p className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold mb-1">First Heard</p>
+                                        <p className="text-sm font-semibold text-white">
+                                            {new Date(selectedArtist.firstPlay).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                    <p className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold mb-2">Why Upcoming?</p>
+                                    <p className="text-[13px] text-white/80 leading-relaxed">
+                                        This artist is gaining traction in your listening habits with <span className="font-semibold text-white">{selectedArtist.plays} plays</span> recently, 
+                                        but hasn't made it to your top charts yet. Keep listening to see them climb!
+                                    </p>
+                                </div>
+
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                    <p className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold mb-2 flex items-center gap-1">
+                                        <Disc size={10} /> Sample Track
+                                    </p>
+                                    <p className="text-sm font-medium text-white truncate">{selectedArtist.trackSample}</p>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { TrendingUp, Sparkles, Disc, Mic2, Music, X, Clock, ChevronDown, Check } from 'lucide-react';
+import { TrendingUp, Sparkles, Disc, Mic2, Music, X, Clock, ChevronDown, Check, Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const AVAILABLE_YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
@@ -321,9 +321,20 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             <div className="flex-1 w-full relative min-h-[400px] md:min-h-[500px]">
                 <div className="flex justify-between items-end mb-4 md:mb-16 px-2 relative z-10">
                     <div>
-                        <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                            Obsession Orbit
-                        </h2>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                                Obsession Orbit
+                            </h2>
+                            <div className="relative group/info">
+                                <Info size={16} className="text-[#8E8E93] hover:text-white transition-colors cursor-help" />
+                                <div className="absolute left-0 top-full mt-2 w-72 bg-[#1C1C1E] border border-white/10 rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
+                                    <p className="text-[11px] text-[#8E8E93] leading-relaxed">
+                                        <span className="text-white font-semibold">Obsession Orbit</span> visualizes your top {activeTab}s based on listening patterns. 
+                                        The center shows your #1, with rings displaying your most obsessed {activeTab}s based on consistency, volume, and recency.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                         <p className="text-[#8E8E93] text-sm mt-1">
                             Your {activeTab} universe in motion
                         </p>
@@ -488,10 +499,10 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         </div>
                     </div>
 
-                    {/* Orbital Lines */}
-                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-60 scale-[0.68] pointer-events-none"></div>
-                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-40 scale-[0.96] pointer-events-none"></div>
-                    <div className="absolute inset-0 rounded-full border border-white/5 opacity-30 scale-[0.82] pointer-events-none"></div>
+                    {/* Orbital Rings - Visible circles */}
+                    <div className="absolute inset-0 rounded-full border-2 border-white/10 scale-[0.68] pointer-events-none"></div>
+                    <div className="absolute inset-0 rounded-full border-2 border-white/10 scale-[0.96] pointer-events-none"></div>
+                    <div className="absolute inset-0 rounded-full border border-white/5 scale-[0.82] pointer-events-none"></div>
                 </motion.div>
                 )}
             </div>
@@ -634,12 +645,12 @@ const OrbitNode = ({ item, rank, size, isActive, isDimmed, onClick }: { item: Tr
                 <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none"></div>
             </div>
 
-            {/* Custom Tooltip - STRAIGHT (Not rotated via parent) */}
-            <div className={`absolute top-full mt-3 left-1/2 -translate-x-1/2 transition-all duration-200 pointer-events-none z-[60] min-w-[max-content] text-center ${isActive || isDimmed ? 'opacity-0' : 'opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-2'}`}>
-                 <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 shadow-2xl transform-none flex items-center gap-3">
-                     <span className="text-[10px] font-black text-[#FA2D48] font-mono">#{rank}</span>
+            {/* Custom Tooltip - Better positioning and UI */}
+            <div className={`absolute bottom-full mb-3 left-1/2 -translate-x-1/2 transition-all duration-200 pointer-events-none z-[60] min-w-[max-content] text-center ${isActive || isDimmed ? 'opacity-0' : 'opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-[-4px]'}`}>
+                 <div className="bg-[#1C1C1E] backdrop-blur-xl border border-white/10 rounded-lg px-3 py-2 shadow-2xl transform-none flex items-center gap-2">
+                     <span className="text-[10px] font-bold text-[#FA2D48] font-mono">#{rank}</span>
                      <div className="h-3 w-px bg-white/20"></div>
-                     <p className="text-[11px] font-bold text-white whitespace-nowrap">{item.recentPlays} plays</p>
+                     <p className="text-[11px] font-semibold text-white whitespace-nowrap">{item.recentPlays} plays</p>
                  </div>
             </div>
         </div>
