@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Send, X, Sparkles } from 'lucide-react';
+import { Search, Send, X, Sparkles, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AISpotlight } from './AISpotlight';
 
@@ -84,9 +84,9 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                         <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-[#FA2D48]/10 flex items-center justify-center">
-                                    <Sparkles className="w-4 h-4 text-[#FA2D48]" />
+                                    <MessageSquare className="w-4 h-4 text-[#FA2D48]" />
                                 </div>
-                                <h2 className="text-base font-bold text-white tracking-tight">AI Discovery</h2>
+                                <h2 className="text-base font-bold text-white tracking-tight">Chat with Punky</h2>
                             </div>
                             <button
                                 onClick={handleClose}

@@ -818,19 +818,19 @@ function App() {
                                     setWrappedModal({ isOpen: true, period: timeRange });
                                 }
                             }}
-                            className="w-full glass-morph rounded-[28px] p-7 shadow-xl border border-white/[0.15] active:scale-[0.98] transition-all"
+                            className="w-full bg-[#1C1C1E] rounded-2xl p-5 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all"
                         >
                             <div className="flex items-center justify-between">
-                                <div className="text-left">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-10 h-10 rounded-full bg-[#1C1C1E] flex items-center justify-center border border-white/10">
-                                            <Sparkles className="w-5 h-5 text-[#FA2D48]" />
-                                        </div>
-                                        <h3 className="text-[20px] font-bold text-white tracking-tight">Your Wrapped</h3>
+                                <div className="text-left flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-[#FA2D48]/10 flex items-center justify-center border border-white/5">
+                                        <Sparkles className="w-5 h-5 text-[#FA2D48]" />
                                     </div>
-                                    <p className="text-[14px] text-white/70 font-medium">View your personalized music story</p>
+                                    <div>
+                                        <h3 className="text-[15px] font-bold text-white tracking-tight">Your Wrapped</h3>
+                                        <p className="text-[12px] text-[#8E8E93] font-medium">View your story</p>
+                                    </div>
                                 </div>
-                                <Calendar className="w-7 h-7 text-[#FA2D48] flex-shrink-0" />
+                                <Calendar className="w-5 h-5 text-[#FA2D48]/60 flex-shrink-0" />
                             </div>
                         </button>
                     </section>
@@ -1088,21 +1088,19 @@ function App() {
                                 setWrappedModal({ isOpen: true, period: timeRange });
                             }
                         }}
-                        className="w-full bg-[#1C1C1E] rounded-3xl p-8 border border-white/5 hover:border-white/10 transition-all group active:scale-[0.99]"
+                        className="w-full bg-[#1C1C1E] rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99]"
                     >
                         <div className="flex items-center justify-between">
-                            <div className="text-left">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-12 h-12 rounded-2xl bg-[#FA2D48]/10 flex items-center justify-center border border-white/5">
-                                        <Sparkles className="w-6 h-6 text-[#FA2D48]" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-white tracking-tight">Your {timeRange} Wrapped</h3>
-                                        <p className="text-[13px] text-[#8E8E93] font-medium mt-0.5">View your personalized music story</p>
-                                    </div>
+                            <div className="text-left flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-[#FA2D48]/10 flex items-center justify-center border border-white/5">
+                                    <Sparkles className="w-5 h-5 text-[#FA2D48]" />
+                                </div>
+                                <div>
+                                    <h3 className="text-[15px] font-bold text-white tracking-tight">Your {timeRange} Wrapped</h3>
+                                    <p className="text-[12px] text-[#8E8E93] font-medium">View your story</p>
                                 </div>
                             </div>
-                            <Calendar className="w-8 h-8 text-[#FA2D48]/60 group-hover:text-[#FA2D48] transition-colors flex-shrink-0" />
+                            <Calendar className="w-5 h-5 text-[#FA2D48]/60 group-hover:text-[#FA2D48] transition-colors flex-shrink-0" />
                         </div>
                     </button>
                 </div>

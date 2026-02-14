@@ -161,7 +161,6 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                         className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
                                     >
                                         <div className="absolute inset-0 bg-[#0A0A0A]" />
-                                        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-64 h-64 bg-[#FA2D48] rounded-full blur-[100px] opacity-[0.15]" />
                                         
                                         <motion.div
                                             initial={{ y: 20, opacity: 0 }}
@@ -193,7 +192,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                             transition={{ delay: 0.5 }}
                                             className="relative z-10 text-lg text-[#8E8E93] font-medium"
                                         >
-                                            {userName ? `Hey ${userName}, let's dive in` : "Let's dive into your stats"}
+                                            {userName ? `${userName}'s Music Wrapped` : "Your Music Wrapped"}
                                         </motion.p>
                                     </motion.div>
                                 )}
@@ -209,7 +208,6 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                         className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
                                     >
                                         <div className="absolute inset-0 bg-[#0A0A0A]" />
-                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FA2D48] rounded-full blur-[120px] opacity-[0.1]" />
                                         
                                         <motion.div
                                             initial={{ scale: 0 }}
@@ -254,7 +252,6 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                         className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
                                     >
                                         <div className="absolute inset-0 bg-[#0A0A0A]" />
-                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 bg-[#FA2D48] rounded-full blur-[100px] opacity-[0.12]" />
                                         
                                         <motion.span
                                             initial={{ y: -10, opacity: 0 }}
@@ -322,7 +319,6 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                         className="absolute inset-0 flex flex-col items-center justify-center p-6 overflow-y-auto no-scrollbar"
                                     >
                                         <div className="absolute inset-0 bg-[#0A0A0A]" />
-                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FA2D48] rounded-full blur-[120px] opacity-[0.08]" />
                                         
                                         <div className="relative z-10 w-full max-w-sm">
                                             {topTracks.length >= 2 ? (
@@ -357,7 +353,6 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                         className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
                                     >
                                         <div className="absolute inset-0 bg-[#0A0A0A]" />
-                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 bg-[#FA2D48] rounded-full blur-[100px] opacity-[0.12]" />
                                         
                                         <motion.span
                                             initial={{ y: -10, opacity: 0 }}
@@ -433,7 +428,6 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                         className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
                                     >
                                         <div className="absolute inset-0 bg-[#0A0A0A]" />
-                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FA2D48] rounded-full blur-[120px] opacity-[0.08]" />
                                         
                                         <motion.div
                                             initial={{ y: -10, opacity: 0 }}
@@ -492,7 +486,6 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                         className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
                                     >
                                         <div className="absolute inset-0 bg-[#0A0A0A]" />
-                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FA2D48] rounded-full blur-[120px] opacity-[0.1]" />
                                         
                                         <motion.div
                                             initial={{ y: -10, opacity: 0 }}
@@ -542,7 +535,6 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                         className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
                                     >
                                         <div className="absolute inset-0 bg-[#0A0A0A]" />
-                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FA2D48] rounded-full blur-[120px] opacity-[0.15]" />
                                         
                                         <motion.div
                                             initial={{ y: -10, opacity: 0 }}
@@ -597,7 +589,6 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                         className="absolute inset-0 flex flex-col p-6 pt-14 overflow-y-auto no-scrollbar"
                                     >
                                         <div className="absolute inset-0 bg-[#0A0A0A] -z-10" />
-                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-40 bg-[#FA2D48] rounded-full blur-[100px] opacity-[0.08] -z-10" />
 
                                         <motion.h2
                                             initial={{ y: 10, opacity: 0 }}
@@ -690,7 +681,6 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                         className="absolute inset-0 flex flex-col p-6 pt-14 overflow-y-auto no-scrollbar"
                                     >
                                         <div className="absolute inset-0 bg-[#0A0A0A] -z-10" />
-                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-40 bg-[#FA2D48] rounded-full blur-[100px] opacity-[0.08] -z-10" />
 
                                         <motion.h2
                                             initial={{ y: 10, opacity: 0 }}

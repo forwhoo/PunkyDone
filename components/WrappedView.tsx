@@ -34,7 +34,7 @@ export const WrappedView: React.FC<WrappedCardProps> = ({ data, title, descripti
     
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-            <div className="relative w-full max-w-md h-[85vh] bg-gradient-to-br from-[#1C1C1E] to-[#000] rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col">
+            <div className="relative w-full max-w-md h-[85vh] bg-[#0A0A0A] rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col">
                 
                 {/* Story Progress Bar (Decorative) */}
                 <div className="absolute top-4 left-4 right-4 flex gap-1 z-20">
@@ -76,12 +76,9 @@ export const WrappedView: React.FC<WrappedCardProps> = ({ data, title, descripti
 
                     {/* Main Visual */}
                     <div className="flex flex-col items-center justify-center mb-6 relative">
-                         {/* Background Glow */}
-                         <div className="absolute inset-0 bg-gradient-to-t from-white/5 to-transparent blur-3xl opacity-20"></div>
                          
                          {topItem && (
                             <div className="relative w-48 h-48 sm:w-56 sm:h-56 mb-10 group animate-in zoom-in duration-1000 delay-300">
-                                <div className={`absolute inset-0 bg-white ${isArtistWrapped ? 'rounded-full' : 'rounded-2xl'} blur-2xl opacity-10 group-hover:opacity-20 transition-opacity`}></div>
                                 <img 
                                     src={getItemImage(topItem)} 
                                     className={`w-full h-full object-cover shadow-2xl border-2 border-white/10 ${isArtistWrapped ? 'rounded-full' : 'rounded-2xl'}`}
