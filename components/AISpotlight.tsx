@@ -27,6 +27,7 @@ interface TopAIProps {
         }
     };
     user?: any;
+    initialQuery?: string;
 }
 
 // Reusable Ranked Item Component (Internal)
@@ -136,7 +137,7 @@ const LoadingDots = ({ color = 'bg-white/40', size = 'w-2 h-2' }: { color?: stri
     </div>
 );
 
-export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history = [], user }) => {
+export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history = [], user, initialQuery }) => {
     const [loading, setLoading] = useState(false);
 
     // Store array of category results
@@ -571,6 +572,17 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         if (!manualPrompt) setUserPrompt("");
     };
 
+    // Auto-send initial query from search bar
+    const initialQuerySentRef = useRef(false);
+    const handleQueryRef = useRef(handleQuery);
+    handleQueryRef.current = handleQuery;
+    useEffect(() => {
+        if (initialQuery && initialQuery.trim() && !initialQuerySentRef.current) {
+            initialQuerySentRef.current = true;
+            handleQueryRef.current(initialQuery.trim());
+        }
+    }, [initialQuery]);
+
     return (
         <div className="flex flex-col h-full" id="ai-spotlight" ref={sectionRef}>
             {/* Header with Discovery Toggle */}
@@ -612,8 +624,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                             <div className={`max-w-[80%] ${msg.role === 'user'
-                                ? 'bg-[#1DB954] text-white rounded-2xl rounded-br-md px-4 py-3'
-                                : 'bg-[#2d2d2d] text-white rounded-2xl rounded-bl-md px-4 py-3'
+                                ? 'bg-white/15 text-white rounded-2xl rounded-br-md px-4 py-3 border border-white/10'
+                                : 'bg-[#1C1C1E] text-white rounded-2xl rounded-bl-md px-4 py-3 border border-white/5'
                             }`}>
                                 {msg.role === 'ai' ? (
                                     <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
@@ -643,7 +655,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             animate={{ opacity: 1, y: 0 }}
                             className="flex justify-start"
                         >
-                            <div className="bg-[#2d2d2d] rounded-2xl rounded-bl-md px-5 py-4">
+                            <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl rounded-bl-md px-5 py-4">
                                 <LoadingDots />
                             </div>
                         </motion.div>

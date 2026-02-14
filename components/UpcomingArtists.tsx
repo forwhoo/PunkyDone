@@ -1,5 +1,5 @@
-import React from 'react';
-import { ArrowUpRight, Disc } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowUpRight, Disc, Info } from 'lucide-react';
 import { Artist } from '../types';
 
 interface UpcomingArtistsProps {
@@ -9,6 +9,8 @@ interface UpcomingArtistsProps {
 }
 
 export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, topArtists, artistImages }) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+    
     // Logic: distinct artists in recentPlays who are NOT in topArtists (Top 20)
     // This simulates "New Discoveries"
     
@@ -45,9 +47,22 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                 <div className="flex items-center gap-3">
                     <h3 className="text-[20px] font-bold text-white tracking-tight flex items-center gap-2">
                         <ArrowUpRight className="text-blue-400" /> Upcoming Artists
+                        <button
+                            onClick={() => setShowTooltip(!showTooltip)}
+                            className="relative p-1 rounded-full hover:bg-white/10 transition-colors"
+                        >
+                            <Info size={16} className="text-[#8E8E93]" />
+                            {showTooltip && (
+                                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 bg-[#1C1C1E] border border-white/10 rounded-xl p-3 w-64 shadow-2xl">
+                                    <p className="text-xs text-white/70 leading-relaxed text-left font-normal">
+                                        Artists entering your radar — new names appearing in your recent listening that aren&apos;t in your top charts yet. Our algorithm spots fresh discoveries in your rotation.
+                                    </p>
+                                </div>
+                            )}
+                        </button>
                     </h3>
                 </div>
-                <p className="text-[#8E8E93] text-xs">New artists entering your orbit recently</p>
+                <p className="text-[#8E8E93] text-xs">New artists entering your orbit</p>
              </div>
 
             <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
