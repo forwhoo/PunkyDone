@@ -586,15 +586,17 @@ export const generateWrappedQuiz = async (stats: {
         };
     } catch (e) {
         console.error("Quiz Generation Error:", e);
+        const correctAnswer = stats.topArtist || 'Artist A';
+        const choices = [
+            correctAnswer,
+            'Taylor Swift',
+            'Drake',
+            'The Weeknd'
+        ].sort(() => Math.random() - 0.5);
         return {
             question: `Who was your #1 most played artist?`,
-            choices: [
-                stats.topArtist || 'Artist A',
-                'Taylor Swift',
-                'Drake',
-                'The Weeknd'
-            ].sort(() => Math.random() - 0.5),
-            correctIndex: 0
+            choices,
+            correctIndex: choices.indexOf(correctAnswer)
         };
     }
 };

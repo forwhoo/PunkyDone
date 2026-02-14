@@ -26,7 +26,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
     const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [currentSlide, setCurrentSlide] = useState(0);
-    const [orbitSpeed, setOrbitSpeed] = useState(20);
+    const [orbitDuration, setOrbitDuration] = useState(20);
 
     const mapPeriod = (p: string): 'daily' | 'weekly' | 'monthly' => {
         const lower = p.toLowerCase();
@@ -77,11 +77,11 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
         }
     }, [isOpen, period]);
 
-    // Orbit speed animation for slide 8
+    // Orbit animation for slide 8 - starts fast (short duration) then slows down
     useEffect(() => {
         if (currentSlide === 8) {
-            setOrbitSpeed(2);
-            const timer = setTimeout(() => setOrbitSpeed(20), 2000);
+            setOrbitDuration(2);
+            const timer = setTimeout(() => setOrbitDuration(20), 2000);
             return () => clearTimeout(timer);
         }
     }, [currentSlide]);
@@ -133,7 +133,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
         return `${h}:00 ${ampm}`;
     };
 
-    const peakSongs = topTracks.filter((_: any, i: number) => i < 3);
+    const peakSongs = topTracks.slice(0, 3);
 
     return (
         <div className="fixed inset-0 z-[100] bg-black">
@@ -769,12 +769,11 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                 return (
                                                     <motion.div
                                                         key={idx}
-                                                        className="absolute"
+                                                        className="absolute w-8 h-8"
                                                         style={{
                                                             left: '50%',
                                                             top: '50%',
-                                                            marginLeft: -16,
-                                                            marginTop: -16,
+                                                            transform: 'translate(-50%, -50%)',
                                                         }}
                                                         initial={{ opacity: 0, scale: 0 }}
                                                         animate={{
@@ -790,7 +789,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                             x: { delay: 0.8 + idx * 0.1 },
                                                             y: { delay: 0.8 + idx * 0.1 },
                                                             rotate: {
-                                                                duration: orbitSpeed,
+                                                                duration: orbitDuration,
                                                                 repeat: Infinity,
                                                                 ease: "linear",
                                                             },
