@@ -1,6 +1,6 @@
+import React, { useState } from 'react';
 import { ArrowUpRight, Disc, Info } from 'lucide-react';
 import { Artist } from '../types';
-import React, { useState } from 'react';
 
 interface UpcomingArtistsProps {
     recentPlays: any[];
@@ -55,7 +55,7 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                             {showTooltip && (
                                 <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 bg-[#1C1C1E] border border-white/10 rounded-xl p-3 w-64 shadow-2xl">
                                     <p className="text-xs text-white/70 leading-relaxed text-left font-normal">
-                                        Artists entering your radar that you&apos;ve never listened to before. Our algorithm detects new artists appearing in your recent listening that aren&apos;t in your top charts.
+                                        Artists entering your radar — new names appearing in your recent listening that aren&apos;t in your top charts yet. Our algorithm spots fresh discoveries in your rotation.
                                     </p>
                                 </div>
                             )}

@@ -574,10 +574,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
     // Auto-send initial query from search bar
     const initialQuerySentRef = useRef(false);
+    const handleQueryRef = useRef(handleQuery);
+    handleQueryRef.current = handleQuery;
     useEffect(() => {
         if (initialQuery && initialQuery.trim() && !initialQuerySentRef.current) {
             initialQuerySentRef.current = true;
-            handleQuery(initialQuery.trim());
+            handleQueryRef.current(initialQuery.trim());
         }
     }, [initialQuery]);
 
