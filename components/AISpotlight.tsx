@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from './UIComponents';
 // import { ActivityHeatmap } from './ActivityHeatmap';
-import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2, Gift, ChevronLeft } from 'lucide-react';
+import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2, Gift, ChevronLeft, ArrowUp } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory, generateWrappedVibe, generateWrappedWithTools, WrappedSlide } from '../services/geminiService';
 import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
@@ -122,6 +122,20 @@ interface CategoryResult {
     viewMode?: 'standard' | 'ranked';
 }
 
+interface ChatMessage {
+    role: 'user' | 'ai';
+    text: string;
+    timestamp: Date;
+}
+
+const LoadingDots = ({ color = 'bg-white/40', size = 'w-2 h-2' }: { color?: string; size?: string }) => (
+    <div className="flex items-center gap-1.5">
+        <span className={`${size} ${color} rounded-full animate-bounce`} style={{ animationDelay: '0ms' }}></span>
+        <span className={`${size} ${color} rounded-full animate-bounce`} style={{ animationDelay: '150ms' }}></span>
+        <span className={`${size} ${color} rounded-full animate-bounce`} style={{ animationDelay: '300ms' }}></span>
+    </div>
+);
+
 export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history = [], user }) => {
     const [loading, setLoading] = useState(false);
 
@@ -216,6 +230,15 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const [discoveryMode, setDiscoveryMode] = useState(false);
     const sectionRef = useRef<HTMLDivElement>(null);
 
+    // Chat message history
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Scroll to bottom when new messages arrive
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chatMessages, displayedText, loading]);
+
     // Use First Name if available
     const userName = useMemo(() => {
         if (!user || !user.display_name) return "there";
@@ -307,6 +330,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
         // Update input if manual
         if (manualPrompt) setUserPrompt(manualPrompt);
+
+        // Add user message to chat history
+        setChatMessages(prev => [...prev, { role: 'user', text: promptToUse, timestamp: new Date() }]);
 
         setLoading(true);
         setErrorMsg(null);
@@ -533,6 +559,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 setMode('chat');
                 const answer = await answerMusicQuestion(promptToUse, contextData);
                 setChatResponse(answer);
+                setChatMessages(prev => [...prev, { role: 'ai', text: answer, timestamp: new Date() }]);
                 setDisplayedText(""); // Reset text for typing
                 setTyping(true);
             }
@@ -545,30 +572,91 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     };
 
     return (
-        <div className="scroll-mt-24" id="ai-spotlight" ref={sectionRef}>
-            {/* Clean Centered Search Interface */}
-            <div className="flex flex-col items-center justify-center mb-8 px-4 text-center">
+        <div className="flex flex-col h-full" id="ai-spotlight" ref={sectionRef}>
+            {/* Header with Discovery Toggle */}
+            <div className="flex-shrink-0 flex items-center justify-center py-3 px-4 border-b border-white/5">
+                <div className="flex items-center gap-0 border border-white/10 bg-white/5 rounded-xl p-1 backdrop-blur-md">
+                    <button
+                        onClick={() => setDiscoveryMode(false)}
+                        className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all ${!discoveryMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
+                    >
+                        Chat
+                    </button>
+                    <button
+                        onClick={() => setDiscoveryMode(true)}
+                        className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all flex items-center gap-1.5 ${discoveryMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
+                    >
+                        <Zap size={12} />
+                        Discovery
+                    </button>
+                </div>
+            </div>
 
-                {/* Chat Display Area */}
-                {(displayedText || mode === 'chat' || loading) && (
-                    <div className="w-full text-left mb-8 min-h-[60px] max-h-[400px] overflow-y-auto px-1 scrollbar-thin scrollbar-thumb-[#FA2D48] scrollbar-track-transparent max-w-2xl mx-auto">
-                        {loading ? (
-                            <div className="flex items-center gap-3 text-[#FA2D48] font-mono text-sm">
-                                <div className="w-2 h-2 bg-[#FA2D48] rounded-full animate-ping"></div>
-                                <span className="animate-pulse">Analyzing your library...</span>
-                            </div>
-                        ) : (
-                            <div className="text-white text-lg font-medium leading-relaxed font-mono whitespace-pre-wrap markdown-container">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {typing ? displayedText : (chatResponse || "")}
-                                </ReactMarkdown>
-                                {typing && <span className="inline-block w-[3px] h-6 ml-1 bg-[#FA2D48] align-middle animate-pulse"></span>}
-                            </div>
-                        )}
+            {/* Scrollable Messages Area */}
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+                {/* Chat Messages */}
+                <div className="max-w-2xl mx-auto space-y-4">
+                    {chatMessages.length === 0 && !loading && categoryResults.length === 0 && !insightMode && !wrappedMode && (
+                        <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
+                            <Sparkles className="w-8 h-8 text-[#FA2D48]/40 mb-3" />
+                            <p className="text-[#8E8E93] text-sm">Ask about your music...</p>
+                        </div>
+                    )}
 
-                        {/* AI Suggestion Button - Centered & Clean */}
-                        {mode === 'chat' && !typing && !loading && categoryResults.length === 0 && (
-                            <div className="mt-8 flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full">
+                    {chatMessages.map((msg, idx) => (
+                        <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                            <div className={`max-w-[80%] ${msg.role === 'user'
+                                ? 'bg-[#1DB954] text-white rounded-2xl rounded-br-md px-4 py-3'
+                                : 'bg-[#2d2d2d] text-white rounded-2xl rounded-bl-md px-4 py-3'
+                            }`}>
+                                {msg.role === 'ai' ? (
+                                    <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {idx === chatMessages.length - 1 && typing
+                                                ? displayedText
+                                                : msg.text}
+                                        </ReactMarkdown>
+                                        {idx === chatMessages.length - 1 && typing && (
+                                            <span className="inline-block w-[2px] h-5 ml-0.5 bg-white/70 align-middle animate-pulse"></span>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className="text-[15px] leading-relaxed">{msg.text}</p>
+                                )}
+                                <p className={`text-[11px] mt-1.5 ${msg.role === 'user' ? 'text-white/60' : 'text-[#666666]'}`}>
+                                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                            </div>
+                        </motion.div>
+                    ))}
+
+                    {/* Typing Indicator */}
+                    {loading && mode === 'chat' && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex justify-start"
+                        >
+                            <div className="bg-[#2d2d2d] rounded-2xl rounded-bl-md px-5 py-4">
+                                <LoadingDots />
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* AI Suggestion Button */}
+                    {mode === 'chat' && !typing && !loading && chatMessages.length > 0 && categoryResults.length === 0 && (
+                        <div className="flex justify-start">
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                            >
                                 <button
                                     onClick={async () => {
                                         setLoading(true);
@@ -590,7 +678,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                             }
                                         }));
 
-                                        // Fetch real images for tracks if needed
                                         if (token && newResults.length > 0) {
                                             const artistNames = new Set<string>();
                                             newResults.forEach(cat => {
@@ -631,106 +718,25 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                         }
                                         setLoading(false);
                                     }}
-                                    className="px-8 py-3 rounded-full bg-[#1C1C1E] border border-white/10 text-white text-[13px] font-bold uppercase tracking-wider hover:bg-[#FA2D48] hover:border-[#FA2D48] hover:text-white transition-all flex items-center gap-2 shadow-lg active:scale-95 group"
+                                    className="px-5 py-2 rounded-full bg-[#1C1C1E] border border-white/10 text-white text-[12px] font-semibold hover:bg-[#FA2D48] hover:border-[#FA2D48] transition-all flex items-center gap-2 active:scale-95 group"
                                 >
-                                    <Sparkles className="w-4 h-4 text-[#FA2D48] group-hover:text-white transition-colors" />
+                                    <Sparkles className="w-3.5 h-3.5 text-[#FA2D48] group-hover:text-white transition-colors" />
                                     Visualize Collection
                                 </button>
-                                <p className="text-[#8E8E93] text-[11px]">Turn this conversation into a high-fidelity category.</p>
-                            </div>
-                        )}
+                            </motion.div>
+                        </div>
+                    )}
+
+                    <div ref={messagesEndRef} />
+                </div>
+
+                {/* Error Messages */}
+                {errorMsg && (
+                    <div className="max-w-2xl mx-auto mb-4 bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-xs font-mono flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                        {errorMsg}
                     </div>
                 )}
-
-
-                {/* Minimal Search Input - Line Style */}
-                <div className="w-full max-w-2xl mx-auto border border-white/10 bg-white/5 rounded-2xl p-2 focus-within:border-[#FA2D48]/50 focus-within:bg-black/40 transition-all backdrop-blur-md shadow-lg">
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        accept=".json"
-                    />
-                    <div className="relative flex items-center px-4">
-                        <input
-                            type="text"
-                            value={userPrompt}
-                            onChange={(e) => setUserPrompt(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    handleQuery();
-                                }
-                            }}
-                            placeholder={discoveryMode ? `Find something for ${userName}...` : `hey ${userName}, ask me something...`}
-                            className="w-full bg-transparent py-3 text-[16px] font-medium text-white focus:outline-none placeholder:text-white/30"
-                        />
-                        <button
-                            onClick={() => handleQuery()}
-                            disabled={loading || !userPrompt.trim()}
-                            className="text-[#FA2D48] disabled:text-white/10 transition-colors p-2 hover:scale-110 active:scale-95"
-                        >
-                            {loading ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Discovery Toggle - Match Search Bar Style */}
-                <div className="flex justify-center mt-6">
-                    <div className="flex items-center gap-0 border border-white/10 bg-white/5 rounded-2xl p-1.5 backdrop-blur-md">
-                        <button
-                            onClick={() => setDiscoveryMode(false)}
-                            className={`px-5 py-2 rounded-xl text-[12px] font-semibold transition-all ${!discoveryMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
-                        >
-                            Chat
-                        </button>
-                        <button
-                            onClick={() => setDiscoveryMode(true)}
-                            className={`px-5 py-2 rounded-xl text-[12px] font-semibold transition-all flex items-center gap-1.5 ${discoveryMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
-                        >
-                            <Zap size={12} />
-                            Discovery
-                        </button>
-                    </div>
-                </div>
-
-                {/* Quick Feature Suggestions */}
-                <div className="flex flex-wrap gap-2 justify-center mt-4">
-                    <button
-                        onClick={() => handleQuery("weekly wrapped")}
-                        disabled={loading}
-                        className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white text-[11px] font-bold uppercase tracking-wider hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
-                    >
-                        <Sparkles className="w-3 h-3 text-[#FA2D48]" />
-                        Weekly Wrapped
-                    </button>
-                    <button
-                        onClick={() => handleQuery("monthly wrapped")}
-                        disabled={loading}
-                        className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white text-[11px] font-bold uppercase tracking-wider hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
-                    >
-                        <Trophy className="w-3 h-3 text-[#FA2D48]" />
-                        Monthly Wrapped
-                    </button>
-                    <button
-                        onClick={() => handleQuery("weekly insight")}
-                        disabled={loading}
-                        className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white text-[11px] font-bold uppercase tracking-wider hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
-                    >
-                        <BarChart3 className="w-3 h-3 text-[#FA2D48]" />
-                        Weekly Insight
-                    </button>
-                </div>
-            </div>
-
-            {/* Error Messages */}
-            {errorMsg && (
-                <div className="mb-4 mx-1 bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-xs font-mono flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                    {errorMsg}
-                </div>
-            )}
 
 
             {/* WEEKLY INSIGHT STORY MODE - Apple Wrapped Style */}
@@ -1281,17 +1287,49 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 </div>
             )}
 
-            {/* Loading Overlay for Category Build - Enhanced */}
-            {loading && mode === 'discover' && categoryResults.length === 0 && (
-                <div className="relative h-[300px] flex flex-col items-center justify-center">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-[#FA2D48]/20 blur-2xl rounded-full animate-pulse"></div>
-                        <div className="w-16 h-16 border-2 border-[#FA2D48] border-t-transparent rounded-full animate-spin mb-4"></div>
+                {/* Loading Overlay for Discovery - Minimal */}
+                {loading && mode === 'discover' && categoryResults.length === 0 && (
+                    <div className="relative h-[200px] flex flex-col items-center justify-center">
+                        <LoadingDots color="bg-[#FA2D48]" size="w-2.5 h-2.5" />
                     </div>
-                    <p className="text-white font-medium text-sm mt-4">Crafting your collection...</p>
-                    <p className="text-[#8E8E93] text-xs mt-1 animate-pulse">AI is curating something special</p>
+                )}
+            </div>
+
+            {/* Input Box - Fixed at Bottom */}
+            <div className="flex-shrink-0 border-t border-white/5 bg-[#0a0a0a] px-4 py-3">
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    accept=".json"
+                />
+                <div className="max-w-2xl mx-auto">
+                    <div className="relative flex items-center bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-2 focus-within:border-[#FA2D48]/50 focus-within:shadow-[0_0_12px_rgba(250,45,72,0.15)] transition-all">
+                        <input
+                            type="text"
+                            value={userPrompt}
+                            onChange={(e) => setUserPrompt(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleQuery();
+                                }
+                            }}
+                            placeholder="Ask about your music..."
+                            className="flex-1 bg-transparent py-1.5 text-[15px] text-white focus:outline-none placeholder:text-[#888888]"
+                        />
+                        <button
+                            onClick={() => handleQuery()}
+                            disabled={loading || !userPrompt.trim()}
+                            className="ml-2 p-1.5 rounded-lg bg-[#FA2D48] disabled:bg-white/5 disabled:text-white/10 text-white transition-all hover:brightness-110 active:scale-95"
+                        >
+                            {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
+                        </button>
+                    </div>
+                    <p className="text-[11px] text-[#666666] text-center mt-1.5">↵ to send</p>
                 </div>
-            )}
+            </div>
         </div>
     );
 };
