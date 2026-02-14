@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { X, Share2, Sparkles, Music2, Headphones, Clock, TrendingUp, Mic2, Disc, ChevronRight, ChevronLeft, Play } from 'lucide-react';
+import { X, Share2, Sparkles, Music2, Headphones, Clock, TrendingUp, Mic2, Disc, ChevronRight, ChevronLeft, Play, Sun, Moon, Sunset, Sunrise, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { generateWrappedStory } from '../services/geminiService';
-import { getWrappedStats } from '../services/dbService';
+import { generateWrappedStory, generateWrappedVibe } from '../services/geminiService';
+import { getWrappedStats, getPeakListeningHour, getRadarArtists } from '../services/dbService';
 
 interface WrappedModalProps {
     isOpen: boolean;
@@ -15,6 +15,9 @@ interface WrappedModalProps {
 export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, period = "Weekly", userImage, userName }) => {
     const [story, setStory] = useState<any>(null);
     const [stats, setStats] = useState<any>(null);
+    const [peakHour, setPeakHour] = useState<any>(null);
+    const [radarArtists, setRadarArtists] = useState<any[]>([]);
+    const [vibeCheck, setVibeCheck] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -29,12 +32,33 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
         if (isOpen) {
             setLoading(true);
             setCurrentSlide(0);
+            const mappedPeriod = mapPeriod(period);
+            
             Promise.all([
                 generateWrappedStory(period),
-                getWrappedStats(mapPeriod(period))
-            ]).then(([storyData, statsData]) => {
+                getWrappedStats(mappedPeriod),
+                getPeakListeningHour(mappedPeriod),
+                getRadarArtists(mappedPeriod)
+            ]).then(([storyData, statsData, peakData, radarData]) => {
                 setStory(storyData);
                 setStats(statsData);
+                setPeakHour(peakData);
+                setRadarArtists(radarData);
+                
+                // Generate vibe check from top tracks
+                if (statsData?.topTracks && statsData.topTracks.length > 0) {
+                    generateWrappedVibe(statsData.topTracks)
+                        .then(vibe => {
+                            setVibeCheck(vibe);
+                        })
+                        .catch(err => {
+                            console.error('Vibe check error:', err);
+                        });
+                }
+                
+                setLoading(false);
+            }).catch(err => {
+                console.error('Wrapped loading error:', err);
                 setLoading(false);
             });
         }
@@ -59,7 +83,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
         return "0%";
     };
 
-    const totalSlides = 5;
+    const totalSlides = 9;
 
     const handleNext = () => setCurrentSlide(prev => Math.min(totalSlides - 1, prev + 1));
     const handlePrev = () => setCurrentSlide(prev => Math.max(0, prev - 1));
@@ -72,6 +96,15 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
         } else {
             handleNext();
         }
+    };
+
+    const getPeakIcon = () => {
+        if (!peakHour) return <Sun className="w-16 h-16 text-[#FA2D48]" />;
+        const hour = peakHour.hour;
+        if (hour >= 6 && hour < 12) return <Sunrise className="w-16 h-16 text-[#FA2D48]" />;
+        if (hour >= 12 && hour < 17) return <Sun className="w-16 h-16 text-[#FA2D48]" />;
+        if (hour >= 17 && hour < 21) return <Sunset className="w-16 h-16 text-[#FA2D48]" />;
+        return <Moon className="w-16 h-16 text-[#FA2D48]" />;
     };
 
     return (
@@ -353,8 +386,172 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     </motion.div>
                                 )}
 
-                                {/* SLIDE 4: SUMMARY + TOP TRACKS */}
+                                {/* SLIDE 4: RADAR / NEW DISCOVERIES */}
                                 {currentSlide === 4 && (
+                                    <motion.div
+                                        key="radar"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
+                                    >
+                                        <div className="absolute inset-0 bg-[#0A0A0A]" />
+                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FA2D48] rounded-full blur-[120px] opacity-[0.08]" />
+                                        
+                                        <motion.div
+                                            initial={{ y: -10, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.1 }}
+                                            className="relative z-10 mb-8"
+                                        >
+                                            <span className="text-sm font-bold text-[#FA2D48] uppercase tracking-widest mb-4 block">On Your Radar</span>
+                                            <h2 className="text-2xl font-black text-white mb-2">New Discoveries</h2>
+                                            <p className="text-white/50 text-sm">Artists that entered your rotation</p>
+                                        </motion.div>
+
+                                        {radarArtists.length > 0 ? (
+                                            <motion.div
+                                                initial={{ y: 20, opacity: 0 }}
+                                                animate={{ y: 0, opacity: 1 }}
+                                                transition={{ delay: 0.3 }}
+                                                className="relative z-10 grid grid-cols-3 gap-4 w-full max-w-xs"
+                                            >
+                                                {radarArtists.slice(0, 6).map((artist, idx) => (
+                                                    <motion.div
+                                                        key={idx}
+                                                        initial={{ scale: 0, opacity: 0 }}
+                                                        animate={{ scale: 1, opacity: 1 }}
+                                                        transition={{ delay: 0.4 + idx * 0.1, type: "spring" }}
+                                                        className="flex flex-col items-center"
+                                                    >
+                                                        <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 mb-2 bg-[#1C1C1E]">
+                                                            <img
+                                                                src={artist.image || avatarFallback(artist.name)}
+                                                                alt={artist.name}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        </div>
+                                                        <p className="text-white text-xs font-semibold truncate w-full text-center">{artist.name}</p>
+                                                    </motion.div>
+                                                ))}
+                                            </motion.div>
+                                        ) : (
+                                            <div className="relative z-10 text-white/40">
+                                                <Sparkles size={64} className="mx-auto mb-4 opacity-30" />
+                                                <p>Keep exploring new music!</p>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+
+                                {/* SLIDE 5: PEAK LISTENING TIME */}
+                                {currentSlide === 5 && (
+                                    <motion.div
+                                        key="peak"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
+                                    >
+                                        <div className="absolute inset-0 bg-[#0A0A0A]" />
+                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FA2D48] rounded-full blur-[120px] opacity-[0.1]" />
+                                        
+                                        <motion.div
+                                            initial={{ y: -10, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.1 }}
+                                            className="relative z-10"
+                                        >
+                                            <span className="text-sm font-bold text-[#FA2D48] uppercase tracking-widest mb-6 block">Peak Listening</span>
+                                            
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                transition={{ delay: 0.2, type: "spring" }}
+                                                className="mb-8"
+                                            >
+                                                {getPeakIcon()}
+                                            </motion.div>
+
+                                            <motion.h2
+                                                initial={{ y: 20, opacity: 0 }}
+                                                animate={{ y: 0, opacity: 1 }}
+                                                transition={{ delay: 0.4 }}
+                                                className="text-4xl font-black text-white mb-3"
+                                            >
+                                                {peakHour?.label || 'Afternoon'}
+                                            </motion.h2>
+                                            <motion.p
+                                                initial={{ y: 20, opacity: 0 }}
+                                                animate={{ y: 0, opacity: 1 }}
+                                                transition={{ delay: 0.5 }}
+                                                className="text-white/50 text-base"
+                                            >
+                                                You listened most during the {peakHour?.label.toLowerCase() || 'afternoon'}
+                                            </motion.p>
+                                        </motion.div>
+                                    </motion.div>
+                                )}
+
+                                {/* SLIDE 6: AI VIBE CHECK */}
+                                {currentSlide === 6 && (
+                                    <motion.div
+                                        key="vibe"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
+                                    >
+                                        <div className="absolute inset-0 bg-[#0A0A0A]" />
+                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FA2D48] rounded-full blur-[120px] opacity-[0.15]" />
+                                        
+                                        <motion.div
+                                            initial={{ y: -10, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.1 }}
+                                            className="relative z-10 mb-6"
+                                        >
+                                            <Zap className="w-12 h-12 text-[#FA2D48] mx-auto mb-4" />
+                                            <span className="text-sm font-bold text-[#FA2D48] uppercase tracking-widest block mb-6">Vibe Check</span>
+                                        </motion.div>
+
+                                        {vibeCheck ? (
+                                            <>
+                                                <motion.h2
+                                                    initial={{ y: 20, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: 0.3 }}
+                                                    className="relative z-10 text-3xl sm:text-4xl font-black text-white mb-4 leading-tight"
+                                                >
+                                                    {vibeCheck.title}
+                                                </motion.h2>
+                                                <motion.p
+                                                    initial={{ y: 20, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: 0.5 }}
+                                                    className="relative z-10 text-white/60 text-base leading-relaxed max-w-sm"
+                                                >
+                                                    {vibeCheck.description}
+                                                </motion.p>
+                                            </>
+                                        ) : (
+                                            <motion.p
+                                                initial={{ y: 20, opacity: 0 }}
+                                                animate={{ y: 0, opacity: 1 }}
+                                                transition={{ delay: 0.3 }}
+                                                className="relative z-10 text-white/40"
+                                            >
+                                                Keep vibing to your favorite tracks
+                                            </motion.p>
+                                        )}
+                                    </motion.div>
+                                )}
+
+                                {/* SLIDE 7: SUMMARY + TOP TRACKS */}
+                                {currentSlide === 7 && (
                                     <motion.div
                                         key="summary"
                                         initial={{ opacity: 0, scale: 0.95 }}
@@ -443,6 +640,47 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                 ))}
                                             </motion.div>
                                         )}
+                                    </motion.div>
+                                )}
+
+                                {/* SLIDE 8: OUTRO */}
+                                {currentSlide === 8 && (
+                                    <motion.div
+                                        key="outro"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
+                                    >
+                                        <div className="absolute inset-0 bg-[#0A0A0A]" />
+                                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 bg-[#FA2D48] rounded-full blur-[120px] opacity-[0.12]" />
+                                        
+                                        <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{ delay: 0.2, type: "spring" }}
+                                            className="relative z-10 mb-8"
+                                        >
+                                            <Sparkles className="w-20 h-20 text-[#FA2D48]" />
+                                        </motion.div>
+
+                                        <motion.h2
+                                            initial={{ y: 20, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.4 }}
+                                            className="relative z-10 text-3xl font-black text-white mb-3"
+                                        >
+                                            Keep Listening
+                                        </motion.h2>
+                                        <motion.p
+                                            initial={{ y: 20, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.5 }}
+                                            className="relative z-10 text-white/60 text-base max-w-xs"
+                                        >
+                                            Your musical journey continues. See you in the next wrapped!
+                                        </motion.p>
                                     </motion.div>
                                 )}
 
