@@ -1721,8 +1721,11 @@ function App() {
                                 if (customDateRange?.start && customDateRange?.end) {
                                     setTimeRange('Custom');
                                     setShowDatePicker(false);
-                                    // Note: You would need to update fetchDashboardStats to handle custom date ranges
-                                    // For now, we'll just set the UI state
+                                    // TODO: Backend integration required
+                                    // The custom date range UI is implemented, but fetchDashboardStats
+                                    // needs to be updated to accept custom date ranges as parameters.
+                                    // Current behavior: UI will show the custom range but stats won't filter
+                                    console.log('Custom range selected:', customDateRange);
                                 }
                             }}
                             disabled={!customDateRange?.start || !customDateRange?.end}

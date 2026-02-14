@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, Disc, Info, X, TrendingUp, Calendar } from 'lucide-react';
+import { ArrowUpRight, Disc, Info, X, TrendingUp } from 'lucide-react';
 import { Artist } from '../types';
 import { AnimatePresence, motion } from 'framer-motion';
 
