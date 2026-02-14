@@ -225,7 +225,9 @@ function App() {
     }
   }, [dbUnifiedData, data, token]);
 
-  const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly' | 'All Time'>('Weekly');
+  const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly' | 'All Time' | 'Custom'>('Weekly');
+  const [customDateRange, setCustomDateRange] = useState<{ start: string; end: string } | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
@@ -671,17 +673,31 @@ function App() {
                         key={range}
                         onClick={() => {
                             setTimeRange(range);
+                            setCustomDateRange(null);
                             fetchDashboardStats(range).then(data => setDbUnifiedData(data));
                         }}
-                        className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                        className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
                             timeRange === range
                                 ? 'bg-white text-black'
-                                : 'bg-white/10 text-white/70 border border-white/10'
+                                : 'bg-white/10 text-white/70 border border-white/10 hover:bg-white/20'
                         }`}
                     >
                         {range}
                     </button>
                 ))}
+                <button
+                    onClick={() => setShowDatePicker(true)}
+                    className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-2 ${
+                        timeRange === 'Custom'
+                            ? 'bg-white text-black'
+                            : 'bg-white/10 text-white/70 border border-white/10 hover:bg-white/20'
+                    }`}
+                >
+                    <Calendar size={14} />
+                    {timeRange === 'Custom' && customDateRange 
+                        ? `${new Date(customDateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(customDateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                        : 'Custom Range'}
+                </button>
             </div>
 
             {showEmptyState ? (
@@ -818,19 +834,19 @@ function App() {
                                     setWrappedModal({ isOpen: true, period: timeRange });
                                 }
                             }}
-                            className="w-full glass-morph rounded-[28px] p-7 shadow-xl border border-white/[0.15] active:scale-[0.98] transition-all"
+                            className="w-full bg-[#1C1C1E] rounded-2xl p-5 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all"
                         >
                             <div className="flex items-center justify-between">
-                                <div className="text-left">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-10 h-10 rounded-full bg-[#1C1C1E] flex items-center justify-center border border-white/10">
-                                            <Sparkles className="w-5 h-5 text-[#FA2D48]" />
-                                        </div>
-                                        <h3 className="text-[20px] font-bold text-white tracking-tight">Your Wrapped</h3>
+                                <div className="text-left flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-[#FA2D48]/10 flex items-center justify-center border border-white/5">
+                                        <Sparkles className="w-5 h-5 text-[#FA2D48]" />
                                     </div>
-                                    <p className="text-[14px] text-white/70 font-medium">View your personalized music story</p>
+                                    <div>
+                                        <h3 className="text-[15px] font-bold text-white tracking-tight">Your Wrapped</h3>
+                                        <p className="text-[12px] text-[#8E8E93] font-medium">View your story</p>
+                                    </div>
                                 </div>
-                                <Calendar className="w-7 h-7 text-[#FA2D48] flex-shrink-0" />
+                                <Calendar className="w-5 h-5 text-[#FA2D48]/60 flex-shrink-0" />
                             </div>
                         </button>
                     </section>
@@ -1088,21 +1104,19 @@ function App() {
                                 setWrappedModal({ isOpen: true, period: timeRange });
                             }
                         }}
-                        className="w-full bg-[#1C1C1E] rounded-3xl p-8 border border-white/5 hover:border-white/10 transition-all group active:scale-[0.99]"
+                        className="w-full bg-[#1C1C1E] rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99]"
                     >
                         <div className="flex items-center justify-between">
-                            <div className="text-left">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-12 h-12 rounded-2xl bg-[#FA2D48]/10 flex items-center justify-center border border-white/5">
-                                        <Sparkles className="w-6 h-6 text-[#FA2D48]" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-white tracking-tight">Your {timeRange} Wrapped</h3>
-                                        <p className="text-[13px] text-[#8E8E93] font-medium mt-0.5">View your personalized music story</p>
-                                    </div>
+                            <div className="text-left flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-[#FA2D48]/10 flex items-center justify-center border border-white/5">
+                                    <Sparkles className="w-5 h-5 text-[#FA2D48]" />
+                                </div>
+                                <div>
+                                    <h3 className="text-[15px] font-bold text-white tracking-tight">Your {timeRange} Wrapped</h3>
+                                    <p className="text-[12px] text-[#8E8E93] font-medium">View your story</p>
                                 </div>
                             </div>
-                            <Calendar className="w-8 h-8 text-[#FA2D48]/60 group-hover:text-[#FA2D48] transition-colors flex-shrink-0" />
+                            <Calendar className="w-5 h-5 text-[#FA2D48]/60 group-hover:text-[#FA2D48] transition-colors flex-shrink-0" />
                         </div>
                     </button>
                 </div>
@@ -1210,10 +1224,18 @@ function App() {
                             <span className="text-lg font-black text-white mb-0.5">{selectedArtistStats?.peakDay || '—'}</span>
                             <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Peak Day</span>
                         </div>
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all relative group">
                             <Sparkles size={16} className="text-[#FA2D48] mb-2" />
                             <span className="text-2xl font-black text-white mb-0.5">{selectedArtistStats?.popularityScore || 0}%</span>
-                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Your Share</span>
+                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Of Plays</span>
+                            {/* Tooltip */}
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 w-48">
+                                <div className="bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2 shadow-xl">
+                                    <p className="text-[10px] text-white/80 text-center leading-relaxed">
+                                        This artist represents this percentage of your total plays across all artists in the current time range.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </motion.div>
 
@@ -1518,12 +1540,20 @@ function App() {
                                 <span className="text-xl font-bold text-white">{selectedTopSong.timeStr ? String(selectedTopSong.timeStr).replace('m', '') : '0'}</span>
                                 <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Minutes</span>
                             </div>
-                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center relative group">
                                 <Sparkles size={16} className="text-[#FA2D48] mb-1.5" />
                                 <span className="text-xl font-bold text-white">
                                     {selectedTopSong.listens ? Math.round((selectedTopSong.listens / (safeRecent.length || 1)) * 100) : 0}%
                                 </span>
-                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Share</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Of Plays</span>
+                                {/* Tooltip */}
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 w-48">
+                                    <div className="bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2 shadow-xl">
+                                        <p className="text-[10px] text-white/80 text-center leading-relaxed">
+                                            This song represents this percentage of your total listening activity in the current time range.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     </div>
@@ -1604,6 +1634,111 @@ function App() {
             </motion.div>
         )}
     </AnimatePresence>
+
+    {/* Date Range Picker Modal */}
+    <AnimatePresence>
+        {showDatePicker && (
+            <>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100]"
+                    onClick={() => setShowDatePicker(false)}
+                />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="p-6 border-b border-white/10">
+                        <div className="flex items-center justify-between mb-2">
+                            <h2 className="text-xl font-bold text-white">Custom Date Range</h2>
+                            <button
+                                onClick={() => setShowDatePicker(false)}
+                                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <p className="text-sm text-[#8E8E93]">Select a custom date range for your stats</p>
+                    </div>
+
+                    {/* Date Inputs */}
+                    <div className="p-6 space-y-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
+                                Start Date
+                            </label>
+                            <input
+                                type="date"
+                                max={new Date().toISOString().split('T')[0]}
+                                onChange={(e) => {
+                                    const newStart = e.target.value;
+                                    setCustomDateRange(prev => ({
+                                        start: newStart,
+                                        end: prev?.end || new Date().toISOString().split('T')[0]
+                                    }));
+                                }}
+                                value={customDateRange?.start || ''}
+                                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FA2D48] transition-colors"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
+                                End Date
+                            </label>
+                            <input
+                                type="date"
+                                max={new Date().toISOString().split('T')[0]}
+                                min={customDateRange?.start}
+                                onChange={(e) => {
+                                    const newEnd = e.target.value;
+                                    setCustomDateRange(prev => ({
+                                        start: prev?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                                        end: newEnd
+                                    }));
+                                }}
+                                value={customDateRange?.end || ''}
+                                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FA2D48] transition-colors"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="p-6 border-t border-white/10 flex gap-3">
+                        <button
+                            onClick={() => setShowDatePicker(false)}
+                            className="flex-1 px-4 py-3 rounded-xl bg-white/10 text-white font-semibold text-sm hover:bg-white/20 transition-all"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => {
+                                if (customDateRange?.start && customDateRange?.end) {
+                                    setTimeRange('Custom');
+                                    setShowDatePicker(false);
+                                    // TODO: Backend integration required
+                                    // The custom date range UI is implemented, but fetchDashboardStats
+                                    // needs to be updated to accept custom date ranges as parameters.
+                                    // Current behavior: UI will show the custom range but stats won't filter
+                                    console.log('Custom range selected:', customDateRange);
+                                }
+                            }}
+                            disabled={!customDateRange?.start || !customDateRange?.end}
+                            className="flex-1 px-4 py-3 rounded-xl bg-[#FA2D48] text-white font-semibold text-sm hover:bg-[#FF6B82] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Apply Range
+                        </button>
+                    </div>
+                </motion.div>
+            </>
+        )}
+    </AnimatePresence>
+
     </>
   );
 }

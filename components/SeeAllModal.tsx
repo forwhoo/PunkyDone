@@ -81,10 +81,6 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                 <div className="flex-shrink-0 px-5 md:px-8 pt-6 md:pt-8 pb-4 bg-[#0A0A0A]/95 backdrop-blur-xl border-b border-white/[0.06] sticky top-0 z-10">
                     <div className="flex items-start justify-between mb-4">
                         <div>
-                            <div className="flex items-center gap-2 mb-1.5">
-                                {getTypeIcon(type)}
-                                <span className="text-[10px] font-bold text-[#8E8E93] uppercase tracking-[0.2em]">{type === 'artist' ? 'Artists' : type === 'album' ? 'Albums' : 'Songs'}</span>
-                            </div>
                             <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">{title}</h2>
                         </div>
                         <button 
