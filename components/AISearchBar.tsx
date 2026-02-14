@@ -103,6 +103,7 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                                 history={history}
                                 contextData={contextData}
                                 user={user}
+                                initialQuery={query}
                             />
                         </div>
                     </motion.div>

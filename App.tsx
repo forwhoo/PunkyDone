@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, MessageSquare } from 'lucide-react';
+import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, MessageSquare, Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
 import { Artist, Album, Song } from './types';
@@ -8,6 +8,7 @@ import { RankingWidget } from './components/RankingWidget';
 import { AISpotlight } from './components/AISpotlight';
 import { AISearchBar } from './components/AISearchBar';
 import { TrendingArtists } from './components/TrendingArtists';
+import { UpcomingArtists } from './components/UpcomingArtists';
 import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ChartSkeleton } from './components/LoadingSkeleton';
@@ -547,30 +548,30 @@ function App() {
 
   if (!token) {
       return (
-          <div className="min-h-[100dvh] min-h-screen bg-black text-white flex items-center justify-center p-6 relative overflow-hidden">
+          <div className="min-h-[100dvh] min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center p-6 relative overflow-hidden">
               <div className="absolute inset-0">
-                  <div className="absolute -top-40 left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-white/5 blur-[120px]" />
-                  <div className="absolute bottom-[-20%] right-[-10%] h-[400px] w-[400px] rounded-full bg-white/5 blur-[140px]" />
+                  <div className="absolute top-[-20%] left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[#FA2D48]/[0.06] blur-[120px]" />
+                  <div className="absolute bottom-[-20%] right-[-10%] h-[400px] w-[400px] rounded-full bg-white/[0.03] blur-[140px]" />
               </div>
 
-              <div className="relative w-full max-w-xl p-8 md:p-12 z-10 flex flex-col items-center text-center">
-                  <div className="w-24 h-24 bg-white rounded-[32px] flex items-center justify-center mb-8 shadow-[0_0_80px_rgba(255,255,255,0.15)]">
-                      <Music className="w-12 h-12 text-black" strokeWidth={2.5} />
+              <div className="relative w-full max-w-md p-8 md:p-12 z-10 flex flex-col items-center text-center">
+                  <div className="w-20 h-20 bg-white rounded-[24px] flex items-center justify-center mb-8 shadow-[0_0_60px_rgba(255,255,255,0.1)]">
+                      <Music className="w-10 h-10 text-black" strokeWidth={2.5} />
                   </div>
                   
-                  <h1 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4 text-white">Muse Analytics</h1>
-                  <p className="text-[#8E8E93] text-lg max-w-md leading-relaxed mb-10">
-                      Unlock your listening DNA. Real-time charts, AI insights, and your personalized music story.
+                  <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-3 text-white">Punky Stats</h1>
+                  <p className="text-[#8E8E93] text-base max-w-sm leading-relaxed mb-10 font-medium">
+                      Your listening DNA. Real-time charts, AI insights, and your personalized music story.
                   </p>
                   
                   <button 
                     onClick={handleConnect}
-                    className="w-full max-w-sm bg-white hover:bg-gray-200 text-black font-semibold text-lg py-4 rounded-full transition-all active:scale-[0.98] shadow-lg shadow-white/10"
+                    className="w-full max-w-xs bg-white hover:bg-gray-100 text-black font-bold text-base py-4 rounded-2xl transition-all active:scale-[0.97] shadow-lg shadow-white/5"
                   >
                     Connect with Spotify
                   </button>
                   
-                  <p className="mt-6 text-xs text-[#505055] font-medium tracking-wide uppercased">
+                  <p className="mt-6 text-[11px] text-[#505055] font-semibold tracking-widest uppercase">
                       Secure Access • Read-only
                   </p>
               </div>
@@ -621,7 +622,7 @@ function App() {
             <div className="space-y-5">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-[10px] uppercase tracking-[0.25em] text-white/40 font-bold">Mobile Wrapped</p>
+                        <p className="text-[10px] uppercase tracking-[0.25em] text-white/40 font-bold">Your Stats</p>
                         <h2 className="text-[26px] font-bold text-white mt-1">Hey {data.user?.display_name || 'there'}</h2>
                     </div>
                     {data.user?.images?.[0]?.url && (
@@ -761,6 +762,15 @@ function App() {
                                 <p className="text-[#8E8E93] text-sm py-8 text-center italic">Not enough data to rank songs yet.</p>
                             )}
                         </div>
+                    </section>
+
+                    {/* Mobile Upcoming Artists */}
+                    <section className="space-y-5">
+                        <UpcomingArtists
+                            recentPlays={safeRecent}
+                            topArtists={safeArtists}
+                            artistImages={artistImages}
+                        />
                     </section>
 
                     <section className="space-y-5">
@@ -1041,6 +1051,15 @@ function App() {
                         )}
                     </div>
 
+                    {/* UPCOMING ARTISTS */}
+                    <div>
+                        <UpcomingArtists
+                            recentPlays={safeRecent}
+                            topArtists={safeArtists}
+                            artistImages={artistImages}
+                        />
+                    </div>
+
                 </div>
                 )}
             </div>
@@ -1060,8 +1079,32 @@ function App() {
                     />
                 </div>
 
-                {/* RIGHT: CHARTS + ARCHIVE */}
+                {/* RIGHT: WRAPPED + EXTRAS */}
                 <div className="space-y-8">
+                    {/* Desktop Wrapped Button */}
+                    <button
+                        onClick={() => {
+                            if (safeArtists.length > 0 || safeSongs.length > 0 || safeAlbums.length > 0) {
+                                setWrappedModal({ isOpen: true, period: timeRange });
+                            }
+                        }}
+                        className="w-full bg-[#1C1C1E] rounded-3xl p-8 border border-white/5 hover:border-white/10 transition-all group active:scale-[0.99]"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="text-left">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-12 h-12 rounded-2xl bg-[#FA2D48]/10 flex items-center justify-center border border-white/5">
+                                        <Sparkles className="w-6 h-6 text-[#FA2D48]" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white tracking-tight">Your {timeRange} Wrapped</h3>
+                                        <p className="text-[13px] text-[#8E8E93] font-medium mt-0.5">View your personalized music story</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <Calendar className="w-8 h-8 text-[#FA2D48]/60 group-hover:text-[#FA2D48] transition-colors flex-shrink-0" />
+                        </div>
+                    </button>
                 </div>
                 
             </div>
