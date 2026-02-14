@@ -1171,7 +1171,7 @@ export const getPeakListeningHour = async (period: 'daily' | 'weekly' | 'monthly
     } else if (period === 'weekly') {
         const day = now.getDay();
         const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-        startDate = new Date(now.setDate(diff));
+        startDate = new Date(now.getFullYear(), now.getMonth(), diff);
         startDate.setHours(0, 0, 0, 0);
     } else {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -1226,7 +1226,7 @@ export const getRadarArtists = async (period: 'daily' | 'weekly' | 'monthly' = '
     } else if (period === 'weekly') {
         const day = now.getDay();
         const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-        startDate = new Date(now.setDate(diff));
+        startDate = new Date(now.getFullYear(), now.getMonth(), diff);
         startDate.setHours(0, 0, 0, 0);
     } else {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);

@@ -47,9 +47,13 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                 
                 // Generate vibe check from top tracks
                 if (statsData?.topTracks && statsData.topTracks.length > 0) {
-                    generateWrappedVibe(statsData.topTracks).then(vibe => {
-                        setVibeCheck(vibe);
-                    });
+                    generateWrappedVibe(statsData.topTracks)
+                        .then(vibe => {
+                            setVibeCheck(vibe);
+                        })
+                        .catch(err => {
+                            console.error('Vibe check error:', err);
+                        });
                 }
                 
                 setLoading(false);
