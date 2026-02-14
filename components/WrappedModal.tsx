@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Share2, Sparkles, Music2, Headphones, Clock, TrendingUp, Mic2, Disc, ChevronRight, ChevronLeft, Play, Sun, Moon, Sunset, Sunrise, Zap, Trophy, Album, CheckCircle, XCircle } from 'lucide-react';
+import { X, Share2, Sparkles, Music2, Headphones, Clock, Mic2, Disc, ChevronRight, ChevronLeft, Play, Sun, Moon, Sunset, Sunrise, CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateWrappedStory, generateWrappedVibe, generateWrappedQuiz, QuizQuestion } from '../services/geminiService';
 import { getWrappedStats, getPeakListeningHour, getRadarArtists } from '../services/dbService';
