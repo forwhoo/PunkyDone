@@ -1208,10 +1208,18 @@ function App() {
                             <span className="text-lg font-black text-white mb-0.5">{selectedArtistStats?.peakDay || '—'}</span>
                             <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Peak Day</span>
                         </div>
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
+                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all relative group">
                             <Sparkles size={16} className="text-[#FA2D48] mb-2" />
                             <span className="text-2xl font-black text-white mb-0.5">{selectedArtistStats?.popularityScore || 0}%</span>
-                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Your Share</span>
+                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Of Plays</span>
+                            {/* Tooltip */}
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 w-48">
+                                <div className="bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2 shadow-xl">
+                                    <p className="text-[10px] text-white/80 text-center leading-relaxed">
+                                        This artist represents this percentage of your total plays across all artists in the current time range
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </motion.div>
 
@@ -1516,12 +1524,20 @@ function App() {
                                 <span className="text-xl font-bold text-white">{selectedTopSong.timeStr ? String(selectedTopSong.timeStr).replace('m', '') : '0'}</span>
                                 <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Minutes</span>
                             </div>
-                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center relative group">
                                 <Sparkles size={16} className="text-[#FA2D48] mb-1.5" />
                                 <span className="text-xl font-bold text-white">
                                     {selectedTopSong.listens ? Math.round((selectedTopSong.listens / (safeRecent.length || 1)) * 100) : 0}%
                                 </span>
-                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Share</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Of Plays</span>
+                                {/* Tooltip */}
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 w-48">
+                                    <div className="bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2 shadow-xl">
+                                        <p className="text-[10px] text-white/80 text-center leading-relaxed">
+                                            This song represents this percentage of your total listening activity in the current time range
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     </div>
