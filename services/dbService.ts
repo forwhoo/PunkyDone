@@ -1160,3 +1160,129 @@ export const getWrappedStats = async (period: 'daily' | 'weekly' | 'monthly' = '
         totalTracks: rawData.length
     };
 }
+
+// Get peak listening hour for wrapped
+export const getPeakListeningHour = async (period: 'daily' | 'weekly' | 'monthly' = 'daily') => {
+    const now = new Date();
+    let startDate: Date;
+
+    if (period === 'daily') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    } else if (period === 'weekly') {
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+        startDate = new Date(now.setDate(diff));
+        startDate.setHours(0, 0, 0, 0);
+    } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const { data: rawData, error } = await supabase
+        .from('listening_history')
+        .select('played_at, duration_ms')
+        .gte('played_at', startDate.toISOString());
+
+    if (error || !rawData || rawData.length === 0) {
+        return { hour: 12, label: 'Afternoon', count: 0 }; // Default fallback
+    }
+
+    // Group by hour
+    const hourlyMap: Record<number, number> = {};
+    for (let i = 0; i < 24; i++) hourlyMap[i] = 0;
+
+    rawData.forEach(item => {
+        const date = new Date(item.played_at);
+        const hour = date.getHours();
+        hourlyMap[hour]++;
+    });
+
+    // Find peak hour
+    let peakHour = 0;
+    let maxCount = 0;
+    Object.entries(hourlyMap).forEach(([h, count]) => {
+        if (count > maxCount) {
+            maxCount = count;
+            peakHour = parseInt(h);
+        }
+    });
+
+    // Label the time of day
+    let label = 'Morning';
+    if (peakHour >= 6 && peakHour < 12) label = 'Morning';
+    else if (peakHour >= 12 && peakHour < 17) label = 'Afternoon';
+    else if (peakHour >= 17 && peakHour < 21) label = 'Evening';
+    else label = 'Night';
+
+    return { hour: peakHour, label, count: maxCount };
+}
+
+// Get radar artists (artists that are new to user's top list)
+export const getRadarArtists = async (period: 'daily' | 'weekly' | 'monthly' = 'daily') => {
+    const now = new Date();
+    let startDate: Date;
+
+    if (period === 'daily') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    } else if (period === 'weekly') {
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+        startDate = new Date(now.setDate(diff));
+        startDate.setHours(0, 0, 0, 0);
+    } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    // Get previous period start
+    const previousStart = new Date(startDate);
+    if (period === 'daily') {
+        previousStart.setDate(previousStart.getDate() - 1);
+    } else if (period === 'weekly') {
+        previousStart.setDate(previousStart.getDate() - 7);
+    } else {
+        previousStart.setMonth(previousStart.getMonth() - 1);
+    }
+
+    // Get current period artists
+    const { data: currentData } = await supabase
+        .from('listening_history')
+        .select('artist_name, album_cover')
+        .gte('played_at', startDate.toISOString());
+
+    // Get previous period artists
+    const { data: previousData } = await supabase
+        .from('listening_history')
+        .select('artist_name')
+        .gte('played_at', previousStart.toISOString())
+        .lt('played_at', startDate.toISOString());
+
+    if (!currentData || currentData.length === 0) {
+        return [];
+    }
+
+    // Count current artists
+    const currentArtists: Record<string, { count: number, image: string }> = {};
+    currentData.forEach(item => {
+        if (item.artist_name) {
+            if (!currentArtists[item.artist_name]) {
+                currentArtists[item.artist_name] = { count: 0, image: item.album_cover || '' };
+            }
+            currentArtists[item.artist_name].count++;
+        }
+    });
+
+    // Get previous period artist set
+    const previousArtistSet = new Set(previousData?.map(d => d.artist_name) || []);
+
+    // Find new artists (in current but not in previous, or with significant increase)
+    const radarArtists = Object.entries(currentArtists)
+        .filter(([name, _]) => !previousArtistSet.has(name))
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 6)
+        .map(([name, data]) => ({
+            name,
+            image: data.image,
+            plays: data.count
+        }));
+
+    return radarArtists;
+}
