@@ -40,7 +40,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
             setLoading(true);
             setCurrentSlide(0);
             setQuizAnswer(null);
-            setOrbitSpeed(20);
+            setOrbitDuration(20);
             const mappedPeriod = mapPeriod(period);
             
             Promise.all([
