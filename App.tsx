@@ -6,8 +6,8 @@ import { Artist, Album, Song } from './types';
 // import { TopCharts } from './components/TopCharts';
 import { RankingWidget } from './components/RankingWidget';
 import { AISpotlight } from './components/AISpotlight';
+import { AISearchBar } from './components/AISearchBar';
 import { TrendingArtists } from './components/TrendingArtists';
-import { ArtistRace } from './components/ArtistRace';
 import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ChartSkeleton } from './components/LoadingSkeleton';
@@ -636,25 +636,32 @@ function App() {
                 />
             </div>
 
-            {/* Mobile Search & AI Chat */}
+            {/* Mobile AI Search Bar */}
             <div className="space-y-3">
-                <button
-                    onClick={() => {
-                        const aiSection = document.getElementById('mobile-ai-chat');
-                        if (aiSection) {
-                            aiSection.scrollIntoView({ behavior: 'smooth' });
-                        }
+                <AISearchBar
+                    token={token}
+                    history={safeRecent}
+                    user={data.user}
+                    contextData={{
+                        userName: data.user?.display_name,
+                        artists: safeArtists.map((a: Artist, idx: number) => {
+                            const time = String(a.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
+                        }),
+                        albums: safeAlbums.map((a: Album, idx: number) => {
+                            const time = String(a.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
+                        }),
+                        songs: safeSongs.map((s: Song, idx: number) => {
+                            const time = String(s.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
+                        }),
+                        globalStats: dbStats
                     }}
-                    className="w-full glass-morph rounded-[24px] px-6 py-5 flex items-center gap-4 active:scale-[0.98] transition-transform border border-white/[0.15] shadow-xl"
-                >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FA2D48] to-[#FF6B82] flex items-center justify-center flex-shrink-0 shadow-lg">
-                        <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 text-left">
-                        <p className="text-[15px] font-bold text-white tracking-tight">AI Discovery</p>
-                        <p className="text-[12px] text-white/70 mt-0.5 font-medium">Ask about your music</p>
-                    </div>
-                </button>
+                />
             </div>
 
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
@@ -870,25 +877,32 @@ function App() {
         </div>
 
         <div className="hidden md:block">
-            {/* SECTION 1: AI DISCOVERY - Button to Open Modal */}
+            {/* SECTION 1: AI DISCOVERY - Search Bar */}
             <div className="mb-16 mt-8">
-                <button
-                    onClick={() => setAiModalOpen(true)}
-                    className="w-full bg-[#1C1C1E] rounded-[24px] p-8 border border-white/10 hover:border-white/20 transition-all group cursor-pointer active:scale-[0.99]"
-                >
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-5">
-                            <div className="w-14 h-14 rounded-2xl bg-[#FA2D48]/10 flex items-center justify-center group-hover:bg-[#FA2D48]/20 transition-colors">
-                                <Sparkles className="w-7 h-7 text-[#FA2D48]" />
-                            </div>
-                            <div className="text-left">
-                                <h2 className="text-xl font-bold text-white tracking-tight mb-1">AI Discovery</h2>
-                                <p className="text-[#8E8E93] text-sm font-medium">Ask questions, discover patterns, and explore your music</p>
-                            </div>
-                        </div>
-                        <MessageSquare className="w-6 h-6 text-[#8E8E93] group-hover:text-[#FA2D48] transition-colors flex-shrink-0" />
-                    </div>
-                </button>
+                <AISearchBar
+                    token={token}
+                    history={safeRecent}
+                    user={data.user}
+                    contextData={{
+                        userName: data.user?.display_name,
+                        artists: safeArtists.map((a: Artist, idx: number) => {
+                            const time = String(a.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
+                        }),
+                        albums: safeAlbums.map((a: Album, idx: number) => {
+                            const time = String(a.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
+                        }),
+                        songs: safeSongs.map((s: Song, idx: number) => {
+                            const time = String(s.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
+                        }),
+                        globalStats: dbStats
+                    }}
+                />
             </div>
 
             {/* SECTION 2: TOP RANKINGS - Prominent Showcase */}
@@ -1026,22 +1040,6 @@ function App() {
                             <p className="text-[#8E8E93] text-sm pl-6 italic">Not enough data to rank songs yet.</p>
                         )}
                     </div>
-
-                    {/* ARTIST RACE - Cool Animation showing top artists battle */}
-                    {safeArtists.length >= 5 && (
-                        <div className="mb-12">
-                            <ArtistRace 
-                                competitors={safeArtists.slice(0, 5).map(artist => ({
-                                    name: artist.name,
-                                    image: artistImages[artist.name] || artist.image || '',
-                                    score: artist.plays || 0,
-                                    type: 'artist' as const
-                                }))}
-                                title="Top Artists Battle"
-                                subtitle="Watch your favorite artists race to the top!"
-                            />
-                        </div>
-                    )}
 
                 </div>
                 )}
