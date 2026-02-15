@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { TrendingUp, Sparkles, Disc, Mic2, Music, X, Clock, ChevronDown, Check, Info } from 'lucide-react';
+import { TrendingUp, Sparkles, Disc, Mic2, Music, X, Clock, ChevronDown, Check, Info, Grid3x3, Orbit } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { GridView } from './GridView';
 
 const AVAILABLE_YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
 
@@ -31,6 +32,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
     const [selectedItem, setSelectedItem] = useState<TrendingItem | null>(null);
     const [selectedYear, setSelectedYear] = useState<number>(2026);
     const [showYearDropdown, setShowYearDropdown] = useState(false);
+    const [viewType, setViewType] = useState<'orbit' | 'grid'>('orbit');
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Close dropdown when clicking outside
@@ -410,6 +412,24 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                     </div>
                     
                     <div className="flex items-center gap-2">
+                        {/* View Toggle: Orbit / Grid */}
+                        <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-0.5 border border-white/5 shadow-sm">
+                            <button
+                                onClick={() => setViewType('orbit')}
+                                className={`p-1.5 rounded-full transition-all ${viewType === 'orbit' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                                title="Orbit View"
+                            >
+                                <Orbit size={14} />
+                            </button>
+                            <button
+                                onClick={() => setViewType('grid')}
+                                className={`p-1.5 rounded-full transition-all ${viewType === 'grid' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                                title="Grid View"
+                            >
+                                <Grid3x3 size={14} />
+                            </button>
+                        </div>
+
                         {/* Year Dropdown */}
                         <div className="relative" ref={dropdownRef}>
                             <button 
@@ -458,13 +478,15 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                     </div>
                 </div>
 
-                {/* MAIN ORBIT VIEW */}
+                {/* MAIN VIEW */}
                 {trendingItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-500">
                         <Music className="w-10 h-10 text-white/10 mb-4" />
                         <p className="text-white/30 text-sm font-medium">No data for {selectedYear}</p>
                         <p className="text-white/15 text-xs mt-1">Try selecting a different year</p>
                     </div>
+                ) : viewType === 'grid' ? (
+                    <GridView items={trendingItems} plays={filteredPlays} onItemClick={handleItemClick} />
                 ) : (
                 <motion.div 
                     layout
