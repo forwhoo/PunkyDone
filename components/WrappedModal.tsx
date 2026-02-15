@@ -1082,12 +1082,12 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                                 alt={artist.name}
                                                                 className="w-full h-full object-cover"
                                                             />
-                                                            {/* Shimmer overlay */}
+                                                            {/* Dither/grain overlay */}
                                                             <div
-                                                                className="absolute inset-0 rounded-full pointer-events-none animate-[shimmer_2s_linear_infinite]"
+                                                                className="absolute inset-0 rounded-full pointer-events-none opacity-40"
                                                                 style={{
-                                                                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
-                                                                    backgroundSize: '200% 100%',
+                                                                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+                                                                    mixBlendMode: 'overlay',
                                                                 }}
                                                             />
                                                         </div>
