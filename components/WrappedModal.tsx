@@ -14,6 +14,14 @@ import LightRays from './reactbits/LightRays';
 import GridScan from './reactbits/GridScan';
 import ColorBends from './reactbits/ColorBends';
 
+// Constants for Top Artist slide
+const AVERAGE_TRACK_DURATION_MINUTES = 3.5; // Average song length assumption for estimating listening time
+const ARTIST_POSITIONS = [
+    { top: '0%', left: '50%', translate: '-50%, 0%' },     // Top center
+    { top: '50%', left: '15%', translate: '0%, -50%' },    // Bottom left
+    { top: '50%', right: '15%', translate: '0%, -50%' }    // Bottom right
+];
+
 interface WrappedModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -530,13 +538,6 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                         >
                                                             {/* Get unique artists from top 3 tracks */}
                                                             {(() => {
-                                                                const AVERAGE_TRACK_DURATION_MINUTES = 3.5; // Average song length assumption
-                                                                const ARTIST_POSITIONS = [
-                                                                    { top: '0%', left: '50%', translate: '-50%, 0%' },     // Top center
-                                                                    { top: '50%', left: '15%', translate: '0%, -50%' },    // Bottom left
-                                                                    { top: '50%', right: '15%', translate: '0%, -50%' }    // Bottom right
-                                                                ];
-                                                                
                                                                 const uniqueArtists: any[] = [];
                                                                 const artistNames = new Set();
                                                                 
@@ -545,7 +546,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                                         uniqueArtists.push({
                                                                             name: track.artist,
                                                                             image: track.artistImage || track.image,
-                                                                            minutes: Math.round(track.playCount * AVERAGE_TRACK_DURATION_MINUTES)
+                                                                            estimatedMinutes: Math.round(track.playCount * AVERAGE_TRACK_DURATION_MINUTES)
                                                                         });
                                                                         artistNames.add(track.artist);
                                                                     }
@@ -605,7 +606,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                                                             className="absolute top-full mt-3 left-1/2 -translate-x-1/2 text-center whitespace-nowrap"
                                                                                         >
                                                                                             <p className="text-white font-bold text-base mb-1">{artist.name}</p>
-                                                                                            <p className="text-white/60 text-xs">{artist.minutes} min</p>
+                                                                                            <p className="text-white/60 text-xs">{artist.estimatedMinutes} min</p>
                                                                                         </motion.div>
                                                                                     )}
                                                                                 </AnimatePresence>
