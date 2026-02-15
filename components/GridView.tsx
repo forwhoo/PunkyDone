@@ -1,0 +1,465 @@
+import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+interface GridItem {
+    id: string;
+    name: string;
+    subName?: string;
+    image: string;
+    trendScore: number;
+    recentPlays: number;
+    type: 'artist' | 'album' | 'song';
+    tracks?: any[];
+}
+
+interface GridViewProps {
+    items: GridItem[];
+    plays: any[];
+    onItemClick?: (item: GridItem) => void;
+}
+
+// Trend score thresholds for glow color coding
+const HIGH_TREND_THRESHOLD = 60;
+const MEDIUM_TREND_THRESHOLD = 30;
+
+// Compute similarity between two items based on listening patterns
+function computeSimilarity(a: GridItem, b: GridItem, plays: any[]): number {
+    let score = 0;
+
+    // 1. Shared artist bonus
+    const aArtist = a.type === 'artist' ? a.name : (a.subName || '');
+    const bArtist = b.type === 'artist' ? b.name : (b.subName || '');
+    if (aArtist && bArtist && aArtist === bArtist) score += 0.4;
+
+    // 2. Listening time pattern similarity (hour-of-day distribution)
+    const aPlays = plays.filter(p => {
+        if (a.type === 'artist') return p.artist_name === a.name;
+        return p.album_name === a.name && p.artist_name === a.subName;
+    });
+    const bPlays = plays.filter(p => {
+        if (b.type === 'artist') return p.artist_name === b.name;
+        return p.album_name === b.name && p.artist_name === b.subName;
+    });
+
+    if (aPlays.length > 0 && bPlays.length > 0) {
+        // Hour distribution similarity (cosine similarity)
+        const aHours = new Float32Array(24);
+        const bHours = new Float32Array(24);
+        aPlays.forEach(p => { const h = new Date(p.played_at).getHours(); aHours[h]++; });
+        bPlays.forEach(p => { const h = new Date(p.played_at).getHours(); bHours[h]++; });
+
+        let dot = 0, magA = 0, magB = 0;
+        for (let i = 0; i < 24; i++) {
+            dot += aHours[i] * bHours[i];
+            magA += aHours[i] * aHours[i];
+            magB += bHours[i] * bHours[i];
+        }
+        const cosSim = (magA > 0 && magB > 0) ? dot / (Math.sqrt(magA) * Math.sqrt(magB)) : 0;
+        score += cosSim * 0.25;
+
+        // Day-of-week distribution similarity
+        const aDays = new Float32Array(7);
+        const bDays = new Float32Array(7);
+        aPlays.forEach(p => { const d = new Date(p.played_at).getDay(); aDays[d]++; });
+        bPlays.forEach(p => { const d = new Date(p.played_at).getDay(); bDays[d]++; });
+
+        let dotD = 0, magAD = 0, magBD = 0;
+        for (let i = 0; i < 7; i++) {
+            dotD += aDays[i] * bDays[i];
+            magAD += aDays[i] * aDays[i];
+            magBD += bDays[i] * bDays[i];
+        }
+        const cosSimD = (magAD > 0 && magBD > 0) ? dotD / (Math.sqrt(magAD) * Math.sqrt(magBD)) : 0;
+        score += cosSimD * 0.15;
+
+        // Play volume similarity (normalized)
+        const maxPlays = Math.max(aPlays.length, bPlays.length);
+        const minPlays = Math.min(aPlays.length, bPlays.length);
+        if (maxPlays > 0) score += (minPlays / maxPlays) * 0.1;
+
+        // Duration pattern similarity
+        const aAvgDur = aPlays.reduce((s, p) => s + (p.duration_ms || 180000), 0) / aPlays.length;
+        const bAvgDur = bPlays.reduce((s, p) => s + (p.duration_ms || 180000), 0) / bPlays.length;
+        const durDiff = Math.abs(aAvgDur - bAvgDur) / Math.max(aAvgDur, bAvgDur, 1);
+        score += (1 - durDiff) * 0.1;
+    }
+
+    return Math.min(1, score);
+}
+
+// Position items in 3D space using force-directed layout
+function computePositions(items: GridItem[], plays: any[]): THREE.Vector3[] {
+    const n = items.length;
+    if (n === 0) return [];
+
+    // Compute similarity matrix
+    const similarities: number[][] = [];
+    for (let i = 0; i < n; i++) {
+        similarities[i] = [];
+        for (let j = 0; j < n; j++) {
+            similarities[i][j] = i === j ? 1 : computeSimilarity(items[i], items[j], plays);
+        }
+    }
+
+    // Initialize positions on a sphere surface
+    const positions: THREE.Vector3[] = [];
+    const spread = 15;
+    for (let i = 0; i < n; i++) {
+        const phi = Math.acos(-1 + (2 * i + 1) / n);
+        const theta = Math.sqrt(n * Math.PI) * phi;
+        positions.push(new THREE.Vector3(
+            spread * Math.cos(theta) * Math.sin(phi),
+            spread * Math.sin(theta) * Math.sin(phi),
+            spread * Math.cos(phi)
+        ));
+    }
+
+    // Simple force-directed refinement (a few iterations)
+    const iterations = 80;
+    const repulsion = 3.0;
+    const attraction = 0.15;
+
+    for (let iter = 0; iter < iterations; iter++) {
+        const forces: THREE.Vector3[] = positions.map(() => new THREE.Vector3());
+        const cooling = 1 - iter / iterations;
+
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                const diff = new THREE.Vector3().subVectors(positions[i], positions[j]);
+                const dist = Math.max(diff.length(), 0.5);
+
+                // Repulsion (all pairs)
+                const repForce = diff.clone().normalize().multiplyScalar(repulsion / (dist * dist));
+                forces[i].add(repForce);
+                forces[j].sub(repForce);
+
+                // Attraction (proportional to similarity)
+                const sim = similarities[i][j];
+                if (sim > 0.1) {
+                    const idealDist = (1 - sim) * spread * 1.5;
+                    const attForce = diff.clone().normalize().multiplyScalar(-attraction * (dist - idealDist) * sim);
+                    forces[i].add(attForce);
+                    forces[j].sub(attForce);
+                }
+            }
+        }
+
+        for (let i = 0; i < n; i++) {
+            forces[i].multiplyScalar(cooling);
+            forces[i].clampLength(0, 2);
+            positions[i].add(forces[i]);
+        }
+    }
+
+    return positions;
+}
+
+export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const sceneRef = useRef<{
+        scene: THREE.Scene;
+        camera: THREE.PerspectiveCamera;
+        renderer: THREE.WebGLRenderer;
+        controls: any;
+        animationId: number;
+        meshes: THREE.Mesh[];
+        lines: THREE.Line[];
+        tooltipDiv: HTMLDivElement | null;
+        raycaster: THREE.Raycaster;
+        mouse: THREE.Vector2;
+        hoveredIndex: number;
+    } | null>(null);
+
+    const positions = useMemo(() => computePositions(items, plays), [items, plays]);
+
+    const similarities = useMemo(() => {
+        const n = items.length;
+        const sims: number[][] = [];
+        for (let i = 0; i < n; i++) {
+            sims[i] = [];
+            for (let j = 0; j < n; j++) {
+                sims[i][j] = i === j ? 1 : computeSimilarity(items[i], items[j], plays);
+            }
+        }
+        return sims;
+    }, [items, plays]);
+
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        const ctx = sceneRef.current;
+        if (!ctx || !containerRef.current) return;
+
+        const rect = containerRef.current.getBoundingClientRect();
+        ctx.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        ctx.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        ctx.raycaster.setFromCamera(ctx.mouse, ctx.camera);
+        const intersects = ctx.raycaster.intersectObjects(ctx.meshes);
+
+        if (intersects.length > 0) {
+            const idx = ctx.meshes.indexOf(intersects[0].object as THREE.Mesh);
+            if (idx !== -1 && idx !== ctx.hoveredIndex) {
+                ctx.hoveredIndex = idx;
+                const item = items[idx];
+                if (ctx.tooltipDiv) {
+                    ctx.tooltipDiv.style.display = 'block';
+                    ctx.tooltipDiv.innerHTML = `<div style="font-weight:700;font-size:13px">${item.name}</div>${item.subName ? `<div style="opacity:0.6;font-size:11px">${item.subName}</div>` : ''}<div style="opacity:0.5;font-size:10px;margin-top:2px">${item.recentPlays} plays</div>`;
+                }
+            }
+            if (ctx.tooltipDiv) {
+                ctx.tooltipDiv.style.left = `${e.clientX - rect.left + 12}px`;
+                ctx.tooltipDiv.style.top = `${e.clientY - rect.top - 10}px`;
+            }
+            containerRef.current.style.cursor = 'pointer';
+        } else {
+            ctx.hoveredIndex = -1;
+            if (ctx.tooltipDiv) ctx.tooltipDiv.style.display = 'none';
+            containerRef.current.style.cursor = 'grab';
+        }
+    }, [items]);
+
+    const handleClick = useCallback((e: MouseEvent) => {
+        const ctx = sceneRef.current;
+        if (!ctx || !onItemClick) return;
+
+        if (ctx.hoveredIndex >= 0 && ctx.hoveredIndex < items.length) {
+            onItemClick(items[ctx.hoveredIndex]);
+        }
+    }, [items, onItemClick]);
+
+    useEffect(() => {
+        if (!containerRef.current || items.length === 0 || positions.length === 0) return;
+
+        const container = containerRef.current;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x0a0a0a, 0.012);
+
+        const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 200);
+        camera.position.set(0, 8, 28);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x0a0a0a, 1);
+        container.appendChild(renderer.domElement);
+
+        // Controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.minDistance = 8;
+        controls.maxDistance = 60;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.3;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xfa2d48, 1.5, 60);
+        pointLight.position.set(10, 15, 10);
+        scene.add(pointLight);
+        const pointLight2 = new THREE.PointLight(0x4488ff, 0.8, 50);
+        pointLight2.position.set(-10, -5, -10);
+        scene.add(pointLight2);
+
+        // Texture loader
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.crossOrigin = 'anonymous';
+
+        // Create meshes for each item
+        const meshes: THREE.Mesh[] = [];
+        const glowMeshes: THREE.Mesh[] = [];
+
+        items.forEach((item, i) => {
+            const pos = positions[i];
+            const size = 0.6 + (item.trendScore / 100) * 0.8;
+
+            // Sphere geometry
+            const geometry = new THREE.SphereGeometry(size, 32, 32);
+
+            // Try loading image texture, fallback to color
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x333333,
+                roughness: 0.4,
+                metalness: 0.3,
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(pos);
+            scene.add(mesh);
+            meshes.push(mesh);
+
+            // Load texture - skip placeholder avatar URLs
+            const isPlaceholder = item.image ? new URL(item.image, 'https://placeholder.local').hostname === 'ui-avatars.com' : true;
+            if (item.image && !isPlaceholder) {
+                textureLoader.load(
+                    item.image,
+                    (texture) => {
+                        texture.colorSpace = THREE.SRGBColorSpace;
+                        (mesh.material as THREE.MeshStandardMaterial).map = texture;
+                        (mesh.material as THREE.MeshStandardMaterial).color.set(0xffffff);
+                        (mesh.material as THREE.MeshStandardMaterial).needsUpdate = true;
+                    },
+                    undefined,
+                    () => {
+                        // On error, use a colored sphere
+                        const hue = (i / items.length);
+                        (mesh.material as THREE.MeshStandardMaterial).color.setHSL(hue, 0.7, 0.5);
+                    }
+                );
+            } else {
+                const hue = (i / items.length);
+                material.color.setHSL(hue, 0.7, 0.5);
+            }
+
+            // Glow sphere
+            const glowGeo = new THREE.SphereGeometry(size * 1.4, 16, 16);
+            const glowColor = item.trendScore > HIGH_TREND_THRESHOLD ? 0xfa2d48 : (item.trendScore > MEDIUM_TREND_THRESHOLD ? 0xff6b35 : 0x4488ff);
+            const glowMat = new THREE.MeshBasicMaterial({
+                color: glowColor,
+                transparent: true,
+                opacity: 0.08 + (item.trendScore / 100) * 0.07,
+            });
+            const glow = new THREE.Mesh(glowGeo, glowMat);
+            glow.position.copy(pos);
+            scene.add(glow);
+            glowMeshes.push(glow);
+        });
+
+        // Connection lines between highly similar items
+        const lines: THREE.Line[] = [];
+        const n = items.length;
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                const sim = similarities[i][j];
+                if (sim > 0.25) {
+                    const lineGeo = new THREE.BufferGeometry().setFromPoints([positions[i], positions[j]]);
+                    const lineMat = new THREE.LineBasicMaterial({
+                        color: 0xfa2d48,
+                        transparent: true,
+                        opacity: Math.min(0.4, sim * 0.5),
+                    });
+                    const line = new THREE.Line(lineGeo, lineMat);
+                    scene.add(line);
+                    lines.push(line);
+                }
+            }
+        }
+
+        // Particle field background
+        const particleCount = 200;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
+            particlePositions[i * 3] = (Math.random() - 0.5) * 80;
+            particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 80;
+            particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 80;
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        const particleMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, transparent: true, opacity: 0.3 });
+        const particles = new THREE.Points(particleGeo, particleMat);
+        scene.add(particles);
+
+        // Tooltip element
+        const tooltipDiv = document.createElement('div');
+        tooltipDiv.style.cssText = 'position:absolute;display:none;background:rgba(28,28,30,0.95);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:8px 12px;color:white;font-size:12px;pointer-events:none;z-index:50;backdrop-filter:blur(8px);box-shadow:0 4px 20px rgba(0,0,0,0.5)';
+        container.appendChild(tooltipDiv);
+
+        // Raycaster
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        sceneRef.current = {
+            scene, camera, renderer, controls,
+            animationId: 0, meshes, lines, tooltipDiv,
+            raycaster, mouse, hoveredIndex: -1
+        };
+
+        // Event listeners
+        container.addEventListener('mousemove', handleMouseMove);
+        container.addEventListener('click', handleClick);
+
+        // Animation loop
+        const clock = new THREE.Clock();
+        const animate = () => {
+            const ctx = sceneRef.current;
+            if (!ctx) return;
+            ctx.animationId = requestAnimationFrame(animate);
+
+            const elapsed = clock.getElapsedTime();
+
+            // Gentle floating animation for spheres
+            meshes.forEach((mesh, i) => {
+                const basePos = positions[i];
+                mesh.position.y = basePos.y + Math.sin(elapsed * 0.5 + i * 0.7) * 0.15;
+                mesh.rotation.y = elapsed * 0.1 + i;
+            });
+
+            // Sync glow positions
+            glowMeshes.forEach((glow, i) => {
+                glow.position.copy(meshes[i].position);
+                const scale = 1 + Math.sin(elapsed * 0.8 + i) * 0.05;
+                glow.scale.set(scale, scale, scale);
+            });
+
+            // Pulse particles
+            particles.rotation.y = elapsed * 0.01;
+
+            controls.update();
+            renderer.render(scene, camera);
+        };
+        animate();
+
+        // Handle resize
+        const handleResize = () => {
+            if (!containerRef.current) return;
+            const w = containerRef.current.clientWidth;
+            const h = containerRef.current.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        };
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            container.removeEventListener('mousemove', handleMouseMove);
+            container.removeEventListener('click', handleClick);
+
+            const ctx = sceneRef.current;
+            if (ctx) {
+                cancelAnimationFrame(ctx.animationId);
+                ctx.renderer.dispose();
+                ctx.meshes.forEach(m => { m.geometry.dispose(); (m.material as THREE.Material).dispose(); });
+                glowMeshes.forEach(m => { m.geometry.dispose(); (m.material as THREE.Material).dispose(); });
+                ctx.lines.forEach(l => { l.geometry.dispose(); (l.material as THREE.Material).dispose(); });
+                particleGeo.dispose();
+                particleMat.dispose();
+                if (ctx.tooltipDiv && ctx.tooltipDiv.parentNode) ctx.tooltipDiv.parentNode.removeChild(ctx.tooltipDiv);
+                if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
+                ctx.controls.dispose();
+            }
+            sceneRef.current = null;
+        };
+    }, [items, positions, similarities, handleMouseMove, handleClick]);
+
+    if (items.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20">
+                <p className="text-white/30 text-sm font-medium">No data available</p>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            ref={containerRef}
+            className="relative w-full aspect-square max-w-[480px] mx-auto rounded-2xl overflow-hidden"
+            style={{ cursor: 'grab', minHeight: 400 }}
+        />
+    );
+};

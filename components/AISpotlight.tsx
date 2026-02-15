@@ -446,9 +446,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 return;
             }
 
-            // Determine query type
+            // Determine query type - only auto-detect analysis queries when in Discovery mode
             const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover', 'top', 'best', 'most', 'rank', 'chart', 'favorite', 'least', 'wrapped', 'gems', 'rewind', 'vibes', 'mix', 'weekly', 'insight', 'stats'];
-            const isAnalysisQuery = analysisKeywords.some(k => promptToUse.toLowerCase().includes(k));
+            const isAnalysisQuery = discoveryMode && analysisKeywords.some(k => promptToUse.toLowerCase().includes(k));
 
             if (isAnalysisQuery || discoveryMode) {
                 // SQL Analysis Mode
