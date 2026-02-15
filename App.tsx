@@ -634,10 +634,6 @@ function App() {
                         </div>
                     )}
                 </div>
-                <MobileHeroCard
-                    title={`Your ${timeRange.toLowerCase()} pulse`}
-                    subtitle="Fresh stats, clean layouts, and a glassy glow built for mobile."
-                />
             </div>
 
             {/* Mobile AI Search Bar */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Send, X, Sparkles, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AISpotlight } from './AISpotlight';
@@ -37,6 +37,18 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
         setIsExpanded(false);
         setQuery('');
     };
+
+    // Lock body scroll when modal is open (fix for non-mobile devices)
+    useEffect(() => {
+        if (isExpanded) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isExpanded]);
 
     return (
         <>
