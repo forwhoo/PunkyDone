@@ -10,6 +10,7 @@ import CountUp from './reactbits/CountUp';
 import PixelBlast from './reactbits/PixelBlast';
 import PrismaticBurst from './reactbits/PrismaticBurst';
 import FaultyTerminal from './reactbits/FaultyTerminal';
+import LightRays from './reactbits/LightRays';
 
 interface WrappedModalProps {
     isOpen: boolean;
@@ -32,6 +33,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
     const [orbitDuration, setOrbitDuration] = useState(20);
     const [artistRevealed, setArtistRevealed] = useState(false);
     const [albumRevealed, setAlbumRevealed] = useState(false);
+    const [spotlightIndex, setSpotlightIndex] = useState(0);
 
     // Always use weekly data for Punky Wrapped
     const mapPeriod = (_p: string): 'daily' | 'weekly' | 'monthly' => {
@@ -96,8 +98,18 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
     useEffect(() => {
         if (currentSlide === 4) {
             setArtistRevealed(false);
-            const timer = setTimeout(() => setArtistRevealed(true), 2500);
-            return () => clearTimeout(timer);
+            setSpotlightIndex(0);
+            
+            // Cycle through spotlight on each artist (0, 1, 2)
+            const timer1 = setTimeout(() => setSpotlightIndex(1), 800);
+            const timer2 = setTimeout(() => setSpotlightIndex(2), 1600);
+            const timer3 = setTimeout(() => setArtistRevealed(true), 2400);
+            
+            return () => {
+                clearTimeout(timer1);
+                clearTimeout(timer2);
+                clearTimeout(timer3);
+            };
         }
     }, [currentSlide]);
 
@@ -469,7 +481,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                 </motion.div>
                             )}
 
-                            {/* SLIDE 4: TOP ARTIST with PrismaticBurst spotlight reveal */}
+                            {/* SLIDE 4: TOP ARTIST with LightRays spotlight reveal */}
                             {currentSlide === 4 && (
                                 <motion.div
                                     key="artist"
@@ -480,58 +492,137 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     className="absolute inset-0"
                                 >
                                     <div className="absolute inset-0 z-0">
-                                        <PrismaticBurst
-                                            animationType="rotate3d"
-                                            intensity={2}
-                                            speed={0.5}
-                                            colors={['#FA2D48', '#7C3AED', '#ffffff']}
-                                            mixBlendMode="lighten"
+                                        <LightRays
+                                            raysOrigin="top-center"
+                                            raysColor="#FA2D48"
+                                            raysSpeed={1.5}
+                                            lightSpread={0.8}
+                                            rayLength={2.5}
+                                            pulsating={true}
+                                            fadeDistance={1.2}
+                                            followMouse={false}
                                         />
                                     </div>
-                                    <div className="absolute inset-0 bg-black/30 z-5" />
+                                    <div className="absolute inset-0 bg-black/40 z-5" />
                                     <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center z-10">
                                         <motion.span
                                             initial={{ y: -10, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.1 }}
-                                            className="text-sm font-bold text-white uppercase tracking-widest mb-6"
+                                            className="text-sm font-bold text-white uppercase tracking-widest mb-8"
                                         >
-                                            Your #1 Artist
+                                            Your Top Artists
                                         </motion.span>
 
-                                        {topArtist ? (
+                                        {topArtist && topTracks.length >= 3 ? (
                                             <>
-                                                {/* Candidate names that fade in first */}
+                                                {/* Three artist images in triangular layout before reveal */}
                                                 <AnimatePresence>
                                                     {!artistRevealed && (
                                                         <motion.div
                                                             initial={{ opacity: 0 }}
                                                             animate={{ opacity: 1 }}
-                                                            exit={{ opacity: 0 }}
-                                                            className="flex flex-col items-center gap-3 mb-6"
+                                                            exit={{ opacity: 0, scale: 0.8 }}
+                                                            transition={{ duration: 0.4 }}
+                                                            className="relative w-full max-w-md h-64 mb-8"
                                                         >
-                                                            {topTracks.slice(0, 3).map((t: any, idx: number) => (
-                                                                <motion.span
-                                                                    key={idx}
-                                                                    initial={{ opacity: 0, x: -20 }}
-                                                                    animate={{ opacity: 0.4, x: 0 }}
-                                                                    transition={{ delay: 0.3 + idx * 0.3 }}
-                                                                    className="text-xl font-bold text-white/40"
-                                                                >
-                                                                    {t.artist}
-                                                                </motion.span>
-                                                            ))}
+                                                            {/* Get unique artists from top 3 tracks */}
+                                                            {(() => {
+                                                                const AVERAGE_TRACK_DURATION_MINUTES = 3.5; // Average song length assumption
+                                                                const ARTIST_POSITIONS = [
+                                                                    { top: '0%', left: '50%', translate: '-50%, 0%' },     // Top center
+                                                                    { top: '50%', left: '15%', translate: '0%, -50%' },    // Bottom left
+                                                                    { top: '50%', right: '15%', translate: '0%, -50%' }    // Bottom right
+                                                                ];
+                                                                
+                                                                const uniqueArtists: any[] = [];
+                                                                const artistNames = new Set();
+                                                                
+                                                                for (const track of topTracks) {
+                                                                    if (!artistNames.has(track.artist) && uniqueArtists.length < 3) {
+                                                                        uniqueArtists.push({
+                                                                            name: track.artist,
+                                                                            image: track.artistImage || track.image,
+                                                                            minutes: Math.round(track.playCount * AVERAGE_TRACK_DURATION_MINUTES)
+                                                                        });
+                                                                        artistNames.add(track.artist);
+                                                                    }
+                                                                }
+                                                                
+                                                                return uniqueArtists.map((artist, idx) => {
+                                                                    const isSpotlit = spotlightIndex === idx;
+                                                                    const pos = ARTIST_POSITIONS[idx];
+                                                                    
+                                                                    return (
+                                                                        <motion.div
+                                                                            key={idx}
+                                                                            initial={{ opacity: 0, scale: 0.5 }}
+                                                                            animate={{ 
+                                                                                opacity: 1, 
+                                                                                scale: isSpotlit ? 1.1 : 1,
+                                                                            }}
+                                                                            transition={{ 
+                                                                                delay: 0.2 + idx * 0.15,
+                                                                                scale: { duration: 0.3 }
+                                                                            }}
+                                                                            className="absolute"
+                                                                            style={{
+                                                                                top: pos.top,
+                                                                                left: pos.left,
+                                                                                right: pos.right,
+                                                                                transform: `translate(${pos.translate})`
+                                                                            }}
+                                                                        >
+                                                                            <div className="relative">
+                                                                                {/* Spotlight glow effect */}
+                                                                                {isSpotlit && (
+                                                                                    <motion.div
+                                                                                        initial={{ opacity: 0 }}
+                                                                                        animate={{ opacity: 1 }}
+                                                                                        className="absolute inset-0 bg-white/30 blur-2xl rounded-full scale-150"
+                                                                                    />
+                                                                                )}
+                                                                                
+                                                                                <img
+                                                                                    src={artist.image || avatarFallback(artist.name)}
+                                                                                    alt={artist.name}
+                                                                                    className={`w-24 h-24 rounded-full object-cover border-4 shadow-2xl relative z-10 transition-all duration-300 ${
+                                                                                        isSpotlit 
+                                                                                            ? 'border-white/80 shadow-white/40' 
+                                                                                            : 'border-white/20 opacity-60'
+                                                                                    }`}
+                                                                                />
+                                                                                
+                                                                                {/* Show name and minutes when spotlit */}
+                                                                                <AnimatePresence>
+                                                                                    {isSpotlit && (
+                                                                                        <motion.div
+                                                                                            initial={{ opacity: 0, y: 10 }}
+                                                                                            animate={{ opacity: 1, y: 0 }}
+                                                                                            exit={{ opacity: 0, y: 10 }}
+                                                                                            className="absolute top-full mt-3 left-1/2 -translate-x-1/2 text-center whitespace-nowrap"
+                                                                                        >
+                                                                                            <p className="text-white font-bold text-base mb-1">{artist.name}</p>
+                                                                                            <p className="text-white/60 text-xs">{artist.minutes} min</p>
+                                                                                        </motion.div>
+                                                                                    )}
+                                                                                </AnimatePresence>
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    );
+                                                                });
+                                                            })()}
                                                         </motion.div>
                                                     )}
                                                 </AnimatePresence>
 
-                                                {/* Spotlight reveal */}
+                                                {/* Final reveal - #1 artist enlarged in center */}
                                                 <AnimatePresence>
                                                     {artistRevealed && (
                                                         <motion.div
-                                                            initial={{ opacity: 0, scale: 0.6 }}
+                                                            initial={{ opacity: 0, scale: 0.5 }}
                                                             animate={{ opacity: 1, scale: 1 }}
-                                                            transition={{ type: "spring", stiffness: 200 }}
+                                                            transition={{ type: "spring", stiffness: 150, damping: 15 }}
                                                         >
                                                             <div className="relative mb-6">
                                                                 <motion.div
@@ -541,12 +632,12 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                                     className="absolute inset-0 bg-white/20 blur-3xl rounded-full animate-pulse scale-125"
                                                                 />
                                                                 <motion.div
-                                                                    initial={{ backgroundPosition: '-200% 0' }}
-                                                                    animate={{ backgroundPosition: '200% 0' }}
-                                                                    transition={{ duration: 1.5, ease: "easeInOut" }}
+                                                                    initial={{ scale: 0 }}
+                                                                    animate={{ scale: 1 }}
+                                                                    transition={{ duration: 0.8, ease: "easeOut" }}
                                                                     className="absolute inset-0 z-20 rounded-full pointer-events-none"
                                                                     style={{
-                                                                        background: 'radial-gradient(circle at 50% 50%, rgba(250,45,72,0.6) 0%, transparent 60%)',
+                                                                        background: 'radial-gradient(circle at 50% 50%, rgba(250,45,72,0.5) 0%, transparent 70%)',
                                                                         mixBlendMode: 'overlay',
                                                                     }}
                                                                 />
