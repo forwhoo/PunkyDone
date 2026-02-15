@@ -150,6 +150,7 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 
 import { SeeAllModal } from './components/SeeAllModal';
 import { WrappedModal } from './components/WrappedModal';
+import PrismaticBurst from './components/reactbits/PrismaticBurst';
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('spotify_token'));
@@ -834,19 +835,23 @@ function App() {
                                     setWrappedModal({ isOpen: true, period: timeRange });
                                 }
                             }}
-                            className="w-full bg-[#1C1C1E] rounded-2xl p-5 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all"
+                            className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all relative overflow-hidden"
                         >
-                            <div className="flex items-center justify-between">
+                            <div className="absolute inset-0 z-0">
+                                <PrismaticBurst animationType="rotate3d" intensity={1.5} speed={0.3} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
+                            </div>
+                            <div className="absolute inset-0 bg-black/60 z-[1]" />
+                            <div className="flex items-center justify-between relative z-10">
                                 <div className="text-left flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-[#FA2D48]/10 flex items-center justify-center border border-white/5">
+                                    <div className="w-10 h-10 rounded-xl bg-[#FA2D48]/20 flex items-center justify-center border border-white/10">
                                         <Sparkles className="w-5 h-5 text-[#FA2D48]" />
                                     </div>
                                     <div>
-                                        <h3 className="text-[15px] font-bold text-white tracking-tight">Your Wrapped</h3>
-                                        <p className="text-[12px] text-[#8E8E93] font-medium">View your story</p>
+                                        <h3 className="text-[15px] font-bold text-white tracking-tight">Punky Wrapped</h3>
+                                        <p className="text-[12px] text-white/60 font-medium">View your story</p>
                                     </div>
                                 </div>
-                                <Calendar className="w-5 h-5 text-[#FA2D48]/60 flex-shrink-0" />
+                                <Calendar className="w-5 h-5 text-white/60 flex-shrink-0" />
                             </div>
                         </button>
                     </section>
@@ -1104,19 +1109,23 @@ function App() {
                                 setWrappedModal({ isOpen: true, period: timeRange });
                             }
                         }}
-                        className="w-full bg-[#1C1C1E] rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99]"
+                        className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99] relative overflow-hidden"
                     >
-                        <div className="flex items-center justify-between">
+                        <div className="absolute inset-0 z-0">
+                            <PrismaticBurst animationType="rotate3d" intensity={1.5} speed={0.3} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
+                        </div>
+                        <div className="absolute inset-0 bg-black/60 z-[1]" />
+                        <div className="flex items-center justify-between relative z-10">
                             <div className="text-left flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#FA2D48]/10 flex items-center justify-center border border-white/5">
+                                <div className="w-10 h-10 rounded-xl bg-[#FA2D48]/20 flex items-center justify-center border border-white/10">
                                     <Sparkles className="w-5 h-5 text-[#FA2D48]" />
                                 </div>
                                 <div>
-                                    <h3 className="text-[15px] font-bold text-white tracking-tight">Your {timeRange} Wrapped</h3>
-                                    <p className="text-[12px] text-[#8E8E93] font-medium">View your story</p>
+                                    <h3 className="text-[15px] font-bold text-white tracking-tight">Punky Wrapped</h3>
+                                    <p className="text-[12px] text-white/60 font-medium">View your story</p>
                                 </div>
                             </div>
-                            <Calendar className="w-5 h-5 text-[#FA2D48]/60 group-hover:text-[#FA2D48] transition-colors flex-shrink-0" />
+                            <Calendar className="w-5 h-5 text-white/60 group-hover:text-white transition-colors flex-shrink-0" />
                         </div>
                     </button>
                 </div>
