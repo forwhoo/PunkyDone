@@ -10,6 +10,17 @@ import CountUp from './reactbits/CountUp';
 import PixelBlast from './reactbits/PixelBlast';
 import PrismaticBurst from './reactbits/PrismaticBurst';
 import FaultyTerminal from './reactbits/FaultyTerminal';
+import LightRays from './reactbits/LightRays';
+import GridScan from './reactbits/GridScan';
+import ColorBends from './reactbits/ColorBends';
+
+// Constants for Top Artist slide
+const AVERAGE_TRACK_DURATION_MINUTES = 3.5; // Average song length assumption for estimating listening time
+const ARTIST_POSITIONS = [
+    { top: '0%', left: '50%', translate: '-50%, 0%' },     // Top center
+    { top: '50%', left: '15%', translate: '0%, -50%' },    // Bottom left
+    { top: '50%', right: '15%', translate: '0%, -50%' }    // Bottom right
+];
 
 interface WrappedModalProps {
     isOpen: boolean;
@@ -32,6 +43,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
     const [orbitDuration, setOrbitDuration] = useState(20);
     const [artistRevealed, setArtistRevealed] = useState(false);
     const [albumRevealed, setAlbumRevealed] = useState(false);
+    const [spotlightIndex, setSpotlightIndex] = useState(0);
 
     // Always use weekly data for Punky Wrapped
     const mapPeriod = (_p: string): 'daily' | 'weekly' | 'monthly' => {
@@ -96,8 +108,18 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
     useEffect(() => {
         if (currentSlide === 4) {
             setArtistRevealed(false);
-            const timer = setTimeout(() => setArtistRevealed(true), 2500);
-            return () => clearTimeout(timer);
+            setSpotlightIndex(0);
+            
+            // Cycle through spotlight on each artist (0, 1, 2)
+            const timer1 = setTimeout(() => setSpotlightIndex(1), 800);
+            const timer2 = setTimeout(() => setSpotlightIndex(2), 1600);
+            const timer3 = setTimeout(() => setArtistRevealed(true), 2400);
+            
+            return () => {
+                clearTimeout(timer1);
+                clearTimeout(timer2);
+                clearTimeout(timer3);
+            };
         }
     }, [currentSlide]);
 
@@ -105,7 +127,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
     useEffect(() => {
         if (currentSlide === 5) {
             setAlbumRevealed(false);
-            const timer = setTimeout(() => setAlbumRevealed(true), 2000);
+            const timer = setTimeout(() => setAlbumRevealed(true), 4500);
             return () => clearTimeout(timer);
         }
     }, [currentSlide]);
@@ -192,12 +214,13 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                 </button>
 
                 {loading ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-6">
-                        <div className="relative">
-                            <div className="w-20 h-20 border-[3px] border-white/10 border-t-[#FA2D48] rounded-full animate-spin" />
-                            <Headphones className="absolute inset-0 m-auto w-8 h-8 text-[#FA2D48] animate-pulse" />
+                    <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
+                        <div className="absolute inset-0 z-0">
+                            <Aurora />
                         </div>
-                        <p className="text-white/40 font-semibold text-xs tracking-widest uppercase animate-pulse">Building your wrapped...</p>
+                        <h1 className="text-6xl font-bold tracking-tight text-white z-10 relative">
+                            Punky Wrapped
+                        </h1>
                     </div>
                 ) : (
                     <div className="flex-1 relative cursor-pointer overflow-hidden" onClick={handleTap}>
@@ -468,7 +491,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                 </motion.div>
                             )}
 
-                            {/* SLIDE 4: TOP ARTIST with PrismaticBurst spotlight reveal */}
+                            {/* SLIDE 4: TOP ARTIST with LightRays spotlight reveal */}
                             {currentSlide === 4 && (
                                 <motion.div
                                     key="artist"
@@ -479,58 +502,130 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     className="absolute inset-0"
                                 >
                                     <div className="absolute inset-0 z-0">
-                                        <PrismaticBurst
-                                            animationType="rotate3d"
-                                            intensity={2}
-                                            speed={0.5}
-                                            colors={['#FA2D48', '#7C3AED', '#ffffff']}
-                                            mixBlendMode="lighten"
+                                        <LightRays
+                                            raysOrigin="top-center"
+                                            raysColor="#FA2D48"
+                                            raysSpeed={1.5}
+                                            lightSpread={0.8}
+                                            rayLength={2.5}
+                                            pulsating={true}
+                                            fadeDistance={1.2}
+                                            followMouse={false}
                                         />
                                     </div>
-                                    <div className="absolute inset-0 bg-black/30 z-5" />
+                                    <div className="absolute inset-0 bg-black/40 z-5" />
                                     <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center z-10">
                                         <motion.span
                                             initial={{ y: -10, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.1 }}
-                                            className="text-sm font-bold text-white uppercase tracking-widest mb-6"
+                                            className="text-sm font-bold text-white uppercase tracking-widest mb-8"
                                         >
-                                            Your #1 Artist
+                                            Your Top Artists
                                         </motion.span>
 
-                                        {topArtist ? (
+                                        {topArtist && topTracks.length >= 3 ? (
                                             <>
-                                                {/* Candidate names that fade in first */}
+                                                {/* Three artist images in triangular layout before reveal */}
                                                 <AnimatePresence>
                                                     {!artistRevealed && (
                                                         <motion.div
                                                             initial={{ opacity: 0 }}
                                                             animate={{ opacity: 1 }}
-                                                            exit={{ opacity: 0 }}
-                                                            className="flex flex-col items-center gap-3 mb-6"
+                                                            exit={{ opacity: 0, scale: 0.8 }}
+                                                            transition={{ duration: 0.4 }}
+                                                            className="relative w-full max-w-md h-64 mb-8"
                                                         >
-                                                            {topTracks.slice(0, 3).map((t: any, idx: number) => (
-                                                                <motion.span
-                                                                    key={idx}
-                                                                    initial={{ opacity: 0, x: -20 }}
-                                                                    animate={{ opacity: 0.4, x: 0 }}
-                                                                    transition={{ delay: 0.3 + idx * 0.3 }}
-                                                                    className="text-xl font-bold text-white/40"
-                                                                >
-                                                                    {t.artist}
-                                                                </motion.span>
-                                                            ))}
+                                                            {/* Get unique artists from top 3 tracks */}
+                                                            {(() => {
+                                                                const uniqueArtists: any[] = [];
+                                                                const artistNames = new Set();
+                                                                
+                                                                for (const track of topTracks) {
+                                                                    if (!artistNames.has(track.artist) && uniqueArtists.length < 3) {
+                                                                        uniqueArtists.push({
+                                                                            name: track.artist,
+                                                                            image: track.artistImage || track.image,
+                                                                            estimatedMinutes: Math.round(track.playCount * AVERAGE_TRACK_DURATION_MINUTES)
+                                                                        });
+                                                                        artistNames.add(track.artist);
+                                                                    }
+                                                                }
+                                                                
+                                                                return uniqueArtists.map((artist, idx) => {
+                                                                    const isSpotlit = spotlightIndex === idx;
+                                                                    const pos = ARTIST_POSITIONS[idx];
+                                                                    
+                                                                    return (
+                                                                        <motion.div
+                                                                            key={idx}
+                                                                            initial={{ opacity: 0, scale: 0.5 }}
+                                                                            animate={{ 
+                                                                                opacity: 1, 
+                                                                                scale: isSpotlit ? 1.1 : 1,
+                                                                            }}
+                                                                            transition={{ 
+                                                                                delay: 0.2 + idx * 0.15,
+                                                                                scale: { duration: 0.3 }
+                                                                            }}
+                                                                            className="absolute"
+                                                                            style={{
+                                                                                top: pos.top,
+                                                                                left: pos.left,
+                                                                                right: pos.right,
+                                                                                transform: `translate(${pos.translate})`
+                                                                            }}
+                                                                        >
+                                                                            <div className="relative">
+                                                                                {/* Spotlight glow effect */}
+                                                                                {isSpotlit && (
+                                                                                    <motion.div
+                                                                                        initial={{ opacity: 0 }}
+                                                                                        animate={{ opacity: 1 }}
+                                                                                        className="absolute inset-0 bg-white/30 blur-2xl rounded-full scale-150"
+                                                                                    />
+                                                                                )}
+                                                                                
+                                                                                <img
+                                                                                    src={artist.image || avatarFallback(artist.name)}
+                                                                                    alt={artist.name}
+                                                                                    className={`w-24 h-24 rounded-full object-cover border-4 shadow-2xl relative z-10 transition-all duration-300 ${
+                                                                                        isSpotlit 
+                                                                                            ? 'border-white/80 shadow-white/40' 
+                                                                                            : 'border-white/20 opacity-60'
+                                                                                    }`}
+                                                                                />
+                                                                                
+                                                                                {/* Show name and minutes when spotlit */}
+                                                                                <AnimatePresence>
+                                                                                    {isSpotlit && (
+                                                                                        <motion.div
+                                                                                            initial={{ opacity: 0, y: 10 }}
+                                                                                            animate={{ opacity: 1, y: 0 }}
+                                                                                            exit={{ opacity: 0, y: 10 }}
+                                                                                            className="absolute top-full mt-3 left-1/2 -translate-x-1/2 text-center whitespace-nowrap"
+                                                                                        >
+                                                                                            <p className="text-white font-bold text-base mb-1">{artist.name}</p>
+                                                                                            <p className="text-white/60 text-xs">{artist.estimatedMinutes} min</p>
+                                                                                        </motion.div>
+                                                                                    )}
+                                                                                </AnimatePresence>
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    );
+                                                                });
+                                                            })()}
                                                         </motion.div>
                                                     )}
                                                 </AnimatePresence>
 
-                                                {/* Spotlight reveal */}
+                                                {/* Final reveal - #1 artist enlarged in center */}
                                                 <AnimatePresence>
                                                     {artistRevealed && (
                                                         <motion.div
-                                                            initial={{ opacity: 0, scale: 0.6 }}
+                                                            initial={{ opacity: 0, scale: 0.5 }}
                                                             animate={{ opacity: 1, scale: 1 }}
-                                                            transition={{ type: "spring", stiffness: 200 }}
+                                                            transition={{ type: "spring", stiffness: 150, damping: 15 }}
                                                         >
                                                             <div className="relative mb-6">
                                                                 <motion.div
@@ -540,12 +635,12 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                                     className="absolute inset-0 bg-white/20 blur-3xl rounded-full animate-pulse scale-125"
                                                                 />
                                                                 <motion.div
-                                                                    initial={{ backgroundPosition: '-200% 0' }}
-                                                                    animate={{ backgroundPosition: '200% 0' }}
-                                                                    transition={{ duration: 1.5, ease: "easeInOut" }}
+                                                                    initial={{ scale: 0 }}
+                                                                    animate={{ scale: 1 }}
+                                                                    transition={{ duration: 0.8, ease: "easeOut" }}
                                                                     className="absolute inset-0 z-20 rounded-full pointer-events-none"
                                                                     style={{
-                                                                        background: 'radial-gradient(circle at 50% 50%, rgba(250,45,72,0.6) 0%, transparent 60%)',
+                                                                        background: 'radial-gradient(circle at 50% 50%, rgba(250,45,72,0.5) 0%, transparent 70%)',
                                                                         mixBlendMode: 'overlay',
                                                                     }}
                                                                 />
@@ -588,7 +683,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                 </motion.div>
                             )}
 
-                            {/* SLIDE 5: TOP ALBUM with FaultyTerminal + typewriter */}
+                            {/* SLIDE 5: TOP ALBUM with GridScan + AI typewriter */}
                             {currentSlide === 5 && (
                                 <motion.div
                                     key="album"
@@ -599,20 +694,13 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     className="absolute inset-0"
                                 >
                                     <div className="absolute inset-0 z-0">
-                                        <FaultyTerminal
-                                            scale={1.5}
-                                            gridMul={[2, 1]}
-                                            digitSize={1.2}
-                                            timeScale={0.5}
-                                            scanlineIntensity={0.5}
-                                            glitchAmount={1}
-                                            flickerAmount={1}
-                                            noiseAmp={1}
-                                            tint="#A7EF9E"
-                                            mouseReact
-                                            mouseStrength={0.5}
-                                            pageLoadAnimation
-                                            brightness={0.6}
+                                        <GridScan
+                                            sensitivity={0.55}
+                                            lineThickness={1}
+                                            linesColor="#392e4e"
+                                            scanColor="#FF9FFC"
+                                            bloomIntensity={0.6}
+                                            chromaticAberration={0.002}
                                         />
                                     </div>
                                     <div className="absolute inset-0 bg-black/30 z-5" />
@@ -628,20 +716,29 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
 
                                         {topAlbum ? (
                                             <>
-                                                {/* Typewriter effect for album details */}
+                                                {/* AI terminal typewriter effect */}
                                                 <motion.div
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 1 }}
                                                     transition={{ delay: 0.3 }}
                                                     className="mb-6 font-mono text-left max-w-xs w-full"
                                                 >
-                                                    {['> Loading album data...', `> Title: ${topAlbum.title}`, `> Artist: ${topAlbum.artist}`, `> Plays: ${topAlbum.count}`].map((line, idx) => (
+                                                    {[
+                                                        '> System: Initializing audio analysis...',
+                                                        '> AI: Scanning listening patterns...',
+                                                        `> AI: I see you listened to ${topAlbum.count} tracks...`,
+                                                        '> AI: Cross-referencing album data...',
+                                                        `> Result: Top album identified`,
+                                                        `> Title: ${topAlbum.title}`,
+                                                        `> Artist: ${topAlbum.artist}`,
+                                                        `> Total plays: ${topAlbum.count}`
+                                                    ].map((line, idx) => (
                                                         <motion.p
                                                             key={idx}
                                                             initial={{ opacity: 0, x: -10 }}
                                                             animate={{ opacity: 1, x: 0 }}
-                                                            transition={{ delay: 0.5 + idx * 0.4 }}
-                                                            className="text-[#A7EF9E] text-sm mb-1"
+                                                            transition={{ delay: 0.5 + idx * 0.45 }}
+                                                            className="text-[#FF9FFC] text-sm mb-1"
                                                         >
                                                             {line}
                                                         </motion.p>
@@ -720,14 +817,13 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     className="absolute inset-0 bg-[#0A0A0A]"
                                 >
                                     <div className="absolute inset-0 z-0">
-                                        <PixelBlast
-                                            variant="diamond"
-                                            pixelSize={3}
-                                            color="#FA2D48"
-                                            patternScale={2}
-                                            speed={0.3}
-                                            edgeFade={0.3}
-                                            transparent
+                                        <GridScan
+                                            sensitivity={0.55}
+                                            lineThickness={1}
+                                            linesColor="#392e4e"
+                                            scanColor="#FF9FFC"
+                                            bloomIntensity={0.6}
+                                            chromaticAberration={0.002}
                                         />
                                     </div>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
@@ -735,7 +831,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                             initial={{ y: -10, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.1 }}
-                                            className="text-sm font-bold text-[#FA2D48] uppercase tracking-widest mb-6"
+                                            className="text-sm font-bold text-[#FF9FFC] uppercase tracking-widest mb-6"
                                         >
                                             Peak Listening
                                         </motion.span>
@@ -987,12 +1083,12 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                                 alt={artist.name}
                                                                 className="w-full h-full object-cover"
                                                             />
-                                                            {/* Shimmer overlay */}
+                                                            {/* Dither/grain overlay */}
                                                             <div
-                                                                className="absolute inset-0 rounded-full pointer-events-none animate-[shimmer_2s_linear_infinite]"
+                                                                className="absolute inset-0 rounded-full pointer-events-none opacity-40"
                                                                 style={{
-                                                                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
-                                                                    backgroundSize: '200% 100%',
+                                                                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+                                                                    mixBlendMode: 'overlay',
                                                                 }}
                                                             />
                                                         </div>
@@ -1035,18 +1131,28 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                             initial={{ scale: 0.8, opacity: 0 }}
                                             animate={{ scale: 1, opacity: 1 }}
                                             transition={{ delay: 0.2, type: "spring" }}
-                                            className="text-4xl sm:text-5xl font-black text-white mb-2"
+                                            className="text-4xl sm:text-5xl font-black text-white mb-8 relative"
                                         >
-                                            Punky <span className="text-[#FA2D48]">Wrapped</span>
+                                            Punky{' '}
+                                            <span className="relative inline-block">
+                                                <span className="absolute inset-0 -m-2">
+                                                    <ColorBends 
+                                                        colors={["#ff5c7a", "#8a5cff", "#00ffd1"]} 
+                                                        speed={0.2} 
+                                                        autoRotate={1}
+                                                        transparent={true}
+                                                    />
+                                                </span>
+                                                <span className="relative" style={{ 
+                                                    WebkitBackgroundClip: 'text',
+                                                    backgroundClip: 'text',
+                                                    WebkitTextFillColor: 'transparent',
+                                                    backgroundImage: 'linear-gradient(135deg, #ff5c7a 0%, #8a5cff 50%, #00ffd1 100%)'
+                                                }}>
+                                                    Wrapped
+                                                </span>
+                                            </span>
                                         </motion.h2>
-                                        <motion.p
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            transition={{ delay: 0.3 }}
-                                            className="text-white/40 text-sm mb-8"
-                                        >
-                                            Until next time 🎵
-                                        </motion.p>
 
                                         <motion.div
                                             initial={{ y: 20, opacity: 0 }}

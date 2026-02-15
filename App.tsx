@@ -666,6 +666,28 @@ function App() {
                         globalStats: dbStats
                     }}
                 />
+                
+                {/* Mobile Punky Wrapped Button */}
+                <button
+                    onClick={() => {
+                        if (safeArtists.length > 0 || safeSongs.length > 0 || safeAlbums.length > 0) {
+                            setWrappedModal({ isOpen: true, period: timeRange });
+                        }
+                    }}
+                    className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all relative overflow-hidden"
+                >
+                    <div className="absolute inset-0 z-0">
+                        <PrismaticBurst animationType="rotate3d" intensity={1.5} speed={0.3} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
+                    </div>
+                    <div className="absolute inset-0 bg-black/60 z-[1]" />
+                    <div className="flex items-center justify-between relative z-10">
+                        <div className="text-left">
+                            <h3 className="text-[15px] font-bold text-white tracking-tight">Punky Wrapped</h3>
+                            <p className="text-[12px] text-white/60 font-medium">View your story</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-white/60 flex-shrink-0" />
+                    </div>
+                </button>
             </div>
 
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
@@ -826,35 +848,7 @@ function App() {
                         )}
                     </section>
 
-                    {/* Mobile Wrapped Button */}
-                    <section className="space-y-5">
-                        <button
-                            onClick={() => {
-                                // Open Wrapped modal
-                                if (safeArtists.length > 0 || safeSongs.length > 0 || safeAlbums.length > 0) {
-                                    setWrappedModal({ isOpen: true, period: timeRange });
-                                }
-                            }}
-                            className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all relative overflow-hidden"
-                        >
-                            <div className="absolute inset-0 z-0">
-                                <PrismaticBurst animationType="rotate3d" intensity={1.5} speed={0.3} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
-                            </div>
-                            <div className="absolute inset-0 bg-black/60 z-[1]" />
-                            <div className="flex items-center justify-between relative z-10">
-                                <div className="text-left flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-[#FA2D48]/20 flex items-center justify-center border border-white/10">
-                                        <Sparkles className="w-5 h-5 text-[#FA2D48]" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-[15px] font-bold text-white tracking-tight">Punky Wrapped</h3>
-                                        <p className="text-[12px] text-white/60 font-medium">View your story</p>
-                                    </div>
-                                </div>
-                                <Calendar className="w-5 h-5 text-white/60 flex-shrink-0" />
-                            </div>
-                        </button>
-                    </section>
+
 
                     {/* Mobile Obsession Orbit */}
                     <section className="space-y-5">
@@ -909,7 +903,7 @@ function App() {
 
         <div className="hidden md:block">
             {/* SECTION 1: AI DISCOVERY - Search Bar */}
-            <div className="mb-16 mt-8">
+            <div className="mb-8 mt-8">
                 <AISearchBar
                     token={token}
                     history={safeRecent}
@@ -934,6 +928,30 @@ function App() {
                         globalStats: dbStats
                     }}
                 />
+            </div>
+            
+            {/* Desktop Punky Wrapped Button */}
+            <div className="mb-16">
+                <button
+                    onClick={() => {
+                        if (safeArtists.length > 0 || safeSongs.length > 0 || safeAlbums.length > 0) {
+                            setWrappedModal({ isOpen: true, period: timeRange });
+                        }
+                    }}
+                    className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99] relative overflow-hidden"
+                >
+                    <div className="absolute inset-0 z-0">
+                        <PrismaticBurst animationType="rotate3d" intensity={1.5} speed={0.3} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
+                    </div>
+                    <div className="absolute inset-0 bg-black/60 z-[1]" />
+                    <div className="flex items-center justify-between relative z-10">
+                        <div className="text-left">
+                            <h3 className="text-[15px] font-bold text-white tracking-tight">Punky Wrapped</h3>
+                            <p className="text-[12px] text-white/60 font-medium">View your story</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors flex-shrink-0" />
+                    </div>
+                </button>
             </div>
 
             {/* SECTION 2: TOP RANKINGS - Prominent Showcase */}
@@ -1100,34 +1118,8 @@ function App() {
                     />
                 </div>
 
-                {/* RIGHT: WRAPPED + EXTRAS */}
+                {/* RIGHT: WRAPPED + EXTRAS - empty for now */}
                 <div className="space-y-8">
-                    {/* Desktop Wrapped Button */}
-                    <button
-                        onClick={() => {
-                            if (safeArtists.length > 0 || safeSongs.length > 0 || safeAlbums.length > 0) {
-                                setWrappedModal({ isOpen: true, period: timeRange });
-                            }
-                        }}
-                        className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99] relative overflow-hidden"
-                    >
-                        <div className="absolute inset-0 z-0">
-                            <PrismaticBurst animationType="rotate3d" intensity={1.5} speed={0.3} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
-                        </div>
-                        <div className="absolute inset-0 bg-black/60 z-[1]" />
-                        <div className="flex items-center justify-between relative z-10">
-                            <div className="text-left flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#FA2D48]/20 flex items-center justify-center border border-white/10">
-                                    <Sparkles className="w-5 h-5 text-[#FA2D48]" />
-                                </div>
-                                <div>
-                                    <h3 className="text-[15px] font-bold text-white tracking-tight">Punky Wrapped</h3>
-                                    <p className="text-[12px] text-white/60 font-medium">View your story</p>
-                                </div>
-                            </div>
-                            <Calendar className="w-5 h-5 text-white/60 group-hover:text-white transition-colors flex-shrink-0" />
-                        </div>
-                    </button>
                 </div>
                 
             </div>
