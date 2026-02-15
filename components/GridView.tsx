@@ -293,8 +293,9 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
             scene.add(mesh);
             meshes.push(mesh);
 
-            // Load texture
-            if (item.image && !item.image.includes('ui-avatars.com')) {
+            // Load texture - skip placeholder avatar URLs
+            const isPlaceholder = item.image ? new URL(item.image, 'https://placeholder.local').hostname === 'ui-avatars.com' : true;
+            if (item.image && !isPlaceholder) {
                 textureLoader.load(
                     item.image,
                     (texture) => {
