@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Share2, Sparkles, Music2, Headphones, Clock, Mic2, Disc, ChevronRight, ChevronLeft, Play, Sun, Moon, Sunset, Sunrise, CheckCircle, XCircle } from 'lucide-react';
+import { X, Share2, Sparkles, Music2, Headphones, Clock, Mic2, Disc, ChevronRight, ChevronLeft, Sun, Moon, Sunset, Sunrise, CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateWrappedStory, generateWrappedVibe, generateWrappedQuiz, QuizQuestion } from '../services/geminiService';
 import { getWrappedStats, getPeakListeningHour, getRadarArtists } from '../services/dbService';
@@ -7,6 +7,9 @@ import Aurora from './reactbits/Aurora';
 import Particles from './reactbits/Particles';
 import GridMotion from './reactbits/GridMotion';
 import CountUp from './reactbits/CountUp';
+import PixelBlast from './reactbits/PixelBlast';
+import PrismaticBurst from './reactbits/PrismaticBurst';
+import FaultyTerminal from './reactbits/FaultyTerminal';
 
 interface WrappedModalProps {
     isOpen: boolean;
@@ -27,11 +30,11 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
     const [loading, setLoading] = useState(true);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [orbitDuration, setOrbitDuration] = useState(20);
+    const [artistRevealed, setArtistRevealed] = useState(false);
+    const [albumRevealed, setAlbumRevealed] = useState(false);
 
-    const mapPeriod = (p: string): 'daily' | 'weekly' | 'monthly' => {
-        const lower = p.toLowerCase();
-        if (lower.includes('day') || lower.includes('daily')) return 'daily';
-        if (lower.includes('month')) return 'monthly';
+    // Always use weekly data for Punky Wrapped
+    const mapPeriod = (_p: string): 'daily' | 'weekly' | 'monthly' => {
         return 'weekly';
     };
 
@@ -41,6 +44,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
             setCurrentSlide(0);
             setQuizAnswer(null);
             setOrbitDuration(20);
+            setArtistRevealed(false);
+            setAlbumRevealed(false);
             const mappedPeriod = mapPeriod(period);
             
             Promise.all([
@@ -77,16 +82,39 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
         }
     }, [isOpen, period]);
 
-    // Orbit animation for slide 8 - starts fast (short duration) then slows down
+    // Orbit animation for slide 7 - starts fast then slows down and converges
     useEffect(() => {
-        if (currentSlide === 8) {
-            setOrbitDuration(2);
-            const timer = setTimeout(() => setOrbitDuration(20), 2000);
+        if (currentSlide === 7) {
+            setOrbitDuration(1);
+            const t1 = setTimeout(() => setOrbitDuration(0.5), 1000);
+            const t2 = setTimeout(() => setOrbitDuration(20), 2000);
+            return () => { clearTimeout(t1); clearTimeout(t2); };
+        }
+    }, [currentSlide]);
+
+    // Artist reveal animation for slide 4
+    useEffect(() => {
+        if (currentSlide === 4) {
+            setArtistRevealed(false);
+            const timer = setTimeout(() => setArtistRevealed(true), 2500);
+            return () => clearTimeout(timer);
+        }
+    }, [currentSlide]);
+
+    // Album reveal animation for slide 5
+    useEffect(() => {
+        if (currentSlide === 5) {
+            setAlbumRevealed(false);
+            const timer = setTimeout(() => setAlbumRevealed(true), 2000);
             return () => clearTimeout(timer);
         }
     }, [currentSlide]);
 
     if (!isOpen) return null;
+
+    const ORBIT_CONVERGENCE_THRESHOLD = 5;
+    const CONVERGED_RADIUS = 30;
+    const EXPANDED_RADIUS = 120;
 
     const topArtist = stats?.topArtist;
     const topSong = stats?.topSong;
@@ -101,7 +129,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
     const avatarFallback = (name: string) =>
         `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1C1C1E&color=fff`;
 
-    const totalSlides = 11;
+    const totalSlides = 10;
 
     const handleNext = () => setCurrentSlide(prev => Math.min(totalSlides - 1, prev + 1));
     const handlePrev = () => setCurrentSlide(prev => Math.max(0, prev - 1));
@@ -186,10 +214,12 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     className="absolute inset-0"
                                 >
                                     <div className="absolute inset-0 z-0">
-                                        <GridMotion
-                                            items={albumCovers.length > 0 ? albumCovers : undefined}
-                                            gradientColor="rgba(0,0,0,0.8)"
-                                        />
+                                        <div className="animate-[perspective-tilt_8s_ease-in-out_infinite] w-full h-full">
+                                            <GridMotion
+                                                items={albumCovers.length > 0 ? albumCovers : undefined}
+                                                gradientColor="rgba(0,0,0,0.8)"
+                                            />
+                                        </div>
                                     </div>
                                     <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80 z-10" />
                                     <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center z-20">
@@ -205,7 +235,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                 </div>
                                             ) : (
                                                 <div className="w-28 h-28 bg-[#FA2D48] rounded-full flex items-center justify-center shadow-[0_0_80px_rgba(250,45,72,0.5)]">
-                                                    <Play size={40} className="fill-white text-white ml-1" />
+                                                    <Sparkles size={40} className="text-white" />
                                                 </div>
                                             )}
                                         </motion.div>
@@ -215,7 +245,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                             transition={{ delay: 0.5 }}
                                             className="text-5xl sm:text-6xl font-black text-white mb-4 tracking-tight"
                                         >
-                                            Your {period} <span className="text-[#FA2D48]">Wrapped</span>
+                                            Punky <span className="text-[#FA2D48]">Wrapped</span>
                                         </motion.h1>
                                         <motion.p
                                             initial={{ y: 20, opacity: 0 }}
@@ -248,15 +278,15 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     className="absolute inset-0"
                                 >
                                     <div className="absolute inset-0 z-0">
-                                        <Particles
-                                            particleCount={100}
-                                            particleSpread={8}
-                                            speed={0.05}
-                                            particleColors={['#FA2D48', '#FF6B81', '#FF9A9E']}
-                                            alphaParticles={true}
-                                            particleBaseSize={80}
-                                            sizeRandomness={0.5}
-                                            cameraDistance={25}
+                                        <PixelBlast
+                                            variant="square"
+                                            pixelSize={4}
+                                            color="#FA2D48"
+                                            patternScale={2}
+                                            patternDensity={1}
+                                            speed={0.5}
+                                            edgeFade={0.25}
+                                            transparent
                                         />
                                     </div>
                                     <div className="absolute inset-0 bg-black/50 z-5" />
@@ -321,10 +351,10 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                 </motion.div>
                             )}
 
-                            {/* SLIDE 2: TOTAL MINUTES */}
+                            {/* SLIDE 2: TOTAL MINUTES + TOTAL PLAYS (merged) */}
                             {currentSlide === 2 && (
                                 <motion.div
-                                    key="minutes"
+                                    key="minutes-plays"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
@@ -359,50 +389,20 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                             initial={{ y: 20, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.5 }}
-                                            className="text-2xl text-white/60 font-semibold"
+                                            className="text-2xl text-white/60 font-semibold mb-8"
                                         >
                                             minutes listened
-                                        </motion.p>
-                                    </div>
-                                </motion.div>
-                            )}
-
-                            {/* SLIDE 3: TOTAL PLAYS */}
-                            {currentSlide === 3 && (
-                                <motion.div
-                                    key="plays"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.5 }}
-                                    className="absolute inset-0 bg-[#0A0A0A]"
-                                >
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-                                        <motion.span
-                                            initial={{ y: -10, opacity: 0 }}
-                                            animate={{ y: 0, opacity: 1 }}
-                                            transition={{ delay: 0.2 }}
-                                            className="text-sm font-bold text-[#FA2D48] uppercase tracking-widest mb-8"
-                                        >
-                                            Total Plays
-                                        </motion.span>
-                                        <div className="text-[100px] sm:text-[120px] leading-none font-black text-white tracking-tighter mb-4">
-                                            <CountUp to={totalTracks} duration={2} separator="," />
-                                        </div>
-                                        <motion.p
-                                            initial={{ y: 20, opacity: 0 }}
-                                            animate={{ y: 0, opacity: 1 }}
-                                            transition={{ delay: 0.5 }}
-                                            className="text-2xl text-white/60 font-semibold"
-                                        >
-                                            tracks played
                                         </motion.p>
                                         <motion.div
                                             initial={{ y: 20, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.8 }}
-                                            className="mt-8 flex items-center gap-4"
+                                            className="flex items-center gap-4"
                                         >
+                                            <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl text-center">
+                                                <span className="text-2xl font-black text-white block">{totalTracks.toLocaleString()}</span>
+                                                <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">tracks</span>
+                                            </div>
                                             <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl text-center">
                                                 <span className="text-2xl font-black text-white block">{totalHours}</span>
                                                 <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">hours</span>
@@ -412,8 +412,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                 </motion.div>
                             )}
 
-                            {/* SLIDE 4: DAYS CONVERSION */}
-                            {currentSlide === 4 && (
+                            {/* SLIDE 3: DAYS CONVERSION */}
+                            {currentSlide === 3 && (
                                 <motion.div
                                     key="days"
                                     initial={{ opacity: 0 }}
@@ -468,8 +468,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                 </motion.div>
                             )}
 
-                            {/* SLIDE 5: TOP ARTIST */}
-                            {currentSlide === 5 && (
+                            {/* SLIDE 4: TOP ARTIST with PrismaticBurst spotlight reveal */}
+                            {currentSlide === 4 && (
                                 <motion.div
                                     key="artist"
                                     initial={{ opacity: 0 }}
@@ -479,11 +479,12 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     className="absolute inset-0"
                                 >
                                     <div className="absolute inset-0 z-0">
-                                        <Aurora
-                                            colorStops={['#FA2D48', '#7C3AED', '#FA2D48']}
-                                            amplitude={1.5}
-                                            blend={0.7}
-                                            speed={0.8}
+                                        <PrismaticBurst
+                                            animationType="rotate3d"
+                                            intensity={2}
+                                            speed={0.5}
+                                            colors={['#FA2D48', '#7C3AED', '#ffffff']}
+                                            mixBlendMode="lighten"
                                         />
                                     </div>
                                     <div className="absolute inset-0 bg-black/30 z-5" />
@@ -499,38 +500,83 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
 
                                         {topArtist ? (
                                             <>
-                                                <motion.div
-                                                    initial={{ scale: 0.6, opacity: 0 }}
-                                                    animate={{ scale: 1, opacity: 1 }}
-                                                    transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-                                                    className="relative mb-6"
-                                                >
-                                                    <div className="absolute inset-0 bg-white/20 blur-3xl rounded-full animate-pulse scale-125" />
-                                                    <img
-                                                        src={topArtist.image || avatarFallback(topArtist.name)}
-                                                        alt={topArtist.name}
-                                                        className="w-52 h-52 sm:w-60 sm:h-60 rounded-full object-cover border-4 border-white/20 shadow-2xl relative z-10"
-                                                    />
-                                                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black font-black px-6 py-2 rounded-full z-20 whitespace-nowrap shadow-xl text-sm">
-                                                        #1 Artist
-                                                    </div>
-                                                </motion.div>
-                                                <motion.h2
-                                                    initial={{ y: 20, opacity: 0 }}
-                                                    animate={{ y: 0, opacity: 1 }}
-                                                    transition={{ delay: 0.5 }}
-                                                    className="text-4xl sm:text-5xl font-black text-white mb-2"
-                                                >
-                                                    {topArtist.name}
-                                                </motion.h2>
-                                                <motion.p
-                                                    initial={{ y: 20, opacity: 0 }}
-                                                    animate={{ y: 0, opacity: 1 }}
-                                                    transition={{ delay: 0.6 }}
-                                                    className="text-white/60 text-lg"
-                                                >
-                                                    {topArtist.count} plays
-                                                </motion.p>
+                                                {/* Candidate names that fade in first */}
+                                                <AnimatePresence>
+                                                    {!artistRevealed && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0 }}
+                                                            animate={{ opacity: 1 }}
+                                                            exit={{ opacity: 0 }}
+                                                            className="flex flex-col items-center gap-3 mb-6"
+                                                        >
+                                                            {topTracks.slice(0, 3).map((t: any, idx: number) => (
+                                                                <motion.span
+                                                                    key={idx}
+                                                                    initial={{ opacity: 0, x: -20 }}
+                                                                    animate={{ opacity: 0.4, x: 0 }}
+                                                                    transition={{ delay: 0.3 + idx * 0.3 }}
+                                                                    className="text-xl font-bold text-white/40"
+                                                                >
+                                                                    {t.artist}
+                                                                </motion.span>
+                                                            ))}
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+
+                                                {/* Spotlight reveal */}
+                                                <AnimatePresence>
+                                                    {artistRevealed && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, scale: 0.6 }}
+                                                            animate={{ opacity: 1, scale: 1 }}
+                                                            transition={{ type: "spring", stiffness: 200 }}
+                                                        >
+                                                            <div className="relative mb-6">
+                                                                <motion.div
+                                                                    initial={{ opacity: 0 }}
+                                                                    animate={{ opacity: 1 }}
+                                                                    transition={{ duration: 0.5 }}
+                                                                    className="absolute inset-0 bg-white/20 blur-3xl rounded-full animate-pulse scale-125"
+                                                                />
+                                                                <motion.div
+                                                                    initial={{ backgroundPosition: '-200% 0' }}
+                                                                    animate={{ backgroundPosition: '200% 0' }}
+                                                                    transition={{ duration: 1.5, ease: "easeInOut" }}
+                                                                    className="absolute inset-0 z-20 rounded-full pointer-events-none"
+                                                                    style={{
+                                                                        background: 'radial-gradient(circle at 50% 50%, rgba(250,45,72,0.6) 0%, transparent 60%)',
+                                                                        mixBlendMode: 'overlay',
+                                                                    }}
+                                                                />
+                                                                <img
+                                                                    src={topArtist.image || avatarFallback(topArtist.name)}
+                                                                    alt={topArtist.name}
+                                                                    className="w-52 h-52 sm:w-60 sm:h-60 rounded-full object-cover border-4 border-white/20 shadow-2xl relative z-10"
+                                                                />
+                                                                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black font-black px-6 py-2 rounded-full z-20 whitespace-nowrap shadow-xl text-sm">
+                                                                    #1 Artist
+                                                                </div>
+                                                            </div>
+                                                            <motion.h2
+                                                                initial={{ y: 20, opacity: 0 }}
+                                                                animate={{ y: 0, opacity: 1 }}
+                                                                transition={{ delay: 0.3 }}
+                                                                className="text-4xl sm:text-5xl font-black text-white mb-2"
+                                                            >
+                                                                {topArtist.name}
+                                                            </motion.h2>
+                                                            <motion.p
+                                                                initial={{ y: 20, opacity: 0 }}
+                                                                animate={{ y: 0, opacity: 1 }}
+                                                                transition={{ delay: 0.4 }}
+                                                                className="text-white/60 text-lg"
+                                                            >
+                                                                {topArtist.count} plays
+                                                            </motion.p>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
                                             </>
                                         ) : (
                                             <div className="text-white/40">
@@ -542,8 +588,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                 </motion.div>
                             )}
 
-                            {/* SLIDE 6: TOP ALBUM */}
-                            {currentSlide === 6 && (
+                            {/* SLIDE 5: TOP ALBUM with FaultyTerminal + typewriter */}
+                            {currentSlide === 5 && (
                                 <motion.div
                                     key="album"
                                     initial={{ opacity: 0 }}
@@ -553,11 +599,20 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     className="absolute inset-0"
                                 >
                                     <div className="absolute inset-0 z-0">
-                                        <Aurora
-                                            colorStops={['#06B6D4', '#8B5CF6', '#06B6D4']}
-                                            amplitude={1.2}
-                                            blend={0.5}
-                                            speed={0.6}
+                                        <FaultyTerminal
+                                            scale={1.5}
+                                            gridMul={[2, 1]}
+                                            digitSize={1.2}
+                                            timeScale={0.5}
+                                            scanlineIntensity={0.5}
+                                            glitchAmount={1}
+                                            flickerAmount={1}
+                                            noiseAmp={1}
+                                            tint="#A7EF9E"
+                                            mouseReact
+                                            mouseStrength={0.5}
+                                            pageLoadAnimation
+                                            brightness={0.6}
                                         />
                                     </div>
                                     <div className="absolute inset-0 bg-black/30 z-5" />
@@ -573,46 +628,76 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
 
                                         {topAlbum ? (
                                             <>
+                                                {/* Typewriter effect for album details */}
                                                 <motion.div
-                                                    initial={{ scale: 0.6, opacity: 0, rotate: -5 }}
-                                                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                                                    transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-                                                    className="relative mb-6"
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    transition={{ delay: 0.3 }}
+                                                    className="mb-6 font-mono text-left max-w-xs w-full"
                                                 >
-                                                    <div className="absolute inset-0 bg-white/15 blur-3xl rounded-2xl animate-pulse scale-110" />
-                                                    <img
-                                                        src={topAlbum.cover || avatarFallback(topAlbum.title)}
-                                                        alt={topAlbum.title}
-                                                        className="w-52 h-52 sm:w-60 sm:h-60 rounded-2xl object-cover border-4 border-white/20 shadow-2xl relative z-10"
-                                                    />
-                                                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black font-black px-6 py-2 rounded-full z-20 whitespace-nowrap shadow-xl text-sm">
-                                                        #1 Album
-                                                    </div>
+                                                    {['> Loading album data...', `> Title: ${topAlbum.title}`, `> Artist: ${topAlbum.artist}`, `> Plays: ${topAlbum.count}`].map((line, idx) => (
+                                                        <motion.p
+                                                            key={idx}
+                                                            initial={{ opacity: 0, x: -10 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            transition={{ delay: 0.5 + idx * 0.4 }}
+                                                            className="text-[#A7EF9E] text-sm mb-1"
+                                                        >
+                                                            {line}
+                                                        </motion.p>
+                                                    ))}
                                                 </motion.div>
-                                                <motion.h2
-                                                    initial={{ y: 20, opacity: 0 }}
-                                                    animate={{ y: 0, opacity: 1 }}
-                                                    transition={{ delay: 0.5 }}
-                                                    className="text-3xl sm:text-4xl font-black text-white mb-1"
-                                                >
-                                                    {topAlbum.title}
-                                                </motion.h2>
-                                                <motion.p
-                                                    initial={{ y: 20, opacity: 0 }}
-                                                    animate={{ y: 0, opacity: 1 }}
-                                                    transition={{ delay: 0.55 }}
-                                                    className="text-white/60 text-base mb-1"
-                                                >
-                                                    {topAlbum.artist}
-                                                </motion.p>
-                                                <motion.p
-                                                    initial={{ y: 20, opacity: 0 }}
-                                                    animate={{ y: 0, opacity: 1 }}
-                                                    transition={{ delay: 0.6 }}
-                                                    className="text-white/40 text-sm"
-                                                >
-                                                    {topAlbum.count} plays
-                                                </motion.p>
+
+                                                {/* Album image reveal */}
+                                                <AnimatePresence>
+                                                    {albumRevealed && (
+                                                        <motion.div
+                                                            initial={{ scale: 0.6, opacity: 0, rotate: -5 }}
+                                                            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                                                            transition={{ type: "spring", stiffness: 200 }}
+                                                            className="relative mb-6"
+                                                        >
+                                                            <div className="absolute inset-0 bg-white/15 blur-3xl rounded-2xl animate-pulse scale-110" />
+                                                            <img
+                                                                src={topAlbum.cover || avatarFallback(topAlbum.title)}
+                                                                alt={topAlbum.title}
+                                                                className="w-52 h-52 sm:w-60 sm:h-60 rounded-2xl object-cover border-4 border-white/20 shadow-2xl relative z-10"
+                                                            />
+                                                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black font-black px-6 py-2 rounded-full z-20 whitespace-nowrap shadow-xl text-sm">
+                                                                #1 Album
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+
+                                                {albumRevealed && (
+                                                    <>
+                                                        <motion.h2
+                                                            initial={{ y: 20, opacity: 0 }}
+                                                            animate={{ y: 0, opacity: 1 }}
+                                                            transition={{ delay: 0.2 }}
+                                                            className="text-3xl sm:text-4xl font-black text-white mb-1"
+                                                        >
+                                                            {topAlbum.title}
+                                                        </motion.h2>
+                                                        <motion.p
+                                                            initial={{ y: 20, opacity: 0 }}
+                                                            animate={{ y: 0, opacity: 1 }}
+                                                            transition={{ delay: 0.3 }}
+                                                            className="text-white/60 text-base mb-1"
+                                                        >
+                                                            {topAlbum.artist}
+                                                        </motion.p>
+                                                        <motion.p
+                                                            initial={{ y: 20, opacity: 0 }}
+                                                            animate={{ y: 0, opacity: 1 }}
+                                                            transition={{ delay: 0.4 }}
+                                                            className="text-white/40 text-sm"
+                                                        >
+                                                            {topAlbum.count} plays
+                                                        </motion.p>
+                                                    </>
+                                                )}
                                             </>
                                         ) : (
                                             <div className="text-white/40">
@@ -624,8 +709,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                 </motion.div>
                             )}
 
-                            {/* SLIDE 7: PEAK LISTENING TIME */}
-                            {currentSlide === 7 && (
+                            {/* SLIDE 6: PEAK LISTENING TIME with PixelBlast */}
+                            {currentSlide === 6 && (
                                 <motion.div
                                     key="peak"
                                     initial={{ opacity: 0 }}
@@ -634,7 +719,18 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     transition={{ duration: 0.5 }}
                                     className="absolute inset-0 bg-[#0A0A0A]"
                                 >
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                                    <div className="absolute inset-0 z-0">
+                                        <PixelBlast
+                                            variant="diamond"
+                                            pixelSize={3}
+                                            color="#FA2D48"
+                                            patternScale={2}
+                                            speed={0.3}
+                                            edgeFade={0.3}
+                                            transparent
+                                        />
+                                    </div>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
                                         <motion.span
                                             initial={{ y: -10, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
@@ -707,8 +803,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                 </motion.div>
                             )}
 
-                            {/* SLIDE 8: OBSESSION ORBIT */}
-                            {currentSlide === 8 && (
+                            {/* SLIDE 7: OBSESSION ORBIT with fast-spin-then-converge */}
+                            {currentSlide === 7 && (
                                 <motion.div
                                     key="orbit"
                                     initial={{ opacity: 0 }}
@@ -742,10 +838,10 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                             <div className="absolute inset-6 rounded-full border border-white/5" />
                                             <div className="absolute inset-12 rounded-full border border-white/5" />
 
-                                            {/* Center - Top Song */}
+                                            {/* Center - Top Song (grows when items converge) */}
                                             <motion.div
                                                 initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
+                                                animate={{ scale: orbitDuration > ORBIT_CONVERGENCE_THRESHOLD ? 1.2 : 0.5 }}
                                                 transition={{ delay: 0.5, type: "spring" }}
                                                 className="absolute inset-0 flex items-center justify-center"
                                             >
@@ -762,10 +858,10 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                 )}
                                             </motion.div>
 
-                                            {/* Orbiting items */}
+                                            {/* Orbiting items - converge to center after 2s */}
                                             {topTracks.slice(0, 6).map((track: any, idx: number) => {
                                                 const angle = (idx / 6) * Math.PI * 2;
-                                                const radius = 120;
+                                                const radius = orbitDuration > ORBIT_CONVERGENCE_THRESHOLD ? CONVERGED_RADIUS : EXPANDED_RADIUS;
                                                 return (
                                                     <motion.div
                                                         key={idx}
@@ -777,17 +873,17 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                         }}
                                                         initial={{ opacity: 0, scale: 0 }}
                                                         animate={{
-                                                            opacity: 1,
+                                                            opacity: orbitDuration > ORBIT_CONVERGENCE_THRESHOLD ? 0.3 : 1,
                                                             scale: 1,
                                                             x: Math.cos(angle) * radius,
                                                             y: Math.sin(angle) * radius,
                                                             rotate: 360,
                                                         }}
                                                         transition={{
-                                                            opacity: { delay: 0.8 + idx * 0.1 },
-                                                            scale: { delay: 0.8 + idx * 0.1, type: "spring" },
-                                                            x: { delay: 0.8 + idx * 0.1 },
-                                                            y: { delay: 0.8 + idx * 0.1 },
+                                                            opacity: { delay: 0.3 + idx * 0.05, duration: 0.5 },
+                                                            scale: { delay: 0.3 + idx * 0.05, type: "spring" },
+                                                            x: { delay: 0.3 + idx * 0.05, duration: orbitDuration > ORBIT_CONVERGENCE_THRESHOLD ? 1 : 0.3 },
+                                                            y: { delay: 0.3 + idx * 0.05, duration: orbitDuration > ORBIT_CONVERGENCE_THRESHOLD ? 1 : 0.3 },
                                                             rotate: {
                                                                 duration: orbitDuration,
                                                                 repeat: Infinity,
@@ -836,8 +932,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                 </motion.div>
                             )}
 
-                            {/* SLIDE 9: UPCOMING ARTISTS */}
-                            {currentSlide === 9 && (
+                            {/* SLIDE 8: NEW DISCOVERIES with PixelBlast + shimmer */}
+                            {currentSlide === 8 && (
                                 <motion.div
                                     key="upcoming"
                                     initial={{ opacity: 0 }}
@@ -847,15 +943,14 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     className="absolute inset-0"
                                 >
                                     <div className="absolute inset-0 z-0">
-                                        <Particles
-                                            particleCount={80}
-                                            particleSpread={10}
-                                            speed={0.03}
-                                            particleColors={['#06B6D4', '#8B5CF6', '#EC4899']}
-                                            alphaParticles={true}
-                                            particleBaseSize={50}
-                                            sizeRandomness={0.8}
-                                            cameraDistance={25}
+                                        <PixelBlast
+                                            variant="circle"
+                                            pixelSize={3}
+                                            color="#8B5CF6"
+                                            patternScale={2}
+                                            speed={0.3}
+                                            edgeFade={0.3}
+                                            transparent
                                         />
                                     </div>
                                     <div className="absolute inset-0 bg-black/40 z-5" />
@@ -886,11 +981,19 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                         transition={{ delay: 0.4 + idx * 0.1, type: "spring" }}
                                                         className="flex flex-col items-center"
                                                     >
-                                                        <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 mb-2 bg-[#1C1C1E]">
+                                                        <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 mb-2 bg-[#1C1C1E] relative">
                                                             <img
                                                                 src={artist.image || avatarFallback(artist.name)}
                                                                 alt={artist.name}
                                                                 className="w-full h-full object-cover"
+                                                            />
+                                                            {/* Shimmer overlay */}
+                                                            <div
+                                                                className="absolute inset-0 rounded-full pointer-events-none animate-[shimmer_2s_linear_infinite]"
+                                                                style={{
+                                                                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                                                                    backgroundSize: '200% 100%',
+                                                                }}
                                                             />
                                                         </div>
                                                         <p className="text-white text-xs font-semibold truncate w-full text-center">{artist.name}</p>
@@ -907,8 +1010,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                 </motion.div>
                             )}
 
-                            {/* SLIDE 10: CLOSING */}
-                            {currentSlide === 10 && (
+                            {/* SLIDE 9: CLOSING with PrismaticBurst + glass-morph */}
+                            {currentSlide === 9 && (
                                 <motion.div
                                     key="closing"
                                     initial={{ opacity: 0 }}
@@ -918,11 +1021,12 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     className="absolute inset-0"
                                 >
                                     <div className="absolute inset-0 z-0">
-                                        <Aurora
-                                            colorStops={['#FA2D48', '#7C3AED', '#06B6D4']}
-                                            amplitude={1.0}
-                                            blend={0.8}
+                                        <PrismaticBurst
+                                            animationType="rotate3d"
+                                            intensity={1.5}
                                             speed={0.4}
+                                            colors={['#FA2D48', '#7C3AED', '#06B6D4']}
+                                            mixBlendMode="lighten"
                                         />
                                     </div>
                                     <div className="absolute inset-0 bg-black/40 z-5" />
@@ -931,23 +1035,31 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                             initial={{ scale: 0.8, opacity: 0 }}
                                             animate={{ scale: 1, opacity: 1 }}
                                             transition={{ delay: 0.2, type: "spring" }}
-                                            className="text-4xl sm:text-5xl font-black text-white mb-8"
+                                            className="text-4xl sm:text-5xl font-black text-white mb-2"
                                         >
-                                            Until Next Time 🎵
+                                            Punky <span className="text-[#FA2D48]">Wrapped</span>
                                         </motion.h2>
+                                        <motion.p
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 0.3 }}
+                                            className="text-white/40 text-sm mb-8"
+                                        >
+                                            Until next time 🎵
+                                        </motion.p>
 
                                         <motion.div
                                             initial={{ y: 20, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.4 }}
-                                            className="grid grid-cols-2 gap-3 w-full max-w-xs mb-8"
+                                            className="grid grid-cols-2 gap-3 w-full max-w-xs mb-6"
                                         >
-                                            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/10 text-center">
+                                            <div className="glass-morph p-4 rounded-2xl text-center">
                                                 <Clock className="w-5 h-5 text-[#FA2D48] mx-auto mb-2" />
                                                 <span className="text-2xl font-black text-white block">{totalHours}h</span>
                                                 <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Listened</span>
                                             </div>
-                                            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/10 text-center">
+                                            <div className="glass-morph p-4 rounded-2xl text-center">
                                                 <Disc className="w-5 h-5 text-[#FA2D48] mx-auto mb-2" />
                                                 <span className="text-2xl font-black text-white block">{totalTracks}</span>
                                                 <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Plays</span>
@@ -959,7 +1071,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                 initial={{ y: 20, opacity: 0 }}
                                                 animate={{ y: 0, opacity: 1 }}
                                                 transition={{ delay: 0.5 }}
-                                                className="flex items-center gap-3 p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 mb-4 w-full max-w-xs"
+                                                className="flex items-center gap-3 p-3 rounded-2xl glass-morph mb-4 w-full max-w-xs"
                                             >
                                                 <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1C1C1E] flex-shrink-0">
                                                     <img src={topArtist.image || avatarFallback(topArtist.name)} className="w-full h-full object-cover" alt={topArtist.name} />
