@@ -207,3 +207,13 @@ html {
 .animate-scale-in {
   animation: scale-in 0.4s ease-out forwards;
 }
+
+@keyframes perspective-tilt {
+  0%, 100% { transform: perspective(800px) rotateY(-5deg) rotateX(3deg); }
+  50% { transform: perspective(800px) rotateY(5deg) rotateX(-3deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
