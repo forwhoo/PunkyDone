@@ -12,6 +12,7 @@ import PrismaticBurst from './reactbits/PrismaticBurst';
 import FaultyTerminal from './reactbits/FaultyTerminal';
 import LightRays from './reactbits/LightRays';
 import GridScan from './reactbits/GridScan';
+import ColorBends from './reactbits/ColorBends';
 
 interface WrappedModalProps {
     isOpen: boolean;
@@ -815,14 +816,13 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     className="absolute inset-0 bg-[#0A0A0A]"
                                 >
                                     <div className="absolute inset-0 z-0">
-                                        <PixelBlast
-                                            variant="diamond"
-                                            pixelSize={3}
-                                            color="#FA2D48"
-                                            patternScale={2}
-                                            speed={0.3}
-                                            edgeFade={0.3}
-                                            transparent
+                                        <GridScan
+                                            sensitivity={0.55}
+                                            lineThickness={1}
+                                            linesColor="#392e4e"
+                                            scanColor="#FF9FFC"
+                                            bloomIntensity={0.6}
+                                            chromaticAberration={0.002}
                                         />
                                     </div>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
@@ -830,7 +830,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                             initial={{ y: -10, opacity: 0 }}
                                             animate={{ y: 0, opacity: 1 }}
                                             transition={{ delay: 0.1 }}
-                                            className="text-sm font-bold text-[#FA2D48] uppercase tracking-widest mb-6"
+                                            className="text-sm font-bold text-[#FF9FFC] uppercase tracking-widest mb-6"
                                         >
                                             Peak Listening
                                         </motion.span>
@@ -1130,18 +1130,28 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                             initial={{ scale: 0.8, opacity: 0 }}
                                             animate={{ scale: 1, opacity: 1 }}
                                             transition={{ delay: 0.2, type: "spring" }}
-                                            className="text-4xl sm:text-5xl font-black text-white mb-2"
+                                            className="text-4xl sm:text-5xl font-black text-white mb-8 relative"
                                         >
-                                            Punky <span className="text-[#FA2D48]">Wrapped</span>
+                                            Punky{' '}
+                                            <span className="relative inline-block">
+                                                <span className="absolute inset-0 -m-2">
+                                                    <ColorBends 
+                                                        colors={["#ff5c7a", "#8a5cff", "#00ffd1"]} 
+                                                        speed={0.2} 
+                                                        autoRotate={1}
+                                                        transparent={true}
+                                                    />
+                                                </span>
+                                                <span className="relative" style={{ 
+                                                    WebkitBackgroundClip: 'text',
+                                                    backgroundClip: 'text',
+                                                    WebkitTextFillColor: 'transparent',
+                                                    backgroundImage: 'linear-gradient(135deg, #ff5c7a 0%, #8a5cff 50%, #00ffd1 100%)'
+                                                }}>
+                                                    Wrapped
+                                                </span>
+                                            </span>
                                         </motion.h2>
-                                        <motion.p
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            transition={{ delay: 0.3 }}
-                                            className="text-white/40 text-sm mb-8"
-                                        >
-                                            Until next time 🎵
-                                        </motion.p>
 
                                         <motion.div
                                             initial={{ y: 20, opacity: 0 }}
