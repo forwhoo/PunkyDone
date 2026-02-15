@@ -111,6 +111,10 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
 
     if (!isOpen) return null;
 
+    const ORBIT_CONVERGENCE_THRESHOLD = 5;
+    const CONVERGED_RADIUS = 30;
+    const EXPANDED_RADIUS = 120;
+
     const topArtist = stats?.topArtist;
     const topSong = stats?.topSong;
     const topAlbum = stats?.topAlbum;
@@ -836,7 +840,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                             {/* Center - Top Song (grows when items converge) */}
                                             <motion.div
                                                 initial={{ scale: 0 }}
-                                                animate={{ scale: orbitDuration > 5 ? 1.2 : 0.5 }}
+                                                animate={{ scale: orbitDuration > ORBIT_CONVERGENCE_THRESHOLD ? 1.2 : 0.5 }}
                                                 transition={{ delay: 0.5, type: "spring" }}
                                                 className="absolute inset-0 flex items-center justify-center"
                                             >
@@ -856,7 +860,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                             {/* Orbiting items - converge to center after 2s */}
                                             {topTracks.slice(0, 6).map((track: any, idx: number) => {
                                                 const angle = (idx / 6) * Math.PI * 2;
-                                                const radius = orbitDuration > 5 ? 30 : 120;
+                                                const radius = orbitDuration > ORBIT_CONVERGENCE_THRESHOLD ? CONVERGED_RADIUS : EXPANDED_RADIUS;
                                                 return (
                                                     <motion.div
                                                         key={idx}
@@ -868,7 +872,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                         }}
                                                         initial={{ opacity: 0, scale: 0 }}
                                                         animate={{
-                                                            opacity: orbitDuration > 5 ? 0.3 : 1,
+                                                            opacity: orbitDuration > ORBIT_CONVERGENCE_THRESHOLD ? 0.3 : 1,
                                                             scale: 1,
                                                             x: Math.cos(angle) * radius,
                                                             y: Math.sin(angle) * radius,
@@ -877,8 +881,8 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                         transition={{
                                                             opacity: { delay: 0.3 + idx * 0.05, duration: 0.5 },
                                                             scale: { delay: 0.3 + idx * 0.05, type: "spring" },
-                                                            x: { delay: 0.3 + idx * 0.05, duration: orbitDuration > 5 ? 1 : 0.3 },
-                                                            y: { delay: 0.3 + idx * 0.05, duration: orbitDuration > 5 ? 1 : 0.3 },
+                                                            x: { delay: 0.3 + idx * 0.05, duration: orbitDuration > ORBIT_CONVERGENCE_THRESHOLD ? 1 : 0.3 },
+                                                            y: { delay: 0.3 + idx * 0.05, duration: orbitDuration > ORBIT_CONVERGENCE_THRESHOLD ? 1 : 0.3 },
                                                             rotate: {
                                                                 duration: orbitDuration,
                                                                 repeat: Infinity,
