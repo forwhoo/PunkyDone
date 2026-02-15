@@ -69,6 +69,12 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                                 type="text"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSubmit();
+                                    }
+                                }}
                                 placeholder="Ask about your music..."
                                 className="flex-1 bg-transparent text-white placeholder-[#8E8E93] px-3 py-4 focus:outline-none text-[15px]"
                             />

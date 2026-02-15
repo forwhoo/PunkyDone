@@ -298,7 +298,6 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
 
         // Create meshes for each item
         const meshes: THREE.Mesh[] = [];
-        const glowMeshes: THREE.Mesh[] = [];
 
         items.forEach((item, i) => {
             const pos = positions[i];
@@ -341,19 +340,6 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                 const hue = (i / items.length);
                 material.color.setHSL(hue, 0.7, 0.5);
             }
-
-            // Glow sphere
-            const glowGeo = new THREE.SphereGeometry(size * 1.4, 16, 16);
-            const glowColor = item.trendScore > HIGH_TREND_THRESHOLD ? 0xfa2d48 : (item.trendScore > MEDIUM_TREND_THRESHOLD ? 0xff6b35 : 0x4488ff);
-            const glowMat = new THREE.MeshBasicMaterial({
-                color: glowColor,
-                transparent: true,
-                opacity: 0.08 + (item.trendScore / 100) * 0.07,
-            });
-            const glow = new THREE.Mesh(glowGeo, glowMat);
-            glow.position.copy(pos);
-            scene.add(glow);
-            glowMeshes.push(glow);
         });
 
         // Connection lines between highly similar items
@@ -430,13 +416,6 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                 mesh.rotation.y = elapsed * 0.1 + i;
             });
 
-            // Sync glow positions
-            glowMeshes.forEach((glow, i) => {
-                glow.position.copy(meshes[i].position);
-                const scale = 1 + Math.sin(elapsed * 0.8 + i) * 0.05;
-                glow.scale.set(scale, scale, scale);
-            });
-
             // Pulse particles
             particles.rotation.y = elapsed * 0.01;
 
@@ -466,7 +445,6 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                 cancelAnimationFrame(ctx.animationId);
                 ctx.renderer.dispose();
                 ctx.meshes.forEach(m => { m.geometry.dispose(); (m.material as THREE.Material).dispose(); });
-                glowMeshes.forEach(m => { m.geometry.dispose(); (m.material as THREE.Material).dispose(); });
                 ctx.lines.forEach(l => { l.geometry.dispose(); (l.material as THREE.Material).dispose(); });
                 particleGeo.dispose();
                 particleMat.dispose();
@@ -489,7 +467,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
     return (
         <div
             ref={containerRef}
-            className="relative w-full aspect-square max-w-[480px] mx-auto rounded-2xl overflow-hidden"
+            className="relative w-full aspect-square max-w-[480px] mx-auto overflow-hidden"
             style={{ cursor: 'grab', minHeight: 400 }}
         />
     );

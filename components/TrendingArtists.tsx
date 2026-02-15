@@ -441,12 +441,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                     </div>
                                 </div>
                             </div>
-                            <p className="text-[#8E8E93] text-sm mt-1">
-                                {viewType === 'grid' 
-                                    ? `Discover hidden links between your favorite ${activeTab}s based on when and how you listen`
-                                    : `Visualizes your top ${activeTab}s — center is your #1, rings show your most obsessed by consistency, volume & recency`
-                                }
-                            </p>
+
                         </div>
                         
                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -516,43 +511,45 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         </div>
                     </div>
 
-                    {/* Sort/Filter Bar */}
-                    <div className="flex items-center gap-2 mt-2">
-                        <div className="relative" ref={sortMenuRef}>
-                            <button
-                                onClick={() => setShowSortMenu(!showSortMenu)}
-                                className="flex items-center gap-1.5 text-[11px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors"
-                            >
-                                <SlidersHorizontal size={12} />
-                                {SORT_LABELS[sortBy]}
-                                <ChevronDown size={10} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
-                            </button>
-                            {showSortMenu && (
-                                <div className="absolute left-0 top-full mt-1 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[150px] animate-in fade-in slide-in-from-top-2 duration-200">
-                                    {([
-                                        { key: 'obsession', label: 'Obsession Score', desc: 'Combined listening signal' },
-                                        { key: 'frequency', label: 'Play Count', desc: 'Total number of plays' },
-                                        { key: 'recency', label: 'Most Recent', desc: 'Last listened first' },
-                                        { key: 'consistency', label: 'Consistency', desc: 'Regularity of listening' },
-                                    ] as const).map(opt => (
-                                        <button
-                                            key={opt.key}
-                                            onClick={() => { setSortBy(opt.key); setShowSortMenu(false); }}
-                                            className={`w-full px-3 py-2 text-left hover:bg-white/5 transition-colors flex items-center justify-between gap-2 ${
-                                                sortBy === opt.key ? 'text-white bg-white/5' : 'text-[#8E8E93]'
-                                            }`}
-                                        >
-                                            <div>
-                                                <div className="text-[11px] font-medium">{opt.label}</div>
-                                                <div className="text-[9px] opacity-50">{opt.desc}</div>
-                                            </div>
-                                            {sortBy === opt.key && <Check size={10} className="text-[#FA2D48] flex-shrink-0" />}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                    {/* Sort/Filter Bar - Only show for grid/connection view */}
+                    {viewType === 'grid' && (
+                        <div className="flex items-center gap-2 mt-2">
+                            <div className="relative" ref={sortMenuRef}>
+                                <button
+                                    onClick={() => setShowSortMenu(!showSortMenu)}
+                                    className="flex items-center gap-1.5 text-[11px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors"
+                                >
+                                    <SlidersHorizontal size={12} />
+                                    {SORT_LABELS[sortBy]}
+                                    <ChevronDown size={10} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
+                                </button>
+                                {showSortMenu && (
+                                    <div className="absolute left-0 top-full mt-1 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[150px] animate-in fade-in slide-in-from-top-2 duration-200">
+                                        {([
+                                            { key: 'obsession', label: 'Obsession Score', desc: 'Combined listening signal' },
+                                            { key: 'frequency', label: 'Play Count', desc: 'Total number of plays' },
+                                            { key: 'recency', label: 'Most Recent', desc: 'Last listened first' },
+                                            { key: 'consistency', label: 'Consistency', desc: 'Regularity of listening' },
+                                        ] as const).map(opt => (
+                                            <button
+                                                key={opt.key}
+                                                onClick={() => { setSortBy(opt.key); setShowSortMenu(false); }}
+                                                className={`w-full px-3 py-2 text-left hover:bg-white/5 transition-colors flex items-center justify-between gap-2 ${
+                                                    sortBy === opt.key ? 'text-white bg-white/5' : 'text-[#8E8E93]'
+                                                }`}
+                                            >
+                                                <div>
+                                                    <div className="text-[11px] font-medium">{opt.label}</div>
+                                                    <div className="text-[9px] opacity-50">{opt.desc}</div>
+                                                </div>
+                                                {sortBy === opt.key && <Check size={10} className="text-[#FA2D48] flex-shrink-0" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* MAIN VIEW */}
