@@ -399,6 +399,8 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
 
         // Raycaster
         const raycaster = new THREE.Raycaster();
+        // Set a generous line intersection threshold (in world units) so users can
+        // hover near a connection line without needing pixel-perfect aim.
         raycaster.params.Line = { threshold: 0.5 };
         const mouse = new THREE.Vector2();
 

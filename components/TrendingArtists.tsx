@@ -396,6 +396,12 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
     // Handle Closing
     const handleClose = () => setSelectedItem(null);
 
+    const SORT_LABELS: Record<typeof sortBy, string> = {
+        obsession: 'Obsession Score',
+        frequency: 'Play Count',
+        recency: 'Most Recent',
+        consistency: 'Consistency',
+    };
 
     // ORBITAL LAYOUT
     const centerItem = trendingItems[0];
@@ -518,7 +524,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                 className="flex items-center gap-1.5 text-[11px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors"
                             >
                                 <SlidersHorizontal size={12} />
-                                {sortBy === 'obsession' ? 'Obsession Score' : sortBy === 'frequency' ? 'Play Count' : sortBy === 'recency' ? 'Most Recent' : 'Consistency'}
+                                {SORT_LABELS[sortBy]}
                                 <ChevronDown size={10} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
                             </button>
                             {showSortMenu && (
