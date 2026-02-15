@@ -11,6 +11,7 @@ import PixelBlast from './reactbits/PixelBlast';
 import PrismaticBurst from './reactbits/PrismaticBurst';
 import FaultyTerminal from './reactbits/FaultyTerminal';
 import LightRays from './reactbits/LightRays';
+import GridScan from './reactbits/GridScan';
 
 interface WrappedModalProps {
     isOpen: boolean;
@@ -117,7 +118,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
     useEffect(() => {
         if (currentSlide === 5) {
             setAlbumRevealed(false);
-            const timer = setTimeout(() => setAlbumRevealed(true), 2000);
+            const timer = setTimeout(() => setAlbumRevealed(true), 4500);
             return () => clearTimeout(timer);
         }
     }, [currentSlide]);
@@ -680,7 +681,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                 </motion.div>
                             )}
 
-                            {/* SLIDE 5: TOP ALBUM with FaultyTerminal + typewriter */}
+                            {/* SLIDE 5: TOP ALBUM with GridScan + AI typewriter */}
                             {currentSlide === 5 && (
                                 <motion.div
                                     key="album"
@@ -691,20 +692,13 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     className="absolute inset-0"
                                 >
                                     <div className="absolute inset-0 z-0">
-                                        <FaultyTerminal
-                                            scale={1.5}
-                                            gridMul={[2, 1]}
-                                            digitSize={1.2}
-                                            timeScale={0.5}
-                                            scanlineIntensity={0.5}
-                                            glitchAmount={1}
-                                            flickerAmount={1}
-                                            noiseAmp={1}
-                                            tint="#A7EF9E"
-                                            mouseReact
-                                            mouseStrength={0.5}
-                                            pageLoadAnimation
-                                            brightness={0.6}
+                                        <GridScan
+                                            sensitivity={0.55}
+                                            lineThickness={1}
+                                            linesColor="#392e4e"
+                                            scanColor="#FF9FFC"
+                                            bloomIntensity={0.6}
+                                            chromaticAberration={0.002}
                                         />
                                     </div>
                                     <div className="absolute inset-0 bg-black/30 z-5" />
@@ -720,20 +714,29 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
 
                                         {topAlbum ? (
                                             <>
-                                                {/* Typewriter effect for album details */}
+                                                {/* AI terminal typewriter effect */}
                                                 <motion.div
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 1 }}
                                                     transition={{ delay: 0.3 }}
                                                     className="mb-6 font-mono text-left max-w-xs w-full"
                                                 >
-                                                    {['> Loading album data...', `> Title: ${topAlbum.title}`, `> Artist: ${topAlbum.artist}`, `> Plays: ${topAlbum.count}`].map((line, idx) => (
+                                                    {[
+                                                        '> System: Initializing audio analysis...',
+                                                        '> AI: Scanning listening patterns...',
+                                                        `> AI: I see you listened to ${topAlbum.count} tracks...`,
+                                                        '> AI: Cross-referencing album data...',
+                                                        `> Result: Top album identified`,
+                                                        `> Title: ${topAlbum.title}`,
+                                                        `> Artist: ${topAlbum.artist}`,
+                                                        `> Total plays: ${topAlbum.count}`
+                                                    ].map((line, idx) => (
                                                         <motion.p
                                                             key={idx}
                                                             initial={{ opacity: 0, x: -10 }}
                                                             animate={{ opacity: 1, x: 0 }}
-                                                            transition={{ delay: 0.5 + idx * 0.4 }}
-                                                            className="text-[#A7EF9E] text-sm mb-1"
+                                                            transition={{ delay: 0.5 + idx * 0.45 }}
+                                                            className="text-[#FF9FFC] text-sm mb-1"
                                                         >
                                                             {line}
                                                         </motion.p>
