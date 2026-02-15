@@ -627,74 +627,49 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                 </div>
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto no-scrollbar pb-8 pt-2">
-                                {/* STATS ROW (Grid Layout) */}
+                            <div className="flex-1 overflow-y-auto no-scrollbar pb-8 pt-4">
                                 {/* @ts-ignore */}
                                 {selectedItem.stats ? (
                                     <>
-                                        <div className="grid grid-cols-3 gap-2 px-4 mb-4">
+                                        {/* Key Stats */}
+                                        <div className="grid grid-cols-3 gap-3 px-5 mb-6">
                                             {/* @ts-ignore */}
-                                            <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
-                                                <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Streak</div>
-                                                {/* @ts-ignore */}
-                                                <div className="text-lg font-bold text-white leading-none">{selectedItem.stats.streak}<span className="text-[10px] font-normal text-white/40 ml-0.5">d</span></div>
+                                            <div className="bg-white/5 p-4 rounded-xl text-center">
+                                                <div className="text-2xl font-black text-white leading-none">{selectedItem.stats.totalPlays}</div>
+                                                <div className="text-[10px] font-semibold uppercase tracking-wider text-white/40 mt-1.5">Plays</div>
                                             </div>
-
-                                            <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
-                                                <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Peak</div>
+                                            <div className="bg-white/5 p-4 rounded-xl text-center">
                                                 {/* @ts-ignore */}
-                                                <div className="text-base font-bold text-white leading-none truncate w-full">{selectedItem.stats.peakTime}</div>
+                                                <div className="text-2xl font-black text-white leading-none">{selectedItem.stats.totalTime.split('h')[0]}<span className="text-sm font-semibold text-white/50">h</span></div>
+                                                <div className="text-[10px] font-semibold uppercase tracking-wider text-white/40 mt-1.5">Listened</div>
                                             </div>
-
-                                            <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
-                                                <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Time</div>
+                                            <div className="bg-white/5 p-4 rounded-xl text-center">
                                                 {/* @ts-ignore */}
-                                                <div className="text-base font-bold text-white leading-none truncate w-full">{selectedItem.stats.totalTime}</div>
+                                                <div className="text-2xl font-black text-white leading-none">{selectedItem.stats.streak}<span className="text-sm font-semibold text-white/50">d</span></div>
+                                                <div className="text-[10px] font-semibold uppercase tracking-wider text-white/40 mt-1.5">Streak</div>
                                             </div>
                                         </div>
 
-                                        {/* Additional Stats Row */}
-                                        <div className="grid grid-cols-3 gap-2 px-4 mb-4">
-                                            {/* @ts-ignore */}
-                                            <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
-                                                <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Plays</div>
-                                                {/* @ts-ignore */}
-                                                <div className="text-lg font-bold text-white leading-none">{selectedItem.stats.totalPlays}</div>
-                                            </div>
-
-                                            <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
-                                                <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Days</div>
-                                                {/* @ts-ignore */}
-                                                <div className="text-lg font-bold text-white leading-none">{selectedItem.stats.uniqueDays}</div>
-                                            </div>
-
-                                            <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
-                                                <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Avg/Day</div>
-                                                {/* @ts-ignore */}
-                                                <div className="text-base font-bold text-white leading-none">{selectedItem.stats.avgPerDay}</div>
-                                            </div>
-                                        </div>
-
-                                        {/* Top Song Highlight */}
+                                        {/* Favorite Track */}
                                         {/* @ts-ignore */}
                                         {selectedItem.stats.topSong && (
-                                            <div className="px-4 mb-4">
-                                                <div className="bg-gradient-to-br from-[#FA2D48]/10 to-[#FF6B35]/10 border border-[#FA2D48]/20 p-3 rounded-lg">
-                                                    <div className="text-[9px] font-bold uppercase tracking-widest text-[#FA2D48] mb-1 flex items-center gap-1">
+                                            <div className="px-5 mb-6">
+                                                <div className="bg-gradient-to-br from-[#FA2D48]/10 to-[#FF6B35]/5 border border-[#FA2D48]/15 p-4 rounded-xl">
+                                                    <div className="text-[10px] font-bold uppercase tracking-widest text-[#FA2D48]/80 mb-2 flex items-center gap-1.5">
                                                         <Sparkles size={10} />
-                                                        Favorite Track
+                                                        Top Track
                                                     </div>
                                                     {/* @ts-ignore */}
-                                                    <div className="text-sm font-bold text-white truncate">{selectedItem.stats.topSong}</div>
+                                                    <div className="text-[15px] font-bold text-white truncate">{selectedItem.stats.topSong}</div>
                                                     {/* @ts-ignore */}
-                                                    <div className="text-[10px] text-white/60 mt-1">{selectedItem.stats.topSongPlays} plays</div>
+                                                    <div className="text-[11px] text-white/50 mt-1">{selectedItem.stats.topSongPlays} plays</div>
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* TOP SONGS LIST */}
-                                        <div className="px-4">
-                                            <h3 className="text-white text-xs font-bold uppercase tracking-widest mb-3 pl-2 opacity-50">All Tracks</h3>
+                                        {/* Tracks */}
+                                        <div className="px-5">
+                                            <h3 className="text-white text-[11px] font-bold uppercase tracking-widest mb-3 opacity-40">All Tracks</h3>
                                             <div className="space-y-0.5">
                                                 {/* @ts-ignore */}
                                                 {selectedItem.tracks && selectedItem.tracks.length > 0 ? (
