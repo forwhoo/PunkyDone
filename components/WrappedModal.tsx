@@ -33,6 +33,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
     const [artistRevealed, setArtistRevealed] = useState(false);
     const [albumRevealed, setAlbumRevealed] = useState(false);
 
+    // Always use weekly data for Punky Wrapped
     const mapPeriod = (_p: string): 'daily' | 'weekly' | 'monthly' => {
         return 'weekly';
     };
