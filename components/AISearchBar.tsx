@@ -91,7 +91,7 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[10000] bg-[#0a0a0a] flex flex-col w-screen h-[100dvh]"
+                        className="fixed inset-0 z-[10000] bg-[#0a0a0a] flex flex-col h-[100dvh]"
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
