@@ -14,9 +14,28 @@ import LightRays from './reactbits/LightRays';
 import GridScan from './reactbits/GridScan';
 import ColorBends from './reactbits/ColorBends';
 
+// Type definitions for wrapped data
+interface WrappedTrack {
+    title: string;
+    artist: string;
+    cover: string;
+    plays?: number;
+    playCount?: number;
+    type?: string;
+    artistImage?: string;
+    image?: string;
+}
+
+interface ArtistPosition {
+    top: string;
+    left?: string;
+    right?: string;
+    translate: string;
+}
+
 // Constants for Top Artist slide
 const AVERAGE_TRACK_DURATION_MINUTES = 3.5; // Average song length assumption for estimating listening time
-const ARTIST_POSITIONS = [
+const ARTIST_POSITIONS: ArtistPosition[] = [
     { top: '0%', left: '50%', translate: '-50%, 0%' },     // Top center
     { top: '50%', left: '15%', translate: '0%, -50%' },    // Bottom left
     { top: '50%', right: '15%', translate: '0%, -50%' }    // Bottom right
@@ -533,7 +552,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                     </div>
                                     
                                     {/* Floating artist images in background */}
-                                    {topTracks.slice(0, 6).map((track: any, idx: number) => {
+                                    {topTracks.slice(0, 6).map((track: WrappedTrack, idx: number) => {
                                         const positions = [
                                             { top: '10%', left: '5%' },
                                             { top: '15%', right: '8%' },
@@ -656,15 +675,20 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                                         >
                                                             {/* Get unique artists from top 3 tracks */}
                                                             {(() => {
-                                                                const uniqueArtists: any[] = [];
-                                                                const artistNames = new Set();
+                                                                interface UniqueArtist {
+                                                                    name: string;
+                                                                    image: string;
+                                                                    estimatedMinutes: number;
+                                                                }
+                                                                const uniqueArtists: UniqueArtist[] = [];
+                                                                const artistNames = new Set<string>();
                                                                 
                                                                 for (const track of topTracks) {
                                                                     if (!artistNames.has(track.artist) && uniqueArtists.length < 3) {
                                                                         uniqueArtists.push({
                                                                             name: track.artist,
-                                                                            image: track.artistImage || track.image,
-                                                                            estimatedMinutes: Math.round(track.playCount * AVERAGE_TRACK_DURATION_MINUTES)
+                                                                            image: track.artistImage || track.image || '',
+                                                                            estimatedMinutes: Math.round((track.playCount || track.plays || 0) * AVERAGE_TRACK_DURATION_MINUTES)
                                                                         });
                                                                         artistNames.add(track.artist);
                                                                     }
@@ -1089,7 +1113,7 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                                             </motion.div>
 
                                             {/* Orbiting items - converge to center and disappear */}
-                                            {topTracks.slice(0, 6).map((track: any, idx: number) => {
+                                            {topTracks.slice(0, 6).map((track: WrappedTrack, idx: number) => {
                                                 const angle = (idx / 6) * Math.PI * 2;
                                                 const isConverging = orbitDuration > ORBIT_CONVERGENCE_THRESHOLD;
                                                 const radius = isConverging ? CONVERGED_RADIUS : EXPANDED_RADIUS;
