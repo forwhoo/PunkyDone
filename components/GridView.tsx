@@ -19,21 +19,9 @@ interface GridViewProps {
     onItemClick?: (item: GridItem) => void;
 }
 
-// Genre color palette for glow effects
-const GENRE_COLORS: Record<string, number> = {
-    default: 0xfa2d48,
-    pop: 0xff69b4,
-    rock: 0xff4500,
-    hiphop: 0xffd700,
-    electronic: 0x00ffff,
-    jazz: 0x9370db,
-    classical: 0xffffff,
-    rnb: 0xff1493,
-    indie: 0x98fb98,
-    metal: 0x8b0000,
-    country: 0xdaa520,
-    latin: 0xff6347,
-};
+// Trend score thresholds for glow color coding
+const HIGH_TREND_THRESHOLD = 60;
+const MEDIUM_TREND_THRESHOLD = 30;
 
 // Compute similarity between two items based on listening patterns
 function computeSimilarity(a: GridItem, b: GridItem, plays: any[]): number {
@@ -329,7 +317,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
 
             // Glow sphere
             const glowGeo = new THREE.SphereGeometry(size * 1.4, 16, 16);
-            const glowColor = item.trendScore > 60 ? 0xfa2d48 : (item.trendScore > 30 ? 0xff6b35 : 0x4488ff);
+            const glowColor = item.trendScore > HIGH_TREND_THRESHOLD ? 0xfa2d48 : (item.trendScore > MEDIUM_TREND_THRESHOLD ? 0xff6b35 : 0x4488ff);
             const glowMat = new THREE.MeshBasicMaterial({
                 color: glowColor,
                 transparent: true,
