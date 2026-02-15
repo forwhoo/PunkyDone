@@ -165,10 +165,12 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         animationId: number;
         meshes: THREE.Mesh[];
         lines: THREE.Line[];
+        lineEdges: { i: number; j: number; sim: number }[];
         tooltipDiv: HTMLDivElement | null;
         raycaster: THREE.Raycaster;
         mouse: THREE.Vector2;
         hoveredIndex: number;
+        hoveredLineIndex: number;
     } | null>(null);
 
     const positions = useMemo(() => computePositions(items, plays), [items, plays]);
@@ -200,6 +202,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
             const idx = ctx.meshes.indexOf(intersects[0].object as THREE.Mesh);
             if (idx !== -1 && idx !== ctx.hoveredIndex) {
                 ctx.hoveredIndex = idx;
+                ctx.hoveredLineIndex = -1;
                 const item = items[idx];
                 if (ctx.tooltipDiv) {
                     ctx.tooltipDiv.style.display = 'block';
@@ -212,9 +215,32 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
             }
             containerRef.current.style.cursor = 'pointer';
         } else {
+            // Check for line hover
             ctx.hoveredIndex = -1;
-            if (ctx.tooltipDiv) ctx.tooltipDiv.style.display = 'none';
-            containerRef.current.style.cursor = 'grab';
+            const lineIntersects = ctx.raycaster.intersectObjects(ctx.lines, false);
+            if (lineIntersects.length > 0) {
+                const lineIdx = ctx.lines.indexOf(lineIntersects[0].object as THREE.Line);
+                if (lineIdx !== -1 && lineIdx !== ctx.hoveredLineIndex) {
+                    ctx.hoveredLineIndex = lineIdx;
+                    const edge = ctx.lineEdges[lineIdx];
+                    if (edge && ctx.tooltipDiv) {
+                        const itemA = items[edge.i];
+                        const itemB = items[edge.j];
+                        const simPct = Math.round(edge.sim * 100);
+                        ctx.tooltipDiv.style.display = 'block';
+                        ctx.tooltipDiv.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><div style="width:6px;height:6px;border-radius:50%;background:#FA2D48"></div><span style="font-weight:700;font-size:11px;color:#FA2D48">Connection</span></div><div style="font-weight:600;font-size:12px">${itemA.name}</div><div style="font-size:10px;opacity:0.4;margin:2px 0">↔</div><div style="font-weight:600;font-size:12px">${itemB.name}</div><div style="opacity:0.5;font-size:10px;margin-top:4px">Similarity: ${simPct}%</div>`;
+                    }
+                }
+                if (ctx.tooltipDiv) {
+                    ctx.tooltipDiv.style.left = `${e.clientX - rect.left + 12}px`;
+                    ctx.tooltipDiv.style.top = `${e.clientY - rect.top - 10}px`;
+                }
+                containerRef.current.style.cursor = 'pointer';
+            } else {
+                ctx.hoveredLineIndex = -1;
+                if (ctx.tooltipDiv) ctx.tooltipDiv.style.display = 'none';
+                containerRef.current.style.cursor = 'grab';
+            }
         }
     }, [items]);
 
@@ -332,6 +358,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
 
         // Connection lines between highly similar items
         const lines: THREE.Line[] = [];
+        const lineEdges: { i: number; j: number; sim: number }[] = [];
         const n = items.length;
         for (let i = 0; i < n; i++) {
             for (let j = i + 1; j < n; j++) {
@@ -346,6 +373,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                     const line = new THREE.Line(lineGeo, lineMat);
                     scene.add(line);
                     lines.push(line);
+                    lineEdges.push({ i, j, sim });
                 }
             }
         }
@@ -371,12 +399,13 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
 
         // Raycaster
         const raycaster = new THREE.Raycaster();
+        raycaster.params.Line = { threshold: 0.5 };
         const mouse = new THREE.Vector2();
 
         sceneRef.current = {
             scene, camera, renderer, controls,
-            animationId: 0, meshes, lines, tooltipDiv,
-            raycaster, mouse, hoveredIndex: -1
+            animationId: 0, meshes, lines, lineEdges, tooltipDiv,
+            raycaster, mouse, hoveredIndex: -1, hoveredLineIndex: -1
         };
 
         // Event listeners
