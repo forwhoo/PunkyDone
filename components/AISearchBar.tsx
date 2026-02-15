@@ -26,17 +26,23 @@ interface AISearchBarProps {
 export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contextData, user }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [query, setQuery] = useState('');
+    const [queryToSend, setQueryToSend] = useState('');
 
     const handleSubmit = (e?: React.FormEvent) => {
         e?.preventDefault();
         if (query.trim()) {
-            setIsExpanded(true);
+            setQueryToSend(query);
+            // Small delay to ensure state is set before expanding
+            setTimeout(() => {
+                setIsExpanded(true);
+            }, 10);
         }
     };
 
     const handleClose = () => {
         setIsExpanded(false);
         setQuery('');
+        setQueryToSend('');
     };
 
     // Lock body scroll when modal is open (fix for non-mobile devices)
@@ -92,7 +98,7 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
             )}
 
             <AnimatePresence>
-                {isExpanded && typeof document !== 'undefined' && createPortal(
+                {isExpanded && createPortal(
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -122,7 +128,7 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                                 history={history}
                                 contextData={contextData}
                                 user={user}
-                                initialQuery={query}
+                                initialQuery={queryToSend}
                             />
                         </div>
                     </motion.div>,
