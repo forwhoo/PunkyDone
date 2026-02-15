@@ -157,6 +157,7 @@ function computePositions(items: GridItem[], plays: any[]): THREE.Vector3[] {
 
 export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick }) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [isRendering, setIsRendering] = useState(false);
     const sceneRef = useRef<{
         scene: THREE.Scene;
         camera: THREE.PerspectiveCamera;
@@ -255,6 +256,9 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
 
     useEffect(() => {
         if (!containerRef.current || items.length === 0 || positions.length === 0) return;
+
+        // Start rendering with fade effect
+        setIsRendering(true);
 
         const container = containerRef.current;
         const width = container.clientWidth;
@@ -427,6 +431,9 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         };
         animate();
 
+        // Fade in after scene is ready
+        setTimeout(() => setIsRendering(true), 50);
+
         // Handle resize
         const handleResize = () => {
             if (!containerRef.current) return;
@@ -439,6 +446,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         window.addEventListener('resize', handleResize);
 
         return () => {
+            setIsRendering(false);
             window.removeEventListener('resize', handleResize);
             container.removeEventListener('mousemove', handleMouseMove);
             container.removeEventListener('click', handleClick);
@@ -470,7 +478,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
     return (
         <div
             ref={containerRef}
-            className="relative w-full aspect-square max-w-[480px] mx-auto overflow-hidden"
+            className={`relative w-full aspect-square max-w-[480px] mx-auto overflow-hidden transition-opacity duration-300 ${isRendering ? 'opacity-100' : 'opacity-0'}`}
             style={{ cursor: 'grab', minHeight: 400 }}
         />
     );
