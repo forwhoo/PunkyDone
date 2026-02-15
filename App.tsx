@@ -149,7 +149,6 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 );
 
 import { SeeAllModal } from './components/SeeAllModal';
-import { WrappedModal } from './components/WrappedModal';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
 
 function App() {
@@ -177,12 +176,6 @@ function App() {
       title: '',
       items: [],
       type: 'artist'
-  });
-
-  // Wrapped Modal State
-  const [wrappedModal, setWrappedModal] = useState<{ isOpen: boolean; period: string }>({
-      isOpen: false,
-      period: 'Weekly'
   });
 
   // AI Discovery Modal State
@@ -665,11 +658,6 @@ function App() {
                 
                 {/* Mobile Punky Wrapped Button */}
                 <button
-                    onClick={() => {
-                        if (safeArtists.length > 0 || safeSongs.length > 0 || safeAlbums.length > 0) {
-                            setWrappedModal({ isOpen: true, period: timeRange });
-                        }
-                    }}
                     className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all relative overflow-hidden"
                 >
                     <div className="absolute inset-0 z-0">
@@ -929,11 +917,6 @@ function App() {
             {/* Desktop Punky Wrapped Button */}
             <div className="mb-16">
                 <button
-                    onClick={() => {
-                        if (safeArtists.length > 0 || safeSongs.length > 0 || safeAlbums.length > 0) {
-                            setWrappedModal({ isOpen: true, period: timeRange });
-                        }
-                    }}
                     className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99] relative overflow-hidden"
                 >
                     <div className="absolute inset-0 z-0">
@@ -1558,15 +1541,6 @@ function App() {
             </motion.div>
         )}
     </AnimatePresence>
-
-    {/* Wrapped Modal */}
-    <WrappedModal
-        isOpen={wrappedModal.isOpen}
-        onClose={() => setWrappedModal({ ...wrappedModal, isOpen: false })}
-        period={wrappedModal.period}
-        userImage={data?.user?.images?.[0]?.url}
-        userName={data?.user?.display_name}
-    />
 
     {/* AI Discovery Modal */}
     <AnimatePresence>
