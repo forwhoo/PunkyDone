@@ -836,10 +836,7 @@ function App() {
 
                     {/* Mobile Obsession Orbit */}
                     <section className="space-y-5">
-                        <div className="flex items-center justify-between px-1">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">Obsession Orbit</h3>
-                        </div>
-                        <div className="glass-morph rounded-[28px] p-5 overflow-hidden border border-white/[0.15] shadow-xl">
+                        <div className="overflow-hidden">
                             <TrendingArtists 
                                 artists={safeArtists}
                                 albums={safeAlbums}

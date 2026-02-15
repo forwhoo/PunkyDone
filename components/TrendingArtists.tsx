@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { TrendingUp, Sparkles, Disc, Mic2, Music, X, Clock, ChevronDown, Check, Info, Grid3x3, Orbit } from 'lucide-react';
+import { TrendingUp, Sparkles, Disc, Mic2, Music, X, Clock, ChevronDown, Check, Info, Grid3x3, Orbit, ArrowUpDown, SlidersHorizontal } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GridView } from './GridView';
 
@@ -15,6 +15,8 @@ interface TrendingItem {
     recentPlays: number;
     type: 'artist' | 'album' | 'song';
     tracks?: any[]; // For expanded view
+    lastPlayTime?: number; // For recency sorting
+    consistencyRatio?: number; // For consistency sorting
 }
 
 interface TrendingArtistsProps {
@@ -33,13 +35,19 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
     const [selectedYear, setSelectedYear] = useState<number>(2026);
     const [showYearDropdown, setShowYearDropdown] = useState(false);
     const [viewType, setViewType] = useState<'orbit' | 'grid'>('orbit');
+    const [sortBy, setSortBy] = useState<'obsession' | 'frequency' | 'recency' | 'consistency'>('obsession');
+    const [showSortMenu, setShowSortMenu] = useState(false);
+    const sortMenuRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Close dropdown when clicking outside
+    // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
                 setShowYearDropdown(false);
+            }
+            if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
+                setShowSortMenu(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -361,13 +369,24 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                 trendScore: Math.round(score),
                 recentPlays: totalPlays,
                 type: activeTab,
-                tracks: data.tracks
+                tracks: data.tracks,
+                lastPlayTime: lastPlay,
+                consistencyRatio: consistency
             });
         });
 
-        result.sort((a, b) => b.trendScore - a.trendScore);
+        // Sort based on selected criterion
+        if (sortBy === 'frequency') {
+            result.sort((a, b) => b.recentPlays - a.recentPlays);
+        } else if (sortBy === 'recency') {
+            result.sort((a, b) => (b.lastPlayTime || 0) - (a.lastPlayTime || 0));
+        } else if (sortBy === 'consistency') {
+            result.sort((a, b) => (b.consistencyRatio || 0) - (a.consistencyRatio || 0));
+        } else {
+            result.sort((a, b) => b.trendScore - a.trendScore);
+        }
         return result.slice(0, 27);
-    }, [filteredPlays, activeTab, artistImages]);
+    }, [filteredPlays, activeTab, artistImages, sortBy]);
 
     // Update trending items when calculation changes
     useEffect(() => {
@@ -377,6 +396,12 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
     // Handle Closing
     const handleClose = () => setSelectedItem(null);
 
+    const SORT_LABELS: Record<typeof sortBy, string> = {
+        obsession: 'Obsession Score',
+        frequency: 'Play Count',
+        recency: 'Most Recent',
+        consistency: 'Consistency',
+    };
 
     // ORBITAL LAYOUT
     const centerItem = trendingItems[0];
@@ -390,80 +415,93 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
         <div className="relative z-0 flex flex-col md:flex-row gap-8 items-start mb-12">
             
             <div className="flex-1 w-full relative min-h-[400px] md:min-h-[500px]">
-                <div className="flex justify-between items-end mb-4 md:mb-16 px-2 relative z-10">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                                Obsession Orbit
-                            </h2>
-                            <div className="relative group/info">
-                                <Info size={16} className="text-[#8E8E93] hover:text-white transition-colors cursor-help" />
-                                <div className="absolute left-0 top-full mt-2 w-72 bg-[#1C1C1E] border border-white/10 rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
-                                    <p className="text-[11px] text-[#8E8E93] leading-relaxed">
-                                        <span className="text-white font-semibold">Obsession Orbit</span> visualizes your top {activeTab}s based on listening patterns. 
-                                        The center shows your #1, with rings displaying your most obsessed {activeTab}s based on consistency, volume, and recency.
-                                    </p>
+                <div className="flex flex-col gap-3 mb-4 md:mb-16 px-2 relative z-10">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                                    {viewType === 'grid' ? 'Connections Obsession Orbit' : 'Obsession Orbit'}
+                                </h2>
+                                <div className="relative group/info">
+                                    <Info size={16} className="text-[#8E8E93] hover:text-white transition-colors cursor-help" />
+                                    <div className="absolute left-0 top-full mt-2 w-72 bg-[#1C1C1E] border border-white/10 rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
+                                        <p className="text-[11px] text-[#8E8E93] leading-relaxed">
+                                            {viewType === 'grid' ? (
+                                                <>
+                                                    <span className="text-white font-semibold">Connection</span> maps your {activeTab}s in 3D space based on listening similarity. 
+                                                    {activeTab === 'artist' ? ' Artists' : ' Albums'} that share listening patterns — similar times, days, and frequency — appear closer together with red lines showing the strongest connections. Click an edge to see the similarity details.
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="text-white font-semibold">Obsession Orbit</span> visualizes your top {activeTab}s based on listening patterns. 
+                                                    The center shows your #1, with rings displaying your most obsessed {activeTab}s based on consistency, volume, and recency.
+                                                </>
+                                            )}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
+                            <p className="text-[#8E8E93] text-sm mt-1">
+                                {viewType === 'grid' 
+                                    ? `Discover hidden links between your favorite ${activeTab}s based on when and how you listen`
+                                    : `Visualizes your top ${activeTab}s — center is your #1, rings show your most obsessed by consistency, volume & recency`
+                                }
+                            </p>
                         </div>
-                        <p className="text-[#8E8E93] text-sm mt-1">
-                            Your {activeTab} universe in motion
-                        </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                        {/* View Toggle: Orbit / Grid */}
-                        <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-0.5 border border-white/5 shadow-sm">
-                            <button
-                                onClick={() => setViewType('orbit')}
-                                className={`p-1.5 rounded-full transition-all ${viewType === 'orbit' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
-                                title="Orbit View"
-                            >
-                                <Orbit size={14} />
-                            </button>
-                            <button
-                                onClick={() => setViewType('grid')}
-                                className={`p-1.5 rounded-full transition-all ${viewType === 'grid' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
-                                title="Grid View"
-                            >
-                                <Grid3x3 size={14} />
-                            </button>
-                        </div>
+                        
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            {/* View Toggle: Orbit / Connection */}
+                            <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-0.5 border border-white/5 shadow-sm">
+                                <button
+                                    onClick={() => setViewType('orbit')}
+                                    className={`p-1.5 rounded-full transition-all ${viewType === 'orbit' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                                    title="Orbit View"
+                                >
+                                    <Orbit size={14} />
+                                </button>
+                                <button
+                                    onClick={() => setViewType('grid')}
+                                    className={`p-1.5 rounded-full transition-all ${viewType === 'grid' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                                    title="Connection View"
+                                >
+                                    <Grid3x3 size={14} />
+                                </button>
+                            </div>
 
-                        {/* Year Dropdown */}
-                        <div className="relative" ref={dropdownRef}>
-                            <button 
-                                onClick={() => setShowYearDropdown(!showYearDropdown)}
-                                className="flex items-center gap-1 text-[11px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors"
-                            >
-                                {selectedYear} <ChevronDown size={12} className={`transition-transform ${showYearDropdown ? 'rotate-180' : ''}`} />
-                            </button>
-                            {showYearDropdown && (
-                                <div className="absolute right-0 top-full mt-1 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[90px] animate-in fade-in slide-in-from-top-2 duration-200">
-                                    {AVAILABLE_YEARS.map(year => (
-                                        <button
-                                            key={year}
-                                            onClick={() => {
-                                                setSelectedYear(year);
-                                                setShowYearDropdown(false);
-                                                setSelectedItem(null);
-                                            }}
-                                            className={`w-full px-3 py-1.5 text-left text-[11px] font-medium flex items-center justify-between gap-2 hover:bg-white/5 transition-colors ${
-                                                year === selectedYear ? 'text-white bg-white/5' : 'text-[#8E8E93]'
-                                            }`}
-                                        >
-                                            {year}
-                                            {year === selectedYear && <Check size={10} className="text-[#FA2D48]" />}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                            {/* Year Dropdown */}
+                            <div className="relative" ref={dropdownRef}>
+                                <button 
+                                    onClick={() => setShowYearDropdown(!showYearDropdown)}
+                                    className="flex items-center gap-1 text-[11px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors"
+                                >
+                                    {selectedYear} <ChevronDown size={12} className={`transition-transform ${showYearDropdown ? 'rotate-180' : ''}`} />
+                                </button>
+                                {showYearDropdown && (
+                                    <div className="absolute right-0 top-full mt-1 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[90px] animate-in fade-in slide-in-from-top-2 duration-200">
+                                        {AVAILABLE_YEARS.map(year => (
+                                            <button
+                                                key={year}
+                                                onClick={() => {
+                                                    setSelectedYear(year);
+                                                    setShowYearDropdown(false);
+                                                    setSelectedItem(null);
+                                                }}
+                                                className={`w-full px-3 py-1.5 text-left text-[11px] font-medium flex items-center justify-between gap-2 hover:bg-white/5 transition-colors ${
+                                                    year === selectedYear ? 'text-white bg-white/5' : 'text-[#8E8E93]'
+                                                }`}
+                                            >
+                                                {year}
+                                                {year === selectedYear && <Check size={10} className="text-[#FA2D48]" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
-                        {/* Custom Toggle UI */}
-                        <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-1 border border-white/5 shadow-sm">
-                            <button 
-                                onClick={() => setActiveTab('artist')}
+                            {/* Custom Toggle UI */}
+                            <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-1 border border-white/5 shadow-sm">
+                                <button 
+                                    onClick={() => setActiveTab('artist')}
                                 className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
                             >
                                  Artists
@@ -474,6 +512,45 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                             >
                                  Albums
                             </button>
+                        </div>
+                        </div>
+                    </div>
+
+                    {/* Sort/Filter Bar */}
+                    <div className="flex items-center gap-2 mt-2">
+                        <div className="relative" ref={sortMenuRef}>
+                            <button
+                                onClick={() => setShowSortMenu(!showSortMenu)}
+                                className="flex items-center gap-1.5 text-[11px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors"
+                            >
+                                <SlidersHorizontal size={12} />
+                                {SORT_LABELS[sortBy]}
+                                <ChevronDown size={10} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
+                            </button>
+                            {showSortMenu && (
+                                <div className="absolute left-0 top-full mt-1 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[150px] animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {([
+                                        { key: 'obsession', label: 'Obsession Score', desc: 'Combined listening signal' },
+                                        { key: 'frequency', label: 'Play Count', desc: 'Total number of plays' },
+                                        { key: 'recency', label: 'Most Recent', desc: 'Last listened first' },
+                                        { key: 'consistency', label: 'Consistency', desc: 'Regularity of listening' },
+                                    ] as const).map(opt => (
+                                        <button
+                                            key={opt.key}
+                                            onClick={() => { setSortBy(opt.key); setShowSortMenu(false); }}
+                                            className={`w-full px-3 py-2 text-left hover:bg-white/5 transition-colors flex items-center justify-between gap-2 ${
+                                                sortBy === opt.key ? 'text-white bg-white/5' : 'text-[#8E8E93]'
+                                            }`}
+                                        >
+                                            <div>
+                                                <div className="text-[11px] font-medium">{opt.label}</div>
+                                                <div className="text-[9px] opacity-50">{opt.desc}</div>
+                                            </div>
+                                            {sortBy === opt.key && <Check size={10} className="text-[#FA2D48] flex-shrink-0" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -746,8 +823,7 @@ const OrbitNode = ({ item, rank, size, isActive, isDimmed, onClick }: { item: Tr
             >
                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                 
-                {/* Shiny overlay on hover */}
-                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none"></div>
+                {/* Subtle scale effect on hover - no overlay */}
             </div>
 
             {/* Custom Tooltip - Better positioning and UI */}
