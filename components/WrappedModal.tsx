@@ -192,12 +192,13 @@ export const WrappedModal: React.FC<WrappedModalProps> = ({ isOpen, onClose, per
                 </button>
 
                 {loading ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-6">
-                        <div className="relative">
-                            <div className="w-20 h-20 border-[3px] border-white/10 border-t-[#FA2D48] rounded-full animate-spin" />
-                            <Headphones className="absolute inset-0 m-auto w-8 h-8 text-[#FA2D48] animate-pulse" />
+                    <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
+                        <div className="absolute inset-0 z-0">
+                            <Aurora />
                         </div>
-                        <p className="text-white/40 font-semibold text-xs tracking-widest uppercase animate-pulse">Building your wrapped...</p>
+                        <h1 className="text-6xl font-bold tracking-tight text-white z-10 relative">
+                            Punky Wrapped
+                        </h1>
                     </div>
                 ) : (
                     <div className="flex-1 relative cursor-pointer overflow-hidden" onClick={handleTap}>
