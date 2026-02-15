@@ -1299,3 +1299,221 @@ export const getRadarArtists = async (period: 'daily' | 'weekly' | 'monthly' = '
 
     return radarArtists;
 }
+
+// Get the most skipped song (shortest average listen ratio relative to track duration)
+export const getMostSkippedSong = async (period: 'daily' | 'weekly' | 'monthly' = 'weekly') => {
+    const now = new Date();
+    let startDate: Date;
+
+    if (period === 'daily') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    } else if (period === 'weekly') {
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+        startDate = new Date(now.getFullYear(), now.getMonth(), diff);
+        startDate.setHours(0, 0, 0, 0);
+    } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const { data, error } = await supabase
+        .from('listening_history')
+        .select('track_name, artist_name, album_cover, duration_ms')
+        .gte('played_at', startDate.toISOString());
+
+    if (error || !data || data.length === 0) return null;
+
+    // Group by song and find ones with many short plays (skips)
+    const songMap: Record<string, { totalDuration: number; count: number; artist: string; cover: string }> = {};
+    data.forEach(item => {
+        if (!item.track_name) return;
+        const key = item.track_name;
+        if (!songMap[key]) songMap[key] = { totalDuration: 0, count: 0, artist: item.artist_name, cover: item.album_cover || '' };
+        songMap[key].totalDuration += item.duration_ms || 0;
+        songMap[key].count++;
+    });
+
+    // Find song with lowest average duration that was played more than once (indicates skipping)
+    const candidates = Object.entries(songMap)
+        .filter(([_, d]) => d.count >= 2)
+        .map(([name, d]) => ({
+            title: name,
+            artist: d.artist,
+            cover: d.cover,
+            avgDuration: d.totalDuration / d.count,
+            plays: d.count
+        }))
+        .sort((a, b) => a.avgDuration - b.avgDuration);
+
+    return candidates[0] || null;
+};
+
+// Get late night anthem (most played song after 1 AM)
+export const getLateNightAnthem = async (period: 'daily' | 'weekly' | 'monthly' = 'weekly') => {
+    const now = new Date();
+    let startDate: Date;
+
+    if (period === 'daily') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    } else if (period === 'weekly') {
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+        startDate = new Date(now.getFullYear(), now.getMonth(), diff);
+        startDate.setHours(0, 0, 0, 0);
+    } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const { data, error } = await supabase
+        .from('listening_history')
+        .select('track_name, artist_name, album_cover, played_at')
+        .gte('played_at', startDate.toISOString());
+
+    if (error || !data || data.length === 0) return null;
+
+    // Filter to late night plays (1 AM - 5 AM)
+    const lateNightPlays = data.filter(item => {
+        const hour = new Date(item.played_at).getHours();
+        return hour >= 1 && hour < 5;
+    });
+
+    if (lateNightPlays.length === 0) return null;
+
+    const songMap: Record<string, { count: number; artist: string; cover: string }> = {};
+    lateNightPlays.forEach(item => {
+        if (!item.track_name) return;
+        if (!songMap[item.track_name]) songMap[item.track_name] = { count: 0, artist: item.artist_name, cover: item.album_cover || '' };
+        songMap[item.track_name].count++;
+    });
+
+    const topEntry = Object.entries(songMap).sort((a, b) => b[1].count - a[1].count)[0];
+    if (!topEntry) return null;
+
+    return {
+        title: topEntry[0],
+        artist: topEntry[1].artist,
+        cover: topEntry[1].cover,
+        plays: topEntry[1].count
+    };
+};
+
+// Get rising star artist (most growth in recent period)
+export const getRisingStar = async (period: 'daily' | 'weekly' | 'monthly' = 'weekly') => {
+    const now = new Date();
+    let currentStart: Date;
+    let previousStart: Date;
+
+    if (period === 'daily') {
+        currentStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        previousStart = new Date(currentStart);
+        previousStart.setDate(previousStart.getDate() - 1);
+    } else if (period === 'weekly') {
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+        currentStart = new Date(now.getFullYear(), now.getMonth(), diff);
+        currentStart.setHours(0, 0, 0, 0);
+        previousStart = new Date(currentStart);
+        previousStart.setDate(previousStart.getDate() - 7);
+    } else {
+        currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        previousStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    }
+
+    const { data: currentData } = await supabase
+        .from('listening_history')
+        .select('artist_name, album_cover')
+        .gte('played_at', currentStart.toISOString());
+
+    const { data: previousData } = await supabase
+        .from('listening_history')
+        .select('artist_name, album_cover')
+        .gte('played_at', previousStart.toISOString())
+        .lt('played_at', currentStart.toISOString());
+
+    if (!currentData || currentData.length === 0) return null;
+
+    const currentCounts: Record<string, { count: number; image: string }> = {};
+    currentData.forEach(item => {
+        if (!item.artist_name) return;
+        if (!currentCounts[item.artist_name]) currentCounts[item.artist_name] = { count: 0, image: item.album_cover || '' };
+        currentCounts[item.artist_name].count++;
+    });
+
+    const previousCounts: Record<string, number> = {};
+    (previousData || []).forEach(item => {
+        if (!item.artist_name) return;
+        previousCounts[item.artist_name] = (previousCounts[item.artist_name] || 0) + 1;
+    });
+
+    // Find artist with biggest growth
+    const growth = Object.entries(currentCounts)
+        .map(([name, data]) => ({
+            name,
+            image: data.image,
+            currentPlays: data.count,
+            previousPlays: previousCounts[name] || 0,
+            increase: data.count - (previousCounts[name] || 0)
+        }))
+        .filter(a => a.increase > 0)
+        .sort((a, b) => b.increase - a.increase);
+
+    return growth[0] || null;
+};
+
+// Get obsession artist (artist where one song dominates their streams)
+export const getObsessionArtist = async (period: 'daily' | 'weekly' | 'monthly' = 'weekly') => {
+    const now = new Date();
+    let startDate: Date;
+
+    if (period === 'daily') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    } else if (period === 'weekly') {
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+        startDate = new Date(now.getFullYear(), now.getMonth(), diff);
+        startDate.setHours(0, 0, 0, 0);
+    } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const { data, error } = await supabase
+        .from('listening_history')
+        .select('track_name, artist_name, album_cover')
+        .gte('played_at', startDate.toISOString());
+
+    if (error || !data || data.length === 0) return null;
+
+    // Group plays by artist, and within each artist by song
+    const artistSongs: Record<string, { total: number; image: string; songs: Record<string, number> }> = {};
+    data.forEach(item => {
+        if (!item.artist_name || !item.track_name) return;
+        if (!artistSongs[item.artist_name]) {
+            artistSongs[item.artist_name] = { total: 0, image: item.album_cover || '', songs: {} };
+        }
+        artistSongs[item.artist_name].total++;
+        artistSongs[item.artist_name].songs[item.track_name] = (artistSongs[item.artist_name].songs[item.track_name] || 0) + 1;
+    });
+
+    // Find artist where one song has highest percentage of total plays (min 3 total plays)
+    let bestArtist = null;
+    let bestPercentage = 0;
+
+    for (const [artistName, data] of Object.entries(artistSongs)) {
+        if (data.total < 3) continue;
+        const topSongEntry = Object.entries(data.songs).sort((a, b) => b[1] - a[1])[0];
+        if (!topSongEntry) continue;
+        const percentage = (topSongEntry[1] / data.total) * 100;
+        if (percentage > bestPercentage && percentage >= 50) {
+            bestPercentage = percentage;
+            bestArtist = {
+                artist: artistName,
+                image: data.image,
+                topSong: topSongEntry[0],
+                percentage: Math.round(percentage),
+                totalPlays: data.total
+            };
+        }
+    }
+
+    return bestArtist;
+};

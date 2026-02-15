@@ -601,6 +601,80 @@ export const generateWrappedQuiz = async (stats: {
     }
 };
 
+// Generate fruit vibe - AI categorizes music taste as a fruit
+export interface FruitVibe {
+    fruit: string;
+    emoji: string;
+    description: string;
+    topSongs: string[];
+}
+
+export const generateFruitVibe = async (tracks: any[]): Promise<FruitVibe> => {
+    const fallback: FruitVibe = {
+        fruit: 'Mango',
+        emoji: '🥭',
+        description: "Your vibe was sweet like a mango — full of happy, upbeat tracks",
+        topSongs: tracks.slice(0, 3).map(t => `${t.title} by ${t.artist}`)
+    };
+
+    try {
+        const client = getAiClient();
+        if (!tracks || tracks.length === 0) return fallback;
+        if (!client) return fallback;
+
+        const trackList = tracks.slice(0, 15).map(t => `${t.title} by ${t.artist}`).join('\n');
+
+        const prompt = `
+            Analyze this list of songs and determine what FRUIT best represents this person's music taste.
+            Choose from common fruits like: Mango, Strawberry, Watermelon, Cherry, Peach, Lemon, Grape, Orange, Apple, Banana, Kiwi, Pineapple, Coconut, Blueberry, Pomegranate, Dragon Fruit, Avocado.
+            
+            Match the fruit to the VIBE of the music:
+            - Mango = sweet, upbeat, happy
+            - Strawberry = romantic, soft, dreamy
+            - Watermelon = refreshing, summer vibes, carefree
+            - Cherry = bold, confident, sassy
+            - Peach = warm, nostalgic, soulful
+            - Lemon = energetic, sharp, punk/rock
+            - Grape = smooth, chill, R&B/jazz
+            - Pineapple = tropical, adventurous, eclectic
+            - Coconut = laid-back, beachy, indie
+            - Dragon Fruit = experimental, unique, avant-garde
+            - Pomegranate = complex, layered, deep emotions
+            - Avocado = trendy, versatile, well-rounded
+
+            Songs:
+            ${trackList}
+
+            Pick the top 3 songs that most shaped this fruit choice.
+
+            Return JSON ONLY: { "fruit": "Mango", "emoji": "🥭", "description": "Your vibe was sweet like a mango — full of happy, upbeat tracks", "topSongs": ["Song by Artist", "Song by Artist", "Song by Artist"] }
+        `;
+
+        const response = await client.chat.completions.create({
+            model: "moonshotai/kimi-k2-instruct-0905",
+            messages: [
+                { role: "system", content: "You are a creative music analyst who matches music vibes to fruits. Be playful and fun." },
+                { role: "user", content: prompt }
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.8
+        });
+
+        const text = response.choices[0]?.message?.content || "{}";
+        const result = JSON.parse(text);
+
+        return {
+            fruit: result.fruit || fallback.fruit,
+            emoji: result.emoji || fallback.emoji,
+            description: result.description || fallback.description,
+            topSongs: result.topSongs || fallback.topSongs
+        };
+    } catch (e) {
+        console.error("Fruit Vibe Error:", e);
+        return fallback;
+    }
+};
+
 // WRAPPED TOOL CALLING - AI generates wrapped using function calls
 export interface WrappedToolResult {
     slides: WrappedSlide[];
