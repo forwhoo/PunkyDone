@@ -27,17 +27,32 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                     name: play.artist_name,
                     image: artistImages[play.artist_name] || play.album_cover || play.cover, // Prefer artist image
                     firstPlay: play.played_at,
+                    lastPlay: play.played_at,
                     plays: 0,
-                    trackSample: play.track_name
+                    trackSample: play.track_name,
+                    uniqueTracks: new Set(),
+                    totalDuration: 0
                 };
             }
             candidates[play.artist_name].plays += 1;
+            candidates[play.artist_name].uniqueTracks.add(play.track_name);
+            candidates[play.artist_name].totalDuration += (play.duration_ms || 180000);
+            // Update last play time
+            if (new Date(play.played_at) > new Date(candidates[play.artist_name].lastPlay)) {
+                candidates[play.artist_name].lastPlay = play.played_at;
+            }
         }
     });
 
-    // Filter for "Meaningful" discoveries (at least 2 plays)
+    // Filter for "Meaningful" discoveries (at least 2 plays) and format stats
     const upcoming = Object.values(candidates)
         .filter(c => c.plays >= 2)
+        .map(c => ({
+            ...c,
+            uniqueTracksCount: c.uniqueTracks.size,
+            avgDuration: Math.floor(c.totalDuration / c.plays / 1000 / 60), // in minutes
+            daysSinceFirstPlay: Math.floor((Date.now() - new Date(c.firstPlay).getTime()) / (1000 * 60 * 60 * 24))
+        }))
         .sort((a, b) => b.plays - a.plays)
         .slice(0, 8); // Top 8 new artists
 
@@ -152,24 +167,39 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                                         <p className="text-2xl font-black text-white">{selectedArtist.plays}</p>
                                     </div>
                                     <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                        <p className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold mb-1">Unique Tracks</p>
+                                        <p className="text-2xl font-black text-white">{selectedArtist.uniqueTracksCount || 1}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                                         <p className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold mb-1">First Heard</p>
                                         <p className="text-sm font-semibold text-white">
                                             {new Date(selectedArtist.firstPlay).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                        </p>
+                                        <p className="text-[9px] text-white/50 mt-0.5">
+                                            {selectedArtist.daysSinceFirstPlay} days ago
+                                        </p>
+                                    </div>
+                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                        <p className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold mb-1">Avg Listen</p>
+                                        <p className="text-sm font-semibold text-white">
+                                            {selectedArtist.avgDuration || 3} mins
                                         </p>
                                     </div>
                                 </div>
 
                                 <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                    <p className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold mb-2">Why Upcoming?</p>
+                                    <p className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold mb-2">Growth Trajectory</p>
                                     <p className="text-[13px] text-white/80 leading-relaxed">
-                                        This artist is gaining traction in your listening habits with <span className="font-semibold text-white">{selectedArtist.plays} plays</span> recently, 
-                                        but hasn't made it to your top charts yet. Keep listening to see them climb!
+                                        This artist entered your rotation <span className="font-semibold text-white">{selectedArtist.daysSinceFirstPlay} days ago</span> with <span className="font-semibold text-white">{selectedArtist.plays} plays</span> across <span className="font-semibold text-white">{selectedArtist.uniqueTracksCount || 1} different tracks</span>. They're gaining momentum and could soon join your top artists!
                                     </p>
                                 </div>
 
                                 <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                                     <p className="text-[10px] uppercase tracking-wider text-[#8E8E93] font-bold mb-2 flex items-center gap-1">
-                                        <Disc size={10} /> Sample Track
+                                        <Disc size={10} /> Recent Track
                                     </p>
                                     <p className="text-sm font-medium text-white truncate">{selectedArtist.trackSample}</p>
                                 </div>

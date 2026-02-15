@@ -282,15 +282,18 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         controls.autoRotate = true;
         controls.autoRotateSpeed = 0.3;
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // Lighting - Increased brightness
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         scene.add(ambientLight);
-        const pointLight = new THREE.PointLight(0xfa2d48, 1.5, 60);
+        const pointLight = new THREE.PointLight(0xfa2d48, 2.5, 60);
         pointLight.position.set(10, 15, 10);
         scene.add(pointLight);
-        const pointLight2 = new THREE.PointLight(0x4488ff, 0.8, 50);
+        const pointLight2 = new THREE.PointLight(0x4488ff, 1.5, 50);
         pointLight2.position.set(-10, -5, -10);
         scene.add(pointLight2);
+        const pointLight3 = new THREE.PointLight(0xffffff, 1.8, 70);
+        pointLight3.position.set(0, 20, 15);
+        scene.add(pointLight3);
 
         // Texture loader
         const textureLoader = new THREE.TextureLoader();

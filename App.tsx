@@ -181,6 +181,9 @@ function App() {
   // AI Discovery Modal State
   const [aiModalOpen, setAiModalOpen] = useState(false);
 
+  // Wrapped Under Construction Modal State
+  const [showWrappedModal, setShowWrappedModal] = useState(false);
+
   // Fetch Artist Images when data loads
   useEffect(() => {
     const loadImages = async () => {
@@ -658,6 +661,7 @@ function App() {
                 
                 {/* Mobile Punky Wrapped Button */}
                 <button
+                    onClick={() => setShowWrappedModal(true)}
                     className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all relative overflow-hidden"
                 >
                     <div className="absolute inset-0 z-0">
@@ -914,6 +918,7 @@ function App() {
             {/* Desktop Punky Wrapped Button */}
             <div className="mb-16">
                 <button
+                    onClick={() => setShowWrappedModal(true)}
                     className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99] relative overflow-hidden"
                 >
                     <div className="absolute inset-0 z-0">
@@ -1700,6 +1705,65 @@ function App() {
                             className="flex-1 px-4 py-3 rounded-xl bg-[#FA2D48] text-white font-semibold text-sm hover:bg-[#FF6B82] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Apply Range
+                        </button>
+                    </div>
+                </motion.div>
+            </>
+        )}
+
+        {/* Wrapped Under Construction Modal */}
+        {showWrappedModal && (
+            <>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100]"
+                    onClick={() => setShowWrappedModal(false)}
+                />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Close Button */}
+                    <button
+                        onClick={() => setShowWrappedModal(false)}
+                        className="absolute top-4 right-4 z-10 bg-black/40 hover:bg-black/60 rounded-full p-2 text-white transition-all"
+                    >
+                        <X size={18} />
+                    </button>
+
+                    {/* Animated Background */}
+                    <div className="absolute inset-0 z-0 opacity-30">
+                        <PrismaticBurst animationType="rotate3d" intensity={2} speed={0.4} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="relative z-10 p-8 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#FA2D48]/10 flex items-center justify-center">
+                            <Sparkles className="w-8 h-8 text-[#FA2D48]" />
+                        </div>
+                        <h2 className="text-2xl font-black text-white mb-3">Punky Wrapped</h2>
+                        <p className="text-white/70 text-sm mb-6 leading-relaxed">
+                            We're crafting something special for you! Your personalized Punky Wrapped experience is currently under construction and will be available soon.
+                        </p>
+                        <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
+                            <p className="text-xs text-white/50 mb-2">Coming Soon:</p>
+                            <ul className="text-xs text-white/70 space-y-1 text-left">
+                                <li>🎵 Your listening journey recap</li>
+                                <li>🌟 Personalized insights & stats</li>
+                                <li>🎨 Beautiful story slides</li>
+                                <li>🎁 Surprise discoveries</li>
+                            </ul>
+                        </div>
+                        <button
+                            onClick={() => setShowWrappedModal(false)}
+                            className="w-full py-3 rounded-xl bg-[#FA2D48] text-white font-semibold text-sm hover:bg-[#FF6B82] transition-all"
+                        >
+                            Got it!
                         </button>
                     </div>
                 </motion.div>

@@ -145,7 +145,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                     />
 
                                     {/* Rank */}
-                                    <span className={`relative z-10 w-7 text-center text-sm font-black flex-shrink-0 ${index < 3 ? 'text-[#FA2D48]' : 'text-white/30'}`}>
+                                    <span className={`relative z-10 w-7 text-center text-sm font-black flex-shrink-0 ${index < 3 ? 'text-white' : 'text-white/30'}`}>
                                         {index + 1}
                                     </span>
 
@@ -160,7 +160,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
 
                                     {/* Info */}
                                     <div className="relative z-10 flex-1 min-w-0">
-                                        <h3 className="text-[13px] md:text-sm font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
+                                        <h3 className="text-[13px] md:text-sm font-semibold text-white truncate group-hover:text-white/90 transition-colors">
                                             {item.name || item.title}
                                         </h3>
                                         <p className="text-[11px] text-[#8E8E93] truncate">
