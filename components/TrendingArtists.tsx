@@ -124,9 +124,13 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
         return {
             streak: activeStreak,
             topSong: topSongName,
+            topSongPlays: maxPlays,
             peakTime: formatTime(peakHour),
             totalTime: `${hours}h ${minutes}m`,
-            firstPlay: new Date(Math.min(...artistPlays.map(p => new Date(p.played_at).getTime()))).toLocaleDateString()
+            totalPlays: artistPlays.length,
+            uniqueDays: playDateSet.size,
+            firstPlay: new Date(Math.min(...artistPlays.map(p => new Date(p.played_at).getTime()))).toLocaleDateString(),
+            avgPerDay: (artistPlays.length / playDateSet.size).toFixed(1)
         };
     }, [filteredPlays]);
 
@@ -225,10 +229,11 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             }
         }
 
-        // Compute Scores - Optimized calculations
+        // Compute Scores - Advanced Obsession Algorithm with Complex Math
         const result: TrendingItem[] = [];
-        const halfLifeMs = 14 * 24 * 60 * 60 * 1000;
-        const sessionGapMs = 90 * 60 * 1000;
+        const halfLifeMs = 14 * 24 * 60 * 60 * 1000; // 14-day exponential decay
+        const sessionGapMs = 90 * 60 * 1000; // 90-minute session gap
+        const bingeThreshold = 5; // 5+ plays in a session = binge
 
         stats.forEach((data, key) => {
             if (data.plays.length < 1) return;
@@ -244,35 +249,99 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
             const consistency = uniqueDays / spanDays;
             const playsPerDay = totalPlays / uniqueDays;
 
-            // Session counting
+            // Session counting with binge detection
             let sessionCount = 1;
+            let bingeSessionCount = 0;
+            let currentSessionPlays = 1;
+            const sessionSizes: number[] = [];
+            
             for (let i = 1; i < sortedPlays.length; i++) {
-                if (sortedPlays[i] - sortedPlays[i - 1] > sessionGapMs) sessionCount++;
+                if (sortedPlays[i] - sortedPlays[i - 1] > sessionGapMs) {
+                    sessionSizes.push(currentSessionPlays);
+                    if (currentSessionPlays >= bingeThreshold) bingeSessionCount++;
+                    sessionCount++;
+                    currentSessionPlays = 1;
+                } else {
+                    currentSessionPlays++;
+                }
             }
+            sessionSizes.push(currentSessionPlays);
+            if (currentSessionPlays >= bingeThreshold) bingeSessionCount++;
+            
             const sessionIntensity = totalPlays / sessionCount;
+            const bingeRatio = bingeSessionCount / sessionCount;
 
+            // Advanced Decay Factor: Multi-layered exponential decay
             const daysSinceLastPlay = (now - lastPlay) / (24 * 60 * 60 * 1000);
-            const recencyFactor = Math.exp(-daysSinceLastPlay / 14);
+            // Fast decay (3-day half-life) + slow decay (21-day half-life) weighted
+            const fastDecay = Math.exp(-daysSinceLastPlay / 3);
+            const slowDecay = Math.exp(-daysSinceLastPlay / 21);
+            const recencyFactor = 0.7 * fastDecay + 0.3 * slowDecay;
 
-            // Recency weighted plays
+            // Momentum: Track velocity of listening patterns (acceleration/deceleration)
+            let momentum = 0;
+            if (sortedPlays.length >= 3) {
+                const recentWindow = 7 * 24 * 60 * 60 * 1000; // Last 7 days
+                const previousWindow = 14 * 24 * 60 * 60 * 1000; // 7-14 days ago
+                
+                const recentPlays = sortedPlays.filter(p => now - p < recentWindow).length;
+                const previousPlays = sortedPlays.filter(p => now - p >= recentWindow && now - p < previousWindow).length;
+                
+                // Momentum = (recent - previous) / previous, capped at [-1, 1]
+                if (previousPlays > 0) {
+                    momentum = Math.max(-1, Math.min(1, (recentPlays - previousPlays) / previousPlays));
+                } else if (recentPlays > 0) {
+                    momentum = 1; // New obsession
+                }
+            }
+
+            // Diversity Factor: Penalize repetitive listening (same tracks over and over)
+            const uniqueTracks = new Set(data.tracks.map(t => t.track_name || t.title)).size;
+            const diversityRatio = Math.min(1, uniqueTracks / Math.sqrt(totalPlays));
+            const diversityBonus = diversityRatio * 0.5 + 0.5; // Range: 0.5-1.0
+
+            // Recency weighted plays with double-exponential decay
             let recencyWeightedPlays = 0;
             for (const play of sortedPlays) {
-                recencyWeightedPlays += Math.exp(-(now - play) / halfLifeMs);
+                const age = (now - play) / halfLifeMs;
+                // Double exponential: e^(-age) * e^(-age²/10) for sharper recent focus
+                recencyWeightedPlays += Math.exp(-age) * Math.exp(-(age * age) / 10);
             }
 
-            // Score components - Normalized to 0-100 scale
-            // Volume: How much you listen (log scale for diminishing returns) - Max ~25
-            const volumeScore = Math.min(25, Math.log1p(totalPlays) * 6);
-            // Consistency: How regularly you listen (ratio of active days) - Max 25
-            const consistencyScore = Math.min(25, consistency * 25);
-            // Intensity: Average plays per active day - Max 20
-            const intensityScore = Math.min(1, playsPerDay / 5) * 20;
-            // Focus: Plays per session (high = obsessed in a session) - Max 15
-            const focusScore = Math.min(1, sessionIntensity / 6) * 15;
-            // Recency: How recently you listened - Max 15
-            const recencyScore = recencyFactor * 15;
-
-            const score = volumeScore + consistencyScore + intensityScore + focusScore + recencyScore;
+            // Advanced Score Components - Normalized to 0-100 scale
+            // 1. Volume: Logarithmic scale with saturation - Max 20
+            const volumeScore = Math.min(20, Math.log1p(totalPlays) * 5);
+            
+            // 2. Consistency: Regularity with exponential reward - Max 18
+            const consistencyScore = Math.min(18, Math.pow(consistency, 0.7) * 18);
+            
+            // 3. Intensity: Average plays per day with logarithmic scaling - Max 16
+            const intensityScore = Math.min(16, Math.log1p(playsPerDay) * 8);
+            
+            // 4. Focus: Session intensity with binge bonus - Max 14
+            const baseFocusScore = Math.min(1, sessionIntensity / 6) * 10;
+            const bingeFocusBonus = bingeRatio * 4; // Up to 4 points for binge sessions
+            const focusScore = baseFocusScore + bingeFocusBonus;
+            
+            // 5. Recency: Multi-layer decay with recent boost - Max 12
+            const recencyScore = recencyFactor * 12;
+            
+            // 6. Momentum: Velocity of listening pattern - Max 10 (can be negative)
+            const momentumScore = Math.max(0, (momentum + 1) * 5); // Convert [-1,1] to [0,10]
+            
+            // 7. Weighted Recency: Double-exponential weighted plays - Max 8
+            const weightedRecencyScore = Math.min(8, (recencyWeightedPlays / totalPlays) * 16);
+            
+            // 8. Engagement: Combination of session variance and length - Max 6
+            const sessionVariance = sessionSizes.length > 1 
+                ? sessionSizes.reduce((sum, size) => sum + Math.pow(size - sessionIntensity, 2), 0) / sessionSizes.length
+                : 0;
+            const engagementScore = Math.min(6, (sessionIntensity / Math.sqrt(sessionVariance + 1)) * 0.8);
+            
+            // Final Score with Diversity Multiplier
+            const rawScore = volumeScore + consistencyScore + intensityScore + focusScore + 
+                           recencyScore + momentumScore + weightedRecencyScore + engagementScore;
+            const score = rawScore * diversityBonus;
 
             const finalImage = data.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(key)}&background=random`;
             
@@ -563,7 +632,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                 {/* @ts-ignore */}
                                 {selectedItem.stats ? (
                                     <>
-                                        <div className="grid grid-cols-3 gap-2 px-4 mb-6">
+                                        <div className="grid grid-cols-3 gap-2 px-4 mb-4">
                                             {/* @ts-ignore */}
                                             <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
                                                 <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Streak</div>
@@ -584,9 +653,48 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                             </div>
                                         </div>
 
+                                        {/* Additional Stats Row */}
+                                        <div className="grid grid-cols-3 gap-2 px-4 mb-4">
+                                            {/* @ts-ignore */}
+                                            <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
+                                                <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Plays</div>
+                                                {/* @ts-ignore */}
+                                                <div className="text-lg font-bold text-white leading-none">{selectedItem.stats.totalPlays}</div>
+                                            </div>
+
+                                            <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
+                                                <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Days</div>
+                                                {/* @ts-ignore */}
+                                                <div className="text-lg font-bold text-white leading-none">{selectedItem.stats.uniqueDays}</div>
+                                            </div>
+
+                                            <div className="bg-white/5 p-3 rounded-lg text-center flex flex-col items-center justify-center">
+                                                <div className="text-[9px] font-bold uppercase tracking-widest text-white/40 mb-1">Avg/Day</div>
+                                                {/* @ts-ignore */}
+                                                <div className="text-base font-bold text-white leading-none">{selectedItem.stats.avgPerDay}</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Top Song Highlight */}
+                                        {/* @ts-ignore */}
+                                        {selectedItem.stats.topSong && (
+                                            <div className="px-4 mb-4">
+                                                <div className="bg-gradient-to-br from-[#FA2D48]/10 to-[#FF6B35]/10 border border-[#FA2D48]/20 p-3 rounded-lg">
+                                                    <div className="text-[9px] font-bold uppercase tracking-widest text-[#FA2D48] mb-1 flex items-center gap-1">
+                                                        <Sparkles size={10} />
+                                                        Favorite Track
+                                                    </div>
+                                                    {/* @ts-ignore */}
+                                                    <div className="text-sm font-bold text-white truncate">{selectedItem.stats.topSong}</div>
+                                                    {/* @ts-ignore */}
+                                                    <div className="text-[10px] text-white/60 mt-1">{selectedItem.stats.topSongPlays} plays</div>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* TOP SONGS LIST */}
                                         <div className="px-4">
-                                            <h3 className="text-white text-xs font-bold uppercase tracking-widest mb-3 pl-2 opacity-50">Top Tracks</h3>
+                                            <h3 className="text-white text-xs font-bold uppercase tracking-widest mb-3 pl-2 opacity-50">All Tracks</h3>
                                             <div className="space-y-0.5">
                                                 {/* @ts-ignore */}
                                                 {selectedItem.tracks && selectedItem.tracks.length > 0 ? (
