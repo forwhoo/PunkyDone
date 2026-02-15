@@ -394,20 +394,29 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                     <div>
                         <div className="flex items-center gap-2">
                             <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                                Obsession Orbit
+                                {viewType === 'grid' ? 'Connections' : 'Obsession Orbit'}
                             </h2>
                             <div className="relative group/info">
                                 <Info size={16} className="text-[#8E8E93] hover:text-white transition-colors cursor-help" />
                                 <div className="absolute left-0 top-full mt-2 w-72 bg-[#1C1C1E] border border-white/10 rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
                                     <p className="text-[11px] text-[#8E8E93] leading-relaxed">
-                                        <span className="text-white font-semibold">Obsession Orbit</span> visualizes your top {activeTab}s based on listening patterns. 
-                                        The center shows your #1, with rings displaying your most obsessed {activeTab}s based on consistency, volume, and recency.
+                                        {viewType === 'grid' ? (
+                                            <>
+                                                <span className="text-white font-semibold">Connections</span> visualizes how your top {activeTab}s relate to each other in 3D space.
+                                                Lines connect similar {activeTab}s based on listening patterns, showing your music universe and its relationships.
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="text-white font-semibold">Obsession Orbit</span> visualizes your top {activeTab}s based on listening patterns. 
+                                                The center shows your #1, with rings displaying your most obsessed {activeTab}s based on consistency, volume, and recency.
+                                            </>
+                                        )}
                                     </p>
                                 </div>
                             </div>
                         </div>
                         <p className="text-[#8E8E93] text-sm mt-1">
-                            Your {activeTab} universe in motion
+                            {viewType === 'grid' ? `Explore ${activeTab} relationships` : `Your ${activeTab} universe in motion`}
                         </p>
                     </div>
                     

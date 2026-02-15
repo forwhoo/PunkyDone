@@ -244,7 +244,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(width, height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x0a0a0a, 1);
+        renderer.setClearColor(0x0a0a0a, 0); // Transparent background to blend with page
         container.appendChild(renderer.domElement);
 
         // Controls
@@ -331,23 +331,37 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         });
 
         // Connection lines between highly similar items
+        // Filter to show only the strongest connections for clarity
         const lines: THREE.Line[] = [];
         const n = items.length;
+        const connections: { i: number; j: number; sim: number }[] = [];
+        
+        // Collect all potential connections
         for (let i = 0; i < n; i++) {
             for (let j = i + 1; j < n; j++) {
                 const sim = similarities[i][j];
-                if (sim > 0.25) {
-                    const lineGeo = new THREE.BufferGeometry().setFromPoints([positions[i], positions[j]]);
-                    const lineMat = new THREE.LineBasicMaterial({
-                        color: 0xfa2d48,
-                        transparent: true,
-                        opacity: Math.min(0.4, sim * 0.5),
-                    });
-                    const line = new THREE.Line(lineGeo, lineMat);
-                    scene.add(line);
-                    lines.push(line);
+                if (sim > 0.35) { // Higher threshold for cleaner visualization
+                    connections.push({ i, j, sim });
                 }
             }
+        }
+        
+        // Sort by similarity and keep only the top connections
+        connections.sort((a, b) => b.sim - a.sim);
+        const maxConnections = Math.min(connections.length, Math.max(15, Math.floor(n * 1.2)));
+        const topConnections = connections.slice(0, maxConnections);
+        
+        // Create lines for top connections
+        for (const conn of topConnections) {
+            const lineGeo = new THREE.BufferGeometry().setFromPoints([positions[conn.i], positions[conn.j]]);
+            const lineMat = new THREE.LineBasicMaterial({
+                color: 0xfa2d48,
+                transparent: true,
+                opacity: Math.min(0.35, conn.sim * 0.6), // Slightly more visible for important connections
+            });
+            const line = new THREE.Line(lineGeo, lineMat);
+            scene.add(line);
+            lines.push(line);
         }
 
         // Particle field background
@@ -458,7 +472,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
     return (
         <div
             ref={containerRef}
-            className="relative w-full aspect-square max-w-[480px] mx-auto rounded-2xl overflow-hidden"
+            className="relative w-full aspect-square max-w-[480px] mx-auto overflow-hidden"
             style={{ cursor: 'grab', minHeight: 400 }}
         />
     );
