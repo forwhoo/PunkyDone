@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { X, Share2, Sparkles, Music2, Headphones, Clock, Mic2, Disc, ChevronRight, ChevronLeft, Sun, Moon, Sunset, Sunrise, CheckCircle, XCircle } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { X, Share2, Sparkles, Music2, Headphones, Clock, Mic2, Disc, ChevronRight, ChevronLeft, ChevronDown, Sun, Moon, Sunset, Sunrise, CheckCircle, XCircle, Volume2, VolumeX, TrendingUp, SkipForward, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { generateWrappedStory, generateWrappedVibe, generateWrappedQuiz, QuizQuestion } from '../services/geminiService';
-import { getWrappedStats, getPeakListeningHour, getRadarArtists } from '../services/dbService';
+import { generateWrappedStory, generateWrappedVibe, generateWrappedQuiz, generateFruitVibe, QuizQuestion, FruitVibe } from '../services/geminiService';
+import { getWrappedStats, getPeakListeningHour, getRadarArtists, getMostSkippedSong, getLateNightAnthem, getRisingStar, getObsessionArtist } from '../services/dbService';
 import Aurora from './reactbits/Aurora';
 import Particles from './reactbits/Particles';
 import GridMotion from './reactbits/GridMotion';
