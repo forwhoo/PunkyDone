@@ -1672,6 +1672,7 @@ function App() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 z-[9999] bg-[#0a0a0a]"
+                style={{ height: '100dvh' }}
             >
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -1679,6 +1680,7 @@ function App() {
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.3 }}
                     className="relative w-full h-full flex flex-col"
+                    style={{ height: '100dvh' }}
                 >
                     {/* Modal Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
@@ -1697,7 +1699,7 @@ function App() {
                     </div>
 
                     {/* AI Spotlight Content */}
-                    <div className="flex-1 overflow-hidden">
+                    <div className="flex-1 overflow-hidden min-h-0 h-0">
                         <AISpotlight
                             token={token}
                             history={safeRecent}
@@ -1831,34 +1833,105 @@ function App() {
             </>
         )}
 
-        {/* Punky Wrapped Coming Soon Message */}
+        {/* Punky Wrapped Title Screen */}
         {showWrappedMessage && (
             <motion.div 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/80"
-                onClick={() => setShowWrappedMessage(false)}
+                className="fixed inset-0 z-[100] bg-black overflow-hidden"
+                style={{ height: '100dvh' }}
             >
-                <motion.div
-                    initial={{ scale: 0.85, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    className="bg-[#1C1C1E] rounded-3xl border border-white/10 p-8 max-w-sm text-center shadow-2xl"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="w-16 h-16 rounded-full bg-[#FA2D48]/10 flex items-center justify-center mx-auto mb-5">
-                        <Sparkles className="w-8 h-8 text-[#FA2D48]" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Sorry!</h3>
-                    <p className="text-white/60 text-sm leading-relaxed mb-6">Punky Wrapped isn't here yet! We're working on something special for you. Stay tuned!</p>
-                    <button
-                        onClick={() => setShowWrappedMessage(false)}
-                        className="px-6 py-2.5 bg-white text-black rounded-full text-sm font-bold hover:bg-white/90 transition-all active:scale-95"
+                {/* Swirl Background */}
+                <div className="absolute inset-0">
+                    <img 
+                        src="/Swirl.jpeg.jpeg" 
+                        alt="" 
+                        className="w-full h-full object-cover opacity-40"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
+                </div>
+
+                {/* Floating Album Covers */}
+                {(() => {
+                    const covers = [
+                        ...safeAlbums.slice(0, 8).map((a: Album) => a.cover),
+                        ...safeArtists.slice(0, 4).map((a: Artist) => a.image)
+                    ].filter(Boolean);
+                    const positions = [
+                        { top: '5%', left: '2%', rotate: -15, size: 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28', delay: 0 },
+                        { top: '8%', right: '5%', rotate: 12, size: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24', delay: 0.1 },
+                        { top: '20%', left: '15%', rotate: -8, size: 'w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20', delay: 0.2 },
+                        { top: '15%', right: '12%', rotate: 20, size: 'w-18 h-18 sm:w-22 sm:h-22 md:w-28 md:h-28', delay: 0.15 },
+                        { bottom: '25%', left: '5%', rotate: 10, size: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24', delay: 0.3 },
+                        { bottom: '18%', right: '3%', rotate: -18, size: 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28', delay: 0.25 },
+                        { bottom: '8%', left: '20%', rotate: 5, size: 'w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20', delay: 0.35 },
+                        { bottom: '5%', right: '15%', rotate: -10, size: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24', delay: 0.4 },
+                        { top: '35%', left: '-2%', rotate: 22, size: 'w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20', delay: 0.2 },
+                        { top: '30%', right: '-1%', rotate: -25, size: 'w-14 h-14 sm:w-18 sm:h-18 md:w-22 md:h-22', delay: 0.3 },
+                        { bottom: '35%', left: '12%', rotate: 15, size: 'w-12 h-12 sm:w-14 sm:h-14 md:w-18 md:h-18', delay: 0.45 },
+                        { bottom: '30%', right: '10%', rotate: -8, size: 'w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20', delay: 0.5 },
+                    ];
+                    return covers.map((cover, i) => {
+                        if (i >= positions.length) return null;
+                        const pos = positions[i];
+                        const style: React.CSSProperties = { 
+                            transform: `rotate(${pos.rotate}deg)`,
+                            ...(pos.top ? { top: pos.top } : {}),
+                            ...(pos.bottom ? { bottom: pos.bottom } : {}),
+                            ...(pos.left ? { left: pos.left } : {}),
+                            ...(pos.right ? { right: pos.right } : {})
+                        };
+                        return (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, scale: 0.5 }}
+                                animate={{ opacity: 0.7, scale: 1 }}
+                                transition={{ delay: pos.delay, duration: 0.8, ease: 'easeOut' }}
+                                className={`absolute ${pos.size} rounded-xl overflow-hidden shadow-2xl border border-white/10`}
+                                style={style}
+                            >
+                                <img src={cover} alt="" className="w-full h-full object-cover" />
+                            </motion.div>
+                        );
+                    });
+                })()}
+
+                {/* Center Title */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.3, type: 'spring', stiffness: 200, damping: 20 }}
+                        className="text-center"
                     >
-                        Got it
-                    </button>
-                </motion.div>
+                        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-none">
+                            Punk
+                        </h1>
+                        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-none">
+                            Wrapped
+                        </h1>
+                        <motion.p
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.6, duration: 0.5 }}
+                            className="text-white/50 text-sm sm:text-base mt-4 font-medium"
+                        >
+                            Your listening story
+                        </motion.p>
+                    </motion.div>
+                </div>
+
+                {/* Close Button */}
+                <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    onClick={() => setShowWrappedMessage(false)}
+                    className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 text-white/70 hover:text-white transition-all"
+                >
+                    <X size={20} />
+                </motion.button>
             </motion.div>
         )}
     </AnimatePresence>
