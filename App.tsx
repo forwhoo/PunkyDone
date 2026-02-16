@@ -150,7 +150,7 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 
 import { SeeAllModal } from './components/SeeAllModal';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
-import { WrappedStories } from './components/WrappedStories';
+import { WrappedModal } from './components/WrappedModal';
 
 function App() {
   const hasAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
@@ -1740,10 +1740,13 @@ function App() {
             </>
         )}
 
-        {/* Punky Wrapped Stories (Material Design 3) */}
-        <WrappedStories
+        {/* Punky Wrapped Modal */}
+        <WrappedModal
             isOpen={showWrappedModal}
             onClose={() => setShowWrappedModal(false)}
+            period="Weekly"
+            userImage={data?.user?.images?.[0]?.url}
+            userName={data?.user?.display_name}
         />
     </AnimatePresence>
 
