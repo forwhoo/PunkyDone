@@ -206,6 +206,31 @@ export const WrappedStories: React.FC<WrappedStoriesProps> = ({ isOpen, onClose 
   const chapter = DEMO_CHAPTERS[currentChapter];
   const theme = CHAPTER_THEMES[currentChapter];
 
+  const transitionToChapter = useCallback((newChapter: number) => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setContentVisible(false);
+
+    setTimeout(() => {
+      setCurrentChapter(newChapter);
+      setProgress(0);
+      setContentVisible(true);
+      setIsTransitioning(false);
+    }, 250);
+  }, [isTransitioning]);
+
+  const goToNext = useCallback(() => {
+    if (currentChapter < totalChapters - 1) {
+      transitionToChapter(currentChapter + 1);
+    }
+  }, [currentChapter, totalChapters, transitionToChapter]);
+
+  const goToPrev = useCallback(() => {
+    if (currentChapter > 0) {
+      transitionToChapter(currentChapter - 1);
+    }
+  }, [currentChapter, transitionToChapter]);
+
   // Progress timer
   useEffect(() => {
     if (!isOpen) return;
@@ -232,32 +257,7 @@ export const WrappedStories: React.FC<WrappedStoriesProps> = ({ isOpen, onClose 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isOpen, currentChapter]);
-
-  const transitionToChapter = useCallback((newChapter: number) => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setContentVisible(false);
-
-    setTimeout(() => {
-      setCurrentChapter(newChapter);
-      setProgress(0);
-      setContentVisible(true);
-      setIsTransitioning(false);
-    }, 250);
-  }, [isTransitioning]);
-
-  const goToNext = useCallback(() => {
-    if (currentChapter < totalChapters - 1) {
-      transitionToChapter(currentChapter + 1);
-    }
-  }, [currentChapter, totalChapters, transitionToChapter]);
-
-  const goToPrev = useCallback(() => {
-    if (currentChapter > 0) {
-      transitionToChapter(currentChapter - 1);
-    }
-  }, [currentChapter, transitionToChapter]);
+  }, [isOpen, currentChapter, goToNext, totalChapters]);
 
   // Tap zones: left third goes back, right two-thirds goes forward
   const handleTap = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -409,7 +409,7 @@ export const WrappedStories: React.FC<WrappedStoriesProps> = ({ isOpen, onClose 
               <Box>
                 {/* Chapter Label Chip */}
                 <Chip
-                  icon={React.cloneElement(chapter.icon, { sx: { fontSize: 16, color: `${theme.accent} !important` } })}
+                  icon={React.cloneElement(chapter.icon, { sx: { fontSize: 16, '&&': { color: theme.accent } } })}
                   label={chapter.label}
                   size="small"
                   sx={{
