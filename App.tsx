@@ -18,6 +18,9 @@ const MIN_PIXEL_BRIGHTNESS = 40;
 const MAX_PIXEL_BRIGHTNESS = 700;
 const MIN_SATURATION_RANGE = 30;
 const FALLBACK_AURA_COLOR = '#FA2D48';
+const AURORA_AMPLITUDE = 0.8;
+const AURORA_BLEND = 0.5;
+const AURORA_SPEED = 0.7;
 
 function extractDominantColor(imageUrl: string): Promise<string> {
     return new Promise((resolve) => {
@@ -49,7 +52,8 @@ function extractDominantColor(imageUrl: string): Promise<string> {
                 // Fall back if color is too desaturated for a visible aura
                 const max = Math.max(r, g, b), min = Math.min(r, g, b);
                 if (max - min < MIN_SATURATION_RANGE) { resolve(FALLBACK_AURA_COLOR); return; }
-                resolve(`rgb(${r}, ${g}, ${b})`);
+                const componentToHex = (value: number) => value.toString(16).padStart(2, '0');
+                resolve(`#${componentToHex(r)}${componentToHex(g)}${componentToHex(b)}`);
             } catch { resolve(FALLBACK_AURA_COLOR); }
         };
         img.onerror = () => resolve(FALLBACK_AURA_COLOR);
@@ -194,6 +198,7 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 
 import { SeeAllModal } from './components/SeeAllModal';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
+import Aurora from './components/reactbits/Aurora';
 
 function App() {
   const hasAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
@@ -780,7 +785,7 @@ function App() {
                 </button>
             </div>
 
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+            <div className="flex gap-2 p-1.5 overflow-x-auto no-scrollbar rounded-2xl border border-white/10 bg-white/5 mb-2">
                 {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
                     <button
                         key={range}
@@ -789,10 +794,11 @@ function App() {
                             setCustomDateRange(null);
                             fetchDashboardStats(range).then(data => setDbUnifiedData(data));
                         }}
-                        className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                        aria-pressed={timeRange === range}
+                        className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
                             timeRange === range
                                 ? 'bg-white text-black'
-                                : 'bg-white/10 text-white/70 border border-white/10 hover:bg-white/20'
+                                : 'text-white/70 hover:text-white hover:bg-white/10'
                         }`}
                     >
                         {range}
@@ -800,10 +806,11 @@ function App() {
                 ))}
                 <button
                     onClick={() => setShowDatePicker(true)}
-                    className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-2 ${
+                    aria-pressed={timeRange === 'Custom'}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-2 ${
                         timeRange === 'Custom'
                             ? 'bg-white text-black'
-                            : 'bg-white/10 text-white/70 border border-white/10 hover:bg-white/20'
+                            : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`}
                 >
                     <Calendar size={14} />
@@ -1044,23 +1051,39 @@ function App() {
                         <h2 className="text-2xl font-bold text-white tracking-tight">Your Top Charts</h2>
                         <p className="text-[#8E8E93] text-sm mt-1">Your most played this {timeRange.toLowerCase()}</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 p-1.5 rounded-2xl border border-white/10 bg-white/5 overflow-x-auto no-scrollbar">
                         {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
                             <button 
                                 key={range}
                                 onClick={() => {
                                     setTimeRange(range);
+                                    setCustomDateRange(null);
                                     fetchDashboardStats(range).then(data => setDbUnifiedData(data));
                                 }}
-                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                                aria-pressed={timeRange === range}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                                     timeRange === range 
                                         ? 'bg-white text-black' 
-                                        : 'bg-[#1C1C1E] text-[#8E8E93] hover:text-white border border-white/10'
+                                        : 'text-[#8E8E93] hover:text-white hover:bg-white/10'
                                 }`}
                             >
                                 {range}
                             </button>
                         ))}
+                        <button
+                            onClick={() => setShowDatePicker(true)}
+                            aria-pressed={timeRange === 'Custom'}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                                timeRange === 'Custom'
+                                    ? 'bg-white text-black'
+                                    : 'text-[#8E8E93] hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            <Calendar size={14} />
+                            {timeRange === 'Custom' && customDateRange
+                                ? `${new Date(customDateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(customDateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                                : 'Custom'}
+                        </button>
                     </div>
                 </div>
                 
@@ -1234,6 +1257,12 @@ function App() {
                 className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-6 backdrop-blur-3xl bg-black/90"
                 onClick={() => setSelectedTopArtist(null)}
             >
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute inset-0 opacity-40">
+                        <Aurora colorStops={[auraColor, '#7C3AED', auraColor]} amplitude={AURORA_AMPLITUDE} blend={AURORA_BLEND} speed={AURORA_SPEED} />
+                    </div>
+                    <div className="absolute inset-0 bg-black/55" />
+                </div>
                 <div 
                     className="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto no-scrollbar flex flex-col items-center" 
                     onClick={(e) => e.stopPropagation()}
@@ -1294,17 +1323,17 @@ function App() {
                         className="grid grid-cols-3 gap-3 w-full max-w-md mb-8 px-3"
                     >
                         <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
-                            <TrendingUp size={14} className="text-[#FA2D48] mb-2" />
+                            <TrendingUp size={14} className="mb-2" style={{ color: auraColor }} />
                             <span className="text-2xl font-black text-white mb-0.5">{selectedTopArtist.totalListens || 0}</span>
                             <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Plays</span>
                         </div>
                         <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
-                            <Clock size={14} className="text-[#FA2D48] mb-2" />
+                            <Clock size={14} className="mb-2" style={{ color: auraColor }} />
                             <span className="text-2xl font-black text-white mb-0.5">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
                             <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Minutes</span>
                         </div>
                         <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
-                            <Sparkles size={14} className="text-[#FA2D48] mb-2" />
+                            <Sparkles size={14} className="mb-2" style={{ color: auraColor }} />
                             <span className="text-2xl font-black text-white mb-0.5">{selectedArtistStats?.popularityScore || 0}%</span>
                             <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Of Time</span>
                         </div>
@@ -1318,7 +1347,7 @@ function App() {
                         className="w-full max-w-md bg-gradient-to-b from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 mx-3"
                     >
                          <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                            <Disc size={14} className="text-[#FA2D48]" /> Top Tracks
+                            <Disc size={14} style={{ color: auraColor }} /> Top Tracks
                          </h3>
                          
                          <div className="space-y-1">
