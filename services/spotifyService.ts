@@ -36,20 +36,25 @@ export const redirectToAuthCodeFlow = async () => {
   }
   authRedirectInProgress = true;
 
-  const verifier = generateRandomString(128);
-  const challenge = await generateCodeChallenge(verifier);
+  try {
+    const verifier = generateRandomString(128);
+    const challenge = await generateCodeChallenge(verifier);
 
-  localStorage.setItem("verifier", verifier);
+    localStorage.setItem("verifier", verifier);
 
-  const params = new URLSearchParams();
-  params.append("client_id", CLIENT_ID);
-  params.append("response_type", "code");
-  params.append("redirect_uri", REDIRECT_URI);
-  params.append("scope", SCOPES);
-  params.append("code_challenge_method", "S256");
-  params.append("code_challenge", challenge);
+    const params = new URLSearchParams();
+    params.append("client_id", CLIENT_ID);
+    params.append("response_type", "code");
+    params.append("redirect_uri", REDIRECT_URI);
+    params.append("scope", SCOPES);
+    params.append("code_challenge_method", "S256");
+    params.append("code_challenge", challenge);
 
-  document.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
+    document.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
+  } catch (e) {
+    authRedirectInProgress = false;
+    throw e;
+  }
 }
 
 
