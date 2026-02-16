@@ -13,6 +13,7 @@ const CYAN = '#00F0FF';
 const WHITE = '#FFFFFF';
 const BRUTAL_FONT = '"Impact", "Arial Black", "Helvetica Neue Bold", sans-serif';
 const MONO_FONT = '"Courier New", "Courier", monospace';
+const CHAPTER_COLORS = [LIME, MAGENTA, CYAN, '#FF6B00', WHITE];
 
 const previewTheme = createTheme({
   palette: {
@@ -93,12 +94,12 @@ export const WrappedStoriesPreview: React.FC = () => {
           }}>
             {['#1 ARTIST', 'TOP 5', 'TIMELINE', 'GENRES', 'PERSONALITY'].map((label, i) => (
               <Box key={label} sx={{
-                border: `3px solid ${[LIME, MAGENTA, CYAN, '#FF6B00', WHITE][i]}`,
+                border: `3px solid ${CHAPTER_COLORS[i]}`,
                 px: 1.5, py: 0.5,
               }}>
                 <Typography sx={{
                   fontFamily: BRUTAL_FONT, fontSize: '0.7rem', fontWeight: 900,
-                  color: [LIME, MAGENTA, CYAN, '#FF6B00', WHITE][i],
+                  color: CHAPTER_COLORS[i],
                   letterSpacing: '0.1em',
                 }}>
                   {label}

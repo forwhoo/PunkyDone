@@ -130,23 +130,27 @@ function useAudioPreview(previewUrl: string) {
   const togglePlay = useCallback(() => {
     if (!previewUrl) return;
     if (!audioRef.current) {
-      audioRef.current = new Audio(previewUrl);
-      audioRef.current.addEventListener('timeupdate', () => {
-        const a = audioRef.current;
-        if (a && a.duration) {
-          setAudioProgress((a.currentTime / a.duration) * 100);
+      const audio = new Audio(previewUrl);
+      const onTimeUpdate = () => {
+        if (audio.duration) {
+          setAudioProgress((audio.currentTime / audio.duration) * 100);
         }
-      });
-      audioRef.current.addEventListener('ended', () => {
+      };
+      const onEnded = () => {
         setIsPlaying(false);
         setAudioProgress(0);
-      });
+      };
+      audio.addEventListener('timeupdate', onTimeUpdate);
+      audio.addEventListener('ended', onEnded);
+      audioRef.current = audio;
     }
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play().catch(() => {});
+      audioRef.current.play().catch((err) => {
+        console.warn('Audio playback failed:', err);
+      });
       setIsPlaying(true);
     }
   }, [previewUrl, isPlaying]);
@@ -522,6 +526,7 @@ export const WrappedStories: React.FC<WrappedStoriesProps> = ({ isOpen, onClose 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const CHAPTER_DURATION = 8000;
   const PROGRESS_INTERVAL = 50;
+  const TRANSITION_DELAY = 80;
 
   const totalChapters = CHAPTER_DATA.length;
 
@@ -534,7 +539,7 @@ export const WrappedStories: React.FC<WrappedStoriesProps> = ({ isOpen, onClose 
       setCurrentChapter(newChapter);
       setProgress(0);
       setIsTransitioning(false);
-    }, 80);
+    }, TRANSITION_DELAY);
   }, [isTransitioning]);
 
   const goToNext = useCallback(() => {
@@ -673,7 +678,7 @@ export const WrappedStories: React.FC<WrappedStoriesProps> = ({ isOpen, onClose 
               initial={{ x: 60, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -60, opacity: 0 }}
-              transition={{ duration: 0, type: 'tween' }}
+              transition={{ duration: 0.08, type: 'tween', ease: 'linear' }}
               style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
             >
               <ChapterContent />
