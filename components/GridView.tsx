@@ -164,15 +164,6 @@ function getSimilarityDetails(a: GridItem, b: GridItem, plays: any[]): { peakHou
     };
 }
 
-// Determine time-of-day category for a play
-function getTimeOfDay(playedAt: string): TimeFilter {
-    const h = new Date(playedAt).getHours();
-    if (h >= 5 && h < 12) return 'morning';
-    if (h >= 12 && h < 17) return 'afternoon';
-    if (h >= 17 && h < 21) return 'evening';
-    return 'night';
-}
-
 // 2D force-directed layout — expanded to use full space
 function compute2DPositions(items: GridItem[], similarities: number[][], width: number, height: number, nodeSizes: number[]): { x: number; y: number }[] {
     const n = items.length;
@@ -864,7 +855,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
     }
 
     return (
-        <div className="relative">
+        <div className="relative w-full max-w-[700px] mx-auto">
             {/* Search Bar + Filters */}
             <div className="relative mb-3">
                 <div className="relative flex items-center gap-2 bg-[#1C1C1E] border border-white/10 rounded-xl px-3 py-2">
