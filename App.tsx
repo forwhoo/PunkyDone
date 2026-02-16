@@ -658,7 +658,7 @@ function App() {
   return (
     <>
     <Layout user={data.user} currentTrack={data.currentTrack}>
-        <div className="md:hidden space-y-10 safe-area-bottom safe-area-top safe-area-x px-4">
+        <div className="lg:hidden space-y-10 safe-area-bottom safe-area-top safe-area-x px-4">
             <div className="space-y-5">
                 <div className="flex items-center justify-between">
                     <div>
@@ -927,7 +927,7 @@ function App() {
             )}
         </div>
 
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
             {/* SECTION 1: AI DISCOVERY - Search Bar */}
             <div className="mb-8 mt-8">
                 <AISearchBar
