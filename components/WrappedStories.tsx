@@ -315,27 +315,27 @@ function ChapterTimeline() {
           WEEKLY EVOLUTION
         </Typography>
         <Box sx={{ display: 'flex', gap: '2px', height: 24 }}>
-          {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day, i) => {
-            const heights = [40, 55, 70, 45, 80, 100, 65];
-            return (
-              <Box key={day} sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center' }}>
-                <Box sx={{
-                  width: '100%',
-                  height: `${heights[i]}%`,
-                  bgcolor: i === 5 ? LIME : MAGENTA,
-                }} />
-              </Box>
-            );
-          })}
-        </Box>
-        <Box sx={{ display: 'flex', gap: '2px', mt: 0.5 }}>
-          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-            <Typography key={i} sx={{
-              flex: 1, textAlign: 'center',
-              fontFamily: MONO_FONT, fontSize: '0.5rem', color: WHITE,
-            }}>
-              {d}
-            </Typography>
+          {[
+            { day: 'M', height: 40 },
+            { day: 'T', height: 55 },
+            { day: 'W', height: 70 },
+            { day: 'T', height: 45 },
+            { day: 'F', height: 80 },
+            { day: 'S', height: 100 },
+            { day: 'S', height: 65 },
+          ].map((d, i) => (
+            <Box key={i} sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center' }}>
+              <Box sx={{
+                width: '100%',
+                height: `${d.height}%`,
+                bgcolor: i === 5 ? LIME : MAGENTA,
+              }} />
+              <Typography sx={{
+                fontFamily: MONO_FONT, fontSize: '0.5rem', color: WHITE, mt: 0.3,
+              }}>
+                {d.day}
+              </Typography>
+            </Box>
           ))}
         </Box>
       </Box>
