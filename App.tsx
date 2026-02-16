@@ -12,6 +12,7 @@ import { UpcomingArtists } from './components/UpcomingArtists';
 import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ChartSkeleton } from './components/LoadingSkeleton';
+import PunkyWrapped from './components/PunkyWrapped';
 
 // Extract dominant color from an image URL using canvas sampling
 const MIN_PIXEL_BRIGHTNESS = 40;
@@ -199,21 +200,6 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 import { SeeAllModal } from './components/SeeAllModal';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
 import Aurora from './components/reactbits/Aurora';
-
-const WRAPPED_COVER_POSITIONS = [
-    { top: '5%', left: '2%', rotate: -15, size: 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28', delay: 0 },
-    { top: '8%', right: '5%', rotate: 12, size: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24', delay: 0.1 },
-    { top: '20%', left: '15%', rotate: -8, size: 'w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20', delay: 0.2 },
-    { top: '15%', right: '12%', rotate: 20, size: 'w-18 h-18 sm:w-22 sm:h-22 md:w-28 md:h-28', delay: 0.15 },
-    { bottom: '25%', left: '5%', rotate: 10, size: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24', delay: 0.3 },
-    { bottom: '18%', right: '3%', rotate: -18, size: 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28', delay: 0.25 },
-    { bottom: '8%', left: '20%', rotate: 5, size: 'w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20', delay: 0.35 },
-    { bottom: '5%', right: '15%', rotate: -10, size: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24', delay: 0.4 },
-    { top: '35%', left: '-2%', rotate: 22, size: 'w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20', delay: 0.2 },
-    { top: '30%', right: '-1%', rotate: -25, size: 'w-14 h-14 sm:w-18 sm:h-18 md:w-22 md:h-22', delay: 0.3 },
-    { bottom: '35%', left: '12%', rotate: 15, size: 'w-12 h-12 sm:w-14 sm:h-14 md:w-18 md:h-18', delay: 0.45 },
-    { bottom: '30%', right: '10%', rotate: -8, size: 'w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20', delay: 0.5 },
-] as const;
 
 function App() {
   const hasAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
@@ -1850,83 +1836,13 @@ function App() {
 
         {/* Punky Wrapped Title Screen */}
         {showWrappedMessage && (
-            <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] bg-black overflow-hidden"
-                style={{ height: '100dvh' }}
-            >
-                {/* Background Gradient */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
-
-                {/* Floating Album Covers */}
-                {(() => {
-                    const covers = [
-                        ...safeAlbums.slice(0, 8).map(a => a.cover),
-                        ...safeArtists.slice(0, 4).map(a => a.image)
-                    ].filter(Boolean);
-                    return covers.map((cover, i) => {
-                        if (i >= WRAPPED_COVER_POSITIONS.length) return null;
-                        const pos = WRAPPED_COVER_POSITIONS[i];
-                        const style: React.CSSProperties = { 
-                            transform: `rotate(${pos.rotate}deg)`,
-                            ...(pos.top ? { top: pos.top } : {}),
-                            ...(pos.bottom ? { bottom: pos.bottom } : {}),
-                            ...(pos.left ? { left: pos.left } : {}),
-                            ...(pos.right ? { right: pos.right } : {})
-                        };
-                        return (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, scale: 0.5 }}
-                                animate={{ opacity: 0.7, scale: 1 }}
-                                transition={{ delay: pos.delay, duration: 0.8, ease: 'easeOut' }}
-                                className={`absolute ${pos.size} rounded-xl overflow-hidden shadow-2xl border border-white/10`}
-                                style={style}
-                            >
-                                <img src={cover} alt="" className="w-full h-full object-cover" />
-                            </motion.div>
-                        );
-                    });
-                })()}
-
-                {/* Center Title */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-                    <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 0.3, type: 'spring', stiffness: 200, damping: 20 }}
-                        className="text-center"
-                    >
-                        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-none">
-                            Punk
-                        </h1>
-                        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-none">
-                            Wrapped
-                        </h1>
-                        <motion.p
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.6, duration: 0.5 }}
-                            className="text-white/50 text-sm sm:text-base mt-4 font-medium"
-                        >
-                            Your listening story
-                        </motion.p>
-                    </motion.div>
-                </div>
-
-                {/* Close Button */}
-                <motion.button
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    onClick={() => setShowWrappedMessage(false)}
-                    className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 text-white/70 hover:text-white transition-all"
-                >
-                    <X size={20} />
-                </motion.button>
-            </motion.div>
+            <PunkyWrapped
+                onClose={() => setShowWrappedMessage(false)}
+                albumCovers={[
+                    ...safeAlbums.slice(0, 8).map((a: Album) => a.cover),
+                    ...safeArtists.slice(0, 4).map((a: Artist) => a.image)
+                ].filter(Boolean)}
+            />
         )}
     </AnimatePresence>
 
