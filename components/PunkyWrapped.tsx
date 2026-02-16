@@ -7,8 +7,8 @@ interface PunkyWrappedProps {
   albumCovers: string[];
 }
 
-const SPIRAL_RINGS = 8;
-const ITEMS_PER_RING = 10;
+const SPIRAL_RINGS = 5;
+const ITEMS_PER_RING = 8;
 
 function shuffleArray(arr: string[]): string[] {
   const shuffled = [...arr];
@@ -23,17 +23,25 @@ function getSpiralItems(shuffledCovers: string[]) {
   if (shuffledCovers.length === 0) return [];
 
   const items: { src: string; angle: number; radius: number; size: number; ring: number; indexInRing: number }[] = [];
+  const totalNeeded = SPIRAL_RINGS * ITEMS_PER_RING;
+  
+  // Use only unique covers, don't repeat
+  const uniqueCovers = shuffledCovers.slice(0, Math.min(totalNeeded, shuffledCovers.length));
 
   for (let ring = 0; ring < SPIRAL_RINGS; ring++) {
-    const radius = 500 - ring * 55;
-    const baseSize = 110 - ring * 10;
-    const size = Math.max(baseSize, 24);
+    const radius = 450 - ring * 70; // Wider spacing between rings
+    const baseSize = 120 - ring * 15; // More dramatic size reduction
+    const size = Math.max(baseSize, 30);
 
     for (let j = 0; j < ITEMS_PER_RING; j++) {
       const globalIndex = ring * ITEMS_PER_RING + j;
-      const angle = (360 / ITEMS_PER_RING) * j + ring * 18;
+      
+      // Stop if we run out of unique covers
+      if (globalIndex >= uniqueCovers.length) break;
+      
+      const angle = (360 / ITEMS_PER_RING) * j + ring * 25; // More spiral offset
       items.push({
-        src: shuffledCovers[globalIndex % shuffledCovers.length],
+        src: uniqueCovers[globalIndex],
         angle,
         radius,
         size,
@@ -73,17 +81,22 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers }) => 
       onMouseMove={handleMouseMove}
     >
       <style>{`
-        @keyframes spiralSpin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        @keyframes spiralInward {
+          0% { 
+            transform: rotate(0deg) scale(1);
+          }
+          100% { 
+            transform: rotate(360deg) scale(0.3);
+          }
         }
       `}</style>
 
-      {/* Endless Spiral of Album Covers */}
+      {/* Spiral Inward Animation */}
       <div className="absolute inset-0 z-[1] flex items-center justify-center">
         {Array.from({ length: SPIRAL_RINGS }).map((_, ring) => {
           const ringItems = spiralItems.filter(item => item.ring === ring);
-          const duration = 40 + ring * 12;
+          const duration = 15 + ring * 3; // Faster animation
+          const delay = ring * 0.5; // Stagger each ring
           const direction = ring % 2 === 0 ? 'normal' : 'reverse';
 
           return (
@@ -93,7 +106,8 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers }) => 
                 position: 'absolute',
                 width: '100%',
                 height: '100%',
-                animation: `spiralSpin ${duration}s linear infinite ${direction}`,
+                animation: `spiralInward ${duration}s ease-in-out infinite ${direction}`,
+                animationDelay: `${delay}s`,
                 transform: `translate(${mousePos.x * (1 - ring * 0.1)}px, ${mousePos.y * (1 - ring * 0.1)}px)`,
               }}
             >
@@ -101,12 +115,12 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers }) => 
                 const rad = (item.angle * Math.PI) / 180;
                 const cx = Math.cos(rad) * item.radius;
                 const cy = Math.sin(rad) * item.radius;
-                const opacity = 1 - (item.ring / SPIRAL_RINGS) * 0.7;
+                const opacity = 1 - (item.ring / SPIRAL_RINGS) * 0.5; // Less fade for better visibility
 
                 return (
                   <div
                     key={`${ring}-${j}`}
-                    className="absolute rounded-lg overflow-hidden"
+                    className="absolute rounded-lg overflow-hidden shadow-lg"
                     style={{
                       width: item.size,
                       height: item.size,
