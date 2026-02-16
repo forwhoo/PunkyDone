@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo, useCallback, useState } from 'react';
-import { Search, Mic2, Disc, Music, Sun, Moon, Sunset, Coffee } from 'lucide-react';
+import { Search, Mic2, Disc, Music } from 'lucide-react';
 
 interface GridItem {
     id: string;
@@ -19,7 +19,6 @@ interface GridViewProps {
 }
 
 type TypeFilter = 'all' | 'artist' | 'album' | 'song';
-type TimeFilter = 'all' | 'morning' | 'afternoon' | 'evening' | 'night';
 
 // Compute similarity between two items based on listening patterns
 function computeSimilarity(a: GridItem, b: GridItem, plays: any[]): number {
@@ -165,15 +164,6 @@ function getSimilarityDetails(a: GridItem, b: GridItem, plays: any[]): { peakHou
     };
 }
 
-// Determine time-of-day category for a play
-function getTimeOfDay(playedAt: string): TimeFilter {
-    const h = new Date(playedAt).getHours();
-    if (h >= 5 && h < 12) return 'morning';
-    if (h >= 12 && h < 17) return 'afternoon';
-    if (h >= 17 && h < 21) return 'evening';
-    return 'night';
-}
-
 // 2D force-directed layout — expanded to use full space
 function compute2DPositions(items: GridItem[], similarities: number[][], width: number, height: number, nodeSizes: number[]): { x: number; y: number }[] {
     const n = items.length;
@@ -278,7 +268,6 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
 
     // Filters
     const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
-    const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
 
     // Pan and zoom state
     const [zoom, setZoom] = useState(1);
@@ -292,18 +281,8 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         if (typeFilter !== 'all') {
             result = result.filter(item => item.type === typeFilter);
         }
-        if (timeFilter !== 'all') {
-            const itemsWithTimePlays = result.filter(item => {
-                const itemPlays = plays.filter(p => {
-                    if (item.type === 'artist') return p.artist_name === item.name;
-                    return p.album_name === item.name && p.artist_name === item.subName;
-                });
-                return itemPlays.some(p => getTimeOfDay(p.played_at) === timeFilter);
-            });
-            if (itemsWithTimePlays.length > 0) result = itemsWithTimePlays;
-        }
         return result;
-    }, [items, plays, typeFilter, timeFilter]);
+    }, [items, typeFilter]);
 
     // Progressive disclosure — node size based on play frequency
     const nodeSizes = useMemo(() => {
@@ -796,25 +775,6 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
     }, [getNodeAt, getEdgeAt, filteredItems, edges, onItemClick]);
 
     // Mouse wheel zoom
-    const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
-        e.preventDefault();
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-
-        const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        const newZoom = Math.max(0.3, Math.min(5, zoom * delta));
-
-        // Zoom toward mouse position
-        const newPanX = mx - (mx - pan.x) * (newZoom / zoom);
-        const newPanY = my - (my - pan.y) * (newZoom / zoom);
-
-        setZoom(newZoom);
-        setPan({ x: newPanX, y: newPanY });
-    }, [zoom, pan]);
-
     // Tooltip content
     const tooltipContent = useMemo(() => {
         if (hoveredNode >= 0 && hoveredNode < filteredItems.length) {
@@ -895,25 +855,70 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
     }
 
     return (
-        <div className="relative">
+        <div className="relative w-full max-w-[700px] mx-auto">
             {/* Search Bar + Filters */}
-            <div className="relative mb-3 space-y-2">
-                <div className="relative flex items-center bg-[#1C1C1E] border border-white/10 rounded-xl px-3 py-2">
-                    <Search size={14} className="text-[#8E8E93] mr-2 flex-shrink-0" />
+            <div className="relative mb-3">
+                <div className="relative flex items-center gap-2 bg-[#1C1C1E] border border-white/10 rounded-xl px-3 py-2">
+                    <Search size={14} className="text-[#8E8E93] flex-shrink-0" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => { setSearchQuery(e.target.value); setSelectedEdge(null); }}
                         placeholder="Search artists, albums, connections..."
-                        className="flex-1 bg-transparent text-[13px] text-white focus:outline-none placeholder:text-[#666666]"
+                        className="flex-1 bg-transparent text-[13px] text-white focus:outline-none placeholder:text-[#666666] min-w-0"
                     />
                     {searchQuery && (
                         <button 
                             onClick={() => setSearchQuery('')}
-                            className="text-[#8E8E93] hover:text-white text-xs ml-2"
+                            className="text-[#8E8E93] hover:text-white text-xs flex-shrink-0"
                         >
                             ✕
                         </button>
+                    )}
+                    
+                    {/* Filter Pills integrated in search bar */}
+                    {(hasType.artist || hasType.album || hasType.song) && (
+                        <>
+                            <div className="w-px h-5 bg-white/10 flex-shrink-0" />
+                            <div className="flex gap-1.5 flex-shrink-0">
+                                {hasType.artist && (
+                                    <button
+                                        onClick={() => setTypeFilter(typeFilter === 'artist' ? 'all' : 'artist')}
+                                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all border ${
+                                            typeFilter === 'artist' 
+                                                ? 'bg-[#FA2D48]/20 border-[#FA2D48]/50 text-[#FA2D48]' 
+                                                : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10'
+                                        }`}
+                                    >
+                                        <Mic2 size={10} />
+                                    </button>
+                                )}
+                                {hasType.album && (
+                                    <button
+                                        onClick={() => setTypeFilter(typeFilter === 'album' ? 'all' : 'album')}
+                                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all border ${
+                                            typeFilter === 'album' 
+                                                ? 'bg-[#FA2D48]/20 border-[#FA2D48]/50 text-[#FA2D48]' 
+                                                : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10'
+                                        }`}
+                                    >
+                                        <Disc size={10} />
+                                    </button>
+                                )}
+                                {hasType.song && (
+                                    <button
+                                        onClick={() => setTypeFilter(typeFilter === 'song' ? 'all' : 'song')}
+                                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all border ${
+                                            typeFilter === 'song' 
+                                                ? 'bg-[#FA2D48]/20 border-[#FA2D48]/50 text-[#FA2D48]' 
+                                                : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10'
+                                        }`}
+                                    >
+                                        <Music size={10} />
+                                    </button>
+                                )}
+                            </div>
+                        </>
                     )}
                 </div>
 
@@ -942,104 +947,6 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                         ))}
                     </div>
                 )}
-
-                {/* Filter Pills */}
-                <div className="flex flex-wrap gap-1.5">
-                    {/* Type filters */}
-                    {hasType.artist && (
-                        <button
-                            onClick={() => setTypeFilter(typeFilter === 'artist' ? 'all' : 'artist')}
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all border ${
-                                typeFilter === 'artist' 
-                                    ? 'bg-[#FA2D48]/20 border-[#FA2D48]/50 text-[#FA2D48]' 
-                                    : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10'
-                            }`}
-                        >
-                            <Mic2 size={10} /> Artists
-                        </button>
-                    )}
-                    {hasType.album && (
-                        <button
-                            onClick={() => setTypeFilter(typeFilter === 'album' ? 'all' : 'album')}
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all border ${
-                                typeFilter === 'album' 
-                                    ? 'bg-[#FA2D48]/20 border-[#FA2D48]/50 text-[#FA2D48]' 
-                                    : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10'
-                            }`}
-                        >
-                            <Disc size={10} /> Albums
-                        </button>
-                    )}
-                    {hasType.song && (
-                        <button
-                            onClick={() => setTypeFilter(typeFilter === 'song' ? 'all' : 'song')}
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all border ${
-                                typeFilter === 'song' 
-                                    ? 'bg-[#FA2D48]/20 border-[#FA2D48]/50 text-[#FA2D48]' 
-                                    : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10'
-                            }`}
-                        >
-                            <Music size={10} /> Tracks
-                        </button>
-                    )}
-
-                    <div className="w-px h-5 bg-white/10 self-center mx-0.5" />
-
-                    {/* Time-of-day filters */}
-                    <button
-                        onClick={() => setTimeFilter(timeFilter === 'morning' ? 'all' : 'morning')}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all border ${
-                            timeFilter === 'morning' 
-                                ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' 
-                                : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10'
-                        }`}
-                    >
-                        <Coffee size={10} /> Morning
-                    </button>
-                    <button
-                        onClick={() => setTimeFilter(timeFilter === 'afternoon' ? 'all' : 'afternoon')}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all border ${
-                            timeFilter === 'afternoon' 
-                                ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400' 
-                                : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10'
-                        }`}
-                    >
-                        <Sun size={10} /> Afternoon
-                    </button>
-                    <button
-                        onClick={() => setTimeFilter(timeFilter === 'evening' ? 'all' : 'evening')}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all border ${
-                            timeFilter === 'evening' 
-                                ? 'bg-orange-500/20 border-orange-500/50 text-orange-400' 
-                                : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10'
-                        }`}
-                    >
-                        <Sunset size={10} /> Evening
-                    </button>
-                    <button
-                        onClick={() => setTimeFilter(timeFilter === 'night' ? 'all' : 'night')}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all border ${
-                            timeFilter === 'night' 
-                                ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' 
-                                : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10'
-                        }`}
-                    >
-                        <Moon size={10} /> Night
-                    </button>
-                </div>
-
-                {/* Active filters display */}
-                {(typeFilter !== 'all' || timeFilter !== 'all') && (
-                    <div className="flex items-center gap-2 text-[10px] text-white/40">
-                        <span>Showing {filteredItems.length} of {items.length} items</span>
-                        <button
-                            onClick={() => { setTypeFilter('all'); setTimeFilter('all'); }}
-                            className="text-[#FA2D48] hover:text-[#FF6B82] font-medium"
-                        >
-                            Clear filters
-                        </button>
-                    </div>
-                )}
             </div>
 
             {/* Canvas Container — Full width, no square constraint */}
@@ -1058,7 +965,6 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                     onMouseUp={handleCanvasMouseUp}
                     onMouseLeave={() => { setHoveredNode(-1); setHoveredEdge(-1); isPanning.current = false; }}
                     onClick={handleCanvasClick}
-                    onWheel={handleWheel}
                 />
 
                 {/* Minimap */}
@@ -1069,28 +975,6 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                         height={90}
                         style={{ width: 120, height: 90 }}
                     />
-                </div>
-
-                {/* Zoom controls */}
-                <div className="absolute bottom-3 left-3 flex flex-col gap-1">
-                    <button
-                        onClick={() => setZoom(z => Math.min(5, z * 1.2))}
-                        className="w-7 h-7 rounded-lg bg-black/60 border border-white/10 text-white/60 hover:text-white hover:bg-black/80 flex items-center justify-center text-sm font-bold transition-colors"
-                    >
-                        +
-                    </button>
-                    <button
-                        onClick={() => setZoom(z => Math.max(0.3, z / 1.2))}
-                        className="w-7 h-7 rounded-lg bg-black/60 border border-white/10 text-white/60 hover:text-white hover:bg-black/80 flex items-center justify-center text-sm font-bold transition-colors"
-                    >
-                        −
-                    </button>
-                    <button
-                        onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
-                        className="w-7 h-7 rounded-lg bg-black/60 border border-white/10 text-white/60 hover:text-white hover:bg-black/80 flex items-center justify-center text-[9px] font-bold transition-colors"
-                    >
-                        1:1
-                    </button>
                 </div>
 
                 {/* Tooltip */}
