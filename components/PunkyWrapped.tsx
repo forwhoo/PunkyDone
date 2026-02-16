@@ -101,8 +101,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers }) => 
               >
                 <img
                   src={item.src}
-                  alt=""
-                  role="presentation"
+                  alt={`Album cover ${i + 1}`}
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
@@ -124,8 +123,8 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers }) => 
       {/* Layer 2 – Navbar */}
       <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[10]">
         <div className="flex items-center gap-4 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-          <span className="text-white/70 text-sm cursor-pointer hover:text-white transition-colors">Manifesto</span>
-          <span className="text-white/70 text-sm cursor-pointer hover:text-white transition-colors">Careers</span>
+          <button type="button" className="text-white/70 text-sm cursor-pointer hover:text-white transition-colors bg-transparent border-none p-0">Manifesto</button>
+          <button type="button" className="text-white/70 text-sm cursor-pointer hover:text-white transition-colors bg-transparent border-none p-0">Careers</button>
           <button className="text-white text-sm px-3 py-1 rounded-full bg-transparent border border-white/20 hover:border-white/40 transition-colors">
             Sign In
           </button>
