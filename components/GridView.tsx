@@ -88,6 +88,64 @@ function computeSimilarity(a: GridItem, b: GridItem, plays: any[]): number {
     return Math.min(1, score);
 }
 
+// Get detailed similarity breakdown for tooltip
+function getSimilarityDetails(a: GridItem, b: GridItem, plays: any[]): { peakHour: string; dayPattern: string } {
+    const aPlays = plays.filter(p => {
+        if (a.type === 'artist') return p.artist_name === a.name;
+        return p.album_name === a.name && p.artist_name === a.subName;
+    });
+    const bPlays = plays.filter(p => {
+        if (b.type === 'artist') return p.artist_name === b.name;
+        return p.album_name === b.name && p.artist_name === b.subName;
+    });
+
+    // Find peak hour overlap
+    const aHours = new Float32Array(24);
+    const bHours = new Float32Array(24);
+    aPlays.forEach(p => { const h = new Date(p.played_at).getHours(); aHours[h]++; });
+    bPlays.forEach(p => { const h = new Date(p.played_at).getHours(); bHours[h]++; });
+    
+    let maxOverlap = 0;
+    let peakHourIdx = 0;
+    for (let i = 0; i < 24; i++) {
+        const overlap = Math.min(aHours[i], bHours[i]);
+        if (overlap > maxOverlap) {
+            maxOverlap = overlap;
+            peakHourIdx = i;
+        }
+    }
+    
+    const formatHour = (h: number) => {
+        if (h === 0) return '12 AM';
+        if (h < 12) return `${h} AM`;
+        if (h === 12) return '12 PM';
+        return `${h - 12} PM`;
+    };
+
+    // Find day pattern
+    const aDays = new Float32Array(7);
+    const bDays = new Float32Array(7);
+    aPlays.forEach(p => { const d = new Date(p.played_at).getDay(); aDays[d]++; });
+    bPlays.forEach(p => { const d = new Date(p.played_at).getDay(); bDays[d]++; });
+    
+    let maxDayOverlap = 0;
+    let peakDayIdx = 0;
+    for (let i = 0; i < 7; i++) {
+        const overlap = Math.min(aDays[i], bDays[i]);
+        if (overlap > maxDayOverlap) {
+            maxDayOverlap = overlap;
+            peakDayIdx = i;
+        }
+    }
+    
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    return {
+        peakHour: maxOverlap > 0 ? formatHour(peakHourIdx) : 'Various',
+        dayPattern: maxDayOverlap > 0 ? days[peakDayIdx] : 'All days'
+    };
+}
+
 // Position items in 3D space using force-directed layout
 function computePositions(items: GridItem[], plays: any[]): THREE.Vector3[] {
     const n = items.length;
@@ -157,6 +215,7 @@ function computePositions(items: GridItem[], plays: any[]): THREE.Vector3[] {
 
 export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick }) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [isRendering, setIsRendering] = useState(false);
     const sceneRef = useRef<{
         scene: THREE.Scene;
         camera: THREE.PerspectiveCamera;
@@ -227,8 +286,9 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                         const itemA = items[edge.i];
                         const itemB = items[edge.j];
                         const simPct = Math.round(edge.sim * 100);
+                        const details = getSimilarityDetails(itemA, itemB, plays);
                         ctx.tooltipDiv.style.display = 'block';
-                        ctx.tooltipDiv.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><div style="width:6px;height:6px;border-radius:50%;background:#FA2D48"></div><span style="font-weight:700;font-size:11px;color:#FA2D48">Connection</span></div><div style="font-weight:600;font-size:12px">${itemA.name}</div><div style="font-size:10px;opacity:0.4;margin:2px 0">↔</div><div style="font-weight:600;font-size:12px">${itemB.name}</div><div style="opacity:0.5;font-size:10px;margin-top:4px">Similarity: ${simPct}%</div>`;
+                        ctx.tooltipDiv.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><div style="width:6px;height:6px;border-radius:50%;background:#FA2D48"></div><span style="font-weight:700;font-size:11px;color:#FA2D48">Connection</span></div><div style="font-weight:600;font-size:12px">${itemA.name}</div><div style="font-size:10px;opacity:0.4;margin:2px 0">↔</div><div style="font-weight:600;font-size:12px">${itemB.name}</div><div style="opacity:0.5;font-size:10px;margin-top:4px">Similarity: ${simPct}%</div><div style="font-size:9px;opacity:0.4;margin-top:3px;line-height:1.4">📍 Peak: ${details.peakHour}<br/>📅 ${details.dayPattern}</div>`;
                     }
                 }
                 if (ctx.tooltipDiv) {
@@ -256,6 +316,9 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
     useEffect(() => {
         if (!containerRef.current || items.length === 0 || positions.length === 0) return;
 
+        // Start rendering with fade effect
+        setIsRendering(true);
+
         const container = containerRef.current;
         const width = container.clientWidth;
         const height = container.clientHeight;
@@ -282,15 +345,18 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         controls.autoRotate = true;
         controls.autoRotateSpeed = 0.3;
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // Lighting - Increased brightness
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         scene.add(ambientLight);
-        const pointLight = new THREE.PointLight(0xfa2d48, 1.5, 60);
+        const pointLight = new THREE.PointLight(0xfa2d48, 2.5, 60);
         pointLight.position.set(10, 15, 10);
         scene.add(pointLight);
-        const pointLight2 = new THREE.PointLight(0x4488ff, 0.8, 50);
+        const pointLight2 = new THREE.PointLight(0x4488ff, 1.5, 50);
         pointLight2.position.set(-10, -5, -10);
         scene.add(pointLight2);
+        const pointLight3 = new THREE.PointLight(0xffffff, 1.8, 70);
+        pointLight3.position.set(0, 20, 15);
+        scene.add(pointLight3);
 
         // Texture loader
         const textureLoader = new THREE.TextureLoader();
@@ -424,6 +490,9 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         };
         animate();
 
+        // Fade in after scene is ready
+        setTimeout(() => setIsRendering(true), 50);
+
         // Handle resize
         const handleResize = () => {
             if (!containerRef.current) return;
@@ -436,6 +505,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         window.addEventListener('resize', handleResize);
 
         return () => {
+            setIsRendering(false);
             window.removeEventListener('resize', handleResize);
             container.removeEventListener('mousemove', handleMouseMove);
             container.removeEventListener('click', handleClick);
@@ -467,7 +537,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
     return (
         <div
             ref={containerRef}
-            className="relative w-full aspect-square max-w-[480px] mx-auto overflow-hidden"
+            className={`relative w-full aspect-square max-w-[480px] mx-auto overflow-hidden transition-opacity duration-300 ${isRendering ? 'opacity-100' : 'opacity-0'}`}
             style={{ cursor: 'grab', minHeight: 400 }}
         />
     );

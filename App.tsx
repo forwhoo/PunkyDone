@@ -181,6 +181,9 @@ function App() {
   // AI Discovery Modal State
   const [aiModalOpen, setAiModalOpen] = useState(false);
 
+  // Wrapped Under Construction Modal State
+  const [showWrappedModal, setShowWrappedModal] = useState(false);
+
   // Fetch Artist Images when data loads
   useEffect(() => {
     const loadImages = async () => {
@@ -658,6 +661,7 @@ function App() {
                 
                 {/* Mobile Punky Wrapped Button */}
                 <button
+                    onClick={() => setShowWrappedModal(true)}
                     className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all relative overflow-hidden"
                 >
                     <div className="absolute inset-0 z-0">
@@ -914,6 +918,7 @@ function App() {
             {/* Desktop Punky Wrapped Button */}
             <div className="mb-16">
                 <button
+                    onClick={() => setShowWrappedModal(true)}
                     className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99] relative overflow-hidden"
                 >
                     <div className="absolute inset-0 z-0">
@@ -1179,77 +1184,64 @@ function App() {
                         {selectedTopArtist.timeStr || '0m'} listened
                     </motion.p>
 
-                    {/* Stats Cards - Apple Style */}
+                    {/* Stats Cards - Simplified and Cleaner */}
                     <motion.div 
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
-                        className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-2xl mb-8 px-3"
+                        className="grid grid-cols-3 gap-3 w-full max-w-md mb-8 px-3"
                     >
                         <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
-                            <TrendingUp size={16} className="text-[#FA2D48] mb-2" />
+                            <TrendingUp size={14} className="text-[#FA2D48] mb-2" />
                             <span className="text-2xl font-black text-white mb-0.5">{selectedTopArtist.totalListens || 0}</span>
-                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Total Plays</span>
+                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Plays</span>
                         </div>
                         <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
-                            <Clock size={16} className="text-[#FA2D48] mb-2" />
+                            <Clock size={14} className="text-[#FA2D48] mb-2" />
                             <span className="text-2xl font-black text-white mb-0.5">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
                             <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Minutes</span>
                         </div>
                         <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
-                            <Calendar size={16} className="text-[#FA2D48] mb-2" />
-                            <span className="text-lg font-black text-white mb-0.5">{selectedArtistStats?.peakDay || '—'}</span>
-                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Peak Day</span>
-                        </div>
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all relative group">
-                            <Sparkles size={16} className="text-[#FA2D48] mb-2" />
+                            <Sparkles size={14} className="text-[#FA2D48] mb-2" />
                             <span className="text-2xl font-black text-white mb-0.5">{selectedArtistStats?.popularityScore || 0}%</span>
-                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Of Plays</span>
-                            {/* Tooltip */}
-                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 w-48">
-                                <div className="bg-[#1C1C1E] border border-white/10 rounded-lg px-3 py-2 shadow-xl">
-                                    <p className="text-[10px] text-white/80 text-center leading-relaxed">
-                                        This artist represents this percentage of your total plays across all artists in the current time range.
-                                    </p>
-                                </div>
-                            </div>
+                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Of Time</span>
                         </div>
                     </motion.div>
 
-                    {/* Top Tracks Section */}
+                    {/* Top Tracks Section - More Compact */}
                     <motion.div 
                         initial={{ opacity: 0, y: 40 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="w-full max-w-2xl bg-gradient-to-b from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-3xl p-5 md:p-7 mx-3"
+                        className="w-full max-w-md bg-gradient-to-b from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 mx-3"
                     >
-                         <h3 className="text-base md:text-lg font-bold text-white mb-5 flex items-center gap-2">
-                            <Disc size={16} className="text-[#FA2D48]" /> Top Tracks
+                         <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                            <Disc size={14} className="text-[#FA2D48]" /> Top Tracks
                          </h3>
                          
-                         <div className="space-y-1.5">
+                         <div className="space-y-1">
                             {(dbUnifiedData?.songs || [])
                                 .filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name)
                                 .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
                                 .slice(0, 5)
                                 .map((song: any, idx: number) => (
-                                    <div key={idx} className="flex items-center gap-3 p-2.5 md:p-3 hover:bg-white/5 rounded-xl transition-all group active:scale-[0.98]">
-                                        <div className="text-[#8E8E93] font-mono text-sm w-5 font-bold">{idx + 1}</div>
-                                        <div className="w-11 h-11 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 relative border border-white/5">
+                                    <div key={idx} className="flex items-center gap-2.5 p-2 hover:bg-white/5 rounded-lg transition-all group active:scale-[0.98]">
+                                        <div className="text-[#8E8E93] font-mono text-xs w-4 font-bold text-right">{idx + 1}</div>
+                                        <div className="w-9 h-9 rounded-md bg-[#2C2C2E] overflow-hidden flex-shrink-0 relative border border-white/5">
                                             <img src={song.cover || song.album_cover} className="w-full h-full object-cover" alt={song.title} />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <div className="text-[13px] md:text-sm font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
+                                            <div className="text-xs font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
                                                 {song.track_name || song.title}
                                             </div>
-                                            <div className="text-[11px] text-[#8E8E93] font-medium">
-                                                    {song.listens || song.plays || 0} plays • {song.timeStr || '0m'}
+                                            <div className="text-[10px] text-[#8E8E93] font-medium">
+                                                    {song.listens || song.plays || 0} plays
                                             </div>
                                         </div>
                                     </div>
                             ))}
                             {(dbUnifiedData?.songs || []).filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name).length === 0 && (
-                                <p className="text-[#8E8E93] text-sm text-center py-6 italic">No track data available for this artist.</p>
+                                <p className="text-[#8E8E93] text-xs text-center py-4 italic">No track data available</p>
                             )}
                         </div>
                     </motion.div>
@@ -1361,17 +1353,17 @@ function App() {
                             </div>
                         </motion.div>
 
-                        {/* Album Tracks */}
+                        {/* Album Tracks - More Compact */}
                         <motion.div 
                             initial={{ opacity: 0, y: 40 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
-                            className="w-full max-w-lg bg-gradient-to-b from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-3xl p-5 md:p-7"
+                            className="w-full max-w-md bg-gradient-to-b from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4"
                         >
-                            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-                                <Music size={14} className="text-[#FA2D48]" /> Tracks from this album
+                            <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                <Music size={14} className="text-[#FA2D48]" /> Tracks
                             </h3>
-                            <div className="space-y-1">
+                            <div className="space-y-1 max-h-64 overflow-y-auto no-scrollbar">
                                 {(() => {
                                     // Normalize album/artist once to avoid repeated operations
                                     const normalizedAlbumTitle = (selectedTopAlbum.title || '').toLowerCase().trim();
@@ -1387,16 +1379,16 @@ function App() {
                                         .slice(0, 10);
                                     
                                     return filteredTracks.length === 0 ? (
-                                        <p className="text-[#8E8E93] text-sm text-center py-6 italic">No track data available for this album.</p>
+                                        <p className="text-[#8E8E93] text-xs text-center py-4 italic">No track data available</p>
                                     ) : (
                                         filteredTracks.map((song: any, idx: number) => (
-                                            <div key={idx} className="flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl transition-all group">
-                                                <div className="text-[#8E8E93] font-mono text-sm w-5 font-bold">{idx + 1}</div>
+                                            <div key={idx} className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg transition-all group">
+                                                <div className="text-[#8E8E93] font-mono text-xs w-4 font-bold text-right">{idx + 1}</div>
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="text-[13px] font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
+                                                    <div className="text-xs font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
                                                         {song.track_name || song.title}
                                                     </div>
-                                                    <div className="text-[11px] text-[#8E8E93]">
+                                                    <div className="text-[10px] text-[#8E8E93]">
                                                         {song.listens || song.plays || 0} plays
                                                     </div>
                                                 </div>
@@ -1700,6 +1692,65 @@ function App() {
                             className="flex-1 px-4 py-3 rounded-xl bg-[#FA2D48] text-white font-semibold text-sm hover:bg-[#FF6B82] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Apply Range
+                        </button>
+                    </div>
+                </motion.div>
+            </>
+        )}
+
+        {/* Wrapped Under Construction Modal */}
+        {showWrappedModal && (
+            <>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100]"
+                    onClick={() => setShowWrappedModal(false)}
+                />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Close Button */}
+                    <button
+                        onClick={() => setShowWrappedModal(false)}
+                        className="absolute top-4 right-4 z-10 bg-black/40 hover:bg-black/60 rounded-full p-2 text-white transition-all"
+                    >
+                        <X size={18} />
+                    </button>
+
+                    {/* Animated Background */}
+                    <div className="absolute inset-0 z-0 opacity-30">
+                        <PrismaticBurst animationType="rotate3d" intensity={2} speed={0.4} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="relative z-10 p-8 text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#FA2D48]/10 flex items-center justify-center">
+                            <Sparkles className="w-8 h-8 text-[#FA2D48]" />
+                        </div>
+                        <h2 className="text-2xl font-black text-white mb-3">Punky Wrapped</h2>
+                        <p className="text-white/70 text-sm mb-6 leading-relaxed">
+                            We're crafting something special for you! Your personalized Punky Wrapped experience is currently under construction and will be available soon.
+                        </p>
+                        <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
+                            <p className="text-xs text-white/50 mb-2">Coming Soon:</p>
+                            <ul className="text-xs text-white/70 space-y-1 text-left">
+                                <li>🎵 Your listening journey recap</li>
+                                <li>🌟 Personalized insights & stats</li>
+                                <li>🎨 Beautiful story slides</li>
+                                <li>🎁 Surprise discoveries</li>
+                            </ul>
+                        </div>
+                        <button
+                            onClick={() => setShowWrappedModal(false)}
+                            className="w-full py-3 rounded-xl bg-[#FA2D48] text-white font-semibold text-sm hover:bg-[#FF6B82] transition-all"
+                        >
+                            Got it!
                         </button>
                     </div>
                 </motion.div>
