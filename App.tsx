@@ -1857,15 +1857,8 @@ function App() {
                 className="fixed inset-0 z-[100] bg-black overflow-hidden"
                 style={{ height: '100dvh' }}
             >
-                {/* Swirl Background */}
-                <div className="absolute inset-0">
-                    <img 
-                        src="/Swirl.jpeg.jpeg" 
-                        alt="" 
-                        className="w-full h-full object-cover opacity-40"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
-                </div>
+                {/* Background Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
 
                 {/* Floating Album Covers */}
                 {(() => {
