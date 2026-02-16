@@ -150,6 +150,7 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 
 import { SeeAllModal } from './components/SeeAllModal';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
+import { WrappedStories } from './components/WrappedStories';
 
 function App() {
   const hasAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
@@ -1739,52 +1740,11 @@ function App() {
             </>
         )}
 
-        {/* Wrapped Under Construction Modal */}
-        {showWrappedModal && (
-            <>
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100]"
-                    onClick={() => setShowWrappedModal(false)}
-                />
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] sm:w-[90vw] max-w-md max-h-[calc(100vh-2rem)] bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-y-auto"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Close Button */}
-                    <button
-                        onClick={() => setShowWrappedModal(false)}
-                        className="absolute top-4 right-4 z-10 bg-black/40 hover:bg-black/60 rounded-full p-2 text-white transition-all"
-                    >
-                        <X size={18} />
-                    </button>
-
-                    {/* Animated Background */}
-                    <div className="absolute inset-0 z-0 opacity-30">
-                        <PrismaticBurst animationType="rotate3d" intensity={2} speed={0.4} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
-                    </div>
-
-                    {/* Content */}
-                    <div className="relative z-10 p-8 text-center">
-                        <h2 className="text-2xl font-black text-white mb-3">Punky Wrapped</h2>
-                        <p className="text-white/70 text-sm mb-6 leading-relaxed">
-                            We're crafting something special for you! Your personalized Punky Wrapped experience is currently under construction and will be available soon.
-                        </p>
-                        <button
-                            onClick={() => setShowWrappedModal(false)}
-                            className="w-full py-3 rounded-xl bg-[#FA2D48] text-white font-semibold text-sm hover:bg-[#FF6B82] transition-all"
-                        >
-                            Close
-                        </button>
-                    </div>
-                </motion.div>
-            </>
-        )}
+        {/* Punky Wrapped Stories (Material Design 3) */}
+        <WrappedStories
+            isOpen={showWrappedModal}
+            onClose={() => setShowWrappedModal(false)}
+        />
     </AnimatePresence>
 
     </>
