@@ -1838,10 +1838,11 @@ function App() {
         {showWrappedMessage && (
             <PunkyWrapped
                 onClose={() => setShowWrappedMessage(false)}
-                albumCovers={[
-                    ...safeAlbums.slice(0, 8).map((a: Album) => a.cover),
-                    ...safeArtists.slice(0, 4).map((a: Artist) => a.image)
-                ].filter(Boolean)}
+                albumCovers={[...new Set([
+                    ...safeAlbums.map((a: Album) => a.cover),
+                    ...safeSongs.map((s: Song) => s.cover),
+                    ...safeArtists.map((a: Artist) => a.image)
+                ].filter(Boolean))]}
             />
         )}
     </AnimatePresence>
