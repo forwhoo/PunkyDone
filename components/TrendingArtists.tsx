@@ -420,7 +420,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         <div>
                             <div className="flex items-center gap-2">
                                 <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                                    {viewType === 'grid' ? 'Connections Obsession Orbit' : 'Obsession Orbit'}
+                                    {viewType === 'grid' ? 'Connections' : 'Obsession Orbit'}
                                 </h2>
                                 <div className="relative group/info">
                                     <Info size={16} className="text-[#8E8E93] hover:text-white transition-colors cursor-help" />
@@ -428,8 +428,8 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                         <p className="text-[11px] text-[#8E8E93] leading-relaxed">
                                             {viewType === 'grid' ? (
                                                 <>
-                                                    <span className="text-white font-semibold">Connection</span> maps your {activeTab}s in 3D space based on listening similarity. 
-                                                    {activeTab === 'artist' ? ' Artists' : ' Albums'} that share listening patterns — similar times, days, and frequency — appear closer together with red lines showing the strongest connections. Click an edge to see the similarity details.
+                                                    <span className="text-white font-semibold">Connections</span> maps your {activeTab}s based on listening similarity. 
+                                                    {activeTab === 'artist' ? ' Artists' : ' Albums'} that share listening patterns — similar times, days, and frequency — appear closer together with red lines showing the strongest connections. Use the search bar to find specific items. Click an edge to see similarity details.
                                                 </>
                                             ) : (
                                                 <>
@@ -808,28 +808,51 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
 
 // Helper Component for Orbit Nodes
 const OrbitNode = ({ item, rank, size, isActive, isDimmed, onClick }: { item: TrendingItem, rank: number, size: number, isActive: boolean, isDimmed: boolean, onClick: () => void }) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+    const handleMouseEnter = () => {
+        if (!isActive && !isDimmed) setShowTooltip(true);
+    };
+    const handleMouseLeave = () => setShowTooltip(false);
+    const handleMouseMove = (e: React.MouseEvent) => {
+        setTooltipPos({ x: e.clientX, y: e.clientY });
+    };
+
     return (
         <div 
             className={`group absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 ${isDimmed ? 'opacity-20 scale-75 blur-[1px]' : 'opacity-100'} ${isActive ? 'scale-110 z-50' : ''}`}
             onClick={onClick}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onMouseMove={handleMouseMove}
         >
             <div 
                 className={`relative rounded-full overflow-hidden border transition-all duration-300 bg-[#1C1C1E] ${isActive ? 'border-[#FA2D48] shadow-[0_0_20px_#FA2D48]' : 'border-[#1C1C1E] shadow-lg group-hover:scale-125'}`}
                 style={{ width: size, height: size }}
             >
                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                
-                {/* Subtle scale effect on hover - no overlay */}
             </div>
 
-            {/* Custom Tooltip - Better positioning and UI */}
-            <div className={`absolute bottom-full mb-3 left-1/2 -translate-x-1/2 transition-all duration-200 pointer-events-none z-[60] min-w-[max-content] text-center ${isActive || isDimmed ? 'opacity-0' : 'opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-[-4px]'}`}>
-                 <div className="bg-[#1C1C1E] backdrop-blur-xl border border-white/10 rounded-lg px-3 py-2 shadow-2xl transform-none flex items-center gap-2">
-                     <span className="text-[10px] font-bold text-[#FA2D48] font-mono">#{rank}</span>
-                     <div className="h-3 w-px bg-white/20"></div>
-                     <p className="text-[11px] font-semibold text-white whitespace-nowrap">{item.recentPlays} plays</p>
-                 </div>
-            </div>
+            {/* Tooltip rendered via portal to avoid orbit rotation issues */}
+            {showTooltip && createPortal(
+                <div 
+                    style={{ 
+                        position: 'fixed',
+                        left: tooltipPos.x + 12,
+                        top: tooltipPos.y - 10,
+                        zIndex: 9999,
+                        pointerEvents: 'none'
+                    }}
+                >
+                    <div className="bg-[rgba(28,28,30,0.95)] backdrop-blur-lg border border-white/10 rounded-[10px] px-3 py-2 shadow-2xl">
+                        <div className="text-[13px] font-bold text-white">{item.name}</div>
+                        {item.subName && <div className="text-[11px] text-white/60">{item.subName}</div>}
+                        <div className="text-[10px] text-white/50 mt-0.5">{item.recentPlays} plays</div>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
     );
 };
