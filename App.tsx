@@ -1651,7 +1651,7 @@ function App() {
                     initial={{ opacity: 0, scale: 0.9, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-hidden"
+                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] sm:w-[90vw] max-w-md max-h-[calc(100vh-2rem)] bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-y-auto"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
@@ -1771,27 +1771,15 @@ function App() {
 
                     {/* Content */}
                     <div className="relative z-10 p-8 text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#FA2D48]/10 flex items-center justify-center">
-                            <Sparkles className="w-8 h-8 text-[#FA2D48]" />
-                        </div>
                         <h2 className="text-2xl font-black text-white mb-3">Punky Wrapped</h2>
                         <p className="text-white/70 text-sm mb-6 leading-relaxed">
                             We're crafting something special for you! Your personalized Punky Wrapped experience is currently under construction and will be available soon.
                         </p>
-                        <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
-                            <p className="text-xs text-white/50 mb-2">Coming Soon:</p>
-                            <ul className="text-xs text-white/70 space-y-1 text-left">
-                                <li>🎵 Your listening journey recap</li>
-                                <li>🌟 Personalized insights & stats</li>
-                                <li>🎨 Beautiful story slides</li>
-                                <li>🎁 Surprise discoveries</li>
-                            </ul>
-                        </div>
                         <button
                             onClick={() => setShowWrappedModal(false)}
                             className="w-full py-3 rounded-xl bg-[#FA2D48] text-white font-semibold text-sm hover:bg-[#FF6B82] transition-all"
                         >
-                            Got it!
+                            Close
                         </button>
                     </div>
                 </motion.div>
