@@ -420,7 +420,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         <div>
                             <div className="flex items-center gap-2">
                                 <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                                    {viewType === 'grid' ? 'Connections Obsession Orbit' : 'Obsession Orbit'}
+                                    {viewType === 'grid' ? 'Connections' : 'Obsession Orbit'}
                                 </h2>
                                 <div className="relative group/info">
                                     <Info size={16} className="text-[#8E8E93] hover:text-white transition-colors cursor-help" />
@@ -428,8 +428,8 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                         <p className="text-[11px] text-[#8E8E93] leading-relaxed">
                                             {viewType === 'grid' ? (
                                                 <>
-                                                    <span className="text-white font-semibold">Connection</span> maps your {activeTab}s in 3D space based on listening similarity. 
-                                                    {activeTab === 'artist' ? ' Artists' : ' Albums'} that share listening patterns — similar times, days, and frequency — appear closer together with red lines showing the strongest connections. Click an edge to see the similarity details.
+                                                    <span className="text-white font-semibold">Connections</span> maps your {activeTab}s based on listening similarity. 
+                                                    {activeTab === 'artist' ? ' Artists' : ' Albums'} that share listening patterns — similar times, days, and frequency — appear closer together with red lines showing the strongest connections. Use the search bar to find specific items. Click an edge to see similarity details.
                                                 </>
                                             ) : (
                                                 <>
@@ -810,24 +810,17 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
 const OrbitNode = ({ item, rank, size, isActive, isDimmed, onClick }: { item: TrendingItem, rank: number, size: number, isActive: boolean, isDimmed: boolean, onClick: () => void }) => {
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
-    const nodeRef = useRef<HTMLDivElement>(null);
 
     const handleMouseEnter = () => {
         if (!isActive && !isDimmed) setShowTooltip(true);
     };
     const handleMouseLeave = () => setShowTooltip(false);
     const handleMouseMove = (e: React.MouseEvent) => {
-        if (nodeRef.current) {
-            const rect = nodeRef.current.closest('.relative.w-full')?.getBoundingClientRect();
-            if (rect) {
-                setTooltipPos({ x: e.clientX - rect.left + 12, y: e.clientY - rect.top - 10 });
-            }
-        }
+        setTooltipPos({ x: e.clientX, y: e.clientY });
     };
 
     return (
         <div 
-            ref={nodeRef}
             className={`group absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 ${isDimmed ? 'opacity-20 scale-75 blur-[1px]' : 'opacity-100'} ${isActive ? 'scale-110 z-50' : ''}`}
             onClick={onClick}
             onMouseEnter={handleMouseEnter}
@@ -846,8 +839,8 @@ const OrbitNode = ({ item, rank, size, isActive, isDimmed, onClick }: { item: Tr
                 <div 
                     style={{ 
                         position: 'fixed',
-                        left: tooltipPos.x,
-                        top: tooltipPos.y,
+                        left: tooltipPos.x + 12,
+                        top: tooltipPos.y - 10,
                         zIndex: 9999,
                         pointerEvents: 'none'
                     }}

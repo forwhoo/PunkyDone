@@ -200,6 +200,21 @@ import { SeeAllModal } from './components/SeeAllModal';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
 import Aurora from './components/reactbits/Aurora';
 
+const WRAPPED_COVER_POSITIONS = [
+    { top: '5%', left: '2%', rotate: -15, size: 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28', delay: 0 },
+    { top: '8%', right: '5%', rotate: 12, size: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24', delay: 0.1 },
+    { top: '20%', left: '15%', rotate: -8, size: 'w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20', delay: 0.2 },
+    { top: '15%', right: '12%', rotate: 20, size: 'w-18 h-18 sm:w-22 sm:h-22 md:w-28 md:h-28', delay: 0.15 },
+    { bottom: '25%', left: '5%', rotate: 10, size: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24', delay: 0.3 },
+    { bottom: '18%', right: '3%', rotate: -18, size: 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28', delay: 0.25 },
+    { bottom: '8%', left: '20%', rotate: 5, size: 'w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20', delay: 0.35 },
+    { bottom: '5%', right: '15%', rotate: -10, size: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24', delay: 0.4 },
+    { top: '35%', left: '-2%', rotate: 22, size: 'w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20', delay: 0.2 },
+    { top: '30%', right: '-1%', rotate: -25, size: 'w-14 h-14 sm:w-18 sm:h-18 md:w-22 md:h-22', delay: 0.3 },
+    { bottom: '35%', left: '12%', rotate: 15, size: 'w-12 h-12 sm:w-14 sm:h-14 md:w-18 md:h-18', delay: 0.45 },
+    { bottom: '30%', right: '10%', rotate: -8, size: 'w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20', delay: 0.5 },
+] as const;
+
 function App() {
   const hasAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
   const authFlowHandledRef = useRef(false);
@@ -1855,26 +1870,12 @@ function App() {
                 {/* Floating Album Covers */}
                 {(() => {
                     const covers = [
-                        ...safeAlbums.slice(0, 8).map((a: Album) => a.cover),
-                        ...safeArtists.slice(0, 4).map((a: Artist) => a.image)
+                        ...safeAlbums.slice(0, 8).map(a => a.cover),
+                        ...safeArtists.slice(0, 4).map(a => a.image)
                     ].filter(Boolean);
-                    const positions = [
-                        { top: '5%', left: '2%', rotate: -15, size: 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28', delay: 0 },
-                        { top: '8%', right: '5%', rotate: 12, size: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24', delay: 0.1 },
-                        { top: '20%', left: '15%', rotate: -8, size: 'w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20', delay: 0.2 },
-                        { top: '15%', right: '12%', rotate: 20, size: 'w-18 h-18 sm:w-22 sm:h-22 md:w-28 md:h-28', delay: 0.15 },
-                        { bottom: '25%', left: '5%', rotate: 10, size: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24', delay: 0.3 },
-                        { bottom: '18%', right: '3%', rotate: -18, size: 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28', delay: 0.25 },
-                        { bottom: '8%', left: '20%', rotate: 5, size: 'w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20', delay: 0.35 },
-                        { bottom: '5%', right: '15%', rotate: -10, size: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24', delay: 0.4 },
-                        { top: '35%', left: '-2%', rotate: 22, size: 'w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20', delay: 0.2 },
-                        { top: '30%', right: '-1%', rotate: -25, size: 'w-14 h-14 sm:w-18 sm:h-18 md:w-22 md:h-22', delay: 0.3 },
-                        { bottom: '35%', left: '12%', rotate: 15, size: 'w-12 h-12 sm:w-14 sm:h-14 md:w-18 md:h-18', delay: 0.45 },
-                        { bottom: '30%', right: '10%', rotate: -8, size: 'w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20', delay: 0.5 },
-                    ];
                     return covers.map((cover, i) => {
-                        if (i >= positions.length) return null;
-                        const pos = positions[i];
+                        if (i >= WRAPPED_COVER_POSITIONS.length) return null;
+                        const pos = WRAPPED_COVER_POSITIONS[i];
                         const style: React.CSSProperties = { 
                             transform: `rotate(${pos.rotate}deg)`,
                             ...(pos.top ? { top: pos.top } : {}),
