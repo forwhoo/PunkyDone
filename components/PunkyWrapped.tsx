@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -19,10 +19,9 @@ function shuffleArray(arr: string[]): string[] {
   return shuffled;
 }
 
-function getSpiralItems(albumCovers: string[]) {
-  if (albumCovers.length === 0) return [];
+function getSpiralItems(shuffledCovers: string[]) {
+  if (shuffledCovers.length === 0) return [];
 
-  const shuffled = shuffleArray(albumCovers);
   const items: { src: string; angle: number; radius: number; size: number; ring: number; indexInRing: number }[] = [];
 
   for (let ring = 0; ring < SPIRAL_RINGS; ring++) {
@@ -34,7 +33,7 @@ function getSpiralItems(albumCovers: string[]) {
       const globalIndex = ring * ITEMS_PER_RING + j;
       const angle = (360 / ITEMS_PER_RING) * j + ring * 18;
       items.push({
-        src: shuffled[globalIndex % shuffled.length],
+        src: shuffledCovers[globalIndex % shuffledCovers.length],
         angle,
         radius,
         size,
@@ -48,6 +47,7 @@ function getSpiralItems(albumCovers: string[]) {
 
 const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers }) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const shuffledRef = useRef<string[] | null>(null);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const x = (e.clientX / window.innerWidth - 0.5) * 20;
@@ -55,7 +55,12 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers }) => 
     setMousePos({ x, y });
   };
 
-  const spiralItems = useMemo(() => getSpiralItems(albumCovers), [albumCovers]);
+  const spiralItems = useMemo(() => {
+    if (!shuffledRef.current || shuffledRef.current.length !== albumCovers.length) {
+      shuffledRef.current = shuffleArray(albumCovers);
+    }
+    return getSpiralItems(shuffledRef.current);
+  }, [albumCovers]);
 
   return (
     <motion.div
@@ -113,7 +118,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers }) => 
                   >
                     <img
                       src={item.src}
-                      alt=""
+                      alt="Album cover"
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
