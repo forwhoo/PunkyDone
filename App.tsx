@@ -1753,7 +1753,7 @@ function App() {
                     initial={{ opacity: 0, scale: 0.9, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-hidden"
+                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] sm:w-[90vw] max-w-md max-h-[calc(100vh-2rem)] bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-y-auto"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Close Button */}
