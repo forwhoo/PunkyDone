@@ -152,9 +152,13 @@ import { SeeAllModal } from './components/SeeAllModal';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
 
 function App() {
+  const hasAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
+  const authFlowHandledRef = useRef(false);
   const [token, setToken] = useState<string | null>(localStorage.getItem('spotify_token'));
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [authenticating, setAuthenticating] = useState(hasAuthCallback);
+  const [connecting, setConnecting] = useState(false);
   const [dbStats, setDbStats] = useState<any>(null);
   const [dbUnifiedData, setDbUnifiedData] = useState<any>(null);
   // Persist images to prevent reloading glitches
@@ -387,32 +391,43 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (authFlowHandledRef.current) return;
+    authFlowHandledRef.current = true;
+
     const handleAuth = async () => {
       // Check for Auth Code (PKCE - New Standard)
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
+      const urlToken = !code ? getTokenFromUrl() : null;
+      if (!code && !urlToken) {
+        setAuthenticating(false);
+        return;
+      }
       
-      if (code) {
+      try {
+        if (code) {
           try {
             const accessToken = await getAccessToken(code);
             if (accessToken) {
                 setToken(accessToken);
                 localStorage.setItem('spotify_token', accessToken);
                 // Clean URL
-                window.history.replaceState({}, document.title, "/");
+                window.history.replaceState({}, document.title, window.location.pathname);
             }
           } catch (e) {
             console.error(e);
           }
           return;
-      }
+        }
 
-      // Check URL for token (Implicit Grant - Legacy Backup)
-      const urlToken = getTokenFromUrl();
-      if (urlToken) {
-          setToken(urlToken);
-          localStorage.setItem('spotify_token', urlToken);
-          window.location.hash = '';
+        // Check URL for token (Implicit Grant - Legacy Backup)
+        if (urlToken) {
+            setToken(urlToken);
+            localStorage.setItem('spotify_token', urlToken);
+            window.location.hash = '';
+        }
+      } finally {
+        setAuthenticating(false);
       }
     };
     handleAuth();
@@ -469,7 +484,15 @@ function App() {
   }, [data]);
 
   const handleConnect = async () => {
-    await redirectToAuthCodeFlow();
+    if (connecting) return;
+    setConnecting(true);
+    try {
+      await redirectToAuthCodeFlow();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setConnecting(false);
+    }
   };
 
   const handleGetInsight = async (query?: string) => {
@@ -545,6 +568,22 @@ function App() {
   // Strict DB check for charts
   const showEmptyState = !loading && dbUnifiedData && !hasDbData;
 
+  if (!token && authenticating) {
+      return (
+          <Layout user={null} currentTrack={null}>
+              <div className="flex h-[80vh] flex-col items-center justify-center gap-6 relative overflow-hidden">
+                  <div className="relative z-10 flex flex-col items-center">
+                      <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-6 animate-pulse">
+                          <Music className="w-8 h-8 text-white opacity-50" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-white tracking-tight mb-2">Finishing Sign In</h3>
+                      <p className="text-[#8E8E93] text-sm animate-pulse">Completing your Spotify authentication...</p>
+                  </div>
+              </div>
+          </Layout>
+      );
+  }
+
   if (!token) {
       return (
           <div className="min-h-[100dvh] min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center p-6 relative overflow-hidden">
@@ -565,9 +604,10 @@ function App() {
                   
                   <button 
                     onClick={handleConnect}
+                    disabled={connecting}
                     className="w-full max-w-xs bg-white hover:bg-gray-100 text-black font-bold text-base py-4 rounded-2xl transition-all active:scale-[0.97] shadow-lg shadow-white/5"
                   >
-                    Connect with Spotify
+                    {connecting ? 'Connecting...' : 'Connect with Spotify'}
                   </button>
                   
                   <p className="mt-6 text-[11px] text-[#505055] font-semibold tracking-widest uppercase">
@@ -602,9 +642,10 @@ function App() {
                   {loading === false && !data && (
                       <button 
                         onClick={handleConnect}
+                        disabled={connecting}
                         className="mt-8 px-8 py-3 bg-white text-black text-sm font-bold rounded-full hover:bg-gray-200 transition-colors z-10"
                       >
-                        Retry Connection
+                        {connecting ? 'Connecting...' : 'Retry Connection'}
                       </button>
                   )}
               </div>

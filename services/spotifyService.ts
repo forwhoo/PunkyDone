@@ -5,6 +5,7 @@ const REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI || "http://localh
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 
 const SCOPES = "user-top-read user-read-recently-played user-read-private user-read-currently-playing";
+let authRedirectInProgress = false;
 
 function generateRandomString(length: number) {
   let text = '';
@@ -28,10 +29,12 @@ async function generateCodeChallenge(codeVerifier: string) {
 }
 
 export const redirectToAuthCodeFlow = async () => {
+  if (authRedirectInProgress) return;
   if (!CLIENT_ID) {
     console.warn("Missing Spotify Client ID");
     return;
   }
+  authRedirectInProgress = true;
 
   const verifier = generateRandomString(128);
   const challenge = await generateCodeChallenge(verifier);
