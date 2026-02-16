@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 interface PunkyWrappedProps {
@@ -7,49 +7,55 @@ interface PunkyWrappedProps {
   albumCovers: string[];
 }
 
-const words = ['creatives', 'designers', 'curators', 'artists'];
+const SPIRAL_RINGS = 8;
+const ITEMS_PER_RING = 10;
 
-const IMAGE_COUNT = 18;
+function shuffleArray(arr: string[]): string[] {
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
 
-function getOrbitItems(albumCovers: string[]) {
+function getSpiralItems(albumCovers: string[]) {
   if (albumCovers.length === 0) return [];
-  const items: { src: string; angle: number; radius: number; size: number; rotateX: number; rotateY: number }[] = [];
-  for (let i = 0; i < IMAGE_COUNT; i++) {
-    const angle = (360 / IMAGE_COUNT) * i;
-    const radius = 260 + (i % 3) * 60;
-    const sizes = [80, 96, 112, 128];
-    const size = sizes[i % sizes.length];
-    items.push({
-      src: albumCovers[i % albumCovers.length],
-      angle,
-      radius,
-      size,
-      rotateX: (i % 5) * 8 - 16,
-      rotateY: (i % 7) * 6 - 18,
-    });
+
+  const shuffled = shuffleArray(albumCovers);
+  const items: { src: string; angle: number; radius: number; size: number; ring: number; indexInRing: number }[] = [];
+
+  for (let ring = 0; ring < SPIRAL_RINGS; ring++) {
+    const radius = 500 - ring * 55;
+    const baseSize = 110 - ring * 10;
+    const size = Math.max(baseSize, 24);
+
+    for (let j = 0; j < ITEMS_PER_RING; j++) {
+      const globalIndex = ring * ITEMS_PER_RING + j;
+      const angle = (360 / ITEMS_PER_RING) * j + ring * 18;
+      items.push({
+        src: shuffled[globalIndex % shuffled.length],
+        angle,
+        radius,
+        size,
+        ring,
+        indexInRing: j,
+      });
+    }
   }
   return items;
 }
 
 const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers }) => {
-  const [wordIndex, setWordIndex] = useState(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [darkMode, setDarkMode] = useState(true);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setWordIndex((prev) => (prev + 1) % words.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    const x = (e.clientX / window.innerWidth - 0.5) * 30;
-    const y = (e.clientY / window.innerHeight - 0.5) * 30;
+    const x = (e.clientX / window.innerWidth - 0.5) * 20;
+    const y = (e.clientY / window.innerHeight - 0.5) * 20;
     setMousePos({ x, y });
   };
 
-  const orbitItems = getOrbitItems(albumCovers);
+  const spiralItems = useMemo(() => getSpiralItems(albumCovers), [albumCovers]);
 
   return (
     <motion.div
@@ -62,53 +68,61 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers }) => 
       onMouseMove={handleMouseMove}
     >
       <style>{`
-        @keyframes orbit {
+        @keyframes spiralSpin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
       `}</style>
 
-      {/* Layer 1 – Orbital Image Cloud */}
+      {/* Endless Spiral of Album Covers */}
       <div className="absolute inset-0 z-[1] flex items-center justify-center">
-        <div
-          style={{
-            animation: 'orbit 60s linear infinite',
-            transform: `translate(${mousePos.x}px, ${mousePos.y}px)`,
-            width: '100%',
-            height: '100%',
-            position: 'relative',
-          }}
-        >
-          {orbitItems.map((item, i) => {
-            const rad = (item.angle * Math.PI) / 180;
-            const cx = Math.cos(rad) * item.radius;
-            const cy = Math.sin(rad) * item.radius;
-            const distRatio = item.radius / 380;
-            const opacity = 1 - distRatio * 0.55;
+        {Array.from({ length: SPIRAL_RINGS }).map((_, ring) => {
+          const ringItems = spiralItems.filter(item => item.ring === ring);
+          const duration = 40 + ring * 12;
+          const direction = ring % 2 === 0 ? 'normal' : 'reverse';
 
-            return (
-              <div
-                key={i}
-                className="absolute rounded-xl overflow-hidden"
-                style={{
-                  width: item.size,
-                  height: item.size,
-                  left: '50%',
-                  top: '50%',
-                  transform: `translate(-50%, -50%) translate(${cx}px, ${cy}px) perspective(800px) rotateX(${item.rotateX}deg) rotateY(${item.rotateY}deg)`,
-                  opacity,
-                }}
-              >
-                <img
-                  src={item.src}
-                  alt={`Album cover ${i + 1}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-            );
-          })}
-        </div>
+          return (
+            <div
+              key={ring}
+              style={{
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                animation: `spiralSpin ${duration}s linear infinite ${direction}`,
+                transform: `translate(${mousePos.x * (1 - ring * 0.1)}px, ${mousePos.y * (1 - ring * 0.1)}px)`,
+              }}
+            >
+              {ringItems.map((item, j) => {
+                const rad = (item.angle * Math.PI) / 180;
+                const cx = Math.cos(rad) * item.radius;
+                const cy = Math.sin(rad) * item.radius;
+                const opacity = 1 - (item.ring / SPIRAL_RINGS) * 0.7;
+
+                return (
+                  <div
+                    key={`${ring}-${j}`}
+                    className="absolute rounded-lg overflow-hidden"
+                    style={{
+                      width: item.size,
+                      height: item.size,
+                      left: '50%',
+                      top: '50%',
+                      transform: `translate(-50%, -50%) translate(${cx}px, ${cy}px)`,
+                      opacity,
+                    }}
+                  >
+                    <img
+                      src={item.src}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
 
       {/* Vignette Overlay */}
@@ -116,67 +130,31 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers }) => 
         className="absolute inset-0 z-[2] pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse at center, transparent 20%, #050505 75%)',
+            'radial-gradient(ellipse at center, transparent 15%, #050505 70%)',
         }}
       />
 
-      {/* Layer 2 – Navbar */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[10]">
-        <div className="flex items-center gap-4 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-          <button type="button" className="text-white/70 text-sm cursor-pointer hover:text-white transition-colors bg-transparent border-none p-0">Manifesto</button>
-          <button type="button" className="text-white/70 text-sm cursor-pointer hover:text-white transition-colors bg-transparent border-none p-0">Careers</button>
-          <button className="text-white text-sm px-3 py-1 rounded-full bg-transparent border border-white/20 hover:border-white/40 transition-colors">
-            Sign In
-          </button>
-          <button className="bg-white text-black text-sm font-medium px-4 py-1 rounded-full hover:bg-white/90 transition-colors">
-            Join Waitlist
-          </button>
-          <button
-            onClick={onClose}
-            className="text-white/70 hover:text-white transition-colors ml-1"
-            aria-label="Close"
-          >
-            <X size={18} />
-          </button>
-        </div>
+      {/* Close Button */}
+      <div className="fixed top-4 right-4 z-[10]">
+        <button
+          onClick={onClose}
+          className="rounded-full border border-white/20 p-2 backdrop-blur-md text-white/70 hover:text-white transition-colors"
+          style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+          aria-label="Close"
+        >
+          <X size={20} />
+        </button>
       </div>
 
-      {/* Layer 2 – Hero Text */}
+      {/* Hero Text */}
       <div className="absolute inset-0 z-[10] flex flex-col items-center justify-center pointer-events-none select-none">
         <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter text-white text-center leading-none">
           PUNKY WRAPPED<sup className="text-lg align-super" aria-hidden="true">©</sup><span className="sr-only"> copyright</span>
         </h1>
 
         <div className="mt-4 flex items-center gap-2 text-white/70 text-base sm:text-lg">
-          <span>A music journey for</span>
-          <span className="inline-flex items-center rounded-full border border-white/20 px-4 py-1 overflow-hidden h-8 relative">
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={words[wordIndex]}
-                className="text-white font-medium"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -20, opacity: 0 }}
-                transition={{ duration: 0.35 }}
-              >
-                {words[wordIndex]}
-              </motion.span>
-            </AnimatePresence>
-          </span>
+          <span>a music journey</span>
         </div>
-      </div>
-
-      {/* Bottom UI – Dark / Light Toggle */}
-      <div className="fixed bottom-4 left-4 z-[10]">
-        <button
-          onClick={() => setDarkMode((v) => !v)}
-          className="rounded-full border border-white/20 px-3 py-1.5 text-sm flex items-center gap-1 pointer-events-auto backdrop-blur-sm"
-          style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
-        >
-          <span className={darkMode ? 'text-white' : 'text-white/40'}>Dark</span>
-          <span className="text-white/40">|</span>
-          <span className={darkMode ? 'text-white/40' : 'text-white'}>Light</span>
-        </button>
       </div>
     </motion.div>
   );
