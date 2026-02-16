@@ -455,7 +455,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                     <Orbit size={14} />
                                 </button>
                                 <button
-                                    onClick={() => setViewType('grid')}
+                                    onClick={() => { setViewType('grid'); if (sortBy === 'obsession') setSortBy('frequency'); }}
                                     className={`p-1.5 rounded-full transition-all ${viewType === 'grid' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
                                     title="Connection View"
                                 >
@@ -526,7 +526,6 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                 {showSortMenu && (
                                     <div className="absolute left-0 top-full mt-1 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[150px] animate-in fade-in slide-in-from-top-2 duration-200">
                                         {([
-                                            { key: 'obsession', label: 'Obsession Score', desc: 'Combined listening signal' },
                                             { key: 'frequency', label: 'Play Count', desc: 'Total number of plays' },
                                             { key: 'recency', label: 'Most Recent', desc: 'Last listened first' },
                                             { key: 'consistency', label: 'Consistency', desc: 'Regularity of listening' },

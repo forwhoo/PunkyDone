@@ -23,14 +23,14 @@ interface GridViewProps {
 const HIGH_TREND_THRESHOLD = 60;
 const MEDIUM_TREND_THRESHOLD = 30;
 
-// Compute similarity between two items based on listening patterns
+// Compute similarity between two items based on listening patterns and graph theory
 function computeSimilarity(a: GridItem, b: GridItem, plays: any[]): number {
     let score = 0;
 
     // 1. Shared artist bonus
     const aArtist = a.type === 'artist' ? a.name : (a.subName || '');
     const bArtist = b.type === 'artist' ? b.name : (b.subName || '');
-    if (aArtist && bArtist && aArtist === bArtist) score += 0.4;
+    if (aArtist && bArtist && aArtist === bArtist) score += 0.3;
 
     // 2. Listening time pattern similarity (hour-of-day distribution)
     const aPlays = plays.filter(p => {
@@ -56,7 +56,7 @@ function computeSimilarity(a: GridItem, b: GridItem, plays: any[]): number {
             magB += bHours[i] * bHours[i];
         }
         const cosSim = (magA > 0 && magB > 0) ? dot / (Math.sqrt(magA) * Math.sqrt(magB)) : 0;
-        score += cosSim * 0.25;
+        score += cosSim * 0.2;
 
         // Day-of-week distribution similarity
         const aDays = new Float32Array(7);
@@ -82,14 +82,34 @@ function computeSimilarity(a: GridItem, b: GridItem, plays: any[]): number {
         const aAvgDur = aPlays.reduce((s, p) => s + (p.duration_ms || 180000), 0) / aPlays.length;
         const bAvgDur = bPlays.reduce((s, p) => s + (p.duration_ms || 180000), 0) / bPlays.length;
         const durDiff = Math.abs(aAvgDur - bAvgDur) / Math.max(aAvgDur, bAvgDur, 1);
-        score += (1 - durDiff) * 0.1;
+        score += (1 - durDiff) * 0.05;
+
+        // 3. Co-listening session adjacency (graph theory: temporal edge weight)
+        // Items played within 30 minutes of each other form a session edge
+        const sessionGap = 30 * 60 * 1000; // 30 min = 1,800,000ms
+        const aTimestamps = aPlays.map(p => new Date(p.played_at).getTime()).sort((x, y) => x - y);
+        const bTimestamps = bPlays.map(p => new Date(p.played_at).getTime()).sort((x, y) => x - y);
+        let coListenCount = 0;
+        let bi = 0;
+        for (let ai = 0; ai < aTimestamps.length; ai++) {
+            while (bi < bTimestamps.length && bTimestamps[bi] < aTimestamps[ai] - sessionGap) bi++;
+            let bj = bi;
+            while (bj < bTimestamps.length && bTimestamps[bj] <= aTimestamps[ai] + sessionGap) {
+                coListenCount++;
+                bj++;
+            }
+        }
+        const maxCoListen = Math.min(aTimestamps.length, bTimestamps.length);
+        if (maxCoListen > 0) {
+            score += Math.min(0.2, (coListenCount / maxCoListen) * 0.2);
+        }
     }
 
     return Math.min(1, score);
 }
 
 // Get detailed similarity breakdown for tooltip
-function getSimilarityDetails(a: GridItem, b: GridItem, plays: any[]): { peakHour: string; dayPattern: string } {
+function getSimilarityDetails(a: GridItem, b: GridItem, plays: any[]): { peakHour: string; dayPattern: string; coSessions: number } {
     const aPlays = plays.filter(p => {
         if (a.type === 'artist') return p.artist_name === a.name;
         return p.album_name === a.name && p.artist_name === a.subName;
@@ -139,10 +159,22 @@ function getSimilarityDetails(a: GridItem, b: GridItem, plays: any[]): { peakHou
     }
     
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    // Count co-listening sessions (played within 30 min of each other)
+    const sessionGap = 30 * 60 * 1000;
+    const aTs = aPlays.map(p => new Date(p.played_at).getTime()).sort((x, y) => x - y);
+    const bTs = bPlays.map(p => new Date(p.played_at).getTime()).sort((x, y) => x - y);
+    let coSessions = 0;
+    let bi = 0;
+    for (let ai = 0; ai < aTs.length; ai++) {
+        while (bi < bTs.length && bTs[bi] < aTs[ai] - sessionGap) bi++;
+        if (bi < bTs.length && bTs[bi] <= aTs[ai] + sessionGap) coSessions++;
+    }
     
     return {
         peakHour: maxOverlap > 0 ? formatHour(peakHourIdx) : 'Various',
-        dayPattern: maxDayOverlap > 0 ? days[peakDayIdx] : 'All days'
+        dayPattern: maxDayOverlap > 0 ? days[peakDayIdx] : 'All days',
+        coSessions
     };
 }
 
@@ -288,7 +320,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                         const simPct = Math.round(edge.sim * 100);
                         const details = getSimilarityDetails(itemA, itemB, plays);
                         ctx.tooltipDiv.style.display = 'block';
-                        ctx.tooltipDiv.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><div style="width:6px;height:6px;border-radius:50%;background:#FA2D48"></div><span style="font-weight:700;font-size:11px;color:#FA2D48">Connection</span></div><div style="font-weight:600;font-size:12px">${itemA.name}</div><div style="font-size:10px;opacity:0.4;margin:2px 0">↔</div><div style="font-weight:600;font-size:12px">${itemB.name}</div><div style="opacity:0.5;font-size:10px;margin-top:4px">Similarity: ${simPct}%</div><div style="font-size:9px;opacity:0.4;margin-top:3px;line-height:1.4">📍 Peak: ${details.peakHour}<br/>📅 ${details.dayPattern}</div>`;
+                        ctx.tooltipDiv.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><div style="width:6px;height:6px;border-radius:50%;background:#FA2D48"></div><span style="font-weight:700;font-size:11px;color:#FA2D48">Connection</span></div><div style="font-weight:600;font-size:12px">${itemA.name}</div><div style="font-size:10px;opacity:0.4;margin:2px 0">↔</div><div style="font-weight:600;font-size:12px">${itemB.name}</div><div style="opacity:0.5;font-size:10px;margin-top:4px">Similarity: ${simPct}%</div><div style="font-size:9px;opacity:0.4;margin-top:3px;line-height:1.4">📍 Peak: ${details.peakHour}<br/>📅 ${details.dayPattern}${details.coSessions > 0 ? `<br/>🔗 ${details.coSessions} co-sessions` : ''}</div>`;
                     }
                 }
                 if (ctx.tooltipDiv) {
@@ -325,7 +357,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
 
         // Scene setup
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x0a0a0a, 0.012);
+        scene.fog = new THREE.FogExp2(0x000000, 0.008);
 
         const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 200);
         camera.position.set(0, 8, 28);
@@ -333,7 +365,8 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(width, height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x0a0a0a, 1);
+        // Fully transparent background so the site background shows through
+        renderer.setClearColor(0x000000, 0);
         container.appendChild(renderer.domElement);
 
         // Controls
@@ -345,18 +378,21 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         controls.autoRotate = true;
         controls.autoRotateSpeed = 0.3;
 
-        // Lighting - Increased brightness
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+        // Lighting - Bright and clear
+        const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
         scene.add(ambientLight);
-        const pointLight = new THREE.PointLight(0xfa2d48, 2.5, 60);
+        const pointLight = new THREE.PointLight(0xfa2d48, 3.0, 80);
         pointLight.position.set(10, 15, 10);
         scene.add(pointLight);
-        const pointLight2 = new THREE.PointLight(0x4488ff, 1.5, 50);
+        const pointLight2 = new THREE.PointLight(0x4488ff, 2.0, 60);
         pointLight2.position.set(-10, -5, -10);
         scene.add(pointLight2);
-        const pointLight3 = new THREE.PointLight(0xffffff, 1.8, 70);
+        const pointLight3 = new THREE.PointLight(0xffffff, 2.5, 90);
         pointLight3.position.set(0, 20, 15);
         scene.add(pointLight3);
+        const pointLight4 = new THREE.PointLight(0xffffff, 1.5, 60);
+        pointLight4.position.set(-5, -15, 20);
+        scene.add(pointLight4);
 
         // Texture loader
         const textureLoader = new THREE.TextureLoader();
@@ -526,6 +562,30 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         };
     }, [items, positions, similarities, handleMouseMove, handleClick]);
 
+    // Compute connection stats for display
+    const connectionStats = useMemo(() => {
+        const n = items.length;
+        let totalConnections = 0;
+        let strongConnections = 0;
+        let totalSim = 0;
+        let connectionCount = 0;
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                const sim = similarities[i]?.[j] || 0;
+                if (sim > 0.25) {
+                    totalConnections++;
+                    totalSim += sim;
+                    connectionCount++;
+                }
+                if (sim > 0.5) strongConnections++;
+            }
+        }
+        const avgSim = connectionCount > 0 ? Math.round((totalSim / connectionCount) * 100) : 0;
+        // Spread = how dispersed the items are (inverse of avg similarity)
+        const spread = 100 - avgSim;
+        return { totalConnections, strongConnections, avgSim, spread, nodeCount: n };
+    }, [items, similarities]);
+
     if (items.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-20">
@@ -535,10 +595,33 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
     }
 
     return (
-        <div
-            ref={containerRef}
-            className={`relative w-full aspect-square max-w-[480px] mx-auto overflow-hidden transition-opacity duration-300 ${isRendering ? 'opacity-100' : 'opacity-0'}`}
-            style={{ cursor: 'grab', minHeight: 400 }}
-        />
+        <div className="relative">
+            <div
+                ref={containerRef}
+                className={`relative w-full aspect-square max-w-[480px] mx-auto overflow-hidden transition-opacity duration-300 ${isRendering ? 'opacity-100' : 'opacity-0'}`}
+                style={{ cursor: 'grab', minHeight: 400 }}
+            />
+            {/* Connection Stats Overlay */}
+            {isRendering && connectionStats.nodeCount > 0 && (
+                <div className="absolute bottom-3 left-3 right-3 flex gap-2 pointer-events-none">
+                    <div className="bg-black/60 backdrop-blur-md rounded-lg px-2.5 py-1.5 border border-white/5">
+                        <div className="text-[9px] uppercase tracking-wider text-white/40 font-bold">Connections</div>
+                        <div className="text-sm font-bold text-white">{connectionStats.totalConnections}</div>
+                    </div>
+                    <div className="bg-black/60 backdrop-blur-md rounded-lg px-2.5 py-1.5 border border-white/5">
+                        <div className="text-[9px] uppercase tracking-wider text-white/40 font-bold">Strong</div>
+                        <div className="text-sm font-bold text-[#FA2D48]">{connectionStats.strongConnections}</div>
+                    </div>
+                    <div className="bg-black/60 backdrop-blur-md rounded-lg px-2.5 py-1.5 border border-white/5">
+                        <div className="text-[9px] uppercase tracking-wider text-white/40 font-bold">Spread</div>
+                        <div className="text-sm font-bold text-white">{connectionStats.spread}%</div>
+                    </div>
+                    <div className="bg-black/60 backdrop-blur-md rounded-lg px-2.5 py-1.5 border border-white/5">
+                        <div className="text-[9px] uppercase tracking-wider text-white/40 font-bold">Avg Sim</div>
+                        <div className="text-sm font-bold text-white">{connectionStats.avgSim}%</div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };

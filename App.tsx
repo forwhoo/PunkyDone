@@ -13,6 +13,50 @@ import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ChartSkeleton } from './components/LoadingSkeleton';
 
+// Extract dominant color from an image URL using canvas sampling
+const MIN_PIXEL_BRIGHTNESS = 40;
+const MAX_PIXEL_BRIGHTNESS = 700;
+const MIN_SATURATION_RANGE = 30;
+const FALLBACK_AURA_COLOR = '#FA2D48';
+
+function extractDominantColor(imageUrl: string): Promise<string> {
+    return new Promise((resolve) => {
+        if (!imageUrl) { resolve(FALLBACK_AURA_COLOR); return; }
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (!ctx) { resolve(FALLBACK_AURA_COLOR); return; }
+                canvas.width = 50;
+                canvas.height = 50;
+                ctx.drawImage(img, 0, 0, 50, 50);
+                const data = ctx.getImageData(0, 0, 50, 50).data;
+                let r = 0, g = 0, b = 0, count = 0;
+                for (let i = 0; i < data.length; i += 16) {
+                    const pr = data[i], pg = data[i+1], pb = data[i+2];
+                    // Skip very dark and very light pixels for better color extraction
+                    const brightness = pr + pg + pb;
+                    if (brightness > MIN_PIXEL_BRIGHTNESS && brightness < MAX_PIXEL_BRIGHTNESS) {
+                        r += pr; g += pg; b += pb; count++;
+                    }
+                }
+                if (count === 0) { resolve(FALLBACK_AURA_COLOR); return; }
+                r = Math.round(r / count);
+                g = Math.round(g / count);
+                b = Math.round(b / count);
+                // Fall back if color is too desaturated for a visible aura
+                const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                if (max - min < MIN_SATURATION_RANGE) { resolve(FALLBACK_AURA_COLOR); return; }
+                resolve(`rgb(${r}, ${g}, ${b})`);
+            } catch { resolve(FALLBACK_AURA_COLOR); }
+        };
+        img.onerror = () => resolve(FALLBACK_AURA_COLOR);
+        img.src = imageUrl;
+    });
+}
+
 // RANKED COMPONENT: Top Album (Standard)
 import { 
     getAuthUrl, 
@@ -150,7 +194,6 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 
 import { SeeAllModal } from './components/SeeAllModal';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
-import { WrappedModal } from './components/WrappedModal';
 
 function App() {
   const hasAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
@@ -186,8 +229,25 @@ function App() {
   // AI Discovery Modal State
   const [aiModalOpen, setAiModalOpen] = useState(false);
 
-  // Wrapped Under Construction Modal State
-  const [showWrappedModal, setShowWrappedModal] = useState(false);
+  // Wrapped Under Construction Message State
+  const [showWrappedMessage, setShowWrappedMessage] = useState(false);
+
+  // Dynamic aura colors extracted from item images
+  const [auraColor, setAuraColor] = useState<string>('#FA2D48');
+
+  // Extract aura color when a top item modal opens
+  useEffect(() => {
+    if (selectedTopArtist) {
+      const imgUrl = artistImages[selectedTopArtist.name] || selectedTopArtist.image || '';
+      extractDominantColor(imgUrl).then(setAuraColor);
+    } else if (selectedTopAlbum) {
+      extractDominantColor(selectedTopAlbum.cover || '').then(setAuraColor);
+    } else if (selectedTopSong) {
+      extractDominantColor(selectedTopSong.cover || '').then(setAuraColor);
+    } else {
+      setAuraColor('#FA2D48');
+    }
+  }, [selectedTopArtist, selectedTopAlbum, selectedTopSong, artistImages]);
 
   // Fetch Artist Images when data loads
   useEffect(() => {
@@ -703,7 +763,7 @@ function App() {
                 
                 {/* Mobile Punky Wrapped Button */}
                 <button
-                    onClick={() => setShowWrappedModal(true)}
+                    onClick={() => setShowWrappedMessage(true)}
                     className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all relative overflow-hidden"
                 >
                     <div className="absolute inset-0 z-0">
@@ -960,7 +1020,7 @@ function App() {
             {/* Desktop Punky Wrapped Button */}
             <div className="mb-16">
                 <button
-                    onClick={() => setShowWrappedModal(true)}
+                    onClick={() => setShowWrappedMessage(true)}
                     className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99] relative overflow-hidden"
                 >
                     <div className="absolute inset-0 z-0">
@@ -1194,7 +1254,7 @@ function App() {
                         className="relative z-10 mb-8 group"
                     >
                         <div className="w-40 h-40 md:w-56 md:h-56 rounded-full p-1.5 border-2 border-white/[0.12] bg-black shadow-2xl relative overflow-visible">
-                            <div className="absolute inset-0 rounded-full bg-[#FA2D48] blur-3xl opacity-[0.08] group-hover:opacity-[0.15] transition-opacity duration-700"></div>
+                            <div className="absolute -inset-4 rounded-full blur-3xl opacity-[0.15] group-hover:opacity-[0.25] transition-opacity duration-700" style={{ backgroundColor: auraColor }}></div>
                             <img 
                                 src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedTopArtist.name)}&background=1C1C1E&color=fff`} 
                                 className="w-full h-full object-cover rounded-full shadow-[0_30px_60px_rgba(0,0,0,0.6)] bg-[#1C1C1E]" 
@@ -1331,9 +1391,10 @@ function App() {
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
-                            className="relative mb-6"
+                            className="relative mb-6 group"
                         >
-                            <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl overflow-hidden ring-4 ring-white/10 shadow-2xl">
+                            <div className="absolute -inset-4 rounded-2xl blur-3xl opacity-[0.2] group-hover:opacity-[0.3] transition-opacity duration-700" style={{ backgroundColor: auraColor }}></div>
+                            <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl overflow-hidden ring-4 ring-white/10 shadow-2xl relative">
                                 <img 
                                     src={selectedTopAlbum.cover} 
                                     className="w-full h-full object-cover" 
@@ -1485,9 +1546,10 @@ function App() {
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
-                            className="relative mb-6"
+                            className="relative mb-6 group"
                         >
-                            <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl overflow-hidden ring-4 ring-white/10 shadow-2xl">
+                            <div className="absolute -inset-4 rounded-2xl blur-3xl opacity-[0.2] group-hover:opacity-[0.3] transition-opacity duration-700" style={{ backgroundColor: auraColor }}></div>
+                            <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl overflow-hidden ring-4 ring-white/10 shadow-2xl relative">
                                 <img 
                                     src={selectedTopSong.cover} 
                                     className="w-full h-full object-cover" 
@@ -1740,14 +1802,36 @@ function App() {
             </>
         )}
 
-        {/* Punky Wrapped Modal */}
-        <WrappedModal
-            isOpen={showWrappedModal}
-            onClose={() => setShowWrappedModal(false)}
-            period="Weekly"
-            userImage={data?.user?.images?.[0]?.url}
-            userName={data?.user?.display_name}
-        />
+        {/* Punky Wrapped Coming Soon Message */}
+        {showWrappedMessage && (
+            <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/80"
+                onClick={() => setShowWrappedMessage(false)}
+            >
+                <motion.div
+                    initial={{ scale: 0.85, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    className="bg-[#1C1C1E] rounded-3xl border border-white/10 p-8 max-w-sm text-center shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="w-16 h-16 rounded-full bg-[#FA2D48]/10 flex items-center justify-center mx-auto mb-5">
+                        <Sparkles className="w-8 h-8 text-[#FA2D48]" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Sorry!</h3>
+                    <p className="text-white/60 text-sm leading-relaxed mb-6">Punky Wrapped isn't here yet! We're working on something special for you. Stay tuned!</p>
+                    <button
+                        onClick={() => setShowWrappedMessage(false)}
+                        className="px-6 py-2.5 bg-white text-black rounded-full text-sm font-bold hover:bg-white/90 transition-all active:scale-95"
+                    >
+                        Got it
+                    </button>
+                </motion.div>
+            </motion.div>
+        )}
     </AnimatePresence>
 
     </>

@@ -67,7 +67,7 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                     className="w-full"
                 >
                     <form onSubmit={handleSubmit} className="relative">
-                        <div className="relative flex items-center bg-[#1C1C1E] border border-white/10 rounded-2xl overflow-hidden transition-all hover:border-white/20">
+                        <div className="relative flex items-center bg-black/40 border border-white/15 rounded-2xl overflow-hidden transition-all hover:border-white/30 backdrop-blur-md">
                             <div className="pl-4 flex items-center pointer-events-none">
                                 <Search className="w-5 h-5 text-[#8E8E93]" />
                             </div>
@@ -82,7 +82,7 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                                     }
                                 }}
                                 placeholder="Ask about your music..."
-                                className="flex-1 bg-transparent text-white placeholder-[#8E8E93] px-3 py-4 focus:outline-none text-[15px]"
+                                className="flex-1 bg-transparent text-white placeholder-white/40 px-3 py-4 focus:outline-none text-[15px]"
                             />
                             {query.trim() && (
                                 <button
