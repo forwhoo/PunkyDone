@@ -5,6 +5,7 @@ const REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI || "http://localh
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 
 const SCOPES = "user-top-read user-read-recently-played user-read-private user-read-currently-playing";
+let authRedirectInProgress = false;
 
 function generateRandomString(length: number) {
   let text = '';
@@ -28,25 +29,32 @@ async function generateCodeChallenge(codeVerifier: string) {
 }
 
 export const redirectToAuthCodeFlow = async () => {
+  if (authRedirectInProgress) return;
   if (!CLIENT_ID) {
     console.warn("Missing Spotify Client ID");
     return;
   }
+  authRedirectInProgress = true;
 
-  const verifier = generateRandomString(128);
-  const challenge = await generateCodeChallenge(verifier);
+  try {
+    const verifier = generateRandomString(128);
+    const challenge = await generateCodeChallenge(verifier);
 
-  localStorage.setItem("verifier", verifier);
+    localStorage.setItem("verifier", verifier);
 
-  const params = new URLSearchParams();
-  params.append("client_id", CLIENT_ID);
-  params.append("response_type", "code");
-  params.append("redirect_uri", REDIRECT_URI);
-  params.append("scope", SCOPES);
-  params.append("code_challenge_method", "S256");
-  params.append("code_challenge", challenge);
+    const params = new URLSearchParams();
+    params.append("client_id", CLIENT_ID);
+    params.append("response_type", "code");
+    params.append("redirect_uri", REDIRECT_URI);
+    params.append("scope", SCOPES);
+    params.append("code_challenge_method", "S256");
+    params.append("code_challenge", challenge);
 
-  document.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
+    document.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
+  } catch (e) {
+    authRedirectInProgress = false;
+    throw e;
+  }
 }
 
 
