@@ -86,7 +86,7 @@ function computeSimilarity(a: GridItem, b: GridItem, plays: any[]): number {
 
         // 3. Co-listening session adjacency (graph theory: temporal edge weight)
         // Items played within 30 minutes of each other form a session edge
-        const sessionGap = 30 * 60 * 1000; // 30 minutes
+        const sessionGap = 30 * 60 * 1000; // 30 min = 1,800,000ms
         const aTimestamps = aPlays.map(p => new Date(p.played_at).getTime()).sort((x, y) => x - y);
         const bTimestamps = bPlays.map(p => new Date(p.played_at).getTime()).sort((x, y) => x - y);
         let coListenCount = 0;
@@ -365,6 +365,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(width, height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        // Fully transparent background so the site background shows through
         renderer.setClearColor(0x000000, 0);
         container.appendChild(renderer.domElement);
 

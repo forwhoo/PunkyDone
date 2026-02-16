@@ -14,16 +14,21 @@ import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ChartSkeleton } from './components/LoadingSkeleton';
 
 // Extract dominant color from an image URL using canvas sampling
+const MIN_PIXEL_BRIGHTNESS = 40;
+const MAX_PIXEL_BRIGHTNESS = 700;
+const MIN_SATURATION_RANGE = 30;
+const FALLBACK_AURA_COLOR = '#FA2D48';
+
 function extractDominantColor(imageUrl: string): Promise<string> {
     return new Promise((resolve) => {
-        if (!imageUrl) { resolve('#FA2D48'); return; }
+        if (!imageUrl) { resolve(FALLBACK_AURA_COLOR); return; }
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
             try {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                if (!ctx) { resolve('#FA2D48'); return; }
+                if (!ctx) { resolve(FALLBACK_AURA_COLOR); return; }
                 canvas.width = 50;
                 canvas.height = 50;
                 ctx.drawImage(img, 0, 0, 50, 50);
@@ -31,22 +36,23 @@ function extractDominantColor(imageUrl: string): Promise<string> {
                 let r = 0, g = 0, b = 0, count = 0;
                 for (let i = 0; i < data.length; i += 16) {
                     const pr = data[i], pg = data[i+1], pb = data[i+2];
-                    // Skip very dark and very light pixels
-                    if (pr + pg + pb > 40 && pr + pg + pb < 700) {
+                    // Skip very dark and very light pixels for better color extraction
+                    const brightness = pr + pg + pb;
+                    if (brightness > MIN_PIXEL_BRIGHTNESS && brightness < MAX_PIXEL_BRIGHTNESS) {
                         r += pr; g += pg; b += pb; count++;
                     }
                 }
-                if (count === 0) { resolve('#FA2D48'); return; }
+                if (count === 0) { resolve(FALLBACK_AURA_COLOR); return; }
                 r = Math.round(r / count);
                 g = Math.round(g / count);
                 b = Math.round(b / count);
-                // Boost saturation slightly for more vibrant aura
+                // Fall back if color is too desaturated for a visible aura
                 const max = Math.max(r, g, b), min = Math.min(r, g, b);
-                if (max - min < 30) { resolve('#FA2D48'); return; }
+                if (max - min < MIN_SATURATION_RANGE) { resolve(FALLBACK_AURA_COLOR); return; }
                 resolve(`rgb(${r}, ${g}, ${b})`);
-            } catch { resolve('#FA2D48'); }
+            } catch { resolve(FALLBACK_AURA_COLOR); }
         };
-        img.onerror = () => resolve('#FA2D48');
+        img.onerror = () => resolve(FALLBACK_AURA_COLOR);
         img.src = imageUrl;
     });
 }
