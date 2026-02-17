@@ -664,7 +664,7 @@ function App() {
                   
                   <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-3 text-white">Punky Stats</h1>
                   <p className="text-[#8E8E93] text-base max-w-sm leading-relaxed mb-10 font-medium">
-                      Your listening DNA. Real-time charts, AI insights, and your personalized music story.
+                      Your music story. Real-time charts, AI insights, and your personalized journey.
                   </p>
                   
                   <button 
@@ -968,72 +968,7 @@ function App() {
                         </div>
                     </section>
 
-                    {/* Mobile Listening DNA */}
-                    <section className="space-y-4">
-                        <div className="flex items-center justify-between px-1">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">Listening DNA</h3>
-                            <p className="text-[#8E8E93] text-xs">Your fingerprint</p>
-                        </div>
-                        {(() => {
-                            const hourBuckets = new Uint16Array(24);
-                            const dayBuckets = new Uint16Array(7);
-                            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                            let totalPlays = 0;
 
-                            safeRecent.forEach((p: any) => {
-                                if (p.played_at) {
-                                    const d = new Date(p.played_at);
-                                    hourBuckets[d.getHours()]++;
-                                    dayBuckets[d.getDay()]++;
-                                    totalPlays++;
-                                }
-                            });
-
-                            const maxHour = Math.max(...Array.from(hourBuckets));
-                            const nightPlays = hourBuckets[22] + hourBuckets[23] + hourBuckets[0] + hourBuckets[1] + hourBuckets[2];
-                            const morningPlays = hourBuckets[6] + hourBuckets[7] + hourBuckets[8] + hourBuckets[9] + hourBuckets[10];
-                            const afternoonPlays = hourBuckets[12] + hourBuckets[13] + hourBuckets[14] + hourBuckets[15] + hourBuckets[16];
-                            const listenerType = nightPlays > morningPlays && nightPlays > afternoonPlays 
-                                ? 'Night Owl 🦉' 
-                                : morningPlays > afternoonPlays 
-                                    ? 'Early Bird 🌅' 
-                                    : 'Afternoon Listener ☀️';
-                            const uniqueArtists = new Set(safeRecent.map((p: any) => p.artist_name)).size;
-
-                            return totalPlays > 0 ? (
-                                <div className="space-y-3">
-                                    {/* Type + Stats */}
-                                    <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-4 flex items-center justify-between">
-                                        <div>
-                                            <div className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-bold mb-0.5">Your Type</div>
-                                            <div className="text-base font-black text-white">{listenerType}</div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-base font-black text-white">{uniqueArtists}</div>
-                                            <div className="text-[9px] text-white/30 font-bold">unique artists</div>
-                                        </div>
-                                    </div>
-                                    {/* Hourly Mini */}
-                                    <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-4">
-                                        <div className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-bold mb-2">Hourly Rhythm</div>
-                                        <div className="flex items-end gap-[2px] h-12">
-                                            {Array.from(hourBuckets).map((count, h) => {
-                                                const pct = maxHour > 0 ? (count / maxHour) * 100 : 0;
-                                                return (
-                                                    <div key={h} className="flex-1">
-                                                        <div 
-                                                            className="w-full rounded-t bg-gradient-to-t from-[#FA2D48]/50 to-[#FA2D48]/20 min-h-[2px]"
-                                                            style={{ height: `${Math.max(3, pct)}%` }}
-                                                        />
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : null;
-                        })()}
-                    </section>
 
                     {/* Mobile AI Discovery Button */}
                     <section id="mobile-ai-chat">
@@ -1288,148 +1223,7 @@ function App() {
                     />
                 </div>
 
-                {/* RIGHT: LISTENING DNA - Pattern Analysis */}
-                <div className="space-y-6">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <h2 className="text-xl font-bold text-white tracking-tight">Listening DNA</h2>
-                            <div className="relative group/info">
-                                <Info size={14} className="text-[#8E8E93] hover:text-white transition-colors cursor-help" />
-                                <div className="absolute left-0 top-full mt-2 w-64 bg-[#1C1C1E] border border-white/10 rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
-                                    <p className="text-[11px] text-[#8E8E93] leading-relaxed">
-                                        Your unique listening fingerprint — patterns derived from when, how, and what you listen to.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <p className="text-[#8E8E93] text-xs mb-5">Your unique listening fingerprint</p>
-                    </div>
 
-                    {/* Time Distribution */}
-                    {(() => {
-                        const hourBuckets = new Uint16Array(24);
-                        const dayBuckets = new Uint16Array(7);
-                        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                        let totalPlays = 0;
-
-                        safeRecent.forEach((p: any) => {
-                            if (p.played_at) {
-                                const d = new Date(p.played_at);
-                                hourBuckets[d.getHours()]++;
-                                dayBuckets[d.getDay()]++;
-                                totalPlays++;
-                            }
-                        });
-
-                        const maxHour = Math.max(...Array.from(hourBuckets));
-                        const maxDay = Math.max(...Array.from(dayBuckets));
-
-                        // Determine listener type
-                        const nightPlays = hourBuckets[22] + hourBuckets[23] + hourBuckets[0] + hourBuckets[1] + hourBuckets[2];
-                        const morningPlays = hourBuckets[6] + hourBuckets[7] + hourBuckets[8] + hourBuckets[9] + hourBuckets[10];
-                        const afternoonPlays = hourBuckets[12] + hourBuckets[13] + hourBuckets[14] + hourBuckets[15] + hourBuckets[16];
-                        const listenerType = nightPlays > morningPlays && nightPlays > afternoonPlays 
-                            ? 'Night Owl 🦉' 
-                            : morningPlays > afternoonPlays 
-                                ? 'Early Bird 🌅' 
-                                : 'Afternoon Listener ☀️';
-
-                        // Session stats
-                        const uniqueArtists = new Set(safeRecent.map((p: any) => p.artist_name)).size;
-                        const uniqueAlbums = new Set(safeRecent.map((p: any) => p.album_name).filter(Boolean)).size;
-
-                        return totalPlays > 0 ? (
-                            <>
-                                {/* Listener Type Badge */}
-                                <div className="bg-gradient-to-br from-[#1C1C1E] to-[#141416] border border-white/[0.06] rounded-2xl p-5">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div>
-                                            <div className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-bold mb-1">Your Type</div>
-                                            <div className="text-lg font-black text-white">{listenerType}</div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-bold mb-1">Diversity</div>
-                                            <div className="text-lg font-black text-white">{uniqueArtists} <span className="text-xs font-medium text-white/30">artists</span></div>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Quick Stats Row */}
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div className="bg-white/[0.04] rounded-xl p-3 text-center">
-                                            <div className="text-base font-black text-white">{totalPlays.toLocaleString()}</div>
-                                            <div className="text-[8px] uppercase tracking-wider text-white/25 font-bold">Plays</div>
-                                        </div>
-                                        <div className="bg-white/[0.04] rounded-xl p-3 text-center">
-                                            <div className="text-base font-black text-white">{uniqueArtists}</div>
-                                            <div className="text-[8px] uppercase tracking-wider text-white/25 font-bold">Artists</div>
-                                        </div>
-                                        <div className="bg-white/[0.04] rounded-xl p-3 text-center">
-                                            <div className="text-base font-black text-white">{uniqueAlbums}</div>
-                                            <div className="text-[8px] uppercase tracking-wider text-white/25 font-bold">Albums</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Hourly Rhythm */}
-                                <div className="bg-gradient-to-br from-[#1C1C1E] to-[#141416] border border-white/[0.06] rounded-2xl p-5">
-                                    <div className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-bold mb-3">Hourly Rhythm</div>
-                                    <div className="flex items-end gap-[2px] h-20">
-                                        {Array.from(hourBuckets).map((count, h) => {
-                                            const pct = maxHour > 0 ? (count / maxHour) * 100 : 0;
-                                            const isNight = h >= 22 || h <= 4;
-                                            return (
-                                                <div key={h} className="flex-1 flex flex-col items-center" title={`${h}:00 — ${count} plays`}>
-                                                    <div 
-                                                        className={`w-full rounded-t transition-all min-h-[2px] ${
-                                                            isNight 
-                                                                ? 'bg-gradient-to-t from-indigo-500/60 to-indigo-400/30' 
-                                                                : 'bg-gradient-to-t from-[#FA2D48]/50 to-[#FA2D48]/20'
-                                                        }`}
-                                                        style={{ height: `${Math.max(3, pct)}%` }}
-                                                    />
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                    <div className="flex justify-between mt-1.5 text-[8px] text-white/15 font-medium">
-                                        <span>12 AM</span>
-                                        <span>6 AM</span>
-                                        <span>12 PM</span>
-                                        <span>6 PM</span>
-                                        <span>11 PM</span>
-                                    </div>
-                                </div>
-
-                                {/* Weekly Pattern */}
-                                <div className="bg-gradient-to-br from-[#1C1C1E] to-[#141416] border border-white/[0.06] rounded-2xl p-5">
-                                    <div className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-bold mb-3">Weekly Pattern</div>
-                                    <div className="space-y-2">
-                                        {Array.from(dayBuckets).map((count, d) => {
-                                            const pct = maxDay > 0 ? (count / maxDay) * 100 : 0;
-                                            return (
-                                                <div key={d} className="flex items-center gap-3">
-                                                    <span className="text-[10px] text-white/30 font-medium w-7">{dayNames[d]}</span>
-                                                    <div className="flex-1 h-3 bg-white/[0.04] rounded-full overflow-hidden">
-                                                        <div 
-                                                            className="h-full rounded-full bg-gradient-to-r from-[#FA2D48]/70 to-[#FF6B82]/50 transition-all"
-                                                            style={{ width: `${Math.max(2, pct)}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className="text-[9px] text-white/20 font-mono w-8 text-right">{count}</span>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </>
-                        ) : (
-                            <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-8 text-center">
-                                <Music size={32} className="text-white/10 mx-auto mb-3" />
-                                <p className="text-white/30 text-sm">No listening data yet</p>
-                            </div>
-                        );
-                    })()}
-                </div>
                 
             </div>
             
