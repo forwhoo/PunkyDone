@@ -41,10 +41,11 @@ interface SpiralItem {
   spawnTime: number; // timestamp when item was spawned
 }
 
-function buildLayerItems(covers: string[]): SpiralItem[] {
+function buildLayerItems(covers: string[], idCounter: { value: number }): SpiralItem[] {
   if (covers.length === 0) return [];
   const items: SpiralItem[] = [];
   let coverIdx = 0;
+  const baseTime = Date.now();
   for (let layer = 0; layer < LAYER_COUNT; layer++) {
     const count = ITEMS_PER_LAYER[layer];
     for (let j = 0; j < count; j++) {
@@ -53,8 +54,8 @@ function buildLayerItems(covers: string[]): SpiralItem[] {
         angle: (360 / count) * j + layer * 18,
         layer,
         indexInLayer: j,
-        id: `${layer}-${j}-${Date.now()}-${Math.random()}`,
-        spawnTime: Date.now(),
+        id: `item-${idCounter.value++}`,
+        spawnTime: baseTime,
       });
       coverIdx++;
     }
@@ -69,12 +70,14 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
   const shuffledRef = useRef<string[] | null>(null);
   const [items, setItems] = useState<SpiralItem[]>([]);
   const animationFrameRef = useRef<number>();
+  const idCounterRef = useRef({ value: 0 });
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
   const spiralItems = useMemo(() => {
     if (!shuffledRef.current || shuffledRef.current.length !== albumCovers.length) {
       shuffledRef.current = shuffleArray(albumCovers);
     }
-    return buildLayerItems(shuffledRef.current);
+    return buildLayerItems(shuffledRef.current, idCounterRef.current);
   }, [albumCovers]);
 
   // Initialize items
@@ -87,18 +90,21 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
     if (story !== 'intro') return;
 
     const animate = () => {
+      const now = Date.now();
+      setCurrentTime(now);
       setItems(prevItems => {
-        const now = Date.now();
         return prevItems.map(item => {
           const elapsed = (now - item.spawnTime) / 1000; // seconds
           
           // Check if item has reached the center (completed its journey)
           if (elapsed >= VORTEX_DURATION) {
             // Respawn at outer edge with new spawn time
+            const covers = shuffledRef.current;
             return {
               ...item,
               spawnTime: now,
-              src: shuffledRef.current![Math.floor(Math.random() * shuffledRef.current!.length)],
+              src: covers ? covers[Math.floor(Math.random() * covers.length)] : item.src,
+              id: `item-${idCounterRef.current.value++}`,
             };
           }
           
@@ -209,8 +215,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
               }}
             >
               {layerItems.map((item) => {
-                const now = Date.now();
-                const elapsed = (now - item.spawnTime) / 1000; // seconds
+                const elapsed = (currentTime - item.spawnTime) / 1000; // seconds
                 const progress = Math.min(elapsed / VORTEX_DURATION, 1); // 0 to 1
                 
                 // Calculate radius: starts at MAX_RADIUS_VW, decreases to 0
