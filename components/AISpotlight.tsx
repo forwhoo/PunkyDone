@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from './UIComponents';
 // import { ActivityHeatmap } from './ActivityHeatmap';
-import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2, Gift, ChevronLeft, ArrowUp } from 'lucide-react';
+import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2, Gift, ChevronLeft, ArrowUp, Palette } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory, generateWrappedVibe, generateWrappedWithTools, WrappedSlide } from '../services/geminiService';
 import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
+import { generateCanvasComponent, CanvasComponent } from '../services/canvasService';
+import { CanvasRenderer } from './CanvasRenderer';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -127,6 +129,7 @@ interface ChatMessage {
     role: 'user' | 'ai';
     text: string;
     timestamp: Date;
+    canvas?: CanvasComponent;
 }
 
 const LoadingDots = ({ color = 'bg-white/40', size = 'w-2 h-2' }: { color?: string; size?: string }) => (
@@ -157,6 +160,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const [wrappedSlides, setWrappedSlides] = useState<WrappedSlide[]>([]);
     const [wrappedStep, setWrappedStep] = useState(0);
     const [wrappedStats, setWrappedStats] = useState<any>(null);
+
+    // Canvas Mode State
+    const [canvasMode, setCanvasMode] = useState(false);
 
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [chatResponse, setChatResponse] = useState<string | null>(null);
@@ -451,6 +457,47 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 return;
             }
 
+            // CANVAS MODE: AI generates interactive HTML/CSS/JS components
+            if (canvasMode) {
+                setMode('chat');
+                setChatResponse("🎨 Building your component...");
+
+                const canvasHistory = chatMessages
+                    .filter(m => !m.canvas || m.role === 'user')
+                    .map(m => ({ role: m.role === 'user' ? 'user' as const : 'assistant' as const, content: m.text }));
+
+                const result = await generateCanvasComponent(
+                    promptToUse,
+                    contextData,
+                    canvasHistory,
+                    (attempt, err) => {
+                        setChatResponse(`🔄 Retrying (${attempt}/5)... ${err}`);
+                    }
+                );
+
+                if (result && !result.error) {
+                    setChatMessages(prev => [...prev, {
+                        role: 'ai',
+                        text: `Here's your **${result.title}** — ${result.description}`,
+                        timestamp: new Date(),
+                        canvas: result
+                    }]);
+                    setChatResponse(null);
+                } else {
+                    const errMsg = result?.error || 'Failed to generate component';
+                    setChatMessages(prev => [...prev, {
+                        role: 'ai',
+                        text: `Sorry, I couldn't build that component. ${errMsg}`,
+                        timestamp: new Date(),
+                        canvas: result || undefined
+                    }]);
+                    setChatResponse(null);
+                }
+                setLoading(false);
+                setUserPrompt("");
+                return;
+            }
+
             // Determine query type - only auto-detect analysis queries when in Discovery mode
             const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover', 'top', 'best', 'most', 'rank', 'chart', 'favorite', 'least', 'wrapped', 'gems', 'rewind', 'vibes', 'mix', 'weekly', 'insight', 'stats'];
             const isAnalysisQuery = discoveryMode && analysisKeywords.some(k => promptToUse.toLowerCase().includes(k));
@@ -598,17 +645,24 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             <div className="flex-shrink-0 flex items-center justify-center py-3 px-4 border-b border-white/5">
                 <div className="flex items-center gap-0 border border-white/10 bg-white/5 rounded-xl p-1 backdrop-blur-md">
                     <button
-                        onClick={() => setDiscoveryMode(false)}
-                        className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all ${!discoveryMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
+                        onClick={() => { setDiscoveryMode(false); setCanvasMode(false); }}
+                        className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all ${!discoveryMode && !canvasMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
                     >
                         Chat
                     </button>
                     <button
-                        onClick={() => setDiscoveryMode(true)}
-                        className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all flex items-center gap-1.5 ${discoveryMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
+                        onClick={() => { setDiscoveryMode(true); setCanvasMode(false); }}
+                        className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all flex items-center gap-1.5 ${discoveryMode && !canvasMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
                     >
                         <Zap size={12} />
                         Discovery
+                    </button>
+                    <button
+                        onClick={() => { setCanvasMode(true); setDiscoveryMode(false); }}
+                        className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all flex items-center gap-1.5 ${canvasMode ? 'bg-gradient-to-r from-[#FA2D48] to-[#FF6B35] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                    >
+                        <Palette size={12} />
+                        Canvas
                     </button>
                 </div>
             </div>
@@ -619,8 +673,18 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 <div className="max-w-2xl mx-auto space-y-4">
                     {chatMessages.length === 0 && !loading && categoryResults.length === 0 && !insightMode && !wrappedMode && (
                         <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
-                            <Sparkles className="w-8 h-8 text-[#FA2D48]/40 mb-3" />
-                            <p className="text-[#8E8E93] text-sm">Ask about your music...</p>
+                            {canvasMode ? (
+                                <>
+                                    <Palette className="w-8 h-8 text-[#FA2D48]/40 mb-3" />
+                                    <p className="text-[#8E8E93] text-sm">Describe a component to build...</p>
+                                    <p className="text-[#666] text-xs mt-1">e.g. "Make a table of my top 10 artists" or "Build a pie chart of my genres"</p>
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="w-8 h-8 text-[#FA2D48]/40 mb-3" />
+                                    <p className="text-[#8E8E93] text-sm">Ask about your music...</p>
+                                </>
+                            )}
                         </div>
                     )}
 
@@ -632,27 +696,65 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             transition={{ duration: 0.3 }}
                             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                            <div className={`max-w-[80%] ${msg.role === 'user'
+                            <div className={`${msg.canvas ? 'w-full max-w-full' : 'max-w-[80%]'} ${msg.role === 'user'
                                 ? 'bg-white/15 text-white rounded-2xl rounded-br-md px-4 py-3 border border-white/10'
-                                : 'bg-[#1C1C1E] text-white rounded-2xl rounded-bl-md px-4 py-3 border border-white/5'
+                                : msg.canvas ? '' : 'bg-[#1C1C1E] text-white rounded-2xl rounded-bl-md px-4 py-3 border border-white/5'
                             }`}>
-                                {msg.role === 'ai' ? (
-                                    <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                            {idx === chatMessages.length - 1 && typing
-                                                ? displayedText
-                                                : msg.text}
-                                        </ReactMarkdown>
-                                        {idx === chatMessages.length - 1 && typing && (
-                                            <span className="inline-block w-[2px] h-5 ml-0.5 bg-white/70 align-middle animate-pulse"></span>
-                                        )}
+                                {msg.role === 'ai' && msg.canvas && msg.canvas.html ? (
+                                    <div className="space-y-3">
+                                        <div className="bg-[#1C1C1E] text-white rounded-2xl rounded-bl-md px-4 py-3 border border-white/5 inline-block">
+                                            <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                                            </div>
+                                        </div>
+                                        <CanvasRenderer
+                                            html={msg.canvas.html}
+                                            title={msg.canvas.title}
+                                            description={msg.canvas.description}
+                                            retryCount={msg.canvas.retryCount}
+                                            error={msg.canvas.error}
+                                            onRetry={async () => {
+                                                setLoading(true);
+                                                setChatResponse("🔄 Regenerating component...");
+                                                const result = await generateCanvasComponent(
+                                                    chatMessages.filter(m => m.role === 'user').slice(-1)[0]?.text || 'Retry the last component',
+                                                    contextData,
+                                                    [],
+                                                    (attempt, err) => setChatResponse(`🔄 Retry ${attempt}/5... ${err}`)
+                                                );
+                                                if (result && !result.error) {
+                                                    setChatMessages(prev => {
+                                                        const updated = [...prev];
+                                                        updated[idx] = { ...updated[idx], canvas: result, text: `Here's your **${result.title}** — ${result.description}` };
+                                                        return updated;
+                                                    });
+                                                }
+                                                setChatResponse(null);
+                                                setLoading(false);
+                                            }}
+                                        />
+                                        <p className="text-[11px] text-[#666666] px-1">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                     </div>
+                                ) : msg.role === 'ai' ? (
+                                    <>
+                                        <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                {idx === chatMessages.length - 1 && typing
+                                                    ? displayedText
+                                                    : msg.text}
+                                            </ReactMarkdown>
+                                            {idx === chatMessages.length - 1 && typing && (
+                                                <span className="inline-block w-[2px] h-5 ml-0.5 bg-white/70 align-middle animate-pulse"></span>
+                                            )}
+                                        </div>
+                                        <p className="text-[11px] mt-1.5 text-[#666666]">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                    </>
                                 ) : (
-                                    <p className="text-[15px] leading-relaxed">{msg.text}</p>
+                                    <>
+                                        <p className="text-[15px] leading-relaxed">{msg.text}</p>
+                                        <p className="text-[11px] mt-1.5 text-white/60">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                    </>
                                 )}
-                                <p className={`text-[11px] mt-1.5 ${msg.role === 'user' ? 'text-white/60' : 'text-[#666666]'}`}>
-                                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </p>
                             </div>
                         </motion.div>
                     ))}
@@ -1337,7 +1439,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                     handleQuery();
                                 }
                             }}
-                            placeholder="Ask about your music..."
+                            placeholder={canvasMode ? "Describe a component to build..." : "Ask about your music..."}
                             className="flex-1 bg-transparent py-1.5 text-[15px] text-white focus:outline-none placeholder:text-[#888888]"
                         />
                         <button
