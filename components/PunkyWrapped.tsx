@@ -11,18 +11,19 @@ interface PunkyWrappedProps {
 }
 
 // --- Configuration ---
-const LAYER_COUNT = 5;
-const ITEMS_PER_LAYER = [12, 10, 8, 8, 6]; // outer → inner
-const LAYER_RADII_VW = [42, 33, 24, 16, 9]; // % of min(vw, vh)
-const LAYER_SIZES = [90, 75, 58, 42, 28]; // px, outer → inner
-const LAYER_DURATIONS = [55, 45, 35, 28, 20]; // seconds per full rotation
-const LAYER_SCALES = [1.0, 0.8, 0.6, 0.4, 0.15]; // scale per layer
-const LAYER_OPACITY = [0.95, 0.85, 0.7, 0.5, 0.25]; // opacity per layer
+const LAYER_COUNT = 7;
+const ITEMS_PER_LAYER = [15, 13, 11, 9, 7, 6, 4]; // outer → inner (increased density)
+const LAYER_RADII_VW = [45, 38, 31, 24, 17, 11, 6]; // % of min(vw, vh) - more spacing
+const LAYER_SIZES = [100, 85, 70, 55, 40, 28, 18]; // px, outer → inner - clearer size hierarchy
+const LAYER_DURATIONS = [60, 50, 40, 32, 25, 19, 14]; // seconds per full rotation
+const LAYER_SCALES = [1.0, 0.8, 0.6, 0.4, 0.3, 0.2, 0.1]; // scale per layer - proper hierarchy
+const LAYER_OPACITY = [0.95, 0.88, 0.78, 0.65, 0.5, 0.35, 0.2]; // opacity per layer
 
 // Vortex configuration
-const VORTEX_DURATION = 8; // seconds for one full spiral from outer edge to center
+const VORTEX_DURATION = 7; // seconds for one full spiral from outer edge to center
 const MAX_RADIUS_VW = 90; // Start at 90% of min(vw, vh)
-const OPACITY_FADE_FACTOR = 0.3; // Fade to 70% of base opacity as items approach center
+const OPACITY_FADE_FACTOR = 0.5; // Stronger fade as items approach center
+const VOID_SIZE = 150; // Size of visible void circle in pixels
 
 function shuffleArray<T>(arr: T[]): T[] {
   const shuffled = [...arr];
@@ -146,13 +147,16 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
   const handleLetsGo = useCallback(() => {
     setVortex(true);
     setTransitioning(true);
+    
+    // Phase 1-3: Dramatic vortex collapse (2.5s total)
+    // Phase 4: Transition to next screen
     setTimeout(() => {
       if (totalMinutes != null && totalMinutes > 0) {
         setStory('totalMinutes');
       } else {
         setStory('done');
       }
-    }, 1500);
+    }, 2500);
   }, [totalMinutes]);
 
   const handleTotalMinutesComplete = useCallback(() => {
@@ -203,30 +207,44 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
       <motion.div
         className="absolute inset-0"
         animate={{ 
-          opacity: transitioning ? 0 : 1, 
-          scale: transitioning ? 0.8 : 1 
+          opacity: transitioning ? 0 : 1,
+          scale: transitioning ? 0 : 1,
+          filter: transitioning ? 'blur(20px)' : 'blur(0px)'
         }}
-        transition={{ duration: transitioning ? 1.5 : 0.4 }}
+        transition={{ 
+          duration: transitioning ? 2.0 : 0.4,
+          ease: transitioning ? [0.6, 0.05, 0.01, 0.99] : "easeOut"
+        }}
       >
 
       {/* PrismaticBurst Background */}
-      <div className="absolute inset-0 z-[0]" style={{ opacity: 0.45 }}>
+      <motion.div 
+        className="absolute inset-0 z-[0]" 
+        style={{ opacity: 0.45 }}
+        animate={{
+          opacity: vortex ? [0.45, 0.8, 0.45] : 0.45,
+          scale: vortex ? [1, 1.2, 0.8] : 1,
+        }}
+        transition={{
+          duration: vortex ? 2.0 : 0,
+          ease: [0.4, 0, 0.2, 1]
+        }}
+      >
         <PrismaticBurst
-          intensity={1.2}
-          speed={0.3}
+          intensity={vortex ? 2.0 : 1.2}
+          speed={vortex ? 1.5 : 0.3}
           animationType="rotate3d"
-          distort={3}
+          distort={vortex ? 6 : 3}
           mixBlendMode="lighten"
         />
-      </div>
+      </motion.div>
 
       {/* Multi-layer spiral animation */}
       <div className="absolute inset-0 z-[1] flex items-center justify-center">
         {Array.from({ length: LAYER_COUNT }).map((_, layer) => {
           const layerItems = items.filter(item => item.layer === layer);
-          const duration = vortex
-            ? LAYER_DURATIONS[layer] / 5
-            : LAYER_DURATIONS[layer];
+          const baseDuration = LAYER_DURATIONS[layer];
+          const duration = vortex ? baseDuration / 4 : baseDuration; // 4x faster rotation in vortex mode
           const size = LAYER_SIZES[layer];
           const isLayerVisible = visibleLayers.includes(layer);
 
@@ -245,26 +263,34 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
             >
               {layerItems.map((item) => {
                 const elapsed = (currentTime - item.spawnTime) / 1000; // seconds
-                const progress = Math.min(elapsed / VORTEX_DURATION, 1); // 0 to 1
+                const linearProgress = Math.min(elapsed / VORTEX_DURATION, 1); // 0 to 1
                 
-                // Calculate radius: starts at MAX_RADIUS_VW, decreases to 0
+                // Exponential acceleration towards center (black hole effect)
+                // Using cubic easing for dramatic speed increase near the center
+                const progress = linearProgress * linearProgress * linearProgress;
+                
+                // Calculate radius with exponential acceleration
                 const currentRadius = MAX_RADIUS_VW * (1 - progress);
                 
-                // Calculate scale: starts at 1, decreases to 0
-                const currentScale = LAYER_SCALES[layer] * (1 - progress);
+                // Calculate scale with more dramatic shrinking near center
+                const scaleProgress = Math.pow(1 - linearProgress, 1.5);
+                const currentScale = LAYER_SCALES[layer] * scaleProgress;
                 
-                // Calculate opacity: fades out as it approaches center
-                const currentOpacity = LAYER_OPACITY[layer] * (1 - progress * OPACITY_FADE_FACTOR);
+                // Calculate opacity: fades out dramatically as it approaches center
+                const opacityProgress = 1 - Math.pow(linearProgress, 2);
+                const currentOpacity = LAYER_OPACITY[layer] * opacityProgress;
                 
                 const rad = (item.angle * Math.PI) / 180;
                 const radiusPx = `min(${currentRadius}vw, ${currentRadius}vh)`;
                 
-                const normalTransform = `translate(-50%, -50%) translate(calc(${Math.cos(rad)} * ${radiusPx}), calc(${Math.sin(rad)} * ${radiusPx})) scale(${currentScale}) rotate3d(1, 1, 0, ${10 + layer * 5}deg)`;
-                const vortexTransform = `translate(-50%, -50%) scale(0) rotate3d(1,1,0,${60 + layer * 30}deg)`;
+                // Add rotation during spiral
+                const spiralRotation = linearProgress * 720; // Two full rotations as it spirals in
+                const normalTransform = `translate(-50%, -50%) translate(calc(${Math.cos(rad)} * ${radiusPx}), calc(${Math.sin(rad)} * ${radiusPx})) scale(${currentScale}) rotate(${spiralRotation}deg) rotate3d(1, 1, 0, ${10 + layer * 5}deg)`;
+                const vortexTransform = `translate(-50%, -50%) scale(0) rotate(${1080 + layer * 360}deg) rotate3d(1,1,0,${60 + layer * 30}deg)`;
                 const introScale = isLayerVisible ? 1 : 0;
 
                 return (
-                  <div
+                  <motion.div
                     key={item.id}
                     className="absolute rounded-lg overflow-hidden"
                     style={{
@@ -274,13 +300,23 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                       top: '50%',
                       transform: vortex ? vortexTransform : normalTransform,
                       opacity: vortex ? 0 : (isLayerVisible ? currentOpacity : 0),
-                      transition: vortex 
-                        ? 'transform 1.5s cubic-bezier(0.4,0,0.2,1), opacity 1.5s ease' 
-                        : isLayerVisible 
-                          ? 'opacity 0.4s ease-out' 
-                          : undefined,
                       boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+                      willChange: 'transform, opacity',
                     }}
+                    animate={{
+                      filter: vortex ? ['blur(0px)', 'blur(4px)', 'blur(8px)'] : 'blur(0px)',
+                    }}
+                    transition={
+                      vortex 
+                        ? { 
+                            transform: { duration: 2.0, ease: [0.6, 0.05, 0.01, 0.99] },
+                            opacity: { duration: 2.0, ease: [0.4, 0, 1, 1] },
+                            filter: { duration: 2.0, ease: "easeIn" }
+                          }
+                        : isLayerVisible 
+                          ? { opacity: { duration: 0.4, ease: "easeOut" } }
+                          : undefined
+                    }
                   >
                     <img
                       src={item.src}
@@ -289,7 +325,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                       loading="lazy"
                       draggable={false}
                     />
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
@@ -304,6 +340,68 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
           background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, transparent 35%, #050505 75%)',
         }}
       />
+
+      {/* Visible Void Circle at Center - Black Hole Effect */}
+      <div className="absolute inset-0 z-[3] flex items-center justify-center pointer-events-none">
+        <motion.div
+          className="rounded-full"
+          style={{
+            width: VOID_SIZE,
+            height: VOID_SIZE,
+            background: 'radial-gradient(circle at center, #000000 0%, #0a0a0a 30%, rgba(20,20,40,0.8) 60%, transparent 100%)',
+          }}
+          animate={vortex ? {
+            rotate: 360,
+            scale: [1, 1.3, 1.5, 0],
+            boxShadow: [
+              `inset 0 0 30px rgba(100, 100, 255, 0.3), inset 0 0 50px rgba(50, 50, 150, 0.2), 0 0 40px rgba(80, 80, 200, 0.2), 0 0 60px rgba(60, 60, 180, 0.1)`,
+              `inset 0 0 50px rgba(150, 150, 255, 0.6), inset 0 0 80px rgba(100, 100, 220, 0.4), 0 0 80px rgba(150, 150, 255, 0.5), 0 0 120px rgba(120, 120, 230, 0.3)`,
+              `inset 0 0 80px rgba(200, 200, 255, 0.9), inset 0 0 120px rgba(150, 150, 255, 0.6), 0 0 150px rgba(200, 200, 255, 0.8), 0 0 200px rgba(180, 180, 255, 0.5)`,
+              `inset 0 0 100px rgba(255, 255, 255, 1.0), inset 0 0 150px rgba(200, 200, 255, 0.8), 0 0 200px rgba(255, 255, 255, 1.0), 0 0 250px rgba(220, 220, 255, 0.7)`,
+            ]
+          } : {
+            rotate: 360,
+            boxShadow: [
+              `inset 0 0 30px rgba(100, 100, 255, 0.3), inset 0 0 50px rgba(50, 50, 150, 0.2), 0 0 40px rgba(80, 80, 200, 0.2), 0 0 60px rgba(60, 60, 180, 0.1)`,
+              `inset 0 0 35px rgba(120, 100, 255, 0.4), inset 0 0 55px rgba(70, 50, 180, 0.25), 0 0 45px rgba(100, 80, 220, 0.25), 0 0 70px rgba(80, 60, 200, 0.15)`,
+              `inset 0 0 30px rgba(100, 100, 255, 0.3), inset 0 0 50px rgba(50, 50, 150, 0.2), 0 0 40px rgba(80, 80, 200, 0.2), 0 0 60px rgba(60, 60, 180, 0.1)`,
+            ]
+          }}
+          transition={vortex ? {
+            rotate: { duration: 2.0, ease: "easeIn" },
+            scale: { duration: 2.0, ease: [0.6, 0.05, 0.01, 0.99], times: [0, 0.4, 0.7, 1] },
+            boxShadow: { duration: 2.0, ease: "easeIn", times: [0, 0.4, 0.7, 1] }
+          } : {
+            rotate: { duration: 8, repeat: Infinity, ease: "linear" },
+            boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+          }}
+        >
+          {/* Inner swirl effect */}
+          <motion.div 
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: 'conic-gradient(from 0deg, transparent 0deg, rgba(80, 80, 200, 0.15) 90deg, transparent 180deg, rgba(100, 80, 220, 0.1) 270deg, transparent 360deg)',
+            }}
+            animate={{
+              rotate: -360,
+              opacity: vortex ? [1, 1, 0] : 1,
+            }}
+            transition={vortex ? {
+              rotate: { duration: 2.0, ease: "easeIn" },
+              opacity: { duration: 2.0, ease: "easeIn" }
+            } : {
+              rotate: { duration: 3, repeat: Infinity, ease: "linear" }
+            }}
+          />
+        </motion.div>
+      </div>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
 
       {/* Close Button */}
       <div className="fixed top-4 right-4 z-[10]">
@@ -358,8 +456,15 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
               }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 1.3 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
+              exit={{ 
+                opacity: 0, 
+                scale: 1.2,
+                filter: 'blur(4px)'
+              }}
+              transition={{ 
+                initial: { duration: 0.5, delay: 0.6 },
+                exit: { duration: 0.5, ease: [0.6, 0.05, 0.01, 0.99] }
+              }}
               whileHover={{ scale: 1.05, background: 'rgba(255,255,255,0.25)' }}
               whileTap={{ scale: 0.95 }}
             >
