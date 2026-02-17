@@ -166,7 +166,7 @@ const MobileArtistCard = ({ artist, rank, image, onClick }: { artist: Artist; ra
     <button
         type="button"
         onClick={onClick}
-        className="relative w-[160px] h-[210px] shrink-0 snap-start rounded-[24px] overflow-hidden shadow-2xl border border-white/[0.08] active:scale-[0.97] transition-transform"
+        className="relative w-[176px] h-[228px] shrink-0 snap-start rounded-[24px] overflow-hidden shadow-2xl border border-white/[0.08] active:scale-[0.97] transition-transform"
     >
         <img
             src={image || artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`}
@@ -176,8 +176,8 @@ const MobileArtistCard = ({ artist, rank, image, onClick }: { artist: Artist; ra
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80" />
         <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
-            <p className="text-[16px] font-bold text-white leading-tight tracking-tight drop-shadow-lg">{artist.name}</p>
-            <p className="text-[12px] text-white/70 mt-1 font-medium">{artist.timeStr}</p>
+            <p className="text-[17px] font-bold text-white leading-tight tracking-tight drop-shadow-lg">{artist.name}</p>
+            <p className="text-[13px] text-white/70 mt-1 font-medium">{artist.timeStr}</p>
         </div>
     </button>
 );
@@ -469,6 +469,28 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Prevent page scrolling while any full-screen modal is open
+  useEffect(() => {
+    const shouldLockScroll = Boolean(
+      selectedTopArtist ||
+      selectedTopAlbum ||
+      selectedTopSong ||
+      showWrappedMessage
+    );
+
+    if (!shouldLockScroll) return;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [selectedTopArtist, selectedTopAlbum, selectedTopSong, showWrappedMessage]);
+
   useEffect(() => {
     if (authFlowHandledRef.current) return;
     authFlowHandledRef.current = true;
@@ -737,12 +759,12 @@ function App() {
   return (
     <>
     <Layout user={data.user} currentTrack={data.currentTrack}>
-        <div className="lg:hidden space-y-10 safe-area-bottom safe-area-top safe-area-x px-5">
+        <div className="lg:hidden space-y-12 safe-area-bottom safe-area-top safe-area-x px-4 sm:px-5">
             <div className="space-y-5">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-[10px] uppercase tracking-[0.25em] text-white/40 font-bold">Your Stats</p>
-                        <h2 className="text-[26px] font-bold text-white mt-1">Hey {data.user?.display_name || 'there'}</h2>
+                        <p className="text-[11px] uppercase tracking-[0.25em] text-white/40 font-bold">Your Stats</p>
+                        <h2 className="text-[30px] font-bold text-white mt-1">Hey {data.user?.display_name || 'there'}</h2>
                     </div>
                     {data.user?.images?.[0]?.url && (
                         <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 shadow-xl">
@@ -782,7 +804,7 @@ function App() {
                 {/* Mobile Punky Wrapped Button */}
                 <button
                     onClick={() => setShowWrappedMessage(true)}
-                    className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all relative overflow-hidden"
+                    className="w-full rounded-2xl p-6 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all relative overflow-hidden"
                 >
                     <div className="absolute inset-0 z-0">
                         <PrismaticBurst animationType="rotate3d" intensity={1.5} speed={0.3} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
@@ -790,8 +812,8 @@ function App() {
                     <div className="absolute inset-0 bg-black/60 z-[1]" />
                     <div className="flex items-center justify-between relative z-10">
                         <div className="text-left">
-                            <h3 className="text-[15px] font-bold text-white tracking-tight">Punky Wrapped</h3>
-                            <p className="text-[12px] text-white/60 font-medium">View your story</p>
+                            <h3 className="text-[17px] font-bold text-white tracking-tight">Punky Wrapped</h3>
+                            <p className="text-[13px] text-white/60 font-medium">View your story</p>
                         </div>
                         <ChevronRight className="w-5 h-5 text-white/60 flex-shrink-0" />
                     </div>
@@ -942,8 +964,8 @@ function App() {
                         {safeAlbums.length > 0 ? (
                             <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
                                 {safeAlbums.slice(0, 6).map((album: Album, index: number) => (
-                                    <div key={album.id} className="w-[140px] shrink-0 snap-start group cursor-pointer" onClick={() => setSelectedTopAlbum(album)}>
-                                        <div className="relative w-full h-[140px] rounded-[20px] overflow-hidden shadow-xl border border-white/[0.08] active:scale-95 transition-transform">
+                                    <div key={album.id} className="w-[156px] shrink-0 snap-start group cursor-pointer" onClick={() => setSelectedTopAlbum(album)}>
+                                        <div className="relative w-full h-[156px] rounded-[20px] overflow-hidden shadow-xl border border-white/[0.08] active:scale-95 transition-transform">
                                             <img src={album.cover} alt={album.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                                         </div>
                                         <p className="mt-3 text-[14px] font-semibold text-white truncate tracking-tight">{album.title}</p>

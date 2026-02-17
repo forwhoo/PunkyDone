@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { X, TrendingUp, ChevronUp } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
+import PrismaticBurst from './reactbits/PrismaticBurst';
 
 // ─── Style Constants (matching app UI) ──────────────────────────
 const ACCENT_RED = '#FA2D48';
@@ -512,10 +513,10 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGr
       });
     });
 
-    if (strongest) return strongest;
+    if (strongest && strongest.a !== strongest.b) return strongest;
 
     const fallbackArtist = artists[0]?.name;
-    const fallbackSongArtist = songs[0]?.artist;
+    const fallbackSongArtist = songs.find((song) => song.artist && song.artist !== fallbackArtist)?.artist;
     if (fallbackArtist && fallbackSongArtist) {
       return { a: fallbackArtist, b: fallbackSongArtist, weight: 1 };
     }
@@ -1201,9 +1202,14 @@ const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Son
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      <div className="absolute inset-0 opacity-35 pointer-events-none">
+        <PrismaticBurst animationType="rotate3d" intensity={1.2} speed={0.22} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
+      </div>
+      <div className="absolute inset-0 bg-black/65" />
+
       {/* Subtle accent */}
       <div
-        className="absolute pointer-events-none"
+        className="absolute pointer-events-none z-[1]"
         style={{
           width: 400,
           height: 400,
@@ -1298,6 +1304,18 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
 
   useEffect(() => {
     injectKeyframes();
+  }, []);
+
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
   }, []);
 
   // Auto-advance
