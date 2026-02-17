@@ -1744,6 +1744,7 @@ export const getLoyaltyScore = async (artistName: string): Promise<{ loyalty_rat
 };
 
 // Get market share breakdown
+// Note: When entityType is 'genre', this uses album_name as a proxy since genre data requires Spotify API
 export const getMarketShare = async (entityType: 'artist' | 'genre'): Promise<{ top_entities: Array<{ name: string; share: string }> } | null> => {
     try {
         const field = entityType === 'artist' ? 'artist_name' : 'album_name'; // Using album as genre proxy
@@ -1820,7 +1821,7 @@ export const getBingeSessions = async (thresholdMinutes: number = 60): Promise<{
             
             if (!currentSession || 
                 currentSession.artist !== item.artist_name ||
-                (playTime.getTime() - (new Date(data[i-1].played_at).getTime() + (data[i-1].duration_ms || 0))) > gapThreshold) {
+                (i > 0 && (playTime.getTime() - (new Date(data[i-1].played_at).getTime() + (data[i-1].duration_ms || 0))) > gapThreshold)) {
                 
                 // Save previous session if it meets threshold
                 if (currentSession && currentSession.totalMs >= thresholdMinutes * 60 * 1000) {
@@ -2022,31 +2023,26 @@ export const getWorkVsPlayStats = async (): Promise<{ workday_top: string[]; wee
 // Get seasonal vibe
 export const getSeasonalVibe = async (season: 'Summer' | 'Winter' | 'Spring' | 'Fall'): Promise<{ top_genres: string[]; avg_tempo: string } | null> => {
     try {
-        const now = new Date();
-        const year = now.getFullYear();
-        
-        let startMonth: number, endMonth: number;
-        switch (season) {
-            case 'Summer': startMonth = 5; endMonth = 8; break;
-            case 'Winter': startMonth = 11; endMonth = 2; break;
-            case 'Spring': startMonth = 2; endMonth = 5; break;
-            case 'Fall': startMonth = 8; endMonth = 11; break;
-        }
-
         const { data } = await supabase
             .from('listening_history')
-            .select('artist_name, album_name');
+            .select('artist_name, album_name, played_at');
 
         if (!data || data.length === 0) return null;
+
+        // Define season month ranges
+        let seasonMonths: number[];
+        switch (season) {
+            case 'Summer': seasonMonths = [5, 6, 7]; break; // Jun, Jul, Aug
+            case 'Winter': seasonMonths = [11, 0, 1]; break; // Dec, Jan, Feb
+            case 'Spring': seasonMonths = [2, 3, 4]; break; // Mar, Apr, May
+            case 'Fall': seasonMonths = [8, 9, 10]; break; // Sep, Oct, Nov
+        }
 
         // Filter by season months
         const seasonalData = data.filter(item => {
             const date = new Date(item.played_at || '');
             const month = date.getMonth();
-            if (season === 'Winter') {
-                return month === 11 || month === 0 || month === 1;
-            }
-            return month >= startMonth && month < endMonth;
+            return seasonMonths.includes(month);
         });
 
         // Use albums as genre proxy
@@ -2306,6 +2302,9 @@ export const getGenreEvolution = async (months: number = 6): Promise<{ timeline:
 };
 
 // Get skip rate by artist
+// Get skip rate by artist
+// Note: This considers songs listened to for < 30 seconds as "skipped"
+// This may include legitimately short songs (interludes, etc.)
 export const getSkipRateByArtist = async (artistName: string): Promise<{ skip_percent: string; avg_listen_duration: string } | null> => {
     try {
         const { data } = await supabase
@@ -2315,7 +2314,7 @@ export const getSkipRateByArtist = async (artistName: string): Promise<{ skip_pe
 
         if (!data || data.length === 0) return null;
 
-        // Assume songs < 30 seconds are skipped
+        // Consider songs < 30 seconds as skipped (note: may include short interludes)
         const skipped = data.filter(item => (item.duration_ms || 0) < 30000);
         const skipPercent = Math.round((skipped.length / data.length) * 100);
 
