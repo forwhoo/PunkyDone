@@ -54,9 +54,13 @@ export const answerMusicQuestion = async (question: string, context: {
         extraStats?: { longestGapHours: string, longestSessionHours: string }
     }
 }): Promise<string> => {
+    console.log('[geminiService] answerMusicQuestion called', { question, hasContext: !!context, artistCount: context.artists?.length });
     try {
         const client = getAiClient();
-        if (!client) return "Configure VITE_GROQ_API_KEY to use chat features.";
+        if (!client) {
+            console.warn('[geminiService] No AI client available - missing VITE_GROQ_API_KEY');
+            return "Configure VITE_GROQ_API_KEY to use chat features.";
+        }
 
         const statsInfo = context.globalStats ? `
 - This Week's Listening Time: ${context.globalStats.weeklyTime}
@@ -98,6 +102,7 @@ USER QUESTION: "${question}"
    - "Deep Cut" usually means songs with encoded popularity < 30 (if available) or rarely played tracks.
 `;
 
+        console.log('[geminiService] Sending request to AI model...');
         const response = await client.chat.completions.create({
             model: "moonshotai/kimi-k2-instruct-0905",
             messages: [{ role: "user", content: prompt }],
@@ -105,9 +110,11 @@ USER QUESTION: "${question}"
             max_tokens: 600
         });
 
-        return response.choices[0]?.message?.content || "I couldn't process that question. Try rephrasing!";
+        const result = response.choices[0]?.message?.content || "I couldn't process that question. Try rephrasing!";
+        console.log('[geminiService] Response received, length:', result.length);
+        return result;
     } catch (error) {
-        console.error("Chat Error:", error);
+        console.error("[geminiService] Chat Error:", error);
         return "Unable to answer right now. Try again!";
     }
 };
@@ -175,6 +182,79 @@ export const generateRankingInsights = async (items: string[]): Promise<Record<s
         return {};
     }
 }
+
+// AI Graph Navigation Tool - finds edges and paths in the connections graph
+export interface GraphNavigationParams {
+    action: 'find_connections' | 'find_path' | 'strongest_edges' | 'clusters' | 'isolated_nodes';
+    sourceNode?: string; // Name of source node
+    targetNode?: string; // Name of target node (for path finding)
+    minSimilarity?: number; // Minimum similarity threshold (0-1)
+    maxResults?: number; // Limit number of results
+    filterType?: 'artist' | 'album' | 'all'; // Filter by node type
+}
+
+export interface GraphNavigationResult {
+    action: string;
+    results: Array<{
+        from: string;
+        to: string;
+        similarity: number;
+        details?: string;
+    }>;
+    summary: string;
+}
+
+export const navigateConnectionGraph = async (
+    params: GraphNavigationParams,
+    graphContext: { nodes: string[]; edges: Array<{ from: string; to: string; similarity: number }> }
+): Promise<GraphNavigationResult> => {
+    console.log('[geminiService] navigateConnectionGraph called', params);
+    try {
+        const client = getAiClient();
+        if (!client) return { action: params.action, results: [], summary: 'Configure VITE_GROQ_API_KEY to use graph navigation.' };
+
+        const prompt = `
+You are a graph analysis assistant. Analyze the following music listening connections graph and respond to the user's request.
+
+GRAPH DATA:
+- Nodes: ${graphContext.nodes.slice(0, 50).join(', ')}
+- Total edges: ${graphContext.edges.length}
+- Top 20 strongest edges: ${JSON.stringify(graphContext.edges.slice(0, 20).map(e => `${e.from} ↔ ${e.to} (${Math.round(e.similarity * 100)}%)`))}
+
+USER REQUEST:
+- Action: ${params.action}
+${params.sourceNode ? `- Source: ${params.sourceNode}` : ''}
+${params.targetNode ? `- Target: ${params.targetNode}` : ''}
+${params.minSimilarity ? `- Min Similarity: ${params.minSimilarity * 100}%` : ''}
+${params.maxResults ? `- Max Results: ${params.maxResults}` : ''}
+${params.filterType ? `- Filter: ${params.filterType}` : ''}
+
+Return a JSON object with:
+- "summary": A brief 1-2 sentence description of findings
+- "results": Array of { "from": string, "to": string, "similarity": number (0-1), "details": string }
+
+Only return valid JSON.`;
+
+        const response = await client.chat.completions.create({
+            model: "moonshotai/kimi-k2-instruct-0905",
+            messages: [{ role: "user", content: prompt }],
+            response_format: { type: "json_object" },
+            temperature: 0.3,
+            max_tokens: 800
+        });
+
+        const parsed = JSON.parse(response.choices[0]?.message?.content || '{}');
+        console.log('[geminiService] Graph navigation result:', parsed);
+        return {
+            action: params.action,
+            results: parsed.results || [],
+            summary: parsed.summary || 'No results found.'
+        };
+    } catch (error) {
+        console.error('[geminiService] Graph navigation error:', error);
+        return { action: params.action, results: [], summary: 'Unable to navigate graph right now.' };
+    }
+};
 
 export interface AIFilterArgs {
     // Result Type

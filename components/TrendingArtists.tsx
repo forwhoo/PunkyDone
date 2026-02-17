@@ -318,39 +318,51 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                 recencyWeightedPlays += Math.exp(-age) * Math.exp(-(age * age) / 10);
             }
 
-            // Advanced Score Components - Normalized to 0-100 scale
-            // 1. Volume: Logarithmic scale with saturation - Max 20
-            const volumeScore = Math.min(20, Math.log1p(totalPlays) * 5);
+            // Advanced Score Components - Normalized to 0-250 scale for greater variation
+            // 1. Volume: Logarithmic scale with saturation - Max 50
+            const volumeScore = Math.min(50, Math.log1p(totalPlays) * 12.5);
             
-            // 2. Consistency: Regularity with exponential reward - Max 18
-            const consistencyScore = Math.min(18, Math.pow(consistency, 0.7) * 18);
+            // 2. Consistency: Regularity with exponential reward - Max 45
+            const consistencyScore = Math.min(45, Math.pow(consistency, 0.7) * 45);
             
-            // 3. Intensity: Average plays per day with logarithmic scaling - Max 16
-            const intensityScore = Math.min(16, Math.log1p(playsPerDay) * 8);
+            // 3. Intensity: Average plays per day with logarithmic scaling - Max 40
+            const intensityScore = Math.min(40, Math.log1p(playsPerDay) * 20);
             
-            // 4. Focus: Session intensity with binge bonus - Max 14
-            const baseFocusScore = Math.min(1, sessionIntensity / 6) * 10;
-            const bingeFocusBonus = bingeRatio * 4; // Up to 4 points for binge sessions
+            // 4. Focus: Session intensity with binge bonus - Max 30
+            const baseFocusScore = Math.min(1, sessionIntensity / 6) * 20;
+            const bingeFocusBonus = bingeRatio * 10; // Up to 10 points for binge sessions
             const focusScore = baseFocusScore + bingeFocusBonus;
             
-            // 5. Recency: Multi-layer decay with recent boost - Max 12
-            const recencyScore = recencyFactor * 12;
+            // 5. Recency: Multi-layer decay with recent boost - Max 25
+            const recencyScore = recencyFactor * 25;
             
-            // 6. Momentum: Velocity of listening pattern - Max 10 (can be negative)
-            const momentumScore = Math.max(0, (momentum + 1) * 5); // Convert [-1,1] to [0,10]
+            // 6. Momentum: Velocity of listening pattern - Max 20 (can be negative)
+            const momentumScore = Math.max(0, (momentum + 1) * 10); // Convert [-1,1] to [0,20]
             
-            // 7. Weighted Recency: Double-exponential weighted plays - Max 8
-            const weightedRecencyScore = Math.min(8, (recencyWeightedPlays / totalPlays) * 16);
+            // 7. Weighted Recency: Double-exponential weighted plays - Max 20
+            const weightedRecencyScore = Math.min(20, (recencyWeightedPlays / totalPlays) * 40);
             
-            // 8. Engagement: Combination of session variance and length - Max 6
+            // 8. Engagement: Combination of session variance and length - Max 15
             const sessionVariance = sessionSizes.length > 1 
                 ? sessionSizes.reduce((sum, size) => sum + Math.pow(size - sessionIntensity, 2), 0) / sessionSizes.length
                 : 0;
-            const engagementScore = Math.min(6, (sessionIntensity / Math.sqrt(sessionVariance + 1)) * 0.8);
+            const engagementScore = Math.min(15, (sessionIntensity / Math.sqrt(sessionVariance + 1)) * 2);
+
+            // 9. Loyalty: Bonus for long-term consistent listening - Max 15
+            const loyaltyDays = Math.min(365, spanDays);
+            const loyaltyScore = Math.min(15, (loyaltyDays / 365) * uniqueDays * 0.1);
+
+            // 10. Night Owl / Peak Hour Bonus: Reward late-night dedicated listening - Max 10
+            const lateNightPlays = sortedPlays.filter(p => {
+                const h = new Date(p).getHours();
+                return h >= 23 || h <= 4;
+            }).length;
+            const peakDedicationScore = Math.min(10, (lateNightPlays / totalPlays) * 25);
             
-            // Final Score with Diversity Multiplier
+            // Final Score with Diversity Multiplier (max theoretical ~250)
             const rawScore = volumeScore + consistencyScore + intensityScore + focusScore + 
-                           recencyScore + momentumScore + weightedRecencyScore + engagementScore;
+                           recencyScore + momentumScore + weightedRecencyScore + engagementScore +
+                           loyaltyScore + peakDedicationScore;
             const score = rawScore * diversityBonus;
 
             const finalImage = data.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(key)}&background=random`;
@@ -762,28 +774,28 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                             </div>
                                         )}
 
-                                        {/* Tracks */}
+                                        {/* Tracks - Cleaned Up */}
                                         <div className="px-5">
-                                            <h3 className="text-white text-[11px] font-bold uppercase tracking-widest mb-3 opacity-40">All Tracks</h3>
+                                            <h3 className="text-white/40 text-[10px] font-bold uppercase tracking-[0.15em] mb-3">All Tracks</h3>
                                             <div className="space-y-0.5">
                                                 {/* @ts-ignore */}
                                                 {selectedItem.tracks && selectedItem.tracks.length > 0 ? (
                                                     selectedItem.tracks
                                                     .slice(0, 15)
                                                     .map((track: any, idx: number) => (
-                                                        <div key={idx} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-md group transition-colors cursor-default">
-                                                            <div className="text-[#8E8E93] font-mono text-[10px] w-4 text-center">{idx + 1}</div>
-                                                            <div className="w-8 h-8 rounded bg-[#2C2C2E] overflow-hidden flex-shrink-0">
+                                                        <div key={idx} className="flex items-center gap-2.5 py-1.5 px-2 hover:bg-white/[0.04] rounded-xl group transition-colors cursor-default">
+                                                            <div className="text-white/20 font-mono text-[10px] w-4 text-right font-bold">{idx + 1}</div>
+                                                            <div className="w-8 h-8 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 border border-white/5">
                                                                 <img src={track.album_cover || track.cover} className="w-full h-full object-cover" alt="" />
                                                             </div>
                                                             <div className="min-w-0 flex-1">
-                                                                <div className="text-[13px] font-medium text-white truncate group-hover:text-white transition-colors">{track.track_name}</div>
-                                                                <div className="text-[10px] text-[#8E8E93] truncate">{track.count} plays</div>
+                                                                <div className="text-[12px] font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">{track.track_name}</div>
+                                                                <div className="text-[10px] text-white/25 font-medium">{track.count} plays</div>
                                                             </div>
                                                         </div>
                                                     ))
                                                 ) : (
-                                                     <div className="text-xs text-[#8E8E93] italic py-4 text-center">Track data unavailable</div>
+                                                     <div className="text-xs text-white/20 italic py-6 text-center">Track data unavailable</div>
                                                 )}
                                             </div>
                                         </div>
