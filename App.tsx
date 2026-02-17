@@ -1843,6 +1843,7 @@ function App() {
                     ...safeSongs.map((s: Song) => s.cover),
                     ...safeArtists.map((a: Artist) => a.image)
                 ].filter(Boolean))]}
+                totalMinutes={dbStats?.totalMinutes ?? 0}
             />
         )}
     </AnimatePresence>
