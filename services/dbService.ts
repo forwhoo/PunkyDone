@@ -1531,3 +1531,1011 @@ export const getObsessionArtist = async (period: 'daily' | 'weekly' | 'monthly' 
 
     return bestArtist;
 };
+
+// ─── COMPARATIVE & GROWTH TOOLS ─────────────────────────────────────
+
+// Compare artist performance across two periods
+export const compareArtistPerformance = async (
+    artistName: string,
+    periodA: string,
+    periodB: string
+): Promise<{ total_plays: [number, number]; minutes: [number, number]; delta_percent: number } | null> => {
+    const getPeriodDates = (period: string): { start: Date; end: Date } => {
+        const now = new Date();
+        const periodLower = period.toLowerCase();
+        
+        if (periodLower.includes('last week')) {
+            const end = new Date(now);
+            end.setDate(end.getDate() - end.getDay());
+            end.setHours(0, 0, 0, 0);
+            const start = new Date(end);
+            start.setDate(start.getDate() - 7);
+            return { start, end };
+        } else if (periodLower.includes('this week')) {
+            const start = new Date(now);
+            start.setDate(start.getDate() - start.getDay());
+            start.setHours(0, 0, 0, 0);
+            return { start, end: now };
+        } else if (periodLower.includes('last month')) {
+            const end = new Date(now.getFullYear(), now.getMonth(), 1);
+            const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            return { start, end };
+        } else if (periodLower.includes('this month')) {
+            const start = new Date(now.getFullYear(), now.getMonth(), 1);
+            return { start, end: now };
+        }
+        
+        // Default: last 7 days for periodA, current 7 days for periodB
+        const start = new Date(now);
+        start.setDate(start.getDate() - 7);
+        return { start, end: now };
+    };
+
+    try {
+        const datesA = getPeriodDates(periodA);
+        const datesB = getPeriodDates(periodB);
+
+        // Fetch period A
+        const { data: dataA } = await supabase
+            .from('listening_history')
+            .select('duration_ms')
+            .ilike('artist_name', `%${artistName}%`)
+            .gte('played_at', datesA.start.toISOString())
+            .lt('played_at', datesA.end.toISOString());
+
+        // Fetch period B
+        const { data: dataB } = await supabase
+            .from('listening_history')
+            .select('duration_ms')
+            .ilike('artist_name', `%${artistName}%`)
+            .gte('played_at', datesB.start.toISOString())
+            .lt('played_at', datesB.end.toISOString());
+
+        const playsA = dataA?.length || 0;
+        const playsB = dataB?.length || 0;
+        const minutesA = Math.round((dataA?.reduce((sum, item) => sum + (item.duration_ms || 0), 0) || 0) / 60000);
+        const minutesB = Math.round((dataB?.reduce((sum, item) => sum + (item.duration_ms || 0), 0) || 0) / 60000);
+
+        const deltaPercent = playsA > 0 ? Math.round(((playsB - playsA) / playsA) * 100) : (playsB > 0 ? 100 : 0);
+
+        return {
+            total_plays: [playsA, playsB],
+            minutes: [minutesA, minutesB],
+            delta_percent: deltaPercent
+        };
+    } catch (error) {
+        console.error('compareArtistPerformance error:', error);
+        return null;
+    }
+};
+
+// Get rank shift for an entity over time
+export const getRankShift = async (
+    entityName: string,
+    entityType: 'artist' | 'song',
+    timeRange: string = 'weekly'
+): Promise<{ previous_rank: number; current_rank: number; movement: string } | null> => {
+    try {
+        const now = new Date();
+        
+        // Current period
+        let currentStart: Date;
+        if (timeRange === 'weekly') {
+            currentStart = new Date(now);
+            currentStart.setDate(currentStart.getDate() - 7);
+        } else if (timeRange === 'monthly') {
+            currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else {
+            currentStart = new Date(now);
+            currentStart.setDate(currentStart.getDate() - 1);
+        }
+
+        // Previous period
+        const previousEnd = new Date(currentStart);
+        const previousStart = new Date(currentStart);
+        if (timeRange === 'weekly') {
+            previousStart.setDate(previousStart.getDate() - 7);
+        } else if (timeRange === 'monthly') {
+            previousStart.setMonth(previousStart.getMonth() - 1);
+        } else {
+            previousStart.setDate(previousStart.getDate() - 1);
+        }
+
+        // Get current rankings
+        const { data: currentData } = await supabase
+            .from('listening_history')
+            .select(entityType === 'artist' ? 'artist_name' : 'track_name')
+            .gte('played_at', currentStart.toISOString())
+            .lte('played_at', now.toISOString());
+
+        // Get previous rankings
+        const { data: previousData } = await supabase
+            .from('listening_history')
+            .select(entityType === 'artist' ? 'artist_name' : 'track_name')
+            .gte('played_at', previousStart.toISOString())
+            .lt('played_at', previousEnd.toISOString());
+
+        const field = entityType === 'artist' ? 'artist_name' : 'track_name';
+        
+        // Count occurrences for current period
+        const currentCounts: Record<string, number> = {};
+        currentData?.forEach(item => {
+            const name = item[field];
+            if (name) currentCounts[name] = (currentCounts[name] || 0) + 1;
+        });
+
+        // Count occurrences for previous period
+        const previousCounts: Record<string, number> = {};
+        previousData?.forEach(item => {
+            const name = item[field];
+            if (name) previousCounts[name] = (previousCounts[name] || 0) + 1;
+        });
+
+        // Sort and rank
+        const currentRanking = Object.entries(currentCounts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([name]) => name);
+        
+        const previousRanking = Object.entries(previousCounts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([name]) => name);
+
+        const currentRank = currentRanking.findIndex(name => 
+            name.toLowerCase().includes(entityName.toLowerCase())
+        ) + 1;
+        
+        const previousRank = previousRanking.findIndex(name => 
+            name.toLowerCase().includes(entityName.toLowerCase())
+        ) + 1;
+
+        if (currentRank === 0) return null;
+
+        const movement = previousRank === 0 ? 'NEW' : 
+            previousRank > currentRank ? `+${previousRank - currentRank}` :
+            previousRank < currentRank ? `-${currentRank - previousRank}` : '=';
+
+        return {
+            previous_rank: previousRank || 0,
+            current_rank: currentRank,
+            movement
+        };
+    } catch (error) {
+        console.error('getRankShift error:', error);
+        return null;
+    }
+};
+
+// Get loyalty score for an artist within their genre
+export const getLoyaltyScore = async (artistName: string): Promise<{ loyalty_ratio: number; status: string } | null> => {
+    try {
+        // Get all plays for the artist
+        const { data: artistPlays } = await supabase
+            .from('listening_history')
+            .select('*')
+            .ilike('artist_name', `%${artistName}%`);
+
+        if (!artistPlays || artistPlays.length === 0) return null;
+
+        // For simplicity, compare to all other artists (genre data would require Spotify API)
+        const { data: allPlays } = await supabase
+            .from('listening_history')
+            .select('artist_name');
+
+        if (!allPlays) return null;
+
+        const totalPlays = allPlays.length;
+        const artistPlayCount = artistPlays.length;
+        const ratio = totalPlays > 0 ? artistPlayCount / totalPlays : 0;
+
+        let status = 'Casual';
+        if (ratio >= 0.5) status = 'Die-hard';
+        else if (ratio >= 0.3) status = 'Super Fan';
+        else if (ratio >= 0.15) status = 'Big Fan';
+        else if (ratio >= 0.05) status = 'Regular';
+
+        return {
+            loyalty_ratio: Math.round(ratio * 100) / 100,
+            status
+        };
+    } catch (error) {
+        console.error('getLoyaltyScore error:', error);
+        return null;
+    }
+};
+
+// Get market share breakdown
+// Note: When entityType is 'genre', this uses album_name as a proxy since genre data requires Spotify API
+export const getMarketShare = async (entityType: 'artist' | 'genre'): Promise<{ top_entities: Array<{ name: string; share: string }> } | null> => {
+    try {
+        const field = entityType === 'artist' ? 'artist_name' : 'album_name'; // Using album as genre proxy
+        
+        const { data } = await supabase
+            .from('listening_history')
+            .select(field);
+
+        if (!data || data.length === 0) return null;
+
+        const counts: Record<string, number> = {};
+        data.forEach(item => {
+            const name = item[field];
+            if (name) counts[name] = (counts[name] || 0) + 1;
+        });
+
+        const totalPlays = data.length;
+        const topEntities = Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10)
+            .map(([name, count]) => ({
+                name,
+                share: `${Math.round((count / totalPlays) * 100)}%`
+            }));
+
+        return { top_entities: topEntities };
+    } catch (error) {
+        console.error('getMarketShare error:', error);
+        return null;
+    }
+};
+
+// ─── BEHAVIORAL & DISCOVERY TOOLS ─────────────────────────────────────
+
+// Get discovery date for an artist
+export const getDiscoveryDate = async (artistName: string): Promise<{ first_played: string; first_song: string } | null> => {
+    try {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('played_at, track_name')
+            .ilike('artist_name', `%${artistName}%`)
+            .order('played_at', { ascending: true })
+            .limit(1);
+
+        if (!data || data.length === 0) return null;
+
+        return {
+            first_played: new Date(data[0].played_at).toLocaleDateString(),
+            first_song: data[0].track_name
+        };
+    } catch (error) {
+        console.error('getDiscoveryDate error:', error);
+        return null;
+    }
+};
+
+// Get binge listening sessions
+export const getBingeSessions = async (thresholdMinutes: number = 60): Promise<{ sessions: Array<{ date: string; duration: string; artist: string }> } | null> => {
+    try {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('played_at, artist_name, duration_ms')
+            .order('played_at', { ascending: true });
+
+        if (!data || data.length === 0) return null;
+
+        const sessions: Array<{ date: string; duration: string; artist: string }> = [];
+        let currentSession: { artist: string; start: Date; totalMs: number } | null = null;
+        const gapThreshold = 30 * 60 * 1000; // 30 minutes gap tolerance
+
+        for (let i = 0; i < data.length; i++) {
+            const item = data[i];
+            const playTime = new Date(item.played_at);
+            
+            if (!currentSession || 
+                currentSession.artist !== item.artist_name ||
+                (i > 0 && (playTime.getTime() - (new Date(data[i-1].played_at).getTime() + (data[i-1].duration_ms || 0))) > gapThreshold)) {
+                
+                // Save previous session if it meets threshold
+                if (currentSession && currentSession.totalMs >= thresholdMinutes * 60 * 1000) {
+                    sessions.push({
+                        date: currentSession.start.toLocaleDateString(),
+                        duration: `${Math.round(currentSession.totalMs / 60000)}m`,
+                        artist: currentSession.artist
+                    });
+                }
+                
+                // Start new session
+                currentSession = {
+                    artist: item.artist_name,
+                    start: playTime,
+                    totalMs: item.duration_ms || 0
+                };
+            } else {
+                currentSession.totalMs += item.duration_ms || 0;
+            }
+        }
+
+        // Check last session
+        if (currentSession && currentSession.totalMs >= thresholdMinutes * 60 * 1000) {
+            sessions.push({
+                date: currentSession.start.toLocaleDateString(),
+                duration: `${Math.round(currentSession.totalMs / 60000)}m`,
+                artist: currentSession.artist
+            });
+        }
+
+        return { sessions: sessions.slice(0, 10) }; // Return top 10
+    } catch (error) {
+        console.error('getBingeSessions error:', error);
+        return null;
+    }
+};
+
+// Get one-hit wonders (artists with one dominant song)
+export const getOneHitWonders = async (minPlays: number = 5): Promise<{ artists: Array<{ name: string; top_song: string; song_share: string }> } | null> => {
+    try {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('artist_name, track_name');
+
+        if (!data || data.length === 0) return null;
+
+        const artistSongs: Record<string, Record<string, number>> = {};
+        data.forEach(item => {
+            if (!item.artist_name || !item.track_name) return;
+            if (!artistSongs[item.artist_name]) {
+                artistSongs[item.artist_name] = {};
+            }
+            artistSongs[item.artist_name][item.track_name] = (artistSongs[item.artist_name][item.track_name] || 0) + 1;
+        });
+
+        const oneHitWonders: Array<{ name: string; top_song: string; song_share: string }> = [];
+
+        for (const [artist, songs] of Object.entries(artistSongs)) {
+            const totalPlays = Object.values(songs).reduce((sum, count) => sum + count, 0);
+            if (totalPlays < minPlays) continue;
+
+            const sortedSongs = Object.entries(songs).sort((a, b) => b[1] - a[1]);
+            const topSong = sortedSongs[0];
+            const songShare = (topSong[1] / totalPlays) * 100;
+
+            if (songShare >= 80) { // 80%+ of plays on one song
+                oneHitWonders.push({
+                    name: artist,
+                    top_song: topSong[0],
+                    song_share: `${Math.round(songShare)}%`
+                });
+            }
+        }
+
+        return { artists: oneHitWonders.slice(0, 10) };
+    } catch (error) {
+        console.error('getOneHitWonders error:', error);
+        return null;
+    }
+};
+
+// Get album completion stats
+export const getAlbumCompletionist = async (albumName: string): Promise<{ tracks_played: number; total_tracks: number; completion: string } | null> => {
+    try {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('track_name')
+            .ilike('album_name', `%${albumName}%`);
+
+        if (!data || data.length === 0) return null;
+
+        const uniqueTracks = new Set(data.map(item => item.track_name));
+        const tracksPlayed = uniqueTracks.size;
+        
+        // Estimate total tracks (would need Spotify API for exact count)
+        // Using a heuristic: assume typical album has 12-15 tracks
+        const estimatedTotal = Math.max(tracksPlayed, 12);
+        const completion = Math.min(100, Math.round((tracksPlayed / estimatedTotal) * 100));
+
+        return {
+            tracks_played: tracksPlayed,
+            total_tracks: estimatedTotal,
+            completion: `${completion}%`
+        };
+    } catch (error) {
+        console.error('getAlbumCompletionist error:', error);
+        return null;
+    }
+};
+
+// Get earworm report (most looped song)
+export const getEarwormReport = async (daysBack: number = 7): Promise<{ song: string; repeat_count: number; max_repeats_in_one_hour: number } | null> => {
+    try {
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - daysBack);
+
+        const { data } = await supabase
+            .from('listening_history')
+            .select('track_name, artist_name, played_at')
+            .gte('played_at', startDate.toISOString())
+            .order('played_at', { ascending: true });
+
+        if (!data || data.length === 0) return null;
+
+        const songCounts: Record<string, number> = {};
+        const hourlyRepeats: Record<string, Record<string, number>> = {};
+
+        data.forEach(item => {
+            const songKey = `${item.track_name} - ${item.artist_name}`;
+            songCounts[songKey] = (songCounts[songKey] || 0) + 1;
+
+            const hour = new Date(item.played_at).toISOString().slice(0, 13);
+            if (!hourlyRepeats[songKey]) hourlyRepeats[songKey] = {};
+            hourlyRepeats[songKey][hour] = (hourlyRepeats[songKey][hour] || 0) + 1;
+        });
+
+        const topSong = Object.entries(songCounts).sort((a, b) => b[1] - a[1])[0];
+        if (!topSong) return null;
+
+        const maxHourlyRepeats = Math.max(...Object.values(hourlyRepeats[topSong[0]] || {}));
+
+        return {
+            song: topSong[0],
+            repeat_count: topSong[1],
+            max_repeats_in_one_hour: maxHourlyRepeats || 0
+        };
+    } catch (error) {
+        console.error('getEarwormReport error:', error);
+        return null;
+    }
+};
+
+// ─── TIME & CONTEXTUAL TOOLS ─────────────────────────────────────
+
+// Get work vs play stats (weekday vs weekend)
+export const getWorkVsPlayStats = async (): Promise<{ workday_top: string[]; weekend_top: string[] } | null> => {
+    try {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('artist_name, played_at');
+
+        if (!data || data.length === 0) return null;
+
+        const weekdayCounts: Record<string, number> = {};
+        const weekendCounts: Record<string, number> = {};
+
+        data.forEach(item => {
+            const date = new Date(item.played_at);
+            const day = date.getDay();
+            const isWeekend = day === 0 || day === 6;
+            const artist = item.artist_name;
+
+            if (!artist) return;
+
+            if (isWeekend) {
+                weekendCounts[artist] = (weekendCounts[artist] || 0) + 1;
+            } else {
+                weekdayCounts[artist] = (weekdayCounts[artist] || 0) + 1;
+            }
+        });
+
+        const workdayTop = Object.entries(weekdayCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name]) => name);
+
+        const weekendTop = Object.entries(weekendCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name]) => name);
+
+        return { workday_top: workdayTop, weekend_top: weekendTop };
+    } catch (error) {
+        console.error('getWorkVsPlayStats error:', error);
+        return null;
+    }
+};
+
+// Get seasonal vibe
+export const getSeasonalVibe = async (season: 'Summer' | 'Winter' | 'Spring' | 'Fall'): Promise<{ top_genres: string[]; avg_tempo: string } | null> => {
+    try {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('artist_name, album_name, played_at');
+
+        if (!data || data.length === 0) return null;
+
+        // Define season month ranges
+        let seasonMonths: number[];
+        switch (season) {
+            case 'Summer': seasonMonths = [5, 6, 7]; break; // Jun, Jul, Aug
+            case 'Winter': seasonMonths = [11, 0, 1]; break; // Dec, Jan, Feb
+            case 'Spring': seasonMonths = [2, 3, 4]; break; // Mar, Apr, May
+            case 'Fall': seasonMonths = [8, 9, 10]; break; // Sep, Oct, Nov
+        }
+
+        // Filter by season months
+        const seasonalData = data.filter(item => {
+            const date = new Date(item.played_at || '');
+            const month = date.getMonth();
+            return seasonMonths.includes(month);
+        });
+
+        // Use albums as genre proxy
+        const genreCounts: Record<string, number> = {};
+        seasonalData.forEach(item => {
+            if (item.album_name) {
+                genreCounts[item.album_name] = (genreCounts[item.album_name] || 0) + 1;
+            }
+        });
+
+        const topGenres = Object.entries(genreCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name]) => name);
+
+        return {
+            top_genres: topGenres,
+            avg_tempo: 'Medium' // Would need Spotify audio features
+        };
+    } catch (error) {
+        console.error('getSeasonalVibe error:', error);
+        return null;
+    }
+};
+
+// Get anniversary flashback (what was playing one year ago)
+export const getAnniversaryFlashback = async (date?: string): Promise<{ date: string; top_song: string; total_minutes: number } | null> => {
+    try {
+        const targetDate = date ? new Date(date) : new Date();
+        const oneYearAgo = new Date(targetDate);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        
+        const startOfDay = new Date(oneYearAgo);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(oneYearAgo);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const { data } = await supabase
+            .from('listening_history')
+            .select('track_name, artist_name, duration_ms')
+            .gte('played_at', startOfDay.toISOString())
+            .lte('played_at', endOfDay.toISOString());
+
+        if (!data || data.length === 0) return null;
+
+        const songCounts: Record<string, number> = {};
+        let totalMs = 0;
+
+        data.forEach(item => {
+            const songKey = `${item.track_name} - ${item.artist_name}`;
+            songCounts[songKey] = (songCounts[songKey] || 0) + 1;
+            totalMs += item.duration_ms || 0;
+        });
+
+        const topSong = Object.entries(songCounts).sort((a, b) => b[1] - a[1])[0];
+
+        return {
+            date: oneYearAgo.toLocaleDateString(),
+            top_song: topSong ? topSong[0] : 'No data',
+            total_minutes: Math.round(totalMs / 60000)
+        };
+    } catch (error) {
+        console.error('getAnniversaryFlashback error:', error);
+        return null;
+    }
+};
+
+// Get commute soundtrack (8-9am, 5-6pm)
+export const getCommuteSoundtrack = async (): Promise<{ top_artists: string[]; time_window: string } | null> => {
+    try {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('artist_name, played_at');
+
+        if (!data || data.length === 0) return null;
+
+        const commuteCounts: Record<string, number> = {};
+
+        data.forEach(item => {
+            const date = new Date(item.played_at);
+            const hour = date.getHours();
+            
+            // Morning commute (7-9am) or evening commute (5-7pm)
+            if ((hour >= 7 && hour < 9) || (hour >= 17 && hour < 19)) {
+                const artist = item.artist_name;
+                if (artist) {
+                    commuteCounts[artist] = (commuteCounts[artist] || 0) + 1;
+                }
+            }
+        });
+
+        const topArtists = Object.entries(commuteCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name]) => name);
+
+        return {
+            top_artists: topArtists,
+            time_window: '7-9am & 5-7pm'
+        };
+    } catch (error) {
+        console.error('getCommuteSoundtrack error:', error);
+        return null;
+    }
+};
+
+// Get sleep pattern
+export const getSleepPattern = async (): Promise<{ avg_stop_time: string; sleep_genres: string[] } | null> => {
+    try {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('artist_name, album_name, played_at')
+            .order('played_at', { ascending: true });
+
+        if (!data || data.length === 0) return null;
+
+        const nightListening: { hour: number; artist: string; album: string }[] = [];
+
+        data.forEach(item => {
+            const date = new Date(item.played_at);
+            const hour = date.getHours();
+            
+            // Late night listening (10pm - 2am)
+            if (hour >= 22 || hour < 2) {
+                nightListening.push({
+                    hour,
+                    artist: item.artist_name,
+                    album: item.album_name
+                });
+            }
+        });
+
+        // Find most common stop time
+        const stopHours = nightListening.map(item => item.hour);
+        const avgStopHour = stopHours.length > 0 
+            ? Math.round(stopHours.reduce((sum, h) => sum + h, 0) / stopHours.length)
+            : 23;
+
+        const avgStopTime = avgStopHour === 0 ? '12:00 AM' : 
+                           avgStopHour < 12 ? `${avgStopHour}:00 AM` :
+                           avgStopHour === 12 ? '12:00 PM' :
+                           `${avgStopHour - 12}:00 PM`;
+
+        // Get common albums/artists (as genre proxy)
+        const genreCounts: Record<string, number> = {};
+        nightListening.forEach(item => {
+            if (item.album) genreCounts[item.album] = (genreCounts[item.album] || 0) + 1;
+        });
+
+        const sleepGenres = Object.entries(genreCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([name]) => name);
+
+        return {
+            avg_stop_time: avgStopTime,
+            sleep_genres: sleepGenres
+        };
+    } catch (error) {
+        console.error('getSleepPattern error:', error);
+        return null;
+    }
+};
+
+// ─── DIVERSITY & TECHNICAL TOOLS ─────────────────────────────────────
+
+// Get diversity index
+export const getDiversityIndex = async (timeRange: string = 'monthly'): Promise<{ score: number; unique_artists: number; repeat_rate: string } | null> => {
+    try {
+        const now = new Date();
+        let startDate: Date;
+
+        if (timeRange === 'weekly') {
+            startDate = new Date(now);
+            startDate.setDate(startDate.getDate() - 7);
+        } else if (timeRange === 'monthly') {
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else {
+            startDate = new Date(now);
+            startDate.setDate(startDate.getDate() - 30);
+        }
+
+        const { data } = await supabase
+            .from('listening_history')
+            .select('artist_name')
+            .gte('played_at', startDate.toISOString());
+
+        if (!data || data.length === 0) return null;
+
+        const uniqueArtists = new Set(data.map(item => item.artist_name).filter(Boolean));
+        const totalPlays = data.length;
+        const uniqueCount = uniqueArtists.size;
+
+        // Diversity score: higher when more unique artists relative to total plays
+        const diversityScore = Math.min(100, Math.round((uniqueCount / totalPlays) * 100 * 10));
+        
+        const repeatRate = totalPlays > 0 ? (totalPlays - uniqueCount) / totalPlays : 0;
+        const repeatLabel = repeatRate < 0.3 ? 'low' : repeatRate < 0.6 ? 'medium' : 'high';
+
+        return {
+            score: diversityScore,
+            unique_artists: uniqueCount,
+            repeat_rate: repeatLabel
+        };
+    } catch (error) {
+        console.error('getDiversityIndex error:', error);
+        return null;
+    }
+};
+
+// Get genre evolution over time
+export const getGenreEvolution = async (months: number = 6): Promise<{ timeline: Array<{ month: string; top: string }> } | null> => {
+    try {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('artist_name, album_name, played_at')
+            .order('played_at', { ascending: true });
+
+        if (!data || data.length === 0) return null;
+
+        const now = new Date();
+        const timeline: Array<{ month: string; top: string }> = [];
+
+        for (let i = months - 1; i >= 0; i--) {
+            const monthDate = new Date(now);
+            monthDate.setMonth(monthDate.getMonth() - i);
+            const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+            const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+
+            const monthData = data.filter(item => {
+                const itemDate = new Date(item.played_at);
+                return itemDate >= monthStart && itemDate <= monthEnd;
+            });
+
+            const genreCounts: Record<string, number> = {};
+            monthData.forEach(item => {
+                // Use artist as genre proxy
+                if (item.artist_name) {
+                    genreCounts[item.artist_name] = (genreCounts[item.artist_name] || 0) + 1;
+                }
+            });
+
+            const topGenre = Object.entries(genreCounts)
+                .sort((a, b) => b[1] - a[1])[0];
+
+            timeline.push({
+                month: monthDate.toLocaleDateString('en-US', { month: 'short' }),
+                top: topGenre ? topGenre[0] : 'None'
+            });
+        }
+
+        return { timeline };
+    } catch (error) {
+        console.error('getGenreEvolution error:', error);
+        return null;
+    }
+};
+
+// Get skip rate by artist
+// Get skip rate by artist
+// Note: This considers songs listened to for < 30 seconds as "skipped"
+// This may include legitimately short songs (interludes, etc.)
+export const getSkipRateByArtist = async (artistName: string): Promise<{ skip_percent: string; avg_listen_duration: string } | null> => {
+    try {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('duration_ms')
+            .ilike('artist_name', `%${artistName}%`);
+
+        if (!data || data.length === 0) return null;
+
+        // Consider songs < 30 seconds as skipped (note: may include short interludes)
+        const skipped = data.filter(item => (item.duration_ms || 0) < 30000);
+        const skipPercent = Math.round((skipped.length / data.length) * 100);
+
+        const avgDuration = data.reduce((sum, item) => sum + (item.duration_ms || 0), 0) / data.length;
+        const avgMinutes = Math.floor(avgDuration / 60000);
+        const avgSeconds = Math.floor((avgDuration % 60000) / 1000);
+
+        return {
+            skip_percent: `${skipPercent}%`,
+            avg_listen_duration: `${avgMinutes}m ${avgSeconds}s`
+        };
+    } catch (error) {
+        console.error('getSkipRateByArtist error:', error);
+        return null;
+    }
+};
+
+// Get gateway tracks (songs that led to discovering an artist)
+export const getGatewayTracks = async (artistName: string): Promise<{ gateway_song: string; follow_up_plays: number } | null> => {
+    try {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('track_name, played_at')
+            .ilike('artist_name', `%${artistName}%`)
+            .order('played_at', { ascending: true });
+
+        if (!data || data.length < 2) return null;
+
+        const firstSong = data[0].track_name;
+        const totalFollowUps = data.length - 1;
+
+        return {
+            gateway_song: firstSong,
+            follow_up_plays: totalFollowUps
+        };
+    } catch (error) {
+        console.error('getGatewayTracks error:', error);
+        return null;
+    }
+};
+
+// Get top collaborations (artists played in same session)
+export const getTopCollaborations = async (): Promise<{ pairs: Array<{ artists: string; co_occurrence: number }> } | null> => {
+    try {
+        const { data } = await supabase
+            .from('listening_history')
+            .select('artist_name, played_at')
+            .order('played_at', { ascending: true });
+
+        if (!data || data.length === 0) return null;
+
+        // Group by sessions (within 30 min gaps)
+        const sessions: string[][] = [];
+        let currentSession: Set<string> = new Set();
+        let lastTime: Date | null = null;
+
+        data.forEach(item => {
+            const currentTime = new Date(item.played_at);
+            
+            if (!lastTime || (currentTime.getTime() - lastTime.getTime()) > 30 * 60 * 1000) {
+                if (currentSession.size > 0) {
+                    sessions.push(Array.from(currentSession));
+                }
+                currentSession = new Set();
+            }
+            
+            if (item.artist_name) currentSession.add(item.artist_name);
+            lastTime = currentTime;
+        });
+
+        if (currentSession.size > 0) {
+            sessions.push(Array.from(currentSession));
+        }
+
+        // Count co-occurrences
+        const pairCounts: Record<string, number> = {};
+        sessions.forEach(session => {
+            const artists = Array.from(new Set(session));
+            for (let i = 0; i < artists.length; i++) {
+                for (let j = i + 1; j < artists.length; j++) {
+                    const pair = [artists[i], artists[j]].sort().join(' & ');
+                    pairCounts[pair] = (pairCounts[pair] || 0) + 1;
+                }
+            }
+        });
+
+        const topPairs = Object.entries(pairCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10)
+            .map(([artists, count]) => ({
+                artists,
+                co_occurrence: count
+            }));
+
+        return { pairs: topPairs };
+    } catch (error) {
+        console.error('getTopCollaborations error:', error);
+        return null;
+    }
+};
+
+// Get milestone tracker
+export const getMilestoneTracker = async (targetPlays: number, artistName?: string): Promise<{ artist: string; current: number; remaining: number; est_days: number } | null> => {
+    try {
+        let query = supabase
+            .from('listening_history')
+            .select('artist_name, played_at');
+
+        if (artistName) {
+            query = query.ilike('artist_name', `%${artistName}%`);
+        }
+
+        const { data } = await query;
+
+        if (!data || data.length === 0) return null;
+
+        let targetArtist: string;
+        let currentPlays: number;
+
+        if (artistName) {
+            targetArtist = artistName;
+            currentPlays = data.length;
+        } else {
+            // Find top artist
+            const artistCounts: Record<string, number> = {};
+            data.forEach(item => {
+                if (item.artist_name) {
+                    artistCounts[item.artist_name] = (artistCounts[item.artist_name] || 0) + 1;
+                }
+            });
+            const topArtist = Object.entries(artistCounts).sort((a, b) => b[1] - a[1])[0];
+            if (!topArtist) return null;
+            targetArtist = topArtist[0];
+            currentPlays = topArtist[1];
+        }
+
+        const remaining = Math.max(0, targetPlays - currentPlays);
+
+        // Estimate days based on recent play rate (last 30 days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const recentPlays = data.filter(item => new Date(item.played_at) >= thirtyDaysAgo).length;
+        const dailyRate = recentPlays / 30;
+        const estDays = dailyRate > 0 ? Math.ceil(remaining / dailyRate) : 0;
+
+        return {
+            artist: targetArtist,
+            current: currentPlays,
+            remaining,
+            est_days: estDays
+        };
+    } catch (error) {
+        console.error('getMilestoneTracker error:', error);
+        return null;
+    }
+};
+
+// Enhanced obsession score with date filtering
+export const getObsessionScore = async (
+    artistName?: string,
+    startDate?: string,
+    endDate?: string
+): Promise<{ artist: string; obsession_score: number; total_plays: number; top_song: string; image: string } | null> => {
+    try {
+        let query = supabase
+            .from('listening_history')
+            .select('track_name, artist_name, album_cover');
+
+        if (startDate) {
+            query = query.gte('played_at', new Date(startDate).toISOString());
+        }
+        if (endDate) {
+            query = query.lte('played_at', new Date(endDate).toISOString());
+        }
+        if (artistName) {
+            query = query.ilike('artist_name', `%${artistName}%`);
+        }
+
+        const { data, error } = await query;
+
+        if (error || !data || data.length === 0) return null;
+
+        // Group plays by artist, and within each artist by song
+        const artistSongs: Record<string, { total: number; image: string; songs: Record<string, number> }> = {};
+        data.forEach(item => {
+            if (!item.artist_name || !item.track_name) return;
+            if (!artistSongs[item.artist_name]) {
+                artistSongs[item.artist_name] = { total: 0, image: item.album_cover || '', songs: {} };
+            }
+            artistSongs[item.artist_name].total++;
+            artistSongs[item.artist_name].songs[item.track_name] = (artistSongs[item.artist_name].songs[item.track_name] || 0) + 1;
+        });
+
+        // Find artist with highest obsession score
+        let bestArtist = null;
+        let bestScore = 0;
+
+        for (const [artist, data] of Object.entries(artistSongs)) {
+            if (data.total < 3) continue;
+            const topSongEntry = Object.entries(data.songs).sort((a, b) => b[1] - a[1])[0];
+            if (!topSongEntry) continue;
+            
+            // Obsession score: combination of single-song dominance and total plays
+            const dominancePercent = (topSongEntry[1] / data.total) * 100;
+            const obsessionScore = Math.round(dominancePercent * (1 + Math.log10(data.total)));
+
+            if (obsessionScore > bestScore) {
+                bestScore = obsessionScore;
+                bestArtist = {
+                    artist,
+                    obsession_score: obsessionScore,
+                    total_plays: data.total,
+                    top_song: topSongEntry[0],
+                    image: data.image
+                };
+            }
+        }
+
+        return bestArtist;
+    } catch (error) {
+        console.error('getObsessionScore error:', error);
+        return null;
+    }
+};
