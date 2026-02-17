@@ -13,6 +13,27 @@ import {
     fetchCharts,
     fetchHeatmapData,
     fetchArtistNetwork,
+    compareArtistPerformance,
+    getRankShift,
+    getLoyaltyScore,
+    getMarketShare,
+    getDiscoveryDate,
+    getBingeSessions,
+    getOneHitWonders,
+    getAlbumCompletionist,
+    getEarwormReport,
+    getWorkVsPlayStats,
+    getSeasonalVibe,
+    getAnniversaryFlashback,
+    getCommuteSoundtrack,
+    getSleepPattern,
+    getDiversityIndex,
+    getGenreEvolution,
+    getSkipRateByArtist,
+    getGatewayTracks,
+    getTopCollaborations,
+    getMilestoneTracker,
+    getObsessionScore,
 } from './dbService';
 import { fetchArtistImages, searchSpotifyTracks } from './spotifyService';
 
@@ -386,6 +407,303 @@ const AGENT_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
                 required: ["names"]
             }
         }
+    },
+    // ─── COMPARATIVE & GROWTH TOOLS ─────────────────────────────────────
+    {
+        type: "function",
+        function: {
+            name: "compare_artist_performance",
+            description: "Compare an artist's stats across two periods (e.g., this week vs last week) to see growth. Use when user asks about artist growth, performance changes, listening trends for an artist, or how their listening to an artist has changed.",
+            parameters: {
+                type: "object",
+                properties: {
+                    artist_name: { type: "string", description: "The artist name to compare" },
+                    period_a: { type: "string", description: "The baseline period (e.g., 'Last Week', 'Last Month')" },
+                    period_b: { type: "string", description: "The comparison period (e.g., 'This Week', 'This Month')" }
+                },
+                required: ["artist_name", "period_a", "period_b"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_rank_shift",
+            description: "Shows how many spots an artist/song climbed or fell in the user's charts. Use when user asks about rank changes, chart movements, what's rising or falling, position changes, or trending direction.",
+            parameters: {
+                type: "object",
+                properties: {
+                    entity_name: { type: "string", description: "The artist or song name" },
+                    entity_type: { type: "string", enum: ["artist", "song"], description: "Whether to check artist or song rankings" },
+                    time_range: { type: "string", enum: ["daily", "weekly", "monthly"], description: "Time range for comparison (default: weekly)" }
+                },
+                required: ["entity_name", "entity_type"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_loyalty_score",
+            description: "Returns the ratio of this artist's plays vs. all other artists. Use when user asks about loyalty, how much they love an artist, dedication level, or their commitment to an artist.",
+            parameters: {
+                type: "object",
+                properties: {
+                    artist_name: { type: "string", description: "The artist name to check loyalty for" }
+                },
+                required: ["artist_name"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_market_share",
+            description: "Returns a breakdown of what percentage of the 'total pie' an entity owns. Use when user asks about distribution, what takes up most of their listening, percentage breakdown, or share of their music time.",
+            parameters: {
+                type: "object",
+                properties: {
+                    entity_type: { type: "string", enum: ["artist", "genre"], description: "Whether to show artist or genre distribution" }
+                },
+                required: ["entity_type"]
+            }
+        }
+    },
+    // ─── BEHAVIORAL & DISCOVERY TOOLS ─────────────────────────────────────
+    {
+        type: "function",
+        function: {
+            name: "get_discovery_date",
+            description: "Finds the exact timestamp and track of the user's very first interaction with an artist. Use when user asks when they discovered an artist, first time listening, when they started with an artist, or discovery date.",
+            parameters: {
+                type: "object",
+                properties: {
+                    artist_name: { type: "string", description: "The artist name to find discovery date for" }
+                },
+                required: ["artist_name"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_binge_sessions",
+            description: "Identifies 'binge' events where the user listened to one artist for a long continuous block. Use when user asks about binge sessions, marathon listening, long sessions, or extended plays of an artist.",
+            parameters: {
+                type: "object",
+                properties: {
+                    threshold_minutes: { type: "number", description: "Minimum duration in minutes to count as binge (default: 60)" }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_one_hit_wonders",
+            description: "Finds artists where the user loves exactly ONE song but never listens to the rest of the discography. Use when user asks about one-hit wonders, artists with one favorite song, or single-song favorites.",
+            parameters: {
+                type: "object",
+                properties: {
+                    min_plays: { type: "number", description: "Minimum total plays to consider (default: 5)" }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_album_completionist",
+            description: "Checks if the user listens to full albums or just cherry-picks singles. Use when user asks about album completion, if they listen to full albums, album listening habits, or completion rates.",
+            parameters: {
+                type: "object",
+                properties: {
+                    album_name: { type: "string", description: "The album name to check completion for" }
+                },
+                required: ["album_name"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_earworm_report",
+            description: "Finds the song the user has 'looped' the most in a short window. Use when user asks about earworms, songs on repeat, most repeated, stuck in their head, or loop behavior.",
+            parameters: {
+                type: "object",
+                properties: {
+                    days_back: { type: "number", description: "Number of days to look back (default: 7)" }
+                },
+                required: []
+            }
+        }
+    },
+    // ─── TIME & CONTEXTUAL TOOLS ─────────────────────────────────────
+    {
+        type: "function",
+        function: {
+            name: "get_work_vs_play_stats",
+            description: "Compares top genres/artists during weekdays (Mon-Fri) vs. weekends. Use when user asks about work music, weekend listening, weekday vs weekend, or context-based listening.",
+            parameters: {
+                type: "object",
+                properties: {},
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_seasonal_vibe",
+            description: "Analyzes if the user's music taste changes based on the season. Use when user asks about seasonal listening, summer music, winter vibes, or seasonal changes.",
+            parameters: {
+                type: "object",
+                properties: {
+                    season: { type: "string", enum: ["Summer", "Winter", "Spring", "Fall"], description: "The season to analyze" }
+                },
+                required: ["season"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_anniversary_flashback",
+            description: "Returns what the user was listening to exactly one year ago today. Use when user asks about this day last year, anniversary, flashback, or year-ago listening.",
+            parameters: {
+                type: "object",
+                properties: {
+                    date: { type: "string", description: "Optional specific date (YYYY-MM-DD format). Defaults to today." }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_commute_soundtrack",
+            description: "Analyzes specific activity during common commute hours (7-9am, 5-7pm). Use when user asks about commute music, drive time, morning/evening listening, or travel soundtrack.",
+            parameters: {
+                type: "object",
+                properties: {},
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_sleep_pattern",
+            description: "Detects when the user stops listening at night and what 'sleep' music they use. Use when user asks about sleep music, night listening, bedtime patterns, or late-night habits.",
+            parameters: {
+                type: "object",
+                properties: {},
+                required: []
+            }
+        }
+    },
+    // ─── DIVERSITY & TECHNICAL TOOLS ─────────────────────────────────────
+    {
+        type: "function",
+        function: {
+            name: "get_diversity_index",
+            description: "Measures how 'adventurous' the user is (many unique artists vs. few repeats). Use when user asks about diversity, variety, how adventurous their taste is, or listening breadth.",
+            parameters: {
+                type: "object",
+                properties: {
+                    time_range: { type: "string", enum: ["daily", "weekly", "monthly"], description: "Time range to analyze (default: monthly)" }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_genre_evolution",
+            description: "Shows how the user's favorite genre has changed month-over-month. Use when user asks about genre changes, taste evolution, how their music evolved, or genre timeline.",
+            parameters: {
+                type: "object",
+                properties: {
+                    months: { type: "number", description: "Number of months to analyze (default: 6)" }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_skip_rate_by_artist",
+            description: "Specifically checks if a user skips an artist's songs more than others. Use when user asks about skip rate, how much they skip, if they finish songs, or listening completion.",
+            parameters: {
+                type: "object",
+                properties: {
+                    artist_name: { type: "string", description: "The artist name to check skip rate for" }
+                },
+                required: ["artist_name"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_gateway_tracks",
+            description: "Identifies the specific song that 'hooked' the user and led them to listen to the rest of the artist. Use when user asks about gateway songs, what got them into an artist, or discovery tracks.",
+            parameters: {
+                type: "object",
+                properties: {
+                    artist_name: { type: "string", description: "The artist name to find gateway track for" }
+                },
+                required: ["artist_name"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_top_collaborations",
+            description: "Finds which artists are most frequently played in the same listening session. Use when user asks about artist pairings, what artists go together, session combos, or listening pairs.",
+            parameters: {
+                type: "object",
+                properties: {},
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_milestone_tracker",
+            description: "Tracks progress toward a milestone (e.g., reaching 1,000 plays for a favorite artist). Use when user asks about milestones, progress to a goal, how close to X plays, or achievement tracking.",
+            parameters: {
+                type: "object",
+                properties: {
+                    target_plays: { type: "number", description: "Target number of plays for the milestone" },
+                    artist_name: { type: "string", description: "Optional: specific artist to track. If omitted, tracks top artist." }
+                },
+                required: ["target_plays"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_obsession_score",
+            description: "Get obsession score for an artist based on single-song dominance and total plays, with optional date filtering. Different from obsession_orbit - this returns a calculated score. Use when user asks about obsession score, obsession level with date range, or artist obsession metrics.",
+            parameters: {
+                type: "object",
+                properties: {
+                    artist_name: { type: "string", description: "Optional: specific artist to check obsession for" },
+                    start_date: { type: "string", description: "Optional: start date for filtering (YYYY-MM-DD)" },
+                    end_date: { type: "string", description: "Optional: end date for filtering (YYYY-MM-DD)" }
+                },
+                required: []
+            }
+        }
     }
 ];
 
@@ -414,6 +732,28 @@ const TOOL_ICON_MAP: Record<string, { icon: string; label: string }> = {
     get_recent_plays: { icon: 'History', label: 'Recent Plays' },
     compare_periods: { icon: 'ArrowLeftRight', label: 'Compare' },
     get_album_covers: { icon: 'ImageIcon', label: 'Album Covers' },
+    // New tools
+    compare_artist_performance: { icon: 'TrendingUp', label: 'Artist Growth' },
+    get_rank_shift: { icon: 'ArrowUpDown', label: 'Rank Movement' },
+    get_loyalty_score: { icon: 'Heart', label: 'Loyalty Score' },
+    get_market_share: { icon: 'PieChart', label: 'Market Share' },
+    get_discovery_date: { icon: 'Calendar', label: 'Discovery Date' },
+    get_binge_sessions: { icon: 'Play', label: 'Binge Sessions' },
+    get_one_hit_wonders: { icon: 'Star', label: 'One-Hit Wonders' },
+    get_album_completionist: { icon: 'CheckCircle', label: 'Album Complete' },
+    get_earworm_report: { icon: 'Repeat', label: 'Earworm' },
+    get_work_vs_play_stats: { icon: 'Briefcase', label: 'Work vs Play' },
+    get_seasonal_vibe: { icon: 'CloudSun', label: 'Seasonal Vibe' },
+    get_anniversary_flashback: { icon: 'CalendarClock', label: 'Anniversary' },
+    get_commute_soundtrack: { icon: 'Car', label: 'Commute' },
+    get_sleep_pattern: { icon: 'Moon', label: 'Sleep Pattern' },
+    get_diversity_index: { icon: 'Sparkles', label: 'Diversity' },
+    get_genre_evolution: { icon: 'LineChart', label: 'Genre Evolution' },
+    get_skip_rate_by_artist: { icon: 'FastForward', label: 'Skip Rate' },
+    get_gateway_tracks: { icon: 'DoorOpen', label: 'Gateway Tracks' },
+    get_top_collaborations: { icon: 'Users', label: 'Collaborations' },
+    get_milestone_tracker: { icon: 'Target', label: 'Milestones' },
+    get_obsession_score: { icon: 'Flame', label: 'Obsession Score' },
 };
 
 // ─── TOOL EXECUTION HANDLER ─────────────────────────────────────
@@ -894,6 +1234,127 @@ async function executeAgentTool(
                 } catch {
                     return { covers: [], error: 'Failed to fetch album covers' };
                 }
+            }
+
+            // ─── COMPARATIVE & GROWTH TOOLS ─────────────────────────────────────
+            case 'compare_artist_performance': {
+                const result = await compareArtistPerformance(
+                    funcArgs.artist_name,
+                    funcArgs.period_a,
+                    funcArgs.period_b
+                );
+                return result || { error: 'No data found for this artist comparison' };
+            }
+
+            case 'get_rank_shift': {
+                const result = await getRankShift(
+                    funcArgs.entity_name,
+                    funcArgs.entity_type,
+                    funcArgs.time_range || 'weekly'
+                );
+                return result || { error: 'No ranking data found for this entity' };
+            }
+
+            case 'get_loyalty_score': {
+                const result = await getLoyaltyScore(funcArgs.artist_name);
+                return result || { error: 'No loyalty data found for this artist' };
+            }
+
+            case 'get_market_share': {
+                const result = await getMarketShare(funcArgs.entity_type);
+                return result || { error: 'No market share data available' };
+            }
+
+            // ─── BEHAVIORAL & DISCOVERY TOOLS ─────────────────────────────────────
+            case 'get_discovery_date': {
+                const result = await getDiscoveryDate(funcArgs.artist_name);
+                return result || { error: 'No discovery date found for this artist' };
+            }
+
+            case 'get_binge_sessions': {
+                const result = await getBingeSessions(funcArgs.threshold_minutes || 60);
+                return result || { error: 'No binge sessions found' };
+            }
+
+            case 'get_one_hit_wonders': {
+                const result = await getOneHitWonders(funcArgs.min_plays || 5);
+                return result || { error: 'No one-hit wonders found' };
+            }
+
+            case 'get_album_completionist': {
+                const result = await getAlbumCompletionist(funcArgs.album_name);
+                return result || { error: 'No album completion data found' };
+            }
+
+            case 'get_earworm_report': {
+                const result = await getEarwormReport(funcArgs.days_back || 7);
+                return result || { error: 'No earworm data found' };
+            }
+
+            // ─── TIME & CONTEXTUAL TOOLS ─────────────────────────────────────
+            case 'get_work_vs_play_stats': {
+                const result = await getWorkVsPlayStats();
+                return result || { error: 'No work vs play data available' };
+            }
+
+            case 'get_seasonal_vibe': {
+                const result = await getSeasonalVibe(funcArgs.season);
+                return result || { error: 'No seasonal data available' };
+            }
+
+            case 'get_anniversary_flashback': {
+                const result = await getAnniversaryFlashback(funcArgs.date);
+                return result || { error: 'No anniversary data found' };
+            }
+
+            case 'get_commute_soundtrack': {
+                const result = await getCommuteSoundtrack();
+                return result || { error: 'No commute data available' };
+            }
+
+            case 'get_sleep_pattern': {
+                const result = await getSleepPattern();
+                return result || { error: 'No sleep pattern data found' };
+            }
+
+            // ─── DIVERSITY & TECHNICAL TOOLS ─────────────────────────────────────
+            case 'get_diversity_index': {
+                const result = await getDiversityIndex(funcArgs.time_range || 'monthly');
+                return result || { error: 'No diversity data available' };
+            }
+
+            case 'get_genre_evolution': {
+                const result = await getGenreEvolution(funcArgs.months || 6);
+                return result || { error: 'No genre evolution data found' };
+            }
+
+            case 'get_skip_rate_by_artist': {
+                const result = await getSkipRateByArtist(funcArgs.artist_name);
+                return result || { error: 'No skip rate data found for this artist' };
+            }
+
+            case 'get_gateway_tracks': {
+                const result = await getGatewayTracks(funcArgs.artist_name);
+                return result || { error: 'No gateway tracks found for this artist' };
+            }
+
+            case 'get_top_collaborations': {
+                const result = await getTopCollaborations();
+                return result || { error: 'No collaboration data available' };
+            }
+
+            case 'get_milestone_tracker': {
+                const result = await getMilestoneTracker(funcArgs.target_plays, funcArgs.artist_name);
+                return result || { error: 'No milestone tracking data available' };
+            }
+
+            case 'get_obsession_score': {
+                const result = await getObsessionScore(
+                    funcArgs.artist_name,
+                    funcArgs.start_date,
+                    funcArgs.end_date
+                );
+                return result || { error: 'No obsession score data found' };
             }
 
             default:
