@@ -96,7 +96,7 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
              </div>
 
             <div className="flex items-center justify-center">
-                <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x scroll-smooth gap-0 px-6">
+                <div className="flex items-center overflow-x-auto pb-8 pt-2 no-scrollbar snap-x scroll-smooth gap-0 px-6">
                     {upcoming.map((artist, idx) => (
                         <div 
                             key={artist.name} 
