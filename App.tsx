@@ -184,7 +184,7 @@ const MobileArtistCard = ({ artist, rank, image, onClick }: { artist: Artist; ra
 
 const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; cover: string; title: string; subtitle: string; meta?: string }) => (
     <div className="flex items-center gap-3 py-3 active:bg-white/5 transition-colors rounded-xl">
-        <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 shadow-md border border-white/[0.06]">
+        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 shadow-md border border-white/[0.06]">
             <img src={cover} alt={title} loading="lazy" className="w-full h-full object-cover" />
         </div>
         <div className="flex-1 min-w-0">
@@ -880,7 +880,7 @@ function App() {
                                 </button>
                             )}
                         </div>
-                        <div className="space-y-0">
+                        <div>
                             {safeSongs.length > 0 ? (
                                 safeSongs.slice(0, 6).map((song: Song, index: number) => (
                                     <div key={song.id} onClick={() => setSelectedTopSong(song)} className="cursor-pointer">
