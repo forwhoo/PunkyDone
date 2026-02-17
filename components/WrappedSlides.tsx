@@ -20,6 +20,7 @@ interface WrappedSlidesProps {
   albums: Album[];
   songs: Song[];
   albumCovers: string[];
+  connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> };
 }
 
 // ─── Helpers ────────────────────────────────────────────────────
@@ -494,48 +495,50 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
   );
 };
 
-// ─── Slide 3 : Connection Match (scrolling images + real match) ─
-const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[] }> = ({ artists, songs }) => {
-  // Find closest connection: artist with most songs by them
-  const artistSongCounts = useMemo(() => {
-    const counts: Record<string, { artist: Artist; songCount: number; songs: Song[] }> = {};
-    artists.forEach(a => {
-      const matched = songs.filter(s => s.artist === a.name);
-      if (matched.length > 0) {
-        counts[a.name] = { artist: a, songCount: matched.length, songs: matched };
-      }
+// ─── Slide 3 : Connection Match (uses connection graph edges) ─
+const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> } }> = ({ artists, songs, connectionGraph }) => {
+  const bestConnection = useMemo(() => {
+    const pairs = connectionGraph?.pairs || {};
+    const artistNames = new Set(artists.map((a) => a.name));
+    let strongest: { a: string; b: string; weight: number } | null = null;
+
+    Object.entries(pairs).forEach(([from, targets]) => {
+      Object.entries(targets || {}).forEach(([to, weight]) => {
+        if (from >= to) return;
+        if (!artistNames.has(from) && !artistNames.has(to)) return;
+        if (!strongest || weight > strongest.weight) {
+          strongest = { a: from, b: to, weight };
+        }
+      });
     });
-    return Object.values(counts).sort((a, b) => b.songCount - a.songCount);
-  }, [artists, songs]);
 
-  const closest = artistSongCounts[0];
-  const artist = closest?.artist || artists[0];
-  const matchedSongs = closest?.songs || songs.slice(0, 3);
-  const connectionPct = closest
-    ? Math.min(99, Math.round(60 + (closest.songCount / Math.max(songs.length, 1)) * 39))
-    : 78;
+    if (strongest) return strongest;
 
-  const [phase, setPhase] = useState<'scroll' | 'reveal'>('scroll');
-  const [showPct, setShowPct] = useState(false);
+    const fallbackArtist = artists[0]?.name;
+    const fallbackSongArtist = songs[0]?.artist;
+    if (fallbackArtist && fallbackSongArtist) {
+      return { a: fallbackArtist, b: fallbackSongArtist, weight: 1 };
+    }
+    return null;
+  }, [artists, songs, connectionGraph]);
 
-  useEffect(() => {
-    const scrollTimer = setTimeout(() => setPhase('reveal'), 3000);
-    const pctTimer = setTimeout(() => setShowPct(true), 3500);
-    return () => {
-      clearTimeout(scrollTimer);
-      clearTimeout(pctTimer);
-    };
-  }, []);
+  const totalWeight = useMemo(() => {
+    if (!connectionGraph?.pairs) return 1;
+    const allWeights = Object.values(connectionGraph.pairs)
+      .flatMap((targets) => Object.values(targets || {}))
+      .filter((v) => typeof v === 'number') as number[];
+    return Math.max(...allWeights, 1);
+  }, [connectionGraph]);
 
-  // Build a scrolling strip of images (both artist & their songs)
-  const scrollImages = useMemo(() => {
-    const imgs: string[] = [];
-    if (artist?.image) imgs.push(artist.image);
-    matchedSongs.forEach(s => { if (s.cover) imgs.push(s.cover); });
-    // Duplicate for seamless loop
-    while (imgs.length < 8) imgs.push(...imgs);
-    return imgs;
-  }, [artist, matchedSongs]);
+  const artistA = artists.find((a) => a.name === bestConnection?.a) || artists[0];
+  const artistB = artists.find((a) => a.name === bestConnection?.b) || artists[1] || artists[0];
+  const songA = songs.find((s) => s.artist === artistA?.name) || songs[0];
+  const songB = songs.find((s) => s.artist === artistB?.name) || songs[1] || songs[0];
+  const connectionPct = bestConnection
+    ? Math.max(62, Math.min(99, Math.round((bestConnection.weight / totalWeight) * 100)))
+    : 76;
+
+  const coverStrip = [songA?.cover, songB?.cover, artistA?.image, artistB?.image].filter(Boolean) as string[];
 
   return (
     <motion.div
@@ -552,96 +555,72 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[] }> = ({ artis
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        Your Connection
+        Your Closest Connection
       </motion.span>
 
-      {/* Scrolling image strip */}
-      <div className="relative z-10 w-full overflow-hidden mb-6" style={{ height: 100 }}>
-        <motion.div
-          className="flex gap-3 absolute"
-          style={{ width: 'max-content' }}
-          animate={
-            phase === 'scroll'
-              ? { x: [0, -400] }
-              : { x: -200, opacity: 0.3 }
-          }
-          transition={
-            phase === 'scroll'
-              ? { x: { duration: 3, ease: 'linear', repeat: Infinity } }
-              : { duration: 0.8 }
-          }
-        >
-          {[...scrollImages, ...scrollImages].map((img, i) => (
-            <div
-              key={i}
-              className="flex-shrink-0 rounded-xl overflow-hidden"
-              style={{ width: 90, height: 90, border: `1px solid ${CARD_BORDER}` }}
+      <div className="relative z-10 mb-8" style={{ width: 260, height: 260 }}>
+        {[artistA, artistB].map((artist, idx) => {
+          const rotation = idx === 0 ? -1 : 1;
+          return (
+            <motion.div
+              key={artist?.name || idx}
+              className="absolute top-1/2 left-1/2"
+              style={{ transformOrigin: 'center center' }}
+              animate={{ rotate: [0, rotation * 360] }}
+              transition={{ duration: 14 - idx * 2, repeat: Infinity, ease: 'linear' }}
             >
+              <motion.img
+                src={(idx === 0 ? songA?.cover : songB?.cover) || artist?.image || fallbackImage}
+                alt={artist?.name || 'Connection'}
+                className="rounded-xl object-cover"
+                style={{
+                  width: 90 - idx * 10,
+                  height: 90 - idx * 10,
+                  border: `1px solid ${CARD_BORDER}`,
+                  transform: `translateX(${idx === 0 ? 86 : -86}px) scale(${idx === 0 ? 1 : 0.86})`,
+                  boxShadow: '0 8px 26px rgba(0,0,0,0.45)',
+                }}
+              />
+            </motion.div>
+          );
+        })}
+
+        <motion.div
+          className="absolute inset-0 m-auto rounded-full"
+          style={{ width: 120, height: 120, border: `1px solid ${ACCENT_RED}40` }}
+          animate={{ scale: [0.95, 1.06, 0.95], opacity: [0.4, 0.9, 0.4] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      </div>
+
+      <motion.div
+        className="relative z-10 text-center"
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+      >
+        <span className="font-bold text-white" style={{ fontSize: 56 }}>
+          {connectionPct}%
+        </span>
+        <span className="text-white/70 ml-2" style={{ fontSize: 20 }}>Match</span>
+        <p className="mt-2" style={{ fontSize: 14, color: GRAY_TEXT }}>
+          {(artistA?.name || 'Your artist')} × {(artistB?.name || 'another favorite')}
+        </p>
+      </motion.div>
+
+      <div className="relative z-10 w-full overflow-hidden mt-6" style={{ height: 56 }}>
+        <motion.div
+          className="flex gap-3"
+          animate={{ x: [0, -280] }}
+          transition={{ duration: 7, ease: 'linear', repeat: Infinity }}
+        >
+          {[...coverStrip, ...coverStrip, ...coverStrip].map((img, i) => (
+            <div key={`${img}-${i}`} className="rounded-md overflow-hidden" style={{ width: 48, height: 48, border: `1px solid ${CARD_BORDER}` }}>
               <img src={img || fallbackImage} alt="" className="w-full h-full object-cover" />
             </div>
           ))}
         </motion.div>
       </div>
-
-      {/* Connection reveal */}
-      <AnimatePresence>
-        {phase === 'reveal' && (
-          <motion.div
-            className="relative z-10 flex items-center gap-5"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, type: 'spring', stiffness: 200 }}
-          >
-            <motion.img
-              src={artist?.image || fallbackImage}
-              alt={artist?.name ?? 'Artist'}
-              className="rounded-xl object-cover"
-              style={{ width: 120, height: 120, border: `1px solid ${CARD_BORDER}` }}
-              initial={{ x: -30 }}
-              animate={{ x: 0 }}
-              transition={{ delay: 0.1, duration: 0.5 }}
-            />
-            <motion.div
-              style={{
-                width: 50,
-                height: 2,
-                background: ACCENT_RED,
-                borderRadius: 2,
-              }}
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ delay: 0.3, duration: 0.4 }}
-            />
-            <motion.img
-              src={matchedSongs[0]?.cover || fallbackImage}
-              alt={matchedSongs[0]?.title ?? 'Song'}
-              className="rounded-xl object-cover"
-              style={{ width: 120, height: 120, border: `1px solid ${CARD_BORDER}` }}
-              initial={{ x: 30 }}
-              animate={{ x: 0 }}
-              transition={{ delay: 0.1, duration: 0.5 }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Percentage reveal */}
-      {showPct && (
-        <motion.div
-          className="relative z-10 mt-6 text-center"
-          initial={{ opacity: 0, y: 20, scale: 0.5 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        >
-          <span className="font-bold text-white" style={{ fontSize: 56 }}>
-            {connectionPct}%
-          </span>
-          <span className="text-white/70 ml-2" style={{ fontSize: 20 }}>Match</span>
-          <p className="mt-2" style={{ fontSize: 14, color: GRAY_TEXT }}>
-            {artist?.name ?? 'Your top artist'} × {matchedSongs[0]?.title ?? 'your top song'}
-          </p>
-        </motion.div>
-      )}
     </motion.div>
   );
 };
@@ -1076,7 +1055,11 @@ const SlideObsession: React.FC<{ songs: Song[]; artists: Artist[] }> = ({ songs,
 // ─── Slide 8 : Leap Chart (artist with highest chart growth) ────
 const SlideLeapChart: React.FC<{ artists: Artist[] }> = ({ artists }) => {
   const leapArtist = useMemo(() => {
-    const sorted = [...artists].sort((a, b) => (b.trend ?? 0) - (a.trend ?? 0));
+    const sorted = [...artists].sort((a, b) => {
+      const trendDelta = (b.trend ?? 0) - (a.trend ?? 0);
+      if (trendDelta !== 0) return trendDelta;
+      return (b.totalListens || 0) - (a.totalListens || 0);
+    });
     return sorted[0] || null;
   }, [artists]);
 
@@ -1085,7 +1068,7 @@ const SlideLeapChart: React.FC<{ artists: Artist[] }> = ({ artists }) => {
   // Animate chart bars showing growth trajectory based on trend
   useEffect(() => {
     if (!leapArtist) return;
-    const trend = leapArtist.trend ?? 1;
+    const trend = Math.max(leapArtist.trend ?? 0, 1);
     const heights = Array.from({ length: 7 }, (_, i) => {
       // Simulate growth from low to high, scaled by actual trend
       const progress = i / 6;
@@ -1306,6 +1289,7 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
   albums,
   songs,
   albumCovers,
+  connectionGraph,
 }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -1364,7 +1348,7 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
       case 1:
         return <SlideTopArtist artists={artists} />;
       case 2:
-        return <SlideConnection artists={artists} songs={songs} />;
+        return <SlideConnection artists={artists} songs={songs} connectionGraph={connectionGraph} />;
       case 3:
         return <SlideAlbumRepeat albums={albums} />;
       case 4:
@@ -1382,7 +1366,7 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
       default:
         return null;
     }
-  }, [currentSlide, totalMinutes, artists, albums, songs, albumCovers]);
+  }, [currentSlide, totalMinutes, artists, albums, songs, albumCovers, connectionGraph]);
 
   return (
     <motion.div

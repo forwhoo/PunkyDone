@@ -9,9 +9,11 @@ interface PunkyWrappedProps {
   onClose: () => void;
   albumCovers: string[];
   totalMinutes?: number;
+  weeklyMinutes?: number;
   artists?: Artist[];
   albums?: Album[];
   songs?: Song[];
+  connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> };
 }
 
 // --- Configuration ---
@@ -41,14 +43,12 @@ interface SpiralItem {
   layer: number;
   indexInLayer: number;
   id: string;
-  spawnTime: number;
 }
 
 function buildLayerItems(covers: string[], idCounter: { value: number }): SpiralItem[] {
   if (covers.length === 0) return [];
   const items: SpiralItem[] = [];
   let coverIdx = 0;
-  const baseTime = Date.now();
   for (let layer = 0; layer < LAYER_COUNT; layer++) {
     const count = ITEMS_PER_LAYER[layer];
     for (let j = 0; j < count; j++) {
@@ -58,7 +58,6 @@ function buildLayerItems(covers: string[], idCounter: { value: number }): Spiral
         layer,
         indexInLayer: j,
         id: `item-${idCounter.value++}`,
-        spawnTime: baseTime,
       });
       coverIdx++;
     }
@@ -77,13 +76,12 @@ function getWeekRange(): string {
   return `${fmt(monday)} – ${fmt(sunday)}, ${now.getFullYear()}`;
 }
 
-const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, totalMinutes, artists = [], albums = [], songs = [] }) => {
+const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, totalMinutes, weeklyMinutes, artists = [], albums = [], songs = [], connectionGraph }) => {
   const [story, setStory] = useState<'intro' | 'slides' | 'done'>('intro');
   const [vortex, setVortex] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const shuffledRef = useRef<string[] | null>(null);
-  const [items, setItems] = useState<SpiralItem[]>([]);
-  const animationFrameRef = useRef<number>();
+  const tickIntervalRef = useRef<number>();
   const idCounterRef = useRef({ value: 0 });
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [visibleLayers, setVisibleLayers] = useState<number[]>([]);
@@ -94,10 +92,6 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
     }
     return buildLayerItems(shuffledRef.current, idCounterRef.current);
   }, [albumCovers]);
-
-  useEffect(() => {
-    setItems(spiralItems);
-  }, [spiralItems]);
 
   useEffect(() => {
     const delays = [0, 150, 300, 450, 600, 750, 900];
@@ -113,32 +107,11 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
 
   useEffect(() => {
     if (story !== 'intro') return;
-    const animate = () => {
-      const now = Date.now();
-      setCurrentTime(now);
-      setItems(prevItems => {
-        return prevItems.map(item => {
-          const elapsed = (now - item.spawnTime) / 1000;
-          if (elapsed >= VORTEX_DURATION) {
-            const covers = shuffledRef.current || [];
-            if (covers.length === 0) return item;
-            return {
-              ...item,
-              spawnTime: now,
-              src: covers[Math.floor(Math.random() * covers.length)],
-              id: `item-${idCounterRef.current.value++}`,
-            };
-          }
-          return item;
-        });
-      });
-      animationFrameRef.current = requestAnimationFrame(animate);
-    };
-    animationFrameRef.current = requestAnimationFrame(animate);
+    tickIntervalRef.current = window.setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 33);
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      if (tickIntervalRef.current) window.clearInterval(tickIntervalRef.current);
     };
   }, [story]);
 
@@ -173,11 +146,12 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
   if (story === 'slides') {
     return (
       <WrappedSlides
-        totalMinutes={totalMinutes ?? 0}
+        totalMinutes={weeklyMinutes ?? totalMinutes ?? 0}
         artists={artists}
         albums={albums}
         songs={songs}
         albumCovers={albumCovers}
+        connectionGraph={connectionGraph}
         onClose={handleSlidesComplete}
       />
     );
@@ -235,7 +209,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
         {/* Multi-layer spiral animation */}
         <div className="absolute inset-0 z-[1] flex items-center justify-center">
           {Array.from({ length: LAYER_COUNT }).map((_, layer) => {
-            const layerItems = items.filter(item => item.layer === layer);
+            const layerItems = spiralItems.filter(item => item.layer === layer);
             const baseDuration = LAYER_DURATIONS[layer];
             const duration = vortex ? baseDuration / 4 : baseDuration;
             const size = LAYER_SIZES[layer];
@@ -255,8 +229,8 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                 }}
               >
                 {layerItems.map((item) => {
-                  const elapsed = (currentTime - item.spawnTime) / 1000;
-                  const linearProgress = Math.min(elapsed / VORTEX_DURATION, 1);
+                  const elapsed = (currentTime / 1000 + item.indexInLayer * 0.22 + layer * 0.35) % VORTEX_DURATION;
+                  const linearProgress = elapsed / VORTEX_DURATION;
                   const progress = linearProgress * linearProgress * linearProgress;
                   const currentRadius = MAX_RADIUS_VW * (1 - progress);
                   const scaleProgress = Math.pow(1 - linearProgress, 1.5);
