@@ -2,12 +2,16 @@ import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import PrismaticBurst from './reactbits/PrismaticBurst';
-import { TotalMinutesStory } from './TotalMinutesStory';
+import WrappedSlides from './WrappedSlides';
+import { Artist, Album, Song } from '../types';
 
 interface PunkyWrappedProps {
   onClose: () => void;
   albumCovers: string[];
   totalMinutes?: number;
+  artists?: Artist[];
+  albums?: Album[];
+  songs?: Song[];
 }
 
 // --- Configuration ---
@@ -62,8 +66,8 @@ function buildLayerItems(covers: string[], idCounter: { value: number }): Spiral
   return items;
 }
 
-const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, totalMinutes }) => {
-  const [story, setStory] = useState<'intro' | 'totalMinutes' | 'done'>('intro');
+const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, totalMinutes, artists = [], albums = [], songs = [] }) => {
+  const [story, setStory] = useState<'intro' | 'slides' | 'done'>('intro');
   const [vortex, setVortex] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const shuffledRef = useRef<string[] | null>(null);
@@ -131,24 +135,20 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
     setVortex(true);
     setTransitioning(true);
     setTimeout(() => {
-      if (totalMinutes != null && totalMinutes > 0) {
-        setStory('totalMinutes');
-      } else {
-        setStory('done');
-      }
+      setStory('slides');
     }, 2500);
-  }, [totalMinutes]);
+  }, []);
 
-  const handleTotalMinutesComplete = useCallback(() => {
+  const handleSlidesComplete = useCallback(() => {
     setStory('done');
     onClose();
   }, [onClose]);
 
   useEffect(() => {
-    if (story === 'done' && !(totalMinutes != null && totalMinutes > 0)) {
+    if (story === 'done') {
       onClose();
     }
-  }, [story, totalMinutes, onClose]);
+  }, [story, onClose]);
 
   const cssKeyframes = useMemo(() =>
     Array.from({ length: LAYER_COUNT }).map((_, i) => `
@@ -159,12 +159,15 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
     `).join(''),
   []);
 
-  if (story === 'totalMinutes') {
+  if (story === 'slides') {
     return (
-      <TotalMinutesStory
+      <WrappedSlides
         totalMinutes={totalMinutes ?? 0}
+        artists={artists}
+        albums={albums}
+        songs={songs}
         albumCovers={albumCovers}
-        onComplete={handleTotalMinutesComplete}
+        onClose={handleSlidesComplete}
       />
     );
   }
