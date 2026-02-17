@@ -1,4 +1,18 @@
 import OpenAI from "openai";
+import {
+    fetchDashboardStats,
+    fetchSmartPlaylist,
+    fetchListeningStats,
+    getWrappedStats,
+    getPeakListeningHour,
+    getRadarArtists,
+    getMostSkippedSong,
+    getLateNightAnthem,
+    getRisingStar,
+    getObsessionArtist,
+    fetchCharts,
+} from './dbService';
+import { fetchArtistImages, searchSpotifyTracks } from './spotifyService';
 
 // Initialize Groq (via OpenAI SDK) lazily
 const getAiClient = () => {
@@ -11,6 +25,737 @@ const getAiClient = () => {
         baseURL: "https://api.groq.com/openai/v1",
         dangerouslyAllowBrowser: true // Required for client-side usage
     });
+};
+
+// ─── TOOL CALL TYPES ──────────────────────────────────────────────
+export interface ToolCallInfo {
+    id: string;
+    name: string;
+    arguments: Record<string, any>;
+    result?: any;
+    icon: string;
+    label: string;
+}
+
+// ─── AGENT TOOL DEFINITIONS ──────────────────────────────────────
+const AGENT_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+    {
+        type: "function",
+        function: {
+            name: "get_top_songs",
+            description: "Get the user's top songs/tracks. Use when user asks about their most played songs, top tracks, favorite songs, what they listen to most, etc.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"], description: "Time period to query" },
+                    limit: { type: "number", description: "Max results to return (default 10, max 50)" },
+                    artist_filter: { type: "string", description: "Optional: filter songs by a specific artist name" }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_top_artists",
+            description: "Get the user's top artists. Use when user asks about their most listened artists, favorite artists, who they listen to most, artist rankings, etc.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"], description: "Time period to query" },
+                    limit: { type: "number", description: "Max results to return (default 10, max 50)" }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_top_albums",
+            description: "Get the user's top albums. Use when user asks about their most played albums, favorite albums, album rankings, etc.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"], description: "Time period to query" },
+                    limit: { type: "number", description: "Max results to return (default 10, max 50)" }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_listening_time",
+            description: "Get the user's total listening time and stats. Use when user asks about how long they listened, total time, weekly time, minutes listened, hours listened, listening stats, etc.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"], description: "Time period to query" }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_obsession_orbit",
+            description: "Get the user's Obsession Orbit - their most obsessed-over artists where one song dominates their plays. Use when user asks about obsession, obsession orbit, obsession score, most obsessed artist, or how obsessed they are with someone.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["daily", "weekly", "monthly"], description: "Time period" },
+                    artist_name: { type: "string", description: "Optional: specific artist to check obsession for" }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_artist_streak",
+            description: "Get streak information for an artist - how consistently the user has been listening. Use when user asks about streaks, consistency, how long they've been listening to an artist, etc.",
+            parameters: {
+                type: "object",
+                properties: {
+                    artist_name: { type: "string", description: "The artist name to check streak for" },
+                    period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"], description: "Time period" }
+                },
+                required: ["artist_name", "period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_listening_percentage",
+            description: "Calculate what percentage of listening time a specific artist, song, or album takes up. Use when user asks about percentage, share, proportion of listening, how much of their time goes to something.",
+            parameters: {
+                type: "object",
+                properties: {
+                    entity_type: { type: "string", enum: ["artist", "song", "album"], description: "What to calculate percentage for" },
+                    entity_name: { type: "string", description: "Name of the artist/song/album" },
+                    period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"], description: "Time period" }
+                },
+                required: ["entity_type", "entity_name", "period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_upcoming_artists",
+            description: "Get radar/upcoming/new artists the user recently discovered. Use when user asks about new artists, recently discovered, radar artists, new finds, upcoming artists in their library.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["daily", "weekly", "monthly"], description: "Time period" }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_peak_listening_hour",
+            description: "Get the hour of day when the user listens to music the most. Use when user asks about peak hour, when they listen most, what time they listen, listening schedule, etc.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["daily", "weekly", "monthly"], description: "Time period" }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_rising_star",
+            description: "Get the artist with the biggest increase in plays compared to previous period. Use when user asks about rising stars, trending artists, who's climbing, breakout artists.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["daily", "weekly", "monthly"], description: "Time period" }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_late_night_anthem",
+            description: "Get the song the user plays most during late night hours (1AM-5AM). Use when user asks about late night listening, what they play at night, night owl tracks, etc.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["daily", "weekly", "monthly"], description: "Time period" }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_most_skipped",
+            description: "Get the song the user skips the most (lowest average listen duration). Use when user asks about skipped songs, songs they skip, least finished tracks.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["daily", "weekly", "monthly"], description: "Time period" }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_charts",
+            description: "Get the current music charts showing trending songs with rank changes. Use when user asks about charts, what's trending, charting songs, rank movements, hot tracks.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["daily", "weekly", "monthly", "all time"], description: "Chart period" }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "filter_songs",
+            description: "Filter songs by various criteria like time of day, day of week, duration, recency, specific artist/album. Use for complex queries like 'songs I listen to in the morning', 'short songs I played this week', 'what did I listen to last weekend', etc.",
+            parameters: {
+                type: "object",
+                properties: {
+                    type: { type: "string", enum: ["song", "artist", "album"], description: "Type of items to return" },
+                    field: { type: "string", enum: ["artist_name", "album_name", "track_name"], description: "Field to match on" },
+                    value: { type: "string", description: "Exact value to match" },
+                    contains: { type: "string", description: "Partial text match (broader)" },
+                    time_of_day: { type: "string", enum: ["morning", "afternoon", "evening", "night", "latenight"], description: "Filter by time of day played" },
+                    day_of_week: { type: "string", enum: ["weekday", "weekend"], description: "Filter by weekday/weekend" },
+                    recent_days: { type: "number", description: "Only last N days (7=week, 30=month, 90=3months, 180=6months)" },
+                    sort_by: { type: "string", enum: ["plays", "minutes", "recency", "duration"], description: "Sort results by" },
+                    sort_order: { type: "string", enum: ["highest", "lowest"], description: "Sort direction" },
+                    limit: { type: "number", description: "Max results (default 20)" }
+                },
+                required: ["type"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "fetch_image",
+            description: "Fetch the image/artwork URL for an artist or album. Use when you want to show an image in your response or when building visual content.",
+            parameters: {
+                type: "object",
+                properties: {
+                    name: { type: "string", description: "Artist or album name to fetch image for" },
+                    type: { type: "string", enum: ["artist", "album"], description: "Type of image to fetch" }
+                },
+                required: ["name"]
+            }
+        }
+    }
+];
+
+// ─── TOOL ICON MAP ──────────────────────────────────────────────
+const TOOL_ICON_MAP: Record<string, { icon: string; label: string }> = {
+    get_top_songs: { icon: '🎵', label: 'Top Songs' },
+    get_top_artists: { icon: '🎤', label: 'Top Artists' },
+    get_top_albums: { icon: '💿', label: 'Top Albums' },
+    get_listening_time: { icon: '⏱️', label: 'Listening Time' },
+    get_obsession_orbit: { icon: '🌀', label: 'Obsession Orbit' },
+    get_artist_streak: { icon: '🔥', label: 'Artist Streak' },
+    get_listening_percentage: { icon: '📊', label: 'Listening %' },
+    get_upcoming_artists: { icon: '📡', label: 'Radar Artists' },
+    get_peak_listening_hour: { icon: '🕐', label: 'Peak Hour' },
+    get_rising_star: { icon: '📈', label: 'Rising Star' },
+    get_late_night_anthem: { icon: '🌙', label: 'Late Night' },
+    get_most_skipped: { icon: '⏭️', label: 'Most Skipped' },
+    get_charts: { icon: '📋', label: 'Charts' },
+    filter_songs: { icon: '🔍', label: 'Filter' },
+    fetch_image: { icon: '🖼️', label: 'Fetch Image' },
+};
+
+// ─── TOOL EXECUTION HANDLER ─────────────────────────────────────
+async function executeAgentTool(
+    funcName: string,
+    funcArgs: Record<string, any>,
+    token?: string | null
+): Promise<any> {
+    console.log(`[agentTools] Executing: ${funcName}`, funcArgs);
+
+    try {
+        switch (funcName) {
+            case 'get_top_songs': {
+                const period = funcArgs.period || 'Weekly';
+                const limit = Math.min(funcArgs.limit || 10, 50);
+                const stats = await fetchDashboardStats(period as any);
+                let songs = (stats.songs || []).slice(0, limit);
+                if (funcArgs.artist_filter) {
+                    const filter = funcArgs.artist_filter.toLowerCase();
+                    songs = songs.filter((s: any) => (s.artist || '').toLowerCase().includes(filter));
+                }
+                return {
+                    period,
+                    count: songs.length,
+                    songs: songs.map((s: any, i: number) => ({
+                        rank: i + 1,
+                        title: s.title || s.name,
+                        artist: s.artist,
+                        plays: s.listens || s.totalListens || 0,
+                        minutes: s.timeStr || null,
+                        cover: s.cover || s.image || null
+                    }))
+                };
+            }
+
+            case 'get_top_artists': {
+                const period = funcArgs.period || 'Weekly';
+                const limit = Math.min(funcArgs.limit || 10, 50);
+                const stats = await fetchDashboardStats(period as any);
+                const artists = (stats.artists || []).slice(0, limit);
+                return {
+                    period,
+                    count: artists.length,
+                    artists: artists.map((a: any, i: number) => ({
+                        rank: i + 1,
+                        name: a.name,
+                        plays: a.totalListens || 0,
+                        time: a.timeStr || null,
+                        image: a.image || null,
+                        genres: a.genres || []
+                    }))
+                };
+            }
+
+            case 'get_top_albums': {
+                const period = funcArgs.period || 'Weekly';
+                const limit = Math.min(funcArgs.limit || 10, 50);
+                const stats = await fetchDashboardStats(period as any);
+                const albums = (stats.albums || []).slice(0, limit);
+                return {
+                    period,
+                    count: albums.length,
+                    albums: albums.map((a: any, i: number) => ({
+                        rank: i + 1,
+                        title: a.title,
+                        artist: a.artist,
+                        plays: a.totalListens || 0,
+                        time: a.timeStr || null,
+                        cover: a.cover || null
+                    }))
+                };
+            }
+
+            case 'get_listening_time': {
+                const period = funcArgs.period || 'Weekly';
+                const listeningStats = await fetchListeningStats();
+                const dashboard = await fetchDashboardStats(period as any);
+                const totalMinutes = (dashboard.songs || []).reduce((acc: number, s: any) => {
+                    const mins = s.timeStr ? parseInt(s.timeStr.replace(/[^0-9]/g, ''), 10) : 0;
+                    return acc + mins;
+                }, 0);
+                return {
+                    period,
+                    weeklyTime: listeningStats.weeklyTime,
+                    weeklyTrend: listeningStats.weeklyTrend,
+                    totalTracks: listeningStats.totalTracks,
+                    totalMinutesThisPeriod: totalMinutes,
+                    totalHoursThisPeriod: Math.round(totalMinutes / 60 * 10) / 10,
+                    longestGap: listeningStats.extraStats?.longestGapHours || 'Unknown',
+                    longestSession: listeningStats.extraStats?.longestSessionHours || 'Unknown'
+                };
+            }
+
+            case 'get_obsession_orbit': {
+                const period = funcArgs.period || 'weekly';
+                const obsession = await getObsessionArtist(period as any);
+                if (funcArgs.artist_name) {
+                    const stats = await fetchDashboardStats(period === 'daily' ? 'Daily' : period === 'monthly' ? 'Monthly' : 'Weekly');
+                    const artists = stats.artists || [];
+                    const target = funcArgs.artist_name.toLowerCase();
+                    const found = artists.find((a: any) => (a.name || '').toLowerCase().includes(target));
+                    const rank = found ? artists.indexOf(found) + 1 : -1;
+                    return {
+                        queried_artist: funcArgs.artist_name,
+                        found: !!found,
+                        rank: rank > 0 ? rank : null,
+                        total_artists: artists.length,
+                        plays: found?.totalListens || 0,
+                        time: found?.timeStr || null,
+                        is_obsession: obsession?.name?.toLowerCase().includes(target) || false,
+                        obsession_artist: obsession || null
+                    };
+                }
+                return {
+                    obsession_artist: obsession || null,
+                    period
+                };
+            }
+
+            case 'get_artist_streak': {
+                const period = funcArgs.period || 'Weekly';
+                const stats = await fetchDashboardStats(period as any);
+                const artists = stats.artists || [];
+                const target = (funcArgs.artist_name || '').toLowerCase();
+                const found = artists.find((a: any) => (a.name || '').toLowerCase().includes(target));
+                const rank = found ? artists.indexOf(found) + 1 : -1;
+                // Check songs by that artist for streak info
+                const artistSongs = (stats.songs || []).filter((s: any) => (s.artist || '').toLowerCase().includes(target));
+                return {
+                    artist: funcArgs.artist_name,
+                    found: !!found,
+                    rank: rank > 0 ? rank : null,
+                    plays: found?.totalListens || 0,
+                    time: found?.timeStr || null,
+                    song_count: artistSongs.length,
+                    top_song: artistSongs[0] ? { title: artistSongs[0].title, plays: artistSongs[0].listens || 0 } : null
+                };
+            }
+
+            case 'get_listening_percentage': {
+                const period = funcArgs.period || 'Weekly';
+                const stats = await fetchDashboardStats(period as any);
+                const entityType = funcArgs.entity_type || 'artist';
+                const entityName = (funcArgs.entity_name || '').toLowerCase();
+
+                let totalMinutes = 0;
+                let entityMinutes = 0;
+
+                if (entityType === 'artist') {
+                    const artists = stats.artists || [];
+                    artists.forEach((a: any) => {
+                        const mins = a.timeStr ? parseInt(a.timeStr.replace(/[^0-9]/g, ''), 10) : 0;
+                        totalMinutes += mins;
+                        if ((a.name || '').toLowerCase().includes(entityName)) entityMinutes += mins;
+                    });
+                } else if (entityType === 'song') {
+                    const songs = stats.songs || [];
+                    songs.forEach((s: any) => {
+                        const mins = s.timeStr ? parseInt(s.timeStr.replace(/[^0-9]/g, ''), 10) : 0;
+                        totalMinutes += mins;
+                        if ((s.title || '').toLowerCase().includes(entityName)) entityMinutes += mins;
+                    });
+                } else {
+                    const albums = stats.albums || [];
+                    albums.forEach((a: any) => {
+                        const mins = a.timeStr ? parseInt(a.timeStr.replace(/[^0-9]/g, ''), 10) : 0;
+                        totalMinutes += mins;
+                        if ((a.title || '').toLowerCase().includes(entityName)) entityMinutes += mins;
+                    });
+                }
+
+                const percentage = totalMinutes > 0 ? Math.round((entityMinutes / totalMinutes) * 1000) / 10 : 0;
+                return {
+                    entity: funcArgs.entity_name,
+                    entity_type: entityType,
+                    period,
+                    percentage,
+                    entity_minutes: entityMinutes,
+                    total_minutes: totalMinutes
+                };
+            }
+
+            case 'get_upcoming_artists': {
+                const period = funcArgs.period || 'weekly';
+                const radar = await getRadarArtists(period as any);
+                return {
+                    period,
+                    new_artists: radar || []
+                };
+            }
+
+            case 'get_peak_listening_hour': {
+                const period = funcArgs.period || 'weekly';
+                const peak = await getPeakListeningHour(period as any);
+                return peak || { hour: null, label: 'Unknown', plays: 0 };
+            }
+
+            case 'get_rising_star': {
+                const period = funcArgs.period || 'weekly';
+                const rising = await getRisingStar(period as any);
+                return rising || { name: 'No data', increase: 0 };
+            }
+
+            case 'get_late_night_anthem': {
+                const period = funcArgs.period || 'weekly';
+                const anthem = await getLateNightAnthem(period as any);
+                return anthem || { title: 'No late night plays found', artist: '', plays: 0 };
+            }
+
+            case 'get_most_skipped': {
+                const period = funcArgs.period || 'weekly';
+                const skipped = await getMostSkippedSong(period as any);
+                return skipped || { title: 'No data', artist: '', avgDuration: 0 };
+            }
+
+            case 'get_charts': {
+                const period = funcArgs.period || 'weekly';
+                const charts = await fetchCharts(period as any);
+                return {
+                    period,
+                    charts: (charts || []).slice(0, 20).map((c: any) => ({
+                        rank: c.rank,
+                        title: c.title,
+                        artist: c.artist,
+                        plays: c.listens,
+                        trend: c.trend,
+                        prev_rank: c.prev
+                    }))
+                };
+            }
+
+            case 'filter_songs': {
+                const concept = {
+                    title: 'Filtered Results',
+                    description: 'Custom filter',
+                    filter: {
+                        type: funcArgs.type || 'song',
+                        field: funcArgs.field,
+                        value: funcArgs.value,
+                        contains: funcArgs.contains,
+                        timeOfDay: funcArgs.time_of_day,
+                        dayOfWeek: funcArgs.day_of_week,
+                        recentDays: funcArgs.recent_days,
+                        sortBy: funcArgs.sort_by || 'plays',
+                        sortOrder: funcArgs.sort_order || 'highest',
+                        limit: Math.min(funcArgs.limit || 20, 50)
+                    }
+                };
+                const data = await fetchSmartPlaylist(concept as any);
+                return {
+                    count: data.length,
+                    items: data.slice(0, 30).map((d: any, i: number) => ({
+                        rank: i + 1,
+                        title: d.title || d.name,
+                        artist: d.artist || d.artist_name,
+                        plays: d.plays || d.listens || d.totalListens || 0,
+                        time: d.timeStr || d.totalMinutes || null,
+                        cover: d.cover || d.image || null
+                    }))
+                };
+            }
+
+            case 'fetch_image': {
+                if (!token) return { image_url: null, error: 'No Spotify token available' };
+                const name = funcArgs.name || '';
+                try {
+                    const images = await fetchArtistImages(token, [name]);
+                    return { name, image_url: images[name] || null };
+                } catch {
+                    return { name, image_url: null, error: 'Failed to fetch image' };
+                }
+            }
+
+            default:
+                return { error: `Unknown tool: ${funcName}` };
+        }
+    } catch (error: any) {
+        console.error(`[agentTools] Error executing ${funcName}:`, error);
+        return { error: error.message || 'Tool execution failed' };
+    }
+}
+
+// ─── AGENT SYSTEM PROMPT ─────────────────────────────────────────
+const AGENT_SYSTEM_PROMPT = `You are **Punky**, the AI music analytics agent for PunkyStats — a premium Spotify analytics dashboard.
+You are NOT a generic chatbot. You are a specialized music data agent with access to real-time tools that query the user's actual listening history database.
+
+## CORE IDENTITY
+- You are Punky: sharp, music-savvy, data-driven, concise
+- You speak like a friend who deeply understands their music taste
+- You never hallucinate data — you ALWAYS use tool calls to fetch real numbers
+- You are an agent: you think, decide which tools to call, call them, then respond with real data
+
+## TOOL CALLING RULES (CRITICAL)
+1. **ALWAYS call tools** before answering data questions. NEVER guess or make up numbers.
+2. You can call **multiple tools in parallel** when needed (e.g., user asks "what's my obsession score for Kanye and also my top song" → call get_obsession_orbit AND get_top_songs simultaneously).
+3. Match the user's time intent to the correct period parameter:
+   - "this week" / "weekly" → "Weekly" or "weekly"
+   - "today" / "daily" → "Daily" or "daily"  
+   - "this month" / "monthly" → "Monthly" or "monthly"
+   - "all time" / "ever" / "overall" → "All Time"
+   - "last week" → "Weekly" (it covers recent data)
+   - "last 6 months" → use filter_songs with recent_days: 180
+   - "last 3 months" → use filter_songs with recent_days: 90
+4. If user asks about a SPECIFIC artist/song/album, use the appropriate tool with the entity name.
+5. For percentage/share questions, use get_listening_percentage.
+6. For "obsession orbit" or obsession-related questions, ALWAYS use get_obsession_orbit.
+7. For streak questions, use get_artist_streak.
+8. For "what did I listen to [time]", use filter_songs with the right recent_days or time_of_day.
+9. When user mentions "kanye" you know they mean "Kanye West". Apply this for well-known artists.
+
+## TOOL SELECTION GUIDE
+| User Intent | Tool to Call | Key Args |
+|---|---|---|
+| "top songs this month" | get_top_songs | period: "Monthly" |
+| "kanye listening last 6 months" | filter_songs | field: "artist_name", value: "Kanye West", recent_days: 180 |
+| "top album" | get_top_albums | period: "Weekly" |
+| "obsession orbit" / "obsession score" | get_obsession_orbit | period, artist_name? |
+| "total time this week" | get_listening_time | period: "Weekly" |
+| "what % is drake" | get_listening_percentage | entity_type: "artist", entity_name: "Drake" |
+| "drake streak" | get_artist_streak | artist_name: "Drake" |
+| "what song at night" | get_late_night_anthem | period |
+| "trending/charts" | get_charts | period |
+| "new artists" / "upcoming" | get_upcoming_artists | period |
+| "peak hour" | get_peak_listening_hour | period |
+| "rising star" | get_rising_star | period |
+| "most skipped" | get_most_skipped | period |
+| "songs this morning" | filter_songs | type: "song", time_of_day: "morning" |
+| "least played album" | filter_songs | type: "album", sort_by: "plays", sort_order: "lowest" |
+| "songs I played last weekend" | filter_songs | type: "song", day_of_week: "weekend", recent_days: 7 |
+
+## RESPONSE FORMAT RULES
+1. **BE EXTREMELY CONCISE.** No yapping. Get to the point.
+2. Use the data from tool results to give precise answers with real numbers.
+3. Use bullet points for lists. NO markdown tables.
+4. When showing ranked items, format like: **1.** Song Name — Artist (X plays)
+5. Include relevant stats: plays, minutes, percentage, rank.
+6. For images: if you fetched an image URL, reference it with ![name](url).
+7. Use bold for emphasis on key numbers and names.
+8. End with a brief insight or fun observation about the data when appropriate.
+9. If data is empty/null, say "No data found for that query" — never make up results.
+
+## VOCABULARY (PunkyStats Terms)
+- **Obsession Orbit**: The user's most obsessed-over artist (where one song dominates plays)
+- **Rising Star**: Artist with biggest play increase vs previous period
+- **Late Night Anthem**: Most played song between 1-5 AM
+- **Radar Artists**: Newly discovered artists (not in previous period)
+- **Deep Cut**: Rarely played or low-popularity tracks
+- **Heavy Rotation**: Songs/artists with high consistent plays
+
+## CANVAS COMPONENT GUIDELINES (for UI references)
+When the user or context references visual components, keep in mind:
+- Colors: Pure black (#000000) bg, dark cards (#1C1C1E), accent red (#FA2D48), white text (#FFFFFF), muted (#8E8E93)
+- Font: System/Inter — clean, Apple-style
+- No gradients (flat, modern aesthetic)
+- Borders: thin white/10 borders, rounded-xl corners
+- Glassmorphism: backdrop-blur effects where appropriate`;
+
+// ─── MAIN AGENT FUNCTION (with tool calling) ─────────────────────
+export interface AgentResponse {
+    text: string;
+    toolCalls: ToolCallInfo[];
+}
+
+export const answerMusicQuestionWithTools = async (
+    question: string,
+    context: {
+        artists: string[],
+        albums: string[],
+        songs: string[],
+        userName?: string,
+        globalStats?: {
+            weeklyTime: string,
+            weeklyTrend: string,
+            totalTracks: number,
+            totalMinutes?: number,
+            charts?: any[],
+            extraStats?: { longestGapHours: string, longestSessionHours: string }
+        }
+    },
+    token?: string | null
+): Promise<AgentResponse> => {
+    console.log('[agentTools] answerMusicQuestionWithTools called', { question });
+
+    const fallbackResponse: AgentResponse = { text: "Unable to answer right now. Try again!", toolCalls: [] };
+
+    try {
+        const client = getAiClient();
+        if (!client) {
+            return { text: "Configure VITE_GROQ_API_KEY to use chat features.", toolCalls: [] };
+        }
+
+        const messages: any[] = [
+            { role: "system", content: AGENT_SYSTEM_PROMPT },
+            {
+                role: "system",
+                content: `User: ${context.userName || 'Unknown'} | Date: ${new Date().toLocaleString()} | Quick context: Top artists include ${context.artists.slice(0, 5).join(', ')}. Weekly time: ${context.globalStats?.weeklyTime || '?'}.`
+            },
+            { role: "user", content: question }
+        ];
+
+        const collectedToolCalls: ToolCallInfo[] = [];
+        let iterations = 0;
+        const MAX_ITERATIONS = 6;
+
+        while (iterations < MAX_ITERATIONS) {
+            iterations++;
+
+            const response = await client.chat.completions.create({
+                model: "moonshotai/kimi-k2-instruct-0905",
+                messages,
+                tools: AGENT_TOOLS,
+                tool_choice: iterations === 1 ? "auto" : "auto",
+                temperature: 0.5,
+                max_tokens: 800
+            });
+
+            const assistantMessage = response.choices[0]?.message;
+            if (!assistantMessage) break;
+
+            messages.push(assistantMessage);
+
+            if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+                // Execute all tool calls in parallel
+                const toolResults = await Promise.all(
+                    assistantMessage.tool_calls.map(async (toolCall) => {
+                        const funcName = toolCall.function.name;
+                        const funcArgs = JSON.parse(toolCall.function.arguments || "{}");
+                        const iconInfo = TOOL_ICON_MAP[funcName] || { icon: '⚡', label: funcName };
+
+                        const result = await executeAgentTool(funcName, funcArgs, token);
+
+                        collectedToolCalls.push({
+                            id: toolCall.id,
+                            name: funcName,
+                            arguments: funcArgs,
+                            result,
+                            icon: iconInfo.icon,
+                            label: iconInfo.label
+                        });
+
+                        return {
+                            role: "tool" as const,
+                            tool_call_id: toolCall.id,
+                            content: JSON.stringify(result)
+                        };
+                    })
+                );
+
+                messages.push(...toolResults);
+            } else {
+                // No more tool calls — return final response
+                const finalText = assistantMessage.content || "I processed your request but couldn't generate a response.";
+                return {
+                    text: finalText,
+                    toolCalls: collectedToolCalls
+                };
+            }
+        }
+
+        // If we hit max iterations, return what we have
+        const lastAssistant = messages.filter(m => m.role === 'assistant').pop();
+        return {
+            text: lastAssistant?.content || "I ran out of processing steps. Try a simpler question!",
+            toolCalls: collectedToolCalls
+        };
+
+    } catch (error: any) {
+        console.error("[agentTools] Agent Error:", error);
+        return fallbackResponse;
+    }
 };
 
 export const generateMusicInsights = async (contextData: string): Promise<string> => {

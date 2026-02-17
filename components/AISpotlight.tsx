@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from './UIComponents';
 // import { ActivityHeatmap } from './ActivityHeatmap';
 import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2, Gift, ChevronLeft, ArrowUp, Palette } from 'lucide-react';
-import { generateDynamicCategoryQuery, answerMusicQuestion, generateWeeklyInsightStory, generateWrappedVibe, generateWrappedWithTools, WrappedSlide } from '../services/geminiService';
+import { generateDynamicCategoryQuery, answerMusicQuestion, answerMusicQuestionWithTools, generateWeeklyInsightStory, generateWrappedVibe, generateWrappedWithTools, WrappedSlide, ToolCallInfo } from '../services/geminiService';
 import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import { generateCanvasComponent, CanvasComponent } from '../services/canvasService';
@@ -130,6 +130,7 @@ interface ChatMessage {
     text: string;
     timestamp: Date;
     canvas?: CanvasComponent;
+    toolCalls?: ToolCallInfo[];
 }
 
 const LoadingDots = ({ color = 'bg-white/40', size = 'w-2 h-2' }: { color?: string; size?: string }) => (
@@ -608,13 +609,18 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 }
 
             } else {
-                // Chat Mode
-                console.log('[AISpotlight] Entering Chat Mode for:', promptToUse);
+                // Chat Mode — Agent with Tool Calls
+                console.log('[AISpotlight] Entering Agent Chat Mode for:', promptToUse);
                 setMode('chat');
-                const answer = await answerMusicQuestion(promptToUse, contextData);
-                console.log('[AISpotlight] Chat response received, length:', answer?.length);
-                setChatResponse(answer);
-                setChatMessages(prev => [...prev, { role: 'ai', text: answer, timestamp: new Date() }]);
+                const agentResult = await answerMusicQuestionWithTools(promptToUse, contextData, token);
+                console.log('[AISpotlight] Agent response received, tools used:', agentResult.toolCalls.length);
+                setChatResponse(agentResult.text);
+                setChatMessages(prev => [...prev, {
+                    role: 'ai',
+                    text: agentResult.text,
+                    timestamp: new Date(),
+                    toolCalls: agentResult.toolCalls.length > 0 ? agentResult.toolCalls : undefined
+                }]);
                 setDisplayedText(""); // Reset text for typing
                 setTyping(true);
             }
@@ -737,6 +743,21 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                     </div>
                                 ) : msg.role === 'ai' ? (
                                     <>
+                                        {/* Tool Call Pills */}
+                                        {msg.toolCalls && msg.toolCalls.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5 mb-2">
+                                                {msg.toolCalls.map((tc, tcIdx) => (
+                                                    <span
+                                                        key={tcIdx}
+                                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px] font-medium text-[#8E8E93]"
+                                                        title={`${tc.name}(${Object.entries(tc.arguments).map(([k,v]) => `${k}: ${v}`).join(', ')})`}
+                                                    >
+                                                        <span>{tc.icon}</span>
+                                                        <span>{tc.label}</span>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                         <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                 {idx === chatMessages.length - 1 && typing
@@ -767,7 +788,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             className="flex justify-start"
                         >
                             <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl rounded-bl-md px-5 py-4">
-                                <LoadingDots />
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[11px] text-[#8E8E93] font-medium">⚡ Running tools</span>
+                                    <LoadingDots />
+                                </div>
                             </div>
                         </motion.div>
                     )}
