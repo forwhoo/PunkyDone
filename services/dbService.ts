@@ -263,15 +263,22 @@ export const fetchListeningStats = async () => {
     };
 };
 
-export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Monthly' | 'All Time' = 'Weekly') => {
-    console.log(`[dbService] 📊 fetchDashboardStats called with timeRange: ${timeRange}`);
+export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Monthly' | 'All Time' | 'Custom' = 'Weekly', customRange?: { start: string; end: string }) => {
+    console.log(`[dbService] 📊 fetchDashboardStats called with timeRange: ${timeRange}`, customRange);
     const functionStart = performance.now();
 
     // Calculate date range based on timeRange selection
     const now = new Date();
     let startDate: Date;
+    let endDate: Date = now;
 
-    if (timeRange === 'Daily') {
+    if (timeRange === 'Custom' && customRange) {
+        // Use custom date range
+        startDate = new Date(customRange.start);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(customRange.end);
+        endDate.setHours(23, 59, 59, 999);
+    } else if (timeRange === 'Daily') {
         // Get data from today (12:00 AM to now)
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     } else if (timeRange === 'Weekly') {
@@ -375,11 +382,18 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
     }
 
     // 1. Fetch all data in a single optimized query
-    const { data: historyData, error: historyError } = await supabase
+    const query = supabase
         .from('listening_history')
         .select('track_name, artist_name, album_name, album_cover, duration_ms, played_at')
         .gte('played_at', startDate.toISOString())
         .order('played_at', { ascending: false });
+    
+    // Add end date filter if we have a custom range or not fetching all time
+    if (timeRange !== 'All Time') {
+        query.lte('played_at', endDate.toISOString());
+    }
+    
+    const { data: historyData, error: historyError } = await query;
 
     if (historyError) {
         console.error("[dbService] ❌ Query Error:", historyError);

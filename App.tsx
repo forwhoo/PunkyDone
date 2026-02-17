@@ -306,11 +306,14 @@ function App() {
           // Increment fetch ID to track this specific request
           const currentFetchId = ++fetchIdRef.current;
           const requestedRange = timeRange; // Capture current value
+          const currentCustomRange = customDateRange; // Capture custom range
           
           console.log(`[App] 📊 Refreshing DB Stats for ${requestedRange}... (fetchId: ${currentFetchId})`);
           try {
             const stats = await fetchListeningStats();
-            const dashboardStuff = await fetchDashboardStats(requestedRange);
+            const dashboardStuff = requestedRange === 'Custom' && currentCustomRange
+                ? await fetchDashboardStats('Custom', currentCustomRange)
+                : await fetchDashboardStats(requestedRange);
             
             // Check if this request is still the latest one
             if (currentFetchId !== fetchIdRef.current) {
@@ -1841,6 +1844,7 @@ function App() {
                                 if (customDateRange?.start && customDateRange?.end) {
                                     setTimeRange('Custom');
                                     setShowDatePicker(false);
+                                    fetchDashboardStats('Custom', customDateRange).then(data => setDbUnifiedData(data));
                                     console.log('Custom range selected:', customDateRange);
                                 }
                             }}
