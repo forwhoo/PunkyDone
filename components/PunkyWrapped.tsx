@@ -22,6 +22,7 @@ const LAYER_OPACITY = [0.95, 0.85, 0.7, 0.5, 0.25]; // opacity per layer
 // Vortex configuration
 const VORTEX_DURATION = 8; // seconds for one full spiral from outer edge to center
 const MAX_RADIUS_VW = 90; // Start at 90% of min(vw, vh)
+const OPACITY_FADE_FACTOR = 0.3; // Fade to 70% of base opacity as items approach center
 
 function shuffleArray<T>(arr: T[]): T[] {
   const shuffled = [...arr];
@@ -99,11 +100,12 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
           // Check if item has reached the center (completed its journey)
           if (elapsed >= VORTEX_DURATION) {
             // Respawn at outer edge with new spawn time
-            const covers = shuffledRef.current;
+            const covers = shuffledRef.current || [];
+            if (covers.length === 0) return item; // Safety check
             return {
               ...item,
               spawnTime: now,
-              src: covers ? covers[Math.floor(Math.random() * covers.length)] : item.src,
+              src: covers[Math.floor(Math.random() * covers.length)],
               id: `item-${idCounterRef.current.value++}`,
             };
           }
@@ -225,7 +227,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                 const currentScale = LAYER_SCALES[layer] * (1 - progress);
                 
                 // Calculate opacity: fades out as it approaches center
-                const currentOpacity = LAYER_OPACITY[layer] * (1 - progress * 0.3);
+                const currentOpacity = LAYER_OPACITY[layer] * (1 - progress * OPACITY_FADE_FACTOR);
                 
                 const rad = (item.angle * Math.PI) / 180;
                 const radiusPx = `min(${currentRadius}vw, ${currentRadius}vh)`;
