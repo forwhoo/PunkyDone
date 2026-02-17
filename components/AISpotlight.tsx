@@ -811,7 +811,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                         >
                             <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl rounded-bl-md px-5 py-4">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[11px] text-[#8E8E93] font-medium">⚡ Running tools</span>
+                                    <span className="text-[11px] text-[#8E8E93] font-medium flex items-center gap-1.5">
+                                        <Zap size={12} className="text-[#8E8E93]" />
+                                        Running tools
+                                    </span>
                                     <LoadingDots />
                                 </div>
                             </div>
