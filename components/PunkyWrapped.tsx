@@ -73,6 +73,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
   const animationFrameRef = useRef<number>();
   const idCounterRef = useRef({ value: 0 });
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [visibleLayers, setVisibleLayers] = useState<number[]>([]);
 
   const spiralItems = useMemo(() => {
     if (!shuffledRef.current || shuffledRef.current.length !== albumCovers.length) {
@@ -85,6 +86,22 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
   useEffect(() => {
     setItems(spiralItems);
   }, [spiralItems]);
+
+  // Staggered layer reveal on mount
+  useEffect(() => {
+    // Reveal layers from outer (0) to inner (4) with stagger
+    const delays = [0, 200, 400, 600, 800]; // ms delay for each layer
+    const timers: NodeJS.Timeout[] = [];
+    
+    delays.forEach((delay, layerIndex) => {
+      const timer = setTimeout(() => {
+        setVisibleLayers(prev => [...prev, layerIndex]);
+      }, delay);
+      timers.push(timer);
+    });
+
+    return () => timers.forEach(clearTimeout);
+  }, []);
 
   // Animation loop for respawning items
   useEffect(() => {
@@ -176,11 +193,21 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
       className="fixed inset-0 z-[100] overflow-hidden"
       style={{ backgroundColor: '#050505' }}
       initial={{ opacity: 0 }}
-      animate={{ opacity: transitioning ? 0 : 1, scale: transitioning ? 0.8 : 1 }}
+      animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: transitioning ? 1.5 : 0.4 }}
+      transition={{ duration: 0.4 }}
     >
       <style>{cssKeyframes}</style>
+
+      {/* Content wrapper with transition effects */}
+      <motion.div
+        className="absolute inset-0"
+        animate={{ 
+          opacity: transitioning ? 0 : 1, 
+          scale: transitioning ? 0.8 : 1 
+        }}
+        transition={{ duration: transitioning ? 1.5 : 0.4 }}
+      >
 
       {/* PrismaticBurst Background */}
       <div className="absolute inset-0 z-[0]" style={{ opacity: 0.45 }}>
@@ -201,6 +228,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
             ? LAYER_DURATIONS[layer] / 5
             : LAYER_DURATIONS[layer];
           const size = LAYER_SIZES[layer];
+          const isLayerVisible = visibleLayers.includes(layer);
 
           return (
             <div
@@ -212,6 +240,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                 animation: `layerSpin${layer} ${duration}s linear infinite`,
                 zIndex: layer,
                 transition: vortex ? 'animation-duration 0.5s' : undefined,
+                opacity: isLayerVisible ? 1 : 0,
               }}
             >
               {layerItems.map((item) => {
@@ -232,6 +261,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                 
                 const normalTransform = `translate(-50%, -50%) translate(calc(${Math.cos(rad)} * ${radiusPx}), calc(${Math.sin(rad)} * ${radiusPx})) scale(${currentScale}) rotate3d(1, 1, 0, ${10 + layer * 5}deg)`;
                 const vortexTransform = `translate(-50%, -50%) scale(0) rotate3d(1,1,0,${60 + layer * 30}deg)`;
+                const introScale = isLayerVisible ? 1 : 0;
 
                 return (
                   <div
@@ -243,8 +273,12 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                       left: '50%',
                       top: '50%',
                       transform: vortex ? vortexTransform : normalTransform,
-                      opacity: vortex ? 0 : currentOpacity,
-                      transition: vortex ? 'transform 1.5s cubic-bezier(0.4,0,0.2,1), opacity 1.5s ease' : undefined,
+                      opacity: vortex ? 0 : (isLayerVisible ? currentOpacity : 0),
+                      transition: vortex 
+                        ? 'transform 1.5s cubic-bezier(0.4,0,0.2,1), opacity 1.5s ease' 
+                        : isLayerVisible 
+                          ? 'opacity 0.4s ease-out' 
+                          : undefined,
                       boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
                     }}
                   >
@@ -334,6 +368,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
           )}
         </AnimatePresence>
       </div>
+      </motion.div> {/* Close content wrapper */}
     </motion.div>
   );
 };

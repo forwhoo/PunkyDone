@@ -299,28 +299,42 @@ export const TotalMinutesStory: React.FC<TotalMinutesStoryProps> = ({
               </>
             ) : (
               <>
-                <span
+                <motion.span
                   className="text-white font-bold leading-none"
                   style={{
                     fontSize: 'clamp(120px, 15vw, 180px)',
                     fontVariantNumeric: 'tabular-nums',
                   }}
+                  initial={{ scale: 0.8, opacity: 0, filter: 'blur(10px)' }}
+                  animate={{ 
+                    scale: [0.8, 1.05, 1],
+                    opacity: 1,
+                    filter: ['blur(10px)', 'blur(0px)', 'blur(0px)'],
+                  }}
+                  transition={{ 
+                    duration: 0.8, 
+                    times: [0, 0.6, 1],
+                    ease: [0.43, 0.13, 0.23, 0.96]
+                  }}
                 >
                   {hours > 0
                     ? `${hours.toLocaleString()} ${hours === 1 ? 'hour' : 'hours'}`
                     : `${totalMinutes.toLocaleString()} min`}
-                </span>
+                </motion.span>
                 {hours > 0 && (
-                  <span
+                  <motion.span
                     className="mt-4"
                     style={{
                       fontSize: 'clamp(24px, 3vw, 32px)',
                       color: 'rgba(255,255,255,0.7)',
                       fontVariantNumeric: 'tabular-nums',
                     }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
                   >
                     {totalMinutes.toLocaleString()} minutes
-                  </span>
+                  </motion.span>
                 )}
               </>
             )}

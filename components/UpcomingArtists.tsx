@@ -143,14 +143,14 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                             onClick={() => setSelectedArtist(null)}
                         />
                         <motion.div
-                            initial={{ opacity: 0, x: 50, scale: 0.95 }}
-                            animate={{ opacity: 1, x: 0, scale: 1 }}
-                            exit={{ opacity: 0, x: 50, scale: 0.95 }}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="fixed top-2 bottom-2 right-2 w-[calc(100vw-16px)] md:w-[340px] z-[101] pointer-events-none"
+                            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-32px)] max-w-md z-[101] pointer-events-none"
                         >
                             <div 
-                                className="h-full w-full bg-[#1C1C1E] rounded-3xl overflow-hidden flex flex-col relative shadow-2xl border border-white/10 pointer-events-auto"
+                                className="h-auto max-h-[85vh] w-full bg-[#1C1C1E] rounded-3xl overflow-hidden flex flex-col relative shadow-2xl border border-white/10 pointer-events-auto"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 {/* Close Button */}

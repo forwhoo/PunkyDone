@@ -67,15 +67,15 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
     const totalTime = items.reduce((sum, item) => sum + (parseInt(String(item.timeStr || '0').replace(/[^0-9]/g, ''), 10) || 0), 0);
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 md:p-6 w-full h-full">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center w-full h-full">
             {/* Backdrop */}
             <div 
                 className="absolute inset-0 bg-black/90 backdrop-blur-2xl transition-all duration-500"
                 onClick={onClose}
             />
 
-            {/* Modal Content */}
-            <div className="relative bg-[#0A0A0A] w-full max-w-5xl h-full md:h-[90vh] md:rounded-[32px] overflow-hidden shadow-2xl flex flex-col border border-white/[0.06] animate-in slide-in-from-bottom-10 fade-in duration-500">
+            {/* Modal Content - Full Screen */}
+            <div className="relative bg-[#0A0A0A] w-full h-full overflow-hidden flex flex-col border-none">
                 
                 {/* Header */}
                 <div className="flex-shrink-0 px-5 md:px-8 pt-6 md:pt-8 pb-4 bg-[#0A0A0A]/95 backdrop-blur-xl border-b border-white/[0.06] sticky top-0 z-10">
