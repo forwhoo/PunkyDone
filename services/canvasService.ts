@@ -1,4 +1,13 @@
 import OpenAI from "openai";
+import {
+    getObsessionArtist,
+    getPeakListeningHour,
+    getRisingStar,
+    getLateNightAnthem,
+    getMostSkippedSong,
+    getWrappedStats,
+    fetchDashboardStats,
+} from './dbService';
 
 // Initialize Groq (via OpenAI SDK) lazily - same pattern as geminiService
 const getAiClient = () => {
@@ -151,6 +160,131 @@ const CANVAS_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     {
         type: "function",
         function: {
+            name: "get_obsession_orbit",
+            description: "Get the user's Obsession Orbit — their most obsessed-over artist where one song dominates plays. Returns artist name, top song, obsession percentage, and total plays. Use for obsession cards, gauges, or highlight components.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: {
+                        type: "string",
+                        enum: ["daily", "weekly", "monthly"],
+                        description: "Time period to check obsession for (default: weekly)"
+                    }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_peak_listening_hour",
+            description: "Get the hour of day when the user listens most. Returns hour, label, and play count. Use for clock visualizations or schedule components.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: {
+                        type: "string",
+                        enum: ["daily", "weekly", "monthly"],
+                        description: "Time period (default: weekly)"
+                    }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_rising_star",
+            description: "Get the artist with the biggest increase in plays compared to previous period. Returns artist name, increase count, and current/previous plays.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: {
+                        type: "string",
+                        enum: ["daily", "weekly", "monthly"],
+                        description: "Time period (default: weekly)"
+                    }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_late_night_anthem",
+            description: "Get the user's most played song during late night hours (1AM-5AM). Returns song title, artist, and play count.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: {
+                        type: "string",
+                        enum: ["daily", "weekly", "monthly"],
+                        description: "Time period (default: weekly)"
+                    }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_most_skipped",
+            description: "Get the song the user skips most (lowest average listen duration). Returns song title, artist, and average duration.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: {
+                        type: "string",
+                        enum: ["daily", "weekly", "monthly"],
+                        description: "Time period (default: weekly)"
+                    }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_wrapped_overview",
+            description: "Get a wrapped-style summary with top artist, top song, top album, total minutes, and total streams for a period. Use for summary dashboards or wrapped-style components.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: {
+                        type: "string",
+                        enum: ["daily", "weekly", "monthly"],
+                        description: "Time period (default: weekly)"
+                    }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_recent_plays",
+            description: "Get the user's most recently played tracks in chronological order with title, artist, cover, and timestamp.",
+            parameters: {
+                type: "object",
+                properties: {
+                    limit: {
+                        type: "number",
+                        description: "Number of recent plays to return (default 20, max 50)"
+                    }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
             name: "render_canvas_component",
             description: "Render a complete HTML/CSS/JS component for the user. This is the FINAL output tool. The HTML must be a self-contained component with inline CSS and JS. Use modern design with dark theme matching the app (bg: #0a0a0a, text: white, accent: #FA2D48).",
             parameters: {
@@ -181,7 +315,7 @@ const CANVAS_SYSTEM_PROMPT = `You are Punky Canvas, an advanced AI component bui
 Your job is to create beautiful, interactive HTML/CSS/JS components based on the user's request.
 
 ## YOUR CAPABILITIES:
-You have tools to fetch the user's real music data (artists, songs, albums, stats, charts, genres).
+You have tools to fetch the user's real music data (artists, songs, albums, stats, charts, genres, obsession orbit, peak hours, rising stars, late night anthems, skipped songs, wrapped overviews, and recent plays).
 You MUST call data tools first, then use the fetched data to build your component.
 Always call render_canvas_component as your FINAL tool call with the complete HTML.
 
@@ -191,15 +325,19 @@ Always call render_canvas_component as your FINAL tool call with the complete HT
 3. Use the real data to build a stunning HTML/CSS/JS component
 4. Call render_canvas_component with the final HTML
 
-## DESIGN SYSTEM:
+## STRICT DESIGN SYSTEM (MUST FOLLOW):
 - Background: #0a0a0a (main), #1C1C1E (cards), #2C2C2E (elevated)
 - Text: #FFFFFF (primary), #8E8E93 (secondary), #666666 (muted)
 - Accent: #FA2D48 (primary red), #FF6B35 (orange), #FF9F0A (amber)
 - Success: #30D158, Info: #0A84FF, Purple: #BF5AF2
-- Border: rgba(255, 255, 255, 0.1)
+- Border: 1px solid rgba(255, 255, 255, 0.1)
 - Border Radius: 12px (cards), 8px (buttons), 16px (large cards)
-- Font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif
+- Font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif
+- Font Sizes: headings 24-32px bold, subheadings 16-18px semibold, body 14-15px regular, captions 11-12px medium
+- Buttons: background #FFFFFF color #000000 for primary actions, background rgba(255,255,255,0.05) for secondary
 - Shadows: Use subtle box-shadows with colored glows for accents
+- Spacing: 16-24px padding for cards, 8-16px gaps between elements
+- NO heavy gradients — flat, clean, Apple-style
 
 ## HTML RULES:
 - Output must be a complete HTML document starting with <!DOCTYPE html>
@@ -225,6 +363,10 @@ Always call render_canvas_component as your FINAL tool call with the complete HT
 - Leaderboards and rankings
 - Interactive music maps
 - Stat counters with animations
+- Obsession score gauges
+- Peak hour clock visualizations
+- Rising star spotlight cards
+- Late night anthem displays
 
 ## IMPORTANT:
 - ALWAYS fetch data first, then render
@@ -408,6 +550,71 @@ export const generateCanvasComponent = async (
                             case "get_genre_breakdown":
                                 toolResult = handleGetGenreBreakdown(context);
                                 break;
+                            case "get_obsession_orbit": {
+                                const obsPeriod = funcArgs.period || 'weekly';
+                                const obsession = await getObsessionArtist(obsPeriod as any);
+                                toolResult = obsession
+                                    ? { artist: obsession.artist, topSong: obsession.topSong, percentage: obsession.percentage, totalPlays: obsession.totalPlays, image: obsession.image }
+                                    : { artist: null, note: 'No obsession found for this period' };
+                                break;
+                            }
+                            case "get_peak_listening_hour": {
+                                const peakPeriod = funcArgs.period || 'weekly';
+                                const peak = await getPeakListeningHour(peakPeriod as any);
+                                toolResult = peak || { hour: null, label: 'Unknown', count: 0 };
+                                break;
+                            }
+                            case "get_rising_star": {
+                                const risingPeriod = funcArgs.period || 'weekly';
+                                const rising = await getRisingStar(risingPeriod as any);
+                                toolResult = rising || { name: 'No data', increase: 0 };
+                                break;
+                            }
+                            case "get_late_night_anthem": {
+                                const lnPeriod = funcArgs.period || 'weekly';
+                                const anthem = await getLateNightAnthem(lnPeriod as any);
+                                toolResult = anthem || { title: 'No late night plays', artist: '', plays: 0 };
+                                break;
+                            }
+                            case "get_most_skipped": {
+                                const skipPeriod = funcArgs.period || 'weekly';
+                                const skipped = await getMostSkippedSong(skipPeriod as any);
+                                toolResult = skipped || { title: 'No data', artist: '', avgDuration: 0 };
+                                break;
+                            }
+                            case "get_wrapped_overview": {
+                                const wrappedPeriod = funcArgs.period || 'weekly';
+                                const wrapped = await getWrappedStats(wrappedPeriod as any);
+                                if (wrapped) {
+                                    toolResult = {
+                                        title: wrapped.title,
+                                        totalMinutes: wrapped.totalMinutes,
+                                        totalTracks: wrapped.totalTracks,
+                                        topArtist: wrapped.topArtist,
+                                        topSong: wrapped.topSong,
+                                        topAlbum: wrapped.topAlbum,
+                                    };
+                                } else {
+                                    toolResult = { found: false, note: 'No data for this period' };
+                                }
+                                break;
+                            }
+                            case "get_recent_plays": {
+                                const rpLimit = Math.min(funcArgs.limit || 20, 50);
+                                const rpStats = await fetchDashboardStats('Daily');
+                                const recent = (rpStats.recentPlays || rpStats.songs || []).slice(0, rpLimit);
+                                toolResult = {
+                                    count: recent.length,
+                                    plays: recent.map((p: any, i: number) => ({
+                                        rank: i + 1,
+                                        title: p.title || p.track_name || p.name,
+                                        artist: p.artist || p.artist_name,
+                                        cover: p.cover || p.album_cover || p.image || null,
+                                        played_at: p.played_at || p.lastPlayed || null,
+                                    }))
+                                };
+                                break;
+                            }
                             case "render_canvas_component":
                                 canvasResult = {
                                     id: `canvas-${Date.now()}`,
