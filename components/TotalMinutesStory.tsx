@@ -74,6 +74,7 @@ export const TotalMinutesStory: React.FC<TotalMinutesStoryProps> = ({
 
   // Smooth counter animation via requestAnimationFrame
   const animateCounter = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
     const step = () => {
       const target = targetCountRef.current;
       const current = counterRef.current;
@@ -167,7 +168,6 @@ export const TotalMinutesStory: React.FC<TotalMinutesStoryProps> = ({
   }, []);
 
   const hours = Math.floor(totalMinutes / 60);
-  const remainingMinutes = totalMinutes % 60;
 
   return (
     <div className="fixed inset-0 z-[100] overflow-hidden" style={{ backgroundColor: '#000000' }}>
@@ -287,18 +287,22 @@ export const TotalMinutesStory: React.FC<TotalMinutesStoryProps> = ({
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 >
-                  {hours.toLocaleString()} {hours === 1 ? 'hour' : 'hours'}
+                  {hours > 0
+                    ? `${hours.toLocaleString()} ${hours === 1 ? 'hour' : 'hours'}`
+                    : `${totalMinutes.toLocaleString()} min`}
                 </span>
-                <span
-                  className="mt-4"
-                  style={{
-                    fontSize: 'clamp(24px, 3vw, 32px)',
-                    color: 'rgba(255,255,255,0.7)',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                >
-                  {totalMinutes.toLocaleString()} minutes
-                </span>
+                {hours > 0 && (
+                  <span
+                    className="mt-4"
+                    style={{
+                      fontSize: 'clamp(24px, 3vw, 32px)',
+                      color: 'rgba(255,255,255,0.7)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {totalMinutes.toLocaleString()} minutes
+                  </span>
+                )}
               </>
             )}
           </motion.div>

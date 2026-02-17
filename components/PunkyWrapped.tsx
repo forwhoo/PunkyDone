@@ -55,17 +55,10 @@ function buildLayerItems(covers: string[]): SpiralItem[] {
 }
 
 const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, totalMinutes }) => {
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [story, setStory] = useState<'intro' | 'totalMinutes' | 'done'>('intro');
   const [vortex, setVortex] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const shuffledRef = useRef<string[] | null>(null);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    const x = (e.clientX / window.innerWidth - 0.5) * 20;
-    const y = (e.clientY / window.innerHeight - 0.5) * 20;
-    setMousePos({ x, y });
-  }, []);
 
   const spiralItems = useMemo(() => {
     if (!shuffledRef.current || shuffledRef.current.length !== albumCovers.length) {
@@ -99,15 +92,15 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
     }
   }, [story, totalMinutes, onClose]);
 
-  // CSS keyframes for continuous layer rotation
-  const cssKeyframes = `
-    ${Array.from({ length: LAYER_COUNT }).map((_, i) => `
+  // CSS keyframes for continuous layer rotation (static, only computed once)
+  const cssKeyframes = useMemo(() =>
+    Array.from({ length: LAYER_COUNT }).map((_, i) => `
       @keyframes layerSpin${i} {
         from { transform: rotate(0deg); }
         to   { transform: rotate(${i % 2 === 0 ? 360 : -360}deg); }
       }
-    `).join('')}
-  `;
+    `).join(''),
+  []);
 
   if (story === 'totalMinutes') {
     return (
@@ -129,7 +122,6 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
       animate={{ opacity: transitioning ? 0 : 1, scale: transitioning ? 0.8 : 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: transitioning ? 0.6 : 0.4 }}
-      onMouseMove={handleMouseMove}
     >
       <style>{cssKeyframes}</style>
 
@@ -171,6 +163,8 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
               {layerItems.map((item, j) => {
                 const rad = (item.angle * Math.PI) / 180;
                 const radiusPx = `min(${radiusVw}vw, ${radiusVw}vh)`;
+                const normalTransform = `translate(-50%, -50%) translate(calc(${Math.cos(rad)} * ${radiusPx}), calc(${Math.sin(rad)} * ${radiusPx})) scale(${layerScale}) rotate3d(1, 1, 0, ${10 + layer * 5}deg)`;
+                const vortexTransform = `translate(-50%, -50%) scale(0) rotate3d(1,1,0,${60 + layer * 30}deg)`;
 
                 return (
                   <div
@@ -181,13 +175,9 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                       height: size,
                       left: '50%',
                       top: '50%',
-                      transform: `translate(-50%, -50%) translate(calc(${Math.cos(rad)} * ${radiusPx}), calc(${Math.sin(rad)} * ${radiusPx})) scale(${layerScale}) rotate3d(1, 1, 0, ${10 + layer * 5}deg)`,
-                      opacity: layerOp,
+                      transform: vortex ? vortexTransform : normalTransform,
+                      opacity: vortex ? 0 : layerOp,
                       transition: vortex ? 'transform 1.5s cubic-bezier(0.4,0,0.2,1), opacity 1.5s ease' : undefined,
-                      ...(vortex ? {
-                        transform: `translate(-50%, -50%) scale(0) rotate3d(1,1,0,${60 + layer * 30}deg)`,
-                        opacity: 0,
-                      } : {}),
                       boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
                     }}
                   >
