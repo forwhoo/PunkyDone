@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, MessageSquare, Info, ChevronRight } from 'lucide-react';
+import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
 import { Artist, Album, Song } from './types';
@@ -726,7 +726,7 @@ function App() {
   return (
     <>
     <Layout user={data.user} currentTrack={data.currentTrack}>
-        <div className="lg:hidden space-y-8 safe-area-bottom safe-area-top safe-area-x px-4">
+        <div className="lg:hidden space-y-10 safe-area-bottom safe-area-top safe-area-x px-5">
             <div className="space-y-5">
                 <div className="flex items-center justify-between">
                     <div>
@@ -973,26 +973,6 @@ function App() {
 
 
 
-                    {/* Mobile AI Discovery Button */}
-                    <section id="mobile-ai-chat">
-                        <button
-                            onClick={() => setAiModalOpen(true)}
-                            className="w-full rounded-2xl p-6 border border-white/[0.08] active:scale-[0.98] transition-all"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="text-left">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-10 h-10 rounded-full bg-[#1C1C1E] flex items-center justify-center border border-white/10">
-                                            <Sparkles className="w-5 h-5 text-[#FA2D48]" />
-                                        </div>
-                                        <h3 className="text-[20px] font-bold text-white tracking-tight">AI Discovery</h3>
-                                    </div>
-                                    <p className="text-[14px] text-white/70 font-medium">Ask questions about your music</p>
-                                </div>
-                                <MessageSquare className="w-7 h-7 text-[#FA2D48] flex-shrink-0" />
-                            </div>
-                        </button>
-                    </section>
                 </>
             )}
         </div>

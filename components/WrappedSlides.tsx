@@ -9,7 +9,7 @@ const GRAY_TEXT = '#8E8E93';
 const CARD_BG = '#1C1C1E';
 const CARD_BORDER = 'rgba(255,255,255,0.05)';
 
-const TOTAL_SLIDES = 10;
+const TOTAL_SLIDES = 9;
 const AUTO_ADVANCE_MS = 6000;
 
 // ─── Props ──────────────────────────────────────────────────────
@@ -1360,24 +1360,22 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
   const slideContent = useMemo(() => {
     switch (currentSlide) {
       case 0:
-        return <SlideIntro />;
-      case 1:
         return <SlideTotalMinutes totalMinutes={totalMinutes || 0} albumCovers={albumCovers} />;
-      case 2:
+      case 1:
         return <SlideTopArtist artists={artists} />;
-      case 3:
+      case 2:
         return <SlideConnection artists={artists} songs={songs} />;
-      case 4:
+      case 3:
         return <SlideAlbumRepeat albums={albums} />;
-      case 5:
+      case 4:
         return <SlideOrbit songs={songs} />;
-      case 6:
+      case 5:
         return <SlideUpcomingArtists artists={artists} />;
-      case 7:
+      case 6:
         return <SlideObsession songs={songs} artists={artists} />;
-      case 8:
+      case 7:
         return <SlideLeapChart artists={artists} />;
-      case 9:
+      case 8:
         return (
           <SlideOutro totalMinutes={totalMinutes || 0} artists={artists} songs={songs} />
         );

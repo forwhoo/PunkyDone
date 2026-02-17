@@ -66,6 +66,17 @@ function buildLayerItems(covers: string[], idCounter: { value: number }): Spiral
   return items;
 }
 
+function getWeekRange(): string {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${fmt(monday)} – ${fmt(sunday)}, ${now.getFullYear()}`;
+}
+
 const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, totalMinutes, artists = [], albums = [], songs = [] }) => {
   const [story, setStory] = useState<'intro' | 'slides' | 'done'>('intro');
   const [vortex, setVortex] = useState(false);
@@ -346,6 +357,16 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
           >
             <span>your music journey awaits</span>
           </motion.div>
+
+          <motion.p
+            className="mt-2 text-sm sm:text-base pointer-events-none"
+            style={{ color: 'rgba(255,255,255,0.42)', textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: vortex ? 0 : 1 }}
+            transition={{ duration: 0.5, delay: vortex ? 0 : 0.5 }}
+          >
+            {getWeekRange()}
+          </motion.p>
 
           {/* Let's Go Button */}
           <AnimatePresence>
