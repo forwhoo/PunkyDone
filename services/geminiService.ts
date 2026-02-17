@@ -552,7 +552,9 @@ async function executeAgentTool(
 
             case 'get_wrapped_overview': {
                 const period = funcArgs.period || 'weekly';
-                const wrapped = await getWrappedStats(period as any);
+                const wrappedPeriod: 'daily' | 'weekly' | 'monthly' =
+                    period === 'daily' || period === 'monthly' ? period : 'weekly';
+                const wrapped = await getWrappedStats(wrappedPeriod);
                 if (!wrapped) return { period, found: false };
                 return {
                     period,
@@ -571,10 +573,11 @@ async function executeAgentTool(
                 const query = (funcArgs.query || '').trim();
                 const limit = Math.min(funcArgs.limit || 5, 20);
                 const tracks = await searchSpotifyTracks(token, query, limit);
+                type SpotifySearchTrack = { title: string; artist: string; album: string; uri: string; cover?: string };
                 return {
                     query,
                     count: tracks.length,
-                    tracks: tracks.map((t: any, i: number) => ({
+                    tracks: tracks.map((t: SpotifySearchTrack, i: number) => ({
                         rank: i + 1,
                         title: t.title,
                         artist: t.artist,
