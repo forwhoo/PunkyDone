@@ -401,6 +401,40 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
     }
 
     const allData = historyData || [];
+    const totalMinutes = Math.round(allData.reduce((sum, item) => sum + (item.duration_ms || 0), 0) / 60000);
+
+    let artistTrendByName = new Map<string, number>();
+    if (timeRange === 'Weekly') {
+        const previousStart = new Date(startDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const previousEnd = new Date(startDate.getTime() - 1);
+        const { data: previousWeekData } = await supabase
+            .from('listening_history')
+            .select('artist_name, duration_ms')
+            .gte('played_at', previousStart.toISOString())
+            .lte('played_at', previousEnd.toISOString());
+
+        const currentCounts = new Map<string, number>();
+        const previousCounts = new Map<string, number>();
+
+        allData.forEach((item) => {
+            if (item.artist_name && (item.duration_ms || 0) > 30000) {
+                currentCounts.set(item.artist_name, (currentCounts.get(item.artist_name) || 0) + 1);
+            }
+        });
+
+        (previousWeekData || []).forEach((item: any) => {
+            if (item.artist_name && (item.duration_ms || 0) > 30000) {
+                previousCounts.set(item.artist_name, (previousCounts.get(item.artist_name) || 0) + 1);
+            }
+        });
+
+        artistTrendByName = new Map(
+            Array.from(currentCounts.entries()).map(([artistName, currentCount]) => {
+                const previousCount = previousCounts.get(artistName) || 0;
+                return [artistName, currentCount - previousCount];
+            }),
+        );
+    }
 
     // Use Maps for O(1) lookups - much faster than objects for large datasets
     const artistCounts = new Map<string, { count: number, time: number, image: string }>();
@@ -458,7 +492,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
             image: info.image,
             totalListens: info.count,
             timeStr: `${Math.floor(info.time / 60000)}m`,
-            trend: 0
+            trend: artistTrendByName.get(name) || 0
         }));
 
     const topSongs = Array.from(songCounts.entries())
@@ -561,6 +595,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         artists: topArtists,
         songs: topSongs,
         albums: topAlbums,
+        totalMinutes,
         hourlyActivity,
         recentPlays
     };

@@ -72,7 +72,7 @@ import {
     refreshAccessToken,
     fetchArtistImages
 } from './services/spotifyService';
-import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts } from './services/dbService';
+import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts, fetchArtistNetwork } from './services/dbService';
 import { generateMusicInsight, generateRankingInsights } from './services/geminiService';
 import { supabase } from './services/supabaseClient';
 
@@ -235,6 +235,7 @@ function App() {
 
   // Wrapped Under Construction Message State
   const [showWrappedMessage, setShowWrappedMessage] = useState(false);
+  const [wrappedConnectionGraph, setWrappedConnectionGraph] = useState<{ artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> } | null>(null);
 
   // Dynamic aura colors extracted from item images
   const [auraColor, setAuraColor] = useState<string>('#FA2D48');
@@ -363,6 +364,16 @@ function App() {
          supabase.removeChannel(channel);
      };
   }, []);
+
+  useEffect(() => {
+    if (!showWrappedMessage) return;
+    fetchArtistNetwork(1500)
+      .then((network) => setWrappedConnectionGraph(network))
+      .catch((error) => {
+        console.error('[App] Failed to load wrapped connection graph:', error);
+        setWrappedConnectionGraph(null);
+      });
+  }, [showWrappedMessage]);
 
   // Sync Data to Supabase when data is loaded
   useEffect(() => {
@@ -1851,6 +1862,8 @@ function App() {
                 artists={safeArtists}
                 albums={safeAlbums}
                 songs={safeSongs}
+                weeklyMinutes={dbUnifiedData?.totalMinutes ?? 0}
+                connectionGraph={wrappedConnectionGraph || undefined}
             />
         )}
     </AnimatePresence>
