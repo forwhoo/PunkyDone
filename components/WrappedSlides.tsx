@@ -327,8 +327,8 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
           animate={phase === 'final' ? { scale: [1, 1.08, 1] } : {}}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          {phase === 'final' && hours > 0
-            ? hours.toLocaleString()
+          {phase === 'final'
+            ? (hours > 0 ? hours.toLocaleString() : totalMinutes.toLocaleString())
             : count.toLocaleString()}
         </motion.span>
 
@@ -512,7 +512,7 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[] }> = ({ artis
   const artist = closest?.artist || artists[0];
   const matchedSongs = closest?.songs || songs.slice(0, 3);
   const connectionPct = closest
-    ? Math.min(99, Math.round((closest.songCount / Math.max(songs.length, 1)) * 100 + 60))
+    ? Math.min(99, Math.round(60 + (closest.songCount / Math.max(songs.length, 1)) * 39))
     : 78;
 
   const [phase, setPhase] = useState<'scroll' | 'reveal'>('scroll');
@@ -1082,17 +1082,18 @@ const SlideLeapChart: React.FC<{ artists: Artist[] }> = ({ artists }) => {
 
   const [barHeights, setBarHeights] = useState<number[]>([]);
 
-  // Animate chart bars growing
+  // Animate chart bars showing growth trajectory based on trend
   useEffect(() => {
+    if (!leapArtist) return;
+    const trend = leapArtist.trend ?? 1;
     const heights = Array.from({ length: 7 }, (_, i) => {
-      const base = 20 + Math.random() * 30;
-      // Make a growth trajectory
-      return base + (i * i * 2);
+      // Simulate growth from low to high, scaled by actual trend
+      const progress = i / 6;
+      return 15 + progress * progress * 85 * Math.min(trend / 10, 1);
     });
-    // Normalize to max 100
-    const max = Math.max(...heights);
+    const max = Math.max(...heights, 1);
     setBarHeights(heights.map(h => (h / max) * 100));
-  }, []);
+  }, [leapArtist]);
 
   if (!leapArtist) return <div className="absolute inset-0 bg-black" />;
 
