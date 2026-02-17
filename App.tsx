@@ -166,7 +166,7 @@ const MobileArtistCard = ({ artist, rank, image, onClick }: { artist: Artist; ra
     <button
         type="button"
         onClick={onClick}
-        className="relative w-[220px] h-[280px] shrink-0 snap-start rounded-[32px] overflow-hidden shadow-2xl border border-white/[0.12] bg-[#1C1C1E]/90 active:scale-[0.97] transition-transform"
+        className="relative w-[160px] h-[210px] shrink-0 snap-start rounded-[24px] overflow-hidden shadow-2xl border border-white/[0.08] active:scale-[0.97] transition-transform"
     >
         <img
             src={image || artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`}
@@ -174,26 +174,24 @@ const MobileArtistCard = ({ artist, rank, image, onClick }: { artist: Artist; ra
             loading="lazy"
             className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/75" />
-        <div className="absolute top-4 left-4 text-white text-[28px] font-bold drop-shadow-2xl number-display">{rank}</div>
-        <div className="absolute bottom-0 left-0 right-0 p-5 text-left">
-            <p className="text-[19px] font-bold text-white leading-tight tracking-tight drop-shadow-lg">{artist.name}</p>
-            <p className="text-[14px] text-white/80 mt-1 font-medium">{artist.timeStr}</p>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80" />
+        <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
+            <p className="text-[16px] font-bold text-white leading-tight tracking-tight drop-shadow-lg">{artist.name}</p>
+            <p className="text-[12px] text-white/70 mt-1 font-medium">{artist.timeStr}</p>
         </div>
     </button>
 );
 
 const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; cover: string; title: string; subtitle: string; meta?: string }) => (
-    <div className="flex items-center gap-3 py-3 active:bg-white/5 transition-colors rounded-xl px-1">
-        <div className="w-8 text-center text-[15px] font-semibold text-white/50 flex-shrink-0 number-display">{rank}</div>
-        <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/10 flex-shrink-0 shadow-md">
+    <div className="flex items-center gap-3 py-3 active:bg-white/5 transition-colors rounded-xl">
+        <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 shadow-md border border-white/[0.06]">
             <img src={cover} alt={title} loading="lazy" className="w-full h-full object-cover" />
         </div>
         <div className="flex-1 min-w-0">
             <p className="text-[15px] font-semibold text-white truncate leading-tight tracking-tight">{title}</p>
-            <p className="text-[13px] text-white/60 truncate mt-0.5 font-medium">{subtitle}</p>
+            <p className="text-[13px] text-white/50 truncate mt-0.5 font-medium">{subtitle}</p>
         </div>
-        {meta && <div className="text-[12px] text-white/50 whitespace-nowrap font-medium flex-shrink-0 number-display">{meta}</div>}
+        {meta && <div className="text-[12px] text-white/40 whitespace-nowrap font-medium flex-shrink-0">{meta}</div>}
     </div>
 );
 
@@ -725,7 +723,7 @@ function App() {
   return (
     <>
     <Layout user={data.user} currentTrack={data.currentTrack}>
-        <div className="lg:hidden space-y-10 safe-area-bottom safe-area-top safe-area-x px-4">
+        <div className="lg:hidden space-y-8 safe-area-bottom safe-area-top safe-area-x px-4">
             <div className="space-y-5">
                 <div className="flex items-center justify-between">
                     <div>
@@ -822,7 +820,7 @@ function App() {
             </div>
 
             {showEmptyState ? (
-                <div className="flex flex-col items-center justify-center py-16 bg-[#1C1C1E] rounded-3xl border border-white/5 animate-in fade-in zoom-in-95 duration-500 text-center">
+                <div className="flex flex-col items-center justify-center py-16 rounded-3xl border border-white/5 animate-in fade-in zoom-in-95 duration-500 text-center">
                     <Music size={40} className="text-white/20 mb-3" />
                     <h3 className="text-lg font-bold text-white">No data yet</h3>
                     <p className="text-[#8E8E93] text-sm mt-2 px-6">
@@ -831,7 +829,7 @@ function App() {
                 </div>
             ) : (
                 <>
-                    <section className="space-y-5">
+                    <section className="space-y-4">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Your Top Artists</h3>
                             {safeArtists.length > 0 && (
@@ -849,7 +847,7 @@ function App() {
                             )}
                         </div>
                         {safeArtists.length > 0 ? (
-                            <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
+                            <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
                                 {safeArtists.slice(0, 6).map((artist: Artist, index: number) => (
                                     <MobileArtistCard
                                         key={artist.id}
@@ -865,7 +863,7 @@ function App() {
                         )}
                     </section>
 
-                    <section className="space-y-5">
+                    <section className="space-y-4">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
                             {safeSongs.length > 0 && (
@@ -882,7 +880,7 @@ function App() {
                                 </button>
                             )}
                         </div>
-                        <div className="glass-morph rounded-[28px] px-5 py-3 border border-white/[0.15]">
+                        <div className="space-y-0">
                             {safeSongs.length > 0 ? (
                                 safeSongs.slice(0, 6).map((song: Song, index: number) => (
                                     <div key={song.id} onClick={() => setSelectedTopSong(song)} className="cursor-pointer">
@@ -902,7 +900,7 @@ function App() {
                     </section>
 
                     {/* Mobile Upcoming Artists */}
-                    <section className="space-y-5">
+                    <section>
                         <UpcomingArtists
                             recentPlays={safeRecent}
                             topArtists={safeArtists}
@@ -910,7 +908,7 @@ function App() {
                         />
                     </section>
 
-                    <section className="space-y-5">
+                    <section className="space-y-4">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
                             {safeAlbums.length > 0 && (
@@ -928,16 +926,14 @@ function App() {
                             )}
                         </div>
                         {safeAlbums.length > 0 ? (
-                            <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
+                            <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
                                 {safeAlbums.slice(0, 6).map((album: Album, index: number) => (
-                                    <div key={album.id} className="w-[150px] shrink-0 snap-start group cursor-pointer" onClick={() => setSelectedTopAlbum(album)}>
-                                        <div className="relative w-full h-[150px] rounded-[24px] overflow-hidden shadow-xl border-2 border-white/[0.1] active:scale-95 transition-transform">
+                                    <div key={album.id} className="w-[140px] shrink-0 snap-start group cursor-pointer" onClick={() => setSelectedTopAlbum(album)}>
+                                        <div className="relative w-full h-[140px] rounded-[20px] overflow-hidden shadow-xl border border-white/[0.08] active:scale-95 transition-transform">
                                             <img src={album.cover} alt={album.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-                                            <div className="absolute top-3 left-3 text-white text-[17px] font-bold bg-black/50 backdrop-blur-md w-8 h-8 rounded-full flex items-center justify-center shadow-lg number-display">{index + 1}</div>
                                         </div>
                                         <p className="mt-3 text-[14px] font-semibold text-white truncate tracking-tight">{album.title}</p>
-                                        <p className="text-[12px] text-white/60 truncate mt-0.5 font-medium">{album.artist}</p>
+                                        <p className="text-[12px] text-white/50 truncate mt-0.5 font-medium">{album.artist}</p>
                                     </div>
                                 ))}
                             </div>
@@ -949,7 +945,7 @@ function App() {
 
 
                     {/* Mobile Obsession Orbit */}
-                    <section className="space-y-5">
+                    <section>
                         <div className="overflow-hidden">
                             <TrendingArtists 
                                 artists={safeArtists}
@@ -963,20 +959,20 @@ function App() {
                     </section>
 
                     {/* Mobile Activity Heatmap */}
-                    <section className="space-y-5">
+                    <section className="space-y-4">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Activity Heatmap</h3>
                         </div>
-                        <div className="glass-morph rounded-[28px] p-5 overflow-hidden border border-white/[0.15] shadow-xl">
+                        <div className="overflow-hidden">
                             <ActivityHeatmap history={safeRecent} />
                         </div>
                     </section>
 
                     {/* Mobile AI Discovery Button */}
-                    <section className="space-y-5" id="mobile-ai-chat">
+                    <section id="mobile-ai-chat">
                         <button
                             onClick={() => setAiModalOpen(true)}
-                            className="w-full glass-morph rounded-[28px] p-7 shadow-xl border border-white/[0.15] active:scale-[0.98] transition-all"
+                            className="w-full rounded-2xl p-6 border border-white/[0.08] active:scale-[0.98] transition-all"
                         >
                             <div className="flex items-center justify-between">
                                 <div className="text-left">
