@@ -6,7 +6,7 @@ import {
     BarChart3, ChartPie, Trophy, Music2, Gift, ChevronLeft, ArrowUp, Palette,
     Music, Mic2, Disc, Clock, Orbit, Flame, Radio, TrendingUp, Moon,
     SkipForward, BarChart2, Search, SlidersHorizontal, Image, Grid3x3,
-    Network, History, ArrowLeftRight, ImageIcon, type LucideIcon
+    Network, History, ArrowLeftRight, ImageIcon, Timer, type LucideIcon
 } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion, answerMusicQuestionWithTools, generateWeeklyInsightStory, generateWrappedVibe, generateWrappedWithTools, WrappedSlide, ToolCallInfo } from '../services/geminiService';
 import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
@@ -22,7 +22,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 const TOOL_LUCIDE_MAP: Record<string, LucideIcon> = {
     Music, Mic2, Disc, Clock, Orbit, Flame, BarChart3, Radio, TrendingUp, Moon,
     SkipForward, BarChart2, Gift, Search, SlidersHorizontal, Image, Grid3x3,
-    Network, PieChart: ChartPie, History, ArrowLeftRight, ImageIcon,
+    Network, ChartPie, History, ArrowLeftRight, ImageIcon, Timer,
 };
 
 const ToolIcon = ({ iconName, size = 12 }: { iconName: string; size?: number }) => {
