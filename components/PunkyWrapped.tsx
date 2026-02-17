@@ -19,6 +19,10 @@ const LAYER_DURATIONS = [55, 45, 35, 28, 20]; // seconds per full rotation
 const LAYER_SCALES = [1.0, 0.8, 0.6, 0.4, 0.15]; // scale per layer
 const LAYER_OPACITY = [0.95, 0.85, 0.7, 0.5, 0.25]; // opacity per layer
 
+// Vortex configuration
+const VORTEX_DURATION = 8; // seconds for one full spiral from outer edge to center
+const MAX_RADIUS_VW = 90; // Start at 90% of min(vw, vh)
+
 function shuffleArray<T>(arr: T[]): T[] {
   const shuffled = [...arr];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -33,6 +37,8 @@ interface SpiralItem {
   angle: number;
   layer: number;
   indexInLayer: number;
+  id: string; // unique identifier for tracking respawns
+  spawnTime: number; // timestamp when item was spawned
 }
 
 function buildLayerItems(covers: string[]): SpiralItem[] {
@@ -47,6 +53,8 @@ function buildLayerItems(covers: string[]): SpiralItem[] {
         angle: (360 / count) * j + layer * 18,
         layer,
         indexInLayer: j,
+        id: `${layer}-${j}-${Date.now()}-${Math.random()}`,
+        spawnTime: Date.now(),
       });
       coverIdx++;
     }
@@ -59,6 +67,8 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
   const [vortex, setVortex] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const shuffledRef = useRef<string[] | null>(null);
+  const [items, setItems] = useState<SpiralItem[]>([]);
+  const animationFrameRef = useRef<number>();
 
   const spiralItems = useMemo(() => {
     if (!shuffledRef.current || shuffledRef.current.length !== albumCovers.length) {
@@ -66,6 +76,47 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
     }
     return buildLayerItems(shuffledRef.current);
   }, [albumCovers]);
+
+  // Initialize items
+  useEffect(() => {
+    setItems(spiralItems);
+  }, [spiralItems]);
+
+  // Animation loop for respawning items
+  useEffect(() => {
+    if (story !== 'intro') return;
+
+    const animate = () => {
+      setItems(prevItems => {
+        const now = Date.now();
+        return prevItems.map(item => {
+          const elapsed = (now - item.spawnTime) / 1000; // seconds
+          
+          // Check if item has reached the center (completed its journey)
+          if (elapsed >= VORTEX_DURATION) {
+            // Respawn at outer edge with new spawn time
+            return {
+              ...item,
+              spawnTime: now,
+              src: shuffledRef.current![Math.floor(Math.random() * shuffledRef.current!.length)],
+            };
+          }
+          
+          return item;
+        });
+      });
+      
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [story]);
 
   const handleLetsGo = useCallback(() => {
     setVortex(true);
@@ -139,13 +190,10 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
       {/* Multi-layer spiral animation */}
       <div className="absolute inset-0 z-[1] flex items-center justify-center">
         {Array.from({ length: LAYER_COUNT }).map((_, layer) => {
-          const layerItems = spiralItems.filter(item => item.layer === layer);
+          const layerItems = items.filter(item => item.layer === layer);
           const duration = vortex
             ? LAYER_DURATIONS[layer] / 5
             : LAYER_DURATIONS[layer];
-          const radiusVw = LAYER_RADII_VW[layer];
-          const layerScale = LAYER_SCALES[layer];
-          const layerOp = LAYER_OPACITY[layer];
           const size = LAYER_SIZES[layer];
 
           return (
@@ -160,15 +208,29 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                 transition: vortex ? 'animation-duration 0.5s' : undefined,
               }}
             >
-              {layerItems.map((item, j) => {
+              {layerItems.map((item) => {
+                const now = Date.now();
+                const elapsed = (now - item.spawnTime) / 1000; // seconds
+                const progress = Math.min(elapsed / VORTEX_DURATION, 1); // 0 to 1
+                
+                // Calculate radius: starts at MAX_RADIUS_VW, decreases to 0
+                const currentRadius = MAX_RADIUS_VW * (1 - progress);
+                
+                // Calculate scale: starts at 1, decreases to 0
+                const currentScale = LAYER_SCALES[layer] * (1 - progress);
+                
+                // Calculate opacity: fades out as it approaches center
+                const currentOpacity = LAYER_OPACITY[layer] * (1 - progress * 0.3);
+                
                 const rad = (item.angle * Math.PI) / 180;
-                const radiusPx = `min(${radiusVw}vw, ${radiusVw}vh)`;
-                const normalTransform = `translate(-50%, -50%) translate(calc(${Math.cos(rad)} * ${radiusPx}), calc(${Math.sin(rad)} * ${radiusPx})) scale(${layerScale}) rotate3d(1, 1, 0, ${10 + layer * 5}deg)`;
+                const radiusPx = `min(${currentRadius}vw, ${currentRadius}vh)`;
+                
+                const normalTransform = `translate(-50%, -50%) translate(calc(${Math.cos(rad)} * ${radiusPx}), calc(${Math.sin(rad)} * ${radiusPx})) scale(${currentScale}) rotate3d(1, 1, 0, ${10 + layer * 5}deg)`;
                 const vortexTransform = `translate(-50%, -50%) scale(0) rotate3d(1,1,0,${60 + layer * 30}deg)`;
 
                 return (
                   <div
-                    key={`${layer}-${j}`}
+                    key={item.id}
                     className="absolute rounded-lg overflow-hidden"
                     style={{
                       width: size,
@@ -176,7 +238,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                       left: '50%',
                       top: '50%',
                       transform: vortex ? vortexTransform : normalTransform,
-                      opacity: vortex ? 0 : layerOp,
+                      opacity: vortex ? 0 : currentOpacity,
                       transition: vortex ? 'transform 1.5s cubic-bezier(0.4,0,0.2,1), opacity 1.5s ease' : undefined,
                       boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
                     }}
