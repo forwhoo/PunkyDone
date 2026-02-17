@@ -972,6 +972,73 @@ function App() {
                         </div>
                     </section>
 
+                    {/* Mobile Listening DNA */}
+                    <section className="space-y-4">
+                        <div className="flex items-center justify-between px-1">
+                            <h3 className="text-[20px] font-bold text-white tracking-tight">Listening DNA</h3>
+                            <p className="text-[#8E8E93] text-xs">Your fingerprint</p>
+                        </div>
+                        {(() => {
+                            const hourBuckets = new Uint16Array(24);
+                            const dayBuckets = new Uint16Array(7);
+                            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                            let totalPlays = 0;
+
+                            safeRecent.forEach((p: any) => {
+                                if (p.played_at) {
+                                    const d = new Date(p.played_at);
+                                    hourBuckets[d.getHours()]++;
+                                    dayBuckets[d.getDay()]++;
+                                    totalPlays++;
+                                }
+                            });
+
+                            const maxHour = Math.max(...Array.from(hourBuckets));
+                            const nightPlays = hourBuckets[22] + hourBuckets[23] + hourBuckets[0] + hourBuckets[1] + hourBuckets[2];
+                            const morningPlays = hourBuckets[6] + hourBuckets[7] + hourBuckets[8] + hourBuckets[9] + hourBuckets[10];
+                            const afternoonPlays = hourBuckets[12] + hourBuckets[13] + hourBuckets[14] + hourBuckets[15] + hourBuckets[16];
+                            const listenerType = nightPlays > morningPlays && nightPlays > afternoonPlays 
+                                ? 'Night Owl 🦉' 
+                                : morningPlays > afternoonPlays 
+                                    ? 'Early Bird 🌅' 
+                                    : 'Afternoon Listener ☀️';
+                            const uniqueArtists = new Set(safeRecent.map((p: any) => p.artist_name)).size;
+
+                            return totalPlays > 0 ? (
+                                <div className="space-y-3">
+                                    {/* Type + Stats */}
+                                    <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-4 flex items-center justify-between">
+                                        <div>
+                                            <div className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-bold mb-0.5">Your Type</div>
+                                            <div className="text-base font-black text-white">{listenerType}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-base font-black text-white">{uniqueArtists}</div>
+                                            <div className="text-[9px] text-white/30 font-bold">unique artists</div>
+                                        </div>
+                                    </div>
+                                    {/* Hourly Mini */}
+                                    <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-4">
+                                        <div className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-bold mb-2">Hourly Rhythm</div>
+                                        <div className="flex items-end gap-[2px] h-12">
+                                            {Array.from(hourBuckets).map((count, h) => {
+                                                const pct = maxHour > 0 ? (count / maxHour) * 100 : 0;
+                                                return (
+                                                    <div key={h} className="flex-1">
+                                                        <div 
+                                                            className="w-full rounded-t bg-gradient-to-t from-[#FA2D48]/50 to-[#FA2D48]/20 min-h-[2px]"
+                                                            style={{ height: `${Math.max(3, pct)}%` }}
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : null;
+                        })()}
+                    </section>
+
                     {/* Mobile AI Discovery Button */}
                     <section className="space-y-5" id="mobile-ai-chat">
                         <button
