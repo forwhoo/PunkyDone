@@ -232,6 +232,35 @@ const AGENT_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     {
         type: "function",
         function: {
+            name: "get_wrapped_overview",
+            description: "Get a wrapped-style summary for daily/weekly/monthly listening with top artist/song/album and total minutes. Use when user asks for wrapped, recap, summary, overview, or highlights.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["daily", "weekly", "monthly"], description: "Time period" }
+                },
+                required: ["period"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "search_spotify_tracks",
+            description: "Search Spotify tracks by keyword when user asks to find tracks, discover songs by name, or look up songs outside their listening history.",
+            parameters: {
+                type: "object",
+                properties: {
+                    query: { type: "string", description: "Search query for tracks" },
+                    limit: { type: "number", description: "Max results (default 5, max 20)" }
+                },
+                required: ["query"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
             name: "filter_songs",
             description: "Filter songs by various criteria like time of day, day of week, duration, recency, specific artist/album. Use for complex queries like 'songs I listen to in the morning', 'short songs I played this week', 'what did I listen to last weekend', etc.",
             parameters: {
@@ -284,6 +313,8 @@ const TOOL_ICON_MAP: Record<string, { icon: string; label: string }> = {
     get_late_night_anthem: { icon: '🌙', label: 'Late Night' },
     get_most_skipped: { icon: '⏭️', label: 'Most Skipped' },
     get_charts: { icon: '📋', label: 'Charts' },
+    get_wrapped_overview: { icon: '🎁', label: 'Wrapped' },
+    search_spotify_tracks: { icon: '🔎', label: 'Track Search' },
     filter_songs: { icon: '🔍', label: 'Filter' },
     fetch_image: { icon: '🖼️', label: 'Fetch Image' },
 };
@@ -395,12 +426,14 @@ async function executeAgentTool(
                         total_artists: artists.length,
                         plays: found?.totalListens || 0,
                         time: found?.timeStr || null,
-                        is_obsession: obsession?.name?.toLowerCase().includes(target) || false,
-                        obsession_artist: obsession || null
+                        is_obsession: obsession?.artist?.toLowerCase().includes(target) || false,
+                        obsession_artist: obsession || null,
+                        obsession_score: obsession?.percentage ?? null
                     };
                 }
                 return {
                     obsession_artist: obsession || null,
+                    obsession_score: obsession?.percentage ?? null,
                     period
                 };
             }
@@ -517,6 +550,41 @@ async function executeAgentTool(
                 };
             }
 
+            case 'get_wrapped_overview': {
+                const period = funcArgs.period || 'weekly';
+                const wrapped = await getWrappedStats(period as any);
+                if (!wrapped) return { period, found: false };
+                return {
+                    period,
+                    found: true,
+                    title: wrapped.title,
+                    total_minutes: wrapped.totalMinutes || 0,
+                    total_streams: wrapped.totalStreams || 0,
+                    top_artist: wrapped.topArtist || null,
+                    top_song: wrapped.topSong || null,
+                    top_album: wrapped.topAlbum || null
+                };
+            }
+
+            case 'search_spotify_tracks': {
+                if (!token) return { query: funcArgs.query || '', tracks: [], error: 'No Spotify token available' };
+                const query = (funcArgs.query || '').trim();
+                const limit = Math.min(funcArgs.limit || 5, 20);
+                const tracks = await searchSpotifyTracks(token, query, limit);
+                return {
+                    query,
+                    count: tracks.length,
+                    tracks: tracks.map((t: any, i: number) => ({
+                        rank: i + 1,
+                        title: t.title,
+                        artist: t.artist,
+                        album: t.album,
+                        uri: t.uri,
+                        cover: t.cover || null
+                    }))
+                };
+            }
+
             case 'filter_songs': {
                 const concept = {
                     title: 'Filtered Results',
@@ -612,6 +680,8 @@ You are NOT a generic chatbot. You are a specialized music data agent with acces
 | "peak hour" | get_peak_listening_hour | period |
 | "rising star" | get_rising_star | period |
 | "most skipped" | get_most_skipped | period |
+| "weekly wrapped recap" | get_wrapped_overview | period: "weekly" |
+| "find track [name]" | search_spotify_tracks | query, limit? |
 | "songs this morning" | filter_songs | type: "song", time_of_day: "morning" |
 | "least played album" | filter_songs | type: "album", sort_by: "plays", sort_order: "lowest" |
 | "songs I played last weekend" | filter_songs | type: "song", day_of_week: "weekend", recent_days: 7 |
