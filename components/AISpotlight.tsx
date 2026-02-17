@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from './UIComponents';
 // import { ActivityHeatmap } from './ActivityHeatmap';
-import { Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight, BarChart3, PieIcon, Trophy, Music2, Gift, ChevronLeft, ArrowUp, Palette } from 'lucide-react';
+import {
+    Sparkles, RefreshCcw, AlertTriangle, MessageSquare, Send, Zap, ChevronRight,
+    BarChart3, ChartPie, Trophy, Music2, Gift, ChevronLeft, ArrowUp, Palette,
+    Music, Mic2, Disc, Clock, Orbit, Flame, Radio, TrendingUp, Moon,
+    SkipForward, BarChart2, Search, SlidersHorizontal, Image, Grid3x3,
+    Network, History, ArrowLeftRight, ImageIcon, Timer, type LucideIcon
+} from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestion, answerMusicQuestionWithTools, generateWeeklyInsightStory, generateWrappedVibe, generateWrappedWithTools, WrappedSlide, ToolCallInfo } from '../services/geminiService';
 import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
@@ -11,6 +17,22 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { AnimatePresence, motion } from 'framer-motion';
+
+// ─── Lucide Icon Map for Tool Call Pills ────────────────────────
+const TOOL_LUCIDE_MAP: Record<string, LucideIcon> = {
+    Music, Mic2, Disc, Clock, Orbit, Flame, BarChart3, Radio, TrendingUp, Moon,
+    SkipForward, BarChart2, Gift, Search, SlidersHorizontal, Image, Grid3x3,
+    Network, ChartPie, History, ArrowLeftRight, ImageIcon, Timer,
+};
+
+const ToolIcon = ({ iconName, size = 12 }: { iconName: string; size?: number }) => {
+    const IconComponent = TOOL_LUCIDE_MAP[iconName];
+    if (IconComponent) {
+        return <IconComponent size={size} />;
+    }
+    // Fallback to Zap for unknown icon names
+    return <Zap size={size} />;
+};
 
 interface TopAIProps {
     token?: string | null;
@@ -665,7 +687,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     </button>
                     <button
                         onClick={() => { setCanvasMode(true); setDiscoveryMode(false); }}
-                        className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all flex items-center gap-1.5 ${canvasMode ? 'bg-gradient-to-r from-[#FA2D48] to-[#FF6B35] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                        className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all flex items-center gap-1.5 ${canvasMode ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
                     >
                         <Palette size={12} />
                         Canvas
@@ -752,7 +774,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px] font-medium text-[#8E8E93]"
                                                         title={`${tc.name}(${Object.entries(tc.arguments).map(([k,v]) => `${k}: ${v}`).join(', ')})`}
                                                     >
-                                                        <span>{tc.icon}</span>
+                                                        <ToolIcon iconName={tc.icon} size={11} />
                                                         <span>{tc.label}</span>
                                                     </span>
                                                 ))}

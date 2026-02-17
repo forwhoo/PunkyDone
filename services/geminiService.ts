@@ -11,6 +11,8 @@ import {
     getRisingStar,
     getObsessionArtist,
     fetchCharts,
+    fetchHeatmapData,
+    fetchArtistNetwork,
 } from './dbService';
 import { fetchArtistImages, searchSpotifyTracks } from './spotifyService';
 
@@ -295,28 +297,123 @@ const AGENT_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
                 required: ["name"]
             }
         }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_heatmap_data",
+            description: "Get the user's listening activity heatmap data showing when they listen most (by hour and day). Use when user asks about their listening schedule, activity heatmap, when they're most active, listening patterns by time/day, activity calendar, or daily routine.",
+            parameters: {
+                type: "object",
+                properties: {
+                    days: { type: "number", description: "Number of recent days to analyze (default 30, max 90)" }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_artist_network",
+            description: "Get artist connection/network data showing which artists the user listens to together (within 10 minutes of each other). Use when user asks about artist connections, who they pair together, related artists in their library, artist combinations, listening flow, or session patterns.",
+            parameters: {
+                type: "object",
+                properties: {
+                    limit: { type: "number", description: "Max listening entries to analyze (default 500)" }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_genre_breakdown",
+            description: "Get an estimated genre breakdown of the user's listening. Use when user asks about genres, what type of music they listen to, genre distribution, music taste profile, genre percentages, or style breakdown.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"], description: "Time period to analyze" }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_recent_plays",
+            description: "Get the user's most recently played tracks in chronological order. Use when user asks about recent plays, what they just listened to, last played, listening history, or what's been playing.",
+            parameters: {
+                type: "object",
+                properties: {
+                    limit: { type: "number", description: "Number of recent plays to return (default 20, max 50)" }
+                },
+                required: []
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "compare_periods",
+            description: "Compare listening stats between two time periods (e.g. this week vs last month). Use when user asks to compare periods, changes over time, how their taste evolved, differences between time frames, progress, or trends.",
+            parameters: {
+                type: "object",
+                properties: {
+                    period_a: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"], description: "First period to compare" },
+                    period_b: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"], description: "Second period to compare" }
+                },
+                required: ["period_a", "period_b"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "get_album_covers",
+            description: "Fetch album cover artwork URLs for multiple artists or albums at once. Use when building visual responses, showing cover art grids, or when the user asks to see album art, cover art, artwork, or visuals for their music.",
+            parameters: {
+                type: "object",
+                properties: {
+                    names: {
+                        type: "array",
+                        items: { type: "string" },
+                        description: "List of artist or album names to fetch covers for"
+                    }
+                },
+                required: ["names"]
+            }
+        }
     }
 ];
 
-// ─── TOOL ICON MAP ──────────────────────────────────────────────
+// ─── TOOL ICON MAP (using Lucide icon names) ────────────────────
 const TOOL_ICON_MAP: Record<string, { icon: string; label: string }> = {
-    get_top_songs: { icon: '🎵', label: 'Top Songs' },
-    get_top_artists: { icon: '🎤', label: 'Top Artists' },
-    get_top_albums: { icon: '💿', label: 'Top Albums' },
-    get_listening_time: { icon: '⏱️', label: 'Listening Time' },
-    get_obsession_orbit: { icon: '🌀', label: 'Obsession Orbit' },
-    get_artist_streak: { icon: '🔥', label: 'Artist Streak' },
-    get_listening_percentage: { icon: '📊', label: 'Listening %' },
-    get_upcoming_artists: { icon: '📡', label: 'Radar Artists' },
-    get_peak_listening_hour: { icon: '🕐', label: 'Peak Hour' },
-    get_rising_star: { icon: '📈', label: 'Rising Star' },
-    get_late_night_anthem: { icon: '🌙', label: 'Late Night' },
-    get_most_skipped: { icon: '⏭️', label: 'Most Skipped' },
-    get_charts: { icon: '📋', label: 'Charts' },
-    get_wrapped_overview: { icon: '🎁', label: 'Wrapped' },
-    search_spotify_tracks: { icon: '🔎', label: 'Track Search' },
-    filter_songs: { icon: '🔍', label: 'Filter' },
-    fetch_image: { icon: '🖼️', label: 'Fetch Image' },
+    get_top_songs: { icon: 'Music', label: 'Top Songs' },
+    get_top_artists: { icon: 'Mic2', label: 'Top Artists' },
+    get_top_albums: { icon: 'Disc', label: 'Top Albums' },
+    get_listening_time: { icon: 'Clock', label: 'Listening Time' },
+    get_obsession_orbit: { icon: 'Orbit', label: 'Obsession Orbit' },
+    get_artist_streak: { icon: 'Flame', label: 'Artist Streak' },
+    get_listening_percentage: { icon: 'BarChart3', label: 'Listening %' },
+    get_upcoming_artists: { icon: 'Radio', label: 'Radar Artists' },
+    get_peak_listening_hour: { icon: 'Timer', label: 'Peak Hour' },
+    get_rising_star: { icon: 'TrendingUp', label: 'Rising Star' },
+    get_late_night_anthem: { icon: 'Moon', label: 'Late Night' },
+    get_most_skipped: { icon: 'SkipForward', label: 'Most Skipped' },
+    get_charts: { icon: 'BarChart2', label: 'Charts' },
+    get_wrapped_overview: { icon: 'Gift', label: 'Wrapped' },
+    search_spotify_tracks: { icon: 'Search', label: 'Track Search' },
+    filter_songs: { icon: 'SlidersHorizontal', label: 'Filter' },
+    fetch_image: { icon: 'Image', label: 'Fetch Image' },
+    get_heatmap_data: { icon: 'Grid3x3', label: 'Heatmap' },
+    get_artist_network: { icon: 'Network', label: 'Artist Network' },
+    get_genre_breakdown: { icon: 'ChartPie', label: 'Genres' },
+    get_recent_plays: { icon: 'History', label: 'Recent Plays' },
+    compare_periods: { icon: 'ArrowLeftRight', label: 'Compare' },
+    get_album_covers: { icon: 'ImageIcon', label: 'Album Covers' },
 };
 
 // ─── TOOL EXECUTION HANDLER ─────────────────────────────────────
@@ -630,6 +727,175 @@ async function executeAgentTool(
                 }
             }
 
+            case 'get_heatmap_data': {
+                const rawData = await fetchHeatmapData();
+                const days = Math.min(funcArgs.days || 30, 90);
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - days);
+                const filtered = rawData.filter((d: any) => new Date(d.played_at) >= cutoff);
+
+                // Aggregate by hour and day of week
+                const hourCounts: Record<number, number> = {};
+                const dayCounts: Record<number, number> = {};
+                filtered.forEach((d: any) => {
+                    const dt = new Date(d.played_at);
+                    const hour = dt.getHours();
+                    const day = dt.getDay();
+                    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+                    dayCounts[day] = (dayCounts[day] || 0) + 1;
+                });
+
+                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+                const peakDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0];
+
+                return {
+                    days_analyzed: days,
+                    total_plays: filtered.length,
+                    hourly_distribution: Object.fromEntries(
+                        Object.entries(hourCounts).sort((a, b) => Number(a[0]) - Number(b[0]))
+                    ),
+                    daily_distribution: Object.fromEntries(
+                        Object.entries(dayCounts).map(([d, c]) => [dayNames[Number(d)], c]).sort((a, b) => (b[1] as number) - (a[1] as number))
+                    ),
+                    peak_hour: peakHour ? { hour: Number(peakHour[0]), label: `${Number(peakHour[0]) % 12 || 12}${Number(peakHour[0]) < 12 ? 'AM' : 'PM'}`, plays: peakHour[1] } : null,
+                    peak_day: peakDay ? { day: dayNames[Number(peakDay[0])], plays: peakDay[1] } : null,
+                };
+            }
+
+            case 'get_artist_network': {
+                const limit = Math.min(funcArgs.limit || 500, 1000);
+                const network = await fetchArtistNetwork(limit);
+                const artistList = Object.values(network.artistInfo)
+                    .sort((a: any, b: any) => b.count - a.count)
+                    .slice(0, 20);
+
+                // Find top pairs
+                const pairList: { artist_a: string; artist_b: string; strength: number }[] = [];
+                for (const [a, connections] of Object.entries(network.pairs)) {
+                    for (const [b, count] of Object.entries(connections as Record<string, number>)) {
+                        if (a < b) { // avoid duplicates
+                            pairList.push({ artist_a: a, artist_b: b, strength: count });
+                        }
+                    }
+                }
+                pairList.sort((a, b) => b.strength - a.strength);
+
+                return {
+                    top_artists: artistList.map((a: any) => ({ name: a.name, plays: a.count })),
+                    top_connections: pairList.slice(0, 15),
+                    total_artists: Object.keys(network.artistInfo).length,
+                };
+            }
+
+            case 'get_genre_breakdown': {
+                const period = funcArgs.period || 'Weekly';
+                const stats = await fetchDashboardStats(period as any);
+                const artists = (stats.artists || []).slice(0, 30);
+
+                // Aggregate genres from artist data
+                const genreCounts: Record<string, number> = {};
+                artists.forEach((a: any) => {
+                    const genres = a.genres || [];
+                    const weight = a.totalListens || 1;
+                    if (genres.length === 0) {
+                        genreCounts['Unknown'] = (genreCounts['Unknown'] || 0) + weight;
+                    }
+                    genres.forEach((g: string) => {
+                        genreCounts[g] = (genreCounts[g] || 0) + weight;
+                    });
+                });
+
+                const totalWeight = Object.values(genreCounts).reduce((a, b) => a + b, 0);
+                const genreList = Object.entries(genreCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 15)
+                    .map(([genre, count]) => ({
+                        genre,
+                        count,
+                        percentage: totalWeight > 0 ? Math.round((count / totalWeight) * 1000) / 10 : 0
+                    }));
+
+                return {
+                    period,
+                    genres: genreList,
+                    total_artists_analyzed: artists.length,
+                };
+            }
+
+            case 'get_recent_plays': {
+                const limit = Math.min(funcArgs.limit || 20, 50);
+                const stats = await fetchDashboardStats('Daily');
+                const recentPlays = (stats.recentPlays || stats.songs || []).slice(0, limit);
+                return {
+                    count: recentPlays.length,
+                    plays: recentPlays.map((p: any, i: number) => ({
+                        rank: i + 1,
+                        title: p.title || p.track_name || p.name,
+                        artist: p.artist || p.artist_name,
+                        album: p.album || p.album_name || null,
+                        cover: p.cover || p.album_cover || p.image || null,
+                        played_at: p.played_at || p.lastPlayed || null,
+                    }))
+                };
+            }
+
+            case 'compare_periods': {
+                const periodA = funcArgs.period_a || 'Weekly';
+                const periodB = funcArgs.period_b || 'Monthly';
+                const [statsA, statsB] = await Promise.all([
+                    fetchDashboardStats(periodA as any),
+                    fetchDashboardStats(periodB as any),
+                ]);
+
+                const totalMinsA = (statsA.songs || []).reduce((acc: number, s: any) => {
+                    return acc + (s.timeStr ? parseInt(s.timeStr.replace(/[^0-9]/g, ''), 10) : 0);
+                }, 0);
+                const totalMinsB = (statsB.songs || []).reduce((acc: number, s: any) => {
+                    return acc + (s.timeStr ? parseInt(s.timeStr.replace(/[^0-9]/g, ''), 10) : 0);
+                }, 0);
+
+                return {
+                    period_a: {
+                        label: periodA,
+                        total_songs: (statsA.songs || []).length,
+                        total_artists: (statsA.artists || []).length,
+                        total_albums: (statsA.albums || []).length,
+                        total_minutes: totalMinsA,
+                        top_artist: statsA.artists?.[0]?.name || null,
+                        top_song: statsA.songs?.[0]?.title || null,
+                    },
+                    period_b: {
+                        label: periodB,
+                        total_songs: (statsB.songs || []).length,
+                        total_artists: (statsB.artists || []).length,
+                        total_albums: (statsB.albums || []).length,
+                        total_minutes: totalMinsB,
+                        top_artist: statsB.artists?.[0]?.name || null,
+                        top_song: statsB.songs?.[0]?.title || null,
+                    },
+                    comparison: {
+                        minutes_diff: totalMinsA - totalMinsB,
+                        songs_diff: (statsA.songs || []).length - (statsB.songs || []).length,
+                        artists_diff: (statsA.artists || []).length - (statsB.artists || []).length,
+                    }
+                };
+            }
+
+            case 'get_album_covers': {
+                if (!token) return { covers: [], error: 'No Spotify token available' };
+                const names = funcArgs.names || [];
+                try {
+                    const images = await fetchArtistImages(token, names);
+                    return {
+                        count: Object.keys(images).length,
+                        covers: Object.entries(images).map(([name, url]) => ({ name, image_url: url }))
+                    };
+                } catch {
+                    return { covers: [], error: 'Failed to fetch album covers' };
+                }
+            }
+
             default:
                 return { error: `Unknown tool: ${funcName}` };
         }
@@ -688,6 +954,16 @@ You are NOT a generic chatbot. You are a specialized music data agent with acces
 | "songs this morning" | filter_songs | type: "song", time_of_day: "morning" |
 | "least played album" | filter_songs | type: "album", sort_by: "plays", sort_order: "lowest" |
 | "songs I played last weekend" | filter_songs | type: "song", day_of_week: "weekend", recent_days: 7 |
+| "when do I listen most" / "activity" | get_heatmap_data | days: 30 |
+| "artists I listen together" / "pairs" | get_artist_network | limit: 500 |
+| "what genres do I listen to" | get_genre_breakdown | period: "Weekly" |
+| "what did I just play" / "recent" | get_recent_plays | limit: 20 |
+| "compare this week vs month" | compare_periods | period_a: "Weekly", period_b: "Monthly" |
+| "show album covers" / "artwork" | get_album_covers | names: [...] |
+| "show me [artist] image" | fetch_image | name, type: "artist" |
+| "how obsessed am I with [artist]" | get_obsession_orbit | period, artist_name |
+| "my listening routine" | get_heatmap_data + get_peak_listening_hour | — |
+| "has my taste changed" | compare_periods | period_a, period_b |
 
 ## RESPONSE FORMAT RULES
 1. **BE EXTREMELY CONCISE.** No yapping. Get to the point.
@@ -710,11 +986,15 @@ You are NOT a generic chatbot. You are a specialized music data agent with acces
 
 ## CANVAS COMPONENT GUIDELINES (for UI references)
 When the user or context references visual components, keep in mind:
-- Colors: Pure black (#000000) bg, dark cards (#1C1C1E), accent red (#FA2D48), white text (#FFFFFF), muted (#8E8E93)
-- Font: System/Inter — clean, Apple-style
-- No gradients (flat, modern aesthetic)
-- Borders: thin white/10 borders, rounded-xl corners
-- Glassmorphism: backdrop-blur effects where appropriate`;
+- Colors: Pure black (#000000) bg, dark cards (#1C1C1E), elevated cards (#2C2C2E), accent red (#FA2D48), white text (#FFFFFF), muted text (#8E8E93), dimmed text (#666666)
+- Font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif
+- Font sizes: headings 24-32px bold, subheadings 16-18px semibold, body 14-15px regular, captions 11-12px medium
+- Borders: 1px solid rgba(255,255,255,0.1), rounded-xl (12px) for cards, rounded-lg (8px) for buttons
+- Shadows: subtle, use colored accent glows sparingly
+- Buttons: bg-white text-black for primary, bg-white/5 text-white/60 for secondary, always rounded-lg with font-semibold text-[13px]
+- No heavy gradients — flat, modern, Apple-style aesthetic
+- Glassmorphism: backdrop-blur effects where appropriate
+- Spacing: consistent padding (p-4 to p-6 for cards), gap-2 to gap-4 for flex layouts`;
 
 // ─── MAIN AGENT FUNCTION (with tool calling) ─────────────────────
 export interface AgentResponse {
@@ -786,7 +1066,7 @@ export const answerMusicQuestionWithTools = async (
                     assistantMessage.tool_calls.map(async (toolCall) => {
                         const funcName = toolCall.function.name;
                         const funcArgs = JSON.parse(toolCall.function.arguments || "{}");
-                        const iconInfo = TOOL_ICON_MAP[funcName] || { icon: '⚡', label: funcName };
+                        const iconInfo = TOOL_ICON_MAP[funcName] || { icon: 'Zap', label: funcName };
 
                         const result = await executeAgentTool(funcName, funcArgs, token);
 
