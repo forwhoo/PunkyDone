@@ -128,15 +128,13 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
 
   const handleLetsGo = useCallback(() => {
     setVortex(true);
+    setTransitioning(true);
     setTimeout(() => {
-      setTransitioning(true);
-      setTimeout(() => {
-        if (totalMinutes != null && totalMinutes > 0) {
-          setStory('totalMinutes');
-        } else {
-          setStory('done');
-        }
-      }, 600);
+      if (totalMinutes != null && totalMinutes > 0) {
+        setStory('totalMinutes');
+      } else {
+        setStory('done');
+      }
     }, 1500);
   }, [totalMinutes]);
 
@@ -180,7 +178,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
       initial={{ opacity: 0 }}
       animate={{ opacity: transitioning ? 0 : 1, scale: transitioning ? 0.8 : 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: transitioning ? 0.6 : 0.4 }}
+      transition={{ duration: transitioning ? 1.5 : 0.4 }}
     >
       <style>{cssKeyframes}</style>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, useAnimation } from 'framer-motion';
+import ColorBends from './reactbits/ColorBends';
 
 interface TotalMinutesStoryProps {
   totalMinutes: number;
@@ -171,6 +172,22 @@ export const TotalMinutesStory: React.FC<TotalMinutesStoryProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] overflow-hidden" style={{ backgroundColor: '#000000' }}>
+      {/* ColorBends Background */}
+      <div className="absolute inset-0 z-[0]">
+        <ColorBends
+          rotation={45}
+          speed={0.3}
+          colors={['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F']}
+          transparent={true}
+          autoRotate={0.5}
+          scale={1.2}
+          frequency={1.2}
+          warpStrength={0.8}
+          mouseInfluence={0.3}
+          parallax={0.2}
+          noise={0.05}
+        />
+      </div>
       {/* Album cover nodes */}
       {nodes.map((node, i) => {
         const isConsumed = consumedNodes.has(i);
@@ -230,6 +247,7 @@ export const TotalMinutesStory: React.FC<TotalMinutesStoryProps> = ({
               width: NODE_SIZE,
               height: NODE_SIZE,
               transform: 'translate3d(0,0,0)',
+              zIndex: 10,
             }}
           >
             <img
@@ -249,6 +267,7 @@ export const TotalMinutesStory: React.FC<TotalMinutesStoryProps> = ({
       {showCounter && (
         <motion.div
           className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
+          style={{ zIndex: 20 }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
