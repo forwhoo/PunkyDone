@@ -1225,8 +1225,147 @@ function App() {
                     />
                 </div>
 
-                {/* RIGHT: WRAPPED + EXTRAS - empty for now */}
-                <div className="space-y-8">
+                {/* RIGHT: LISTENING DNA - Pattern Analysis */}
+                <div className="space-y-6">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <h2 className="text-xl font-bold text-white tracking-tight">Listening DNA</h2>
+                            <div className="relative group/info">
+                                <Info size={14} className="text-[#8E8E93] hover:text-white transition-colors cursor-help" />
+                                <div className="absolute left-0 top-full mt-2 w-64 bg-[#1C1C1E] border border-white/10 rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
+                                    <p className="text-[11px] text-[#8E8E93] leading-relaxed">
+                                        Your unique listening fingerprint — patterns derived from when, how, and what you listen to.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <p className="text-[#8E8E93] text-xs mb-5">Your unique listening fingerprint</p>
+                    </div>
+
+                    {/* Time Distribution */}
+                    {(() => {
+                        const hourBuckets = new Uint16Array(24);
+                        const dayBuckets = new Uint16Array(7);
+                        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                        let totalPlays = 0;
+
+                        safeRecent.forEach((p: any) => {
+                            if (p.played_at) {
+                                const d = new Date(p.played_at);
+                                hourBuckets[d.getHours()]++;
+                                dayBuckets[d.getDay()]++;
+                                totalPlays++;
+                            }
+                        });
+
+                        const maxHour = Math.max(...Array.from(hourBuckets));
+                        const maxDay = Math.max(...Array.from(dayBuckets));
+
+                        // Determine listener type
+                        const nightPlays = hourBuckets[22] + hourBuckets[23] + hourBuckets[0] + hourBuckets[1] + hourBuckets[2];
+                        const morningPlays = hourBuckets[6] + hourBuckets[7] + hourBuckets[8] + hourBuckets[9] + hourBuckets[10];
+                        const afternoonPlays = hourBuckets[12] + hourBuckets[13] + hourBuckets[14] + hourBuckets[15] + hourBuckets[16];
+                        const listenerType = nightPlays > morningPlays && nightPlays > afternoonPlays 
+                            ? 'Night Owl 🦉' 
+                            : morningPlays > afternoonPlays 
+                                ? 'Early Bird 🌅' 
+                                : 'Afternoon Listener ☀️';
+
+                        // Session stats
+                        const uniqueArtists = new Set(safeRecent.map((p: any) => p.artist_name)).size;
+                        const uniqueAlbums = new Set(safeRecent.map((p: any) => p.album_name).filter(Boolean)).size;
+
+                        return totalPlays > 0 ? (
+                            <>
+                                {/* Listener Type Badge */}
+                                <div className="bg-gradient-to-br from-[#1C1C1E] to-[#141416] border border-white/[0.06] rounded-2xl p-5">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <div className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-bold mb-1">Your Type</div>
+                                            <div className="text-lg font-black text-white">{listenerType}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-bold mb-1">Diversity</div>
+                                            <div className="text-lg font-black text-white">{uniqueArtists} <span className="text-xs font-medium text-white/30">artists</span></div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Quick Stats Row */}
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div className="bg-white/[0.04] rounded-xl p-3 text-center">
+                                            <div className="text-base font-black text-white">{totalPlays.toLocaleString()}</div>
+                                            <div className="text-[8px] uppercase tracking-wider text-white/25 font-bold">Plays</div>
+                                        </div>
+                                        <div className="bg-white/[0.04] rounded-xl p-3 text-center">
+                                            <div className="text-base font-black text-white">{uniqueArtists}</div>
+                                            <div className="text-[8px] uppercase tracking-wider text-white/25 font-bold">Artists</div>
+                                        </div>
+                                        <div className="bg-white/[0.04] rounded-xl p-3 text-center">
+                                            <div className="text-base font-black text-white">{uniqueAlbums}</div>
+                                            <div className="text-[8px] uppercase tracking-wider text-white/25 font-bold">Albums</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Hourly Rhythm */}
+                                <div className="bg-gradient-to-br from-[#1C1C1E] to-[#141416] border border-white/[0.06] rounded-2xl p-5">
+                                    <div className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-bold mb-3">Hourly Rhythm</div>
+                                    <div className="flex items-end gap-[2px] h-20">
+                                        {Array.from(hourBuckets).map((count, h) => {
+                                            const pct = maxHour > 0 ? (count / maxHour) * 100 : 0;
+                                            const isNight = h >= 22 || h <= 4;
+                                            return (
+                                                <div key={h} className="flex-1 flex flex-col items-center" title={`${h}:00 — ${count} plays`}>
+                                                    <div 
+                                                        className={`w-full rounded-t transition-all min-h-[2px] ${
+                                                            isNight 
+                                                                ? 'bg-gradient-to-t from-indigo-500/60 to-indigo-400/30' 
+                                                                : 'bg-gradient-to-t from-[#FA2D48]/50 to-[#FA2D48]/20'
+                                                        }`}
+                                                        style={{ height: `${Math.max(3, pct)}%` }}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="flex justify-between mt-1.5 text-[8px] text-white/15 font-medium">
+                                        <span>12 AM</span>
+                                        <span>6 AM</span>
+                                        <span>12 PM</span>
+                                        <span>6 PM</span>
+                                        <span>11 PM</span>
+                                    </div>
+                                </div>
+
+                                {/* Weekly Pattern */}
+                                <div className="bg-gradient-to-br from-[#1C1C1E] to-[#141416] border border-white/[0.06] rounded-2xl p-5">
+                                    <div className="text-[9px] uppercase tracking-[0.15em] text-white/30 font-bold mb-3">Weekly Pattern</div>
+                                    <div className="space-y-2">
+                                        {Array.from(dayBuckets).map((count, d) => {
+                                            const pct = maxDay > 0 ? (count / maxDay) * 100 : 0;
+                                            return (
+                                                <div key={d} className="flex items-center gap-3">
+                                                    <span className="text-[10px] text-white/30 font-medium w-7">{dayNames[d]}</span>
+                                                    <div className="flex-1 h-3 bg-white/[0.04] rounded-full overflow-hidden">
+                                                        <div 
+                                                            className="h-full rounded-full bg-gradient-to-r from-[#FA2D48]/70 to-[#FF6B82]/50 transition-all"
+                                                            style={{ width: `${Math.max(2, pct)}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-[9px] text-white/20 font-mono w-8 text-right">{count}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl p-8 text-center">
+                                <Music size={32} className="text-white/10 mx-auto mb-3" />
+                                <p className="text-white/30 text-sm">No listening data yet</p>
+                            </div>
+                        );
+                    })()}
                 </div>
                 
             </div>
@@ -1248,136 +1387,142 @@ function App() {
         type={seeAllModal.type}
     />
 
-    {/* Artist Detail Modal - Apple Music Style */}
+    {/* Artist Detail Modal - Clean Centered Design with Aurora */}
     <AnimatePresence>
         {selectedTopArtist && (
             <motion.div 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-6 backdrop-blur-3xl bg-black/90"
+                className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-6"
                 onClick={() => setSelectedTopArtist(null)}
             >
+                {/* Aurora Background */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute inset-0 opacity-40">
-                        <Aurora colorStops={[auraColor, '#7C3AED', auraColor]} amplitude={AURORA_AMPLITUDE} blend={AURORA_BLEND} speed={AURORA_SPEED} />
+                    <div className="absolute inset-0 opacity-30">
+                        <Aurora colorStops={[auraColor, '#000000', auraColor]} amplitude={AURORA_AMPLITUDE} blend={AURORA_BLEND} speed={AURORA_SPEED} />
                     </div>
-                    <div className="absolute inset-0 bg-black/55" />
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-xl" />
                 </div>
-                <div 
-                    className="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto no-scrollbar flex flex-col items-center" 
+                <motion.div 
+                    initial={{ scale: 0.92, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.92, opacity: 0, y: 20 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 24 }}
+                    className="relative w-full max-w-md max-h-[85vh] overflow-y-auto no-scrollbar bg-gradient-to-b from-[#1C1C1E] to-[#0A0A0A] rounded-3xl border border-white/[0.08] shadow-2xl" 
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Close Button */}
                     <button 
                         onClick={() => setSelectedTopArtist(null)}
-                        className="absolute top-2 right-2 md:top-0 md:right-0 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/[0.08] hover:scale-105 active:scale-95"
+                        className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white/60 hover:text-white backdrop-blur-md transition-all z-50 border border-white/[0.05]"
                     >
-                        <X size={18} />
+                        <X size={16} />
                     </button>
 
-                    {/* Artist Spotlight Image */}
-                    <motion.div 
-                        initial={{ scale: 0.85, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: "spring", stiffness: 220, damping: 22 }}
-                        className="relative z-10 mb-8 group"
-                    >
-                        <div className="w-40 h-40 md:w-56 md:h-56 rounded-full p-1.5 border-2 border-white/[0.12] bg-black shadow-2xl relative overflow-visible">
-                            <div className="absolute -inset-4 rounded-full blur-3xl opacity-[0.15] group-hover:opacity-[0.25] transition-opacity duration-700" style={{ backgroundColor: auraColor }}></div>
-                            <img 
-                                src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedTopArtist.name)}&background=1C1C1E&color=fff`} 
-                                className="w-full h-full object-cover rounded-full shadow-[0_30px_60px_rgba(0,0,0,0.6)] bg-[#1C1C1E]" 
-                                alt={selectedTopArtist.name}
-                            />
-                            
-                            {/* Rank Badge */}
-                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 rounded-full font-black text-xs shadow-xl border-2 border-black/10 whitespace-nowrap">
-                                #{safeArtists.findIndex((a: Artist) => a.id === selectedTopArtist.id) + 1 || '?'}
+                    {/* Artist Image + Info */}
+                    <div className="flex flex-col items-center pt-10 pb-6 px-6">
+                        <motion.div 
+                            initial={{ scale: 0.85, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 220, damping: 22 }}
+                            className="relative mb-5 group"
+                        >
+                            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full p-1 border border-white/[0.1] bg-black shadow-2xl relative overflow-visible">
+                                <div className="absolute -inset-6 rounded-full blur-3xl opacity-[0.12] group-hover:opacity-[0.2] transition-opacity duration-700" style={{ backgroundColor: auraColor }}></div>
+                                <img 
+                                    src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedTopArtist.name)}&background=1C1C1E&color=fff`} 
+                                    className="w-full h-full object-cover rounded-full bg-[#1C1C1E]" 
+                                    alt={selectedTopArtist.name}
+                                />
+                                {/* Rank Badge */}
+                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white text-black px-3 py-0.5 rounded-full font-black text-[10px] shadow-xl border border-black/10 whitespace-nowrap">
+                                    #{safeArtists.findIndex((a: Artist) => a.id === selectedTopArtist.id) + 1 || '?'}
+                                </div>
                             </div>
-                        </div>
-                    </motion.div>
+                        </motion.div>
 
-                    {/* Artist Name */}
-                    <motion.h2 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="text-2xl md:text-4xl font-black text-white text-center mb-2 tracking-tight px-4"
-                    >
-                        {selectedTopArtist.name}
-                    </motion.h2>
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.12 }}
-                        className="text-[#8E8E93] text-sm mb-8"
-                    >
-                        {selectedTopArtist.timeStr || '0m'} listened
-                    </motion.p>
+                        {/* Name + Listening Time */}
+                        <motion.h2 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                            className="text-xl md:text-2xl font-black text-white text-center tracking-tight"
+                        >
+                            {selectedTopArtist.name}
+                        </motion.h2>
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.12 }}
+                            className="text-[#8E8E93] text-xs mt-1 mb-6"
+                        >
+                            {selectedTopArtist.timeStr || '0m'} listened
+                        </motion.p>
 
-                    {/* Stats Cards - Simplified and Cleaner */}
-                    <motion.div 
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.15 }}
-                        className="grid grid-cols-3 gap-3 w-full max-w-md mb-8 px-3"
-                    >
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
-                            <TrendingUp size={14} className="mb-2" style={{ color: auraColor }} />
-                            <span className="text-2xl font-black text-white mb-0.5">{selectedTopArtist.totalListens || 0}</span>
-                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Plays</span>
-                        </div>
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
-                            <Clock size={14} className="mb-2" style={{ color: auraColor }} />
-                            <span className="text-2xl font-black text-white mb-0.5">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
-                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Minutes</span>
-                        </div>
-                        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/[0.15] transition-all">
-                            <Sparkles size={14} className="mb-2" style={{ color: auraColor }} />
-                            <span className="text-2xl font-black text-white mb-0.5">{selectedArtistStats?.popularityScore || 0}%</span>
-                            <span className="text-[9px] uppercase tracking-[0.15em] text-[#8E8E93] font-bold">Of Time</span>
-                        </div>
-                    </motion.div>
+                        {/* Stats Row */}
+                        <motion.div 
+                            initial={{ opacity: 0, y: 15 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.15 }}
+                            className="grid grid-cols-3 gap-2.5 w-full mb-6"
+                        >
+                            <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-3 flex flex-col items-center text-center">
+                                <TrendingUp size={12} className="mb-1.5 opacity-60" style={{ color: auraColor }} />
+                                <span className="text-xl font-black text-white">{selectedTopArtist.totalListens || 0}</span>
+                                <span className="text-[8px] uppercase tracking-[0.15em] text-white/35 font-bold mt-0.5">Plays</span>
+                            </div>
+                            <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-3 flex flex-col items-center text-center">
+                                <Clock size={12} className="mb-1.5 opacity-60" style={{ color: auraColor }} />
+                                <span className="text-xl font-black text-white">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
+                                <span className="text-[8px] uppercase tracking-[0.15em] text-white/35 font-bold mt-0.5">Minutes</span>
+                            </div>
+                            <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-3 flex flex-col items-center text-center">
+                                <Sparkles size={12} className="mb-1.5 opacity-60" style={{ color: auraColor }} />
+                                <span className="text-xl font-black text-white">{selectedArtistStats?.popularityScore || 0}%</span>
+                                <span className="text-[8px] uppercase tracking-[0.15em] text-white/35 font-bold mt-0.5">Of Time</span>
+                            </div>
+                        </motion.div>
 
-                    {/* Top Tracks Section - More Compact */}
-                    <motion.div 
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="w-full max-w-md bg-gradient-to-b from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4 mx-3"
-                    >
-                         <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                            <Disc size={14} style={{ color: auraColor }} /> Top Tracks
-                         </h3>
-                         
-                         <div className="space-y-1">
-                            {(dbUnifiedData?.songs || [])
-                                .filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name)
-                                .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
-                                .slice(0, 5)
-                                .map((song: any, idx: number) => (
-                                    <div key={idx} className="flex items-center gap-2.5 p-2 hover:bg-white/5 rounded-lg transition-all group active:scale-[0.98]">
-                                        <div className="text-[#8E8E93] font-mono text-xs w-4 font-bold text-right">{idx + 1}</div>
-                                        <div className="w-9 h-9 rounded-md bg-[#2C2C2E] overflow-hidden flex-shrink-0 relative border border-white/5">
-                                            <img src={song.cover || song.album_cover} className="w-full h-full object-cover" alt={song.title} />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="text-xs font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
-                                                {song.track_name || song.title}
+                        {/* Top Tracks Section */}
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4"
+                        >
+                             <h3 className="text-xs font-bold text-white/70 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                                <Disc size={12} style={{ color: auraColor }} /> Top Tracks
+                             </h3>
+                             
+                             <div className="space-y-0.5">
+                                {(dbUnifiedData?.songs || [])
+                                    .filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name)
+                                    .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
+                                    .slice(0, 5)
+                                    .map((song: any, idx: number) => (
+                                        <div key={idx} className="flex items-center gap-2.5 p-2 hover:bg-white/5 rounded-xl transition-all group active:scale-[0.98]">
+                                            <div className="text-white/25 font-mono text-[10px] w-4 font-bold text-right">{idx + 1}</div>
+                                            <div className="w-8 h-8 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 border border-white/5">
+                                                <img src={song.cover || song.album_cover} className="w-full h-full object-cover" alt={song.title} />
                                             </div>
-                                            <div className="text-[10px] text-[#8E8E93] font-medium">
-                                                    {song.listens || song.plays || 0} plays
+                                            <div className="min-w-0 flex-1">
+                                                <div className="text-xs font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">
+                                                    {song.track_name || song.title}
+                                                </div>
+                                                <div className="text-[10px] text-white/30 font-medium">
+                                                        {song.listens || song.plays || 0} plays
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                            ))}
-                            {(dbUnifiedData?.songs || []).filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name).length === 0 && (
-                                <p className="text-[#8E8E93] text-xs text-center py-4 italic">No track data available</p>
-                            )}
-                        </div>
-                    </motion.div>
-                </div>
+                                ))}
+                                {(dbUnifiedData?.songs || []).filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name).length === 0 && (
+                                    <p className="text-[#8E8E93] text-xs text-center py-4 italic">No track data available</p>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                </motion.div>
             </motion.div>
         )}
     </AnimatePresence>
@@ -1731,7 +1876,7 @@ function App() {
         )}
     </AnimatePresence>
 
-    {/* Date Range Picker Modal */}
+    {/* Date Range Picker - Centered Dropdown Style */}
     <AnimatePresence>
         {showDatePicker && (
             <>
@@ -1739,35 +1884,62 @@ function App() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100]"
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
                     onClick={() => setShowDatePicker(false)}
                 />
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] sm:w-[90vw] max-w-md max-h-[calc(100vh-2rem)] bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-y-auto"
+                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-hidden"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* Header */}
-                    <div className="p-6 border-b border-white/10">
-                        <div className="flex items-center justify-between mb-2">
-                            <h2 className="text-xl font-bold text-white">Custom Date Range</h2>
-                            <button
-                                onClick={() => setShowDatePicker(false)}
-                                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all"
-                            >
-                                <X size={18} />
-                            </button>
+                    {/* Compact Header */}
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+                        <div className="flex items-center gap-2">
+                            <Calendar size={14} className="text-[#FA2D48]" />
+                            <h2 className="text-sm font-bold text-white">Custom Range</h2>
                         </div>
-                        <p className="text-sm text-[#8E8E93]">Select a custom date range for your stats</p>
+                        <button
+                            onClick={() => setShowDatePicker(false)}
+                            className="p-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                        >
+                            <X size={14} />
+                        </button>
                     </div>
 
-                    {/* Date Inputs */}
-                    <div className="p-6 space-y-4">
-                        <div>
-                            <label className="block text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
-                                Start Date
+                    {/* Quick Presets */}
+                    <div className="px-5 py-3 border-b border-white/5">
+                        <div className="grid grid-cols-3 gap-2">
+                            {[
+                                { label: 'Last 3 days', days: 3 },
+                                { label: 'Last 2 weeks', days: 14 },
+                                { label: 'Last 3 months', days: 90 },
+                            ].map(preset => (
+                                <button
+                                    key={preset.days}
+                                    onClick={() => {
+                                        const end = new Date();
+                                        const start = new Date(Date.now() - preset.days * 24 * 60 * 60 * 1000);
+                                        setCustomDateRange({
+                                            start: start.toISOString().split('T')[0],
+                                            end: end.toISOString().split('T')[0]
+                                        });
+                                    }}
+                                    className="px-2 py-2 rounded-xl text-[10px] font-semibold text-white/60 bg-white/5 hover:bg-white/10 hover:text-white transition-all border border-white/5"
+                                >
+                                    {preset.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Date Inputs - Inline */}
+                    <div className="px-5 py-4 flex gap-3">
+                        <div className="flex-1">
+                            <label className="block text-[9px] font-bold text-white/30 uppercase tracking-wider mb-1.5">
+                                From
                             </label>
                             <input
                                 type="date"
@@ -1780,12 +1952,13 @@ function App() {
                                     }));
                                 }}
                                 value={customDateRange?.start || ''}
-                                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FA2D48] transition-colors"
+                                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-[#FA2D48] transition-colors"
                             />
                         </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mb-2">
-                                End Date
+                        <div className="flex items-end pb-3 text-white/20">→</div>
+                        <div className="flex-1">
+                            <label className="block text-[9px] font-bold text-white/30 uppercase tracking-wider mb-1.5">
+                                To
                             </label>
                             <input
                                 type="date"
@@ -1799,33 +1972,23 @@ function App() {
                                     }));
                                 }}
                                 value={customDateRange?.end || ''}
-                                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FA2D48] transition-colors"
+                                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-[#FA2D48] transition-colors"
                             />
                         </div>
                     </div>
 
-                    {/* Footer */}
-                    <div className="p-6 border-t border-white/10 flex gap-3">
-                        <button
-                            onClick={() => setShowDatePicker(false)}
-                            className="flex-1 px-4 py-3 rounded-xl bg-white/10 text-white font-semibold text-sm hover:bg-white/20 transition-all"
-                        >
-                            Cancel
-                        </button>
+                    {/* Apply Button - Full Width */}
+                    <div className="px-5 pb-4">
                         <button
                             onClick={() => {
                                 if (customDateRange?.start && customDateRange?.end) {
                                     setTimeRange('Custom');
                                     setShowDatePicker(false);
-                                    // TODO: Backend integration required
-                                    // The custom date range UI is implemented, but fetchDashboardStats
-                                    // needs to be updated to accept custom date ranges as parameters.
-                                    // Current behavior: UI will show the custom range but stats won't filter
                                     console.log('Custom range selected:', customDateRange);
                                 }
                             }}
                             disabled={!customDateRange?.start || !customDateRange?.end}
-                            className="flex-1 px-4 py-3 rounded-xl bg-[#FA2D48] text-white font-semibold text-sm hover:bg-[#FF6B82] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full px-4 py-2.5 rounded-xl bg-[#FA2D48] text-white font-bold text-xs hover:bg-[#FF6B82] transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98]"
                         >
                             Apply Range
                         </button>

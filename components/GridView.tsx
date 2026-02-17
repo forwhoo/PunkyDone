@@ -462,22 +462,27 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
             ctx.lineTo(to.x, to.y);
 
             if (isSelectedPath || isHoveredEdge || isSearchHighlighted) {
-                ctx.strokeStyle = '#FA2D48';
-                ctx.lineWidth = isSelectedPath || isHoveredEdge ? 2.5 : 1.5;
-                ctx.globalAlpha = isSelectedPath || isHoveredEdge ? 1 : 0.8;
+                // Gradient edge for highlighted connections
+                const grad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
+                grad.addColorStop(0, '#FA2D48');
+                grad.addColorStop(1, '#FF6B82');
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = isSelectedPath || isHoveredEdge ? 2.5 : 1.8;
+                ctx.globalAlpha = isSelectedPath || isHoveredEdge ? 1 : 0.85;
             } else if (isHoverNeighbor) {
-                ctx.strokeStyle = '#ffffff';
+                ctx.strokeStyle = 'rgba(255,255,255,0.6)';
                 ctx.lineWidth = 1.5;
-                ctx.globalAlpha = 0.5;
+                ctx.globalAlpha = 0.6;
             } else if (hasSearch || hasSelection || hasHover) {
                 ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 1;
-                ctx.globalAlpha = 0.05;
+                ctx.lineWidth = 0.5;
+                ctx.globalAlpha = 0.04;
             } else {
-                // Default: thin semi-transparent white lines
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 1;
-                ctx.globalAlpha = 0.2;
+                // Default: subtle curved-feel lines with low opacity
+                const strength = Math.min(1, edge.sim * 2);
+                ctx.strokeStyle = `rgba(255,255,255,${0.06 + strength * 0.12})`;
+                ctx.lineWidth = 0.5 + strength * 1;
+                ctx.globalAlpha = 1;
             }
 
             ctx.stroke();
@@ -507,30 +512,58 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
 
             // Draw shadow for depth
             ctx.save();
-            ctx.shadowColor = 'rgba(0,0,0,0.5)';
-            ctx.shadowBlur = 8;
-            ctx.shadowOffsetX = 2;
-            ctx.shadowOffsetY = 2;
+            ctx.shadowColor = 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 4;
             ctx.fillStyle = '#1C1C1E';
-            ctx.fillRect(pos.x - halfSize, pos.y - halfSize, nodeSize, nodeSize);
+            // Rounded rect for nodes
+            const r = 8;
+            ctx.beginPath();
+            ctx.moveTo(pos.x - halfSize + r, pos.y - halfSize);
+            ctx.lineTo(pos.x + halfSize - r, pos.y - halfSize);
+            ctx.quadraticCurveTo(pos.x + halfSize, pos.y - halfSize, pos.x + halfSize, pos.y - halfSize + r);
+            ctx.lineTo(pos.x + halfSize, pos.y + halfSize - r);
+            ctx.quadraticCurveTo(pos.x + halfSize, pos.y + halfSize, pos.x + halfSize - r, pos.y + halfSize);
+            ctx.lineTo(pos.x - halfSize + r, pos.y + halfSize);
+            ctx.quadraticCurveTo(pos.x - halfSize, pos.y + halfSize, pos.x - halfSize, pos.y + halfSize - r);
+            ctx.lineTo(pos.x - halfSize, pos.y - halfSize + r);
+            ctx.quadraticCurveTo(pos.x - halfSize, pos.y - halfSize, pos.x - halfSize + r, pos.y - halfSize);
+            ctx.closePath();
+            ctx.fill();
             ctx.restore();
             ctx.globalAlpha = alpha;
 
-            // Draw border/glow for highlighted nodes
+            // Border/glow for highlighted nodes
             if (isSearchMatch || isSelectedNode || isHovered) {
                 ctx.save();
                 ctx.shadowColor = '#FA2D48';
-                ctx.shadowBlur = 16;
-                ctx.fillStyle = '#FA2D48';
-                ctx.fillRect(pos.x - halfSize - 2, pos.y - halfSize - 2, nodeSize + 4, nodeSize + 4);
+                ctx.shadowBlur = 20;
+                const grad = ctx.createRadialGradient(pos.x, pos.y, halfSize * 0.5, pos.x, pos.y, halfSize + 6);
+                grad.addColorStop(0, 'rgba(250,45,72,0.3)');
+                grad.addColorStop(1, 'rgba(250,45,72,0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(pos.x - halfSize - 6, pos.y - halfSize - 6, nodeSize + 12, nodeSize + 12);
                 ctx.restore();
                 ctx.globalAlpha = alpha;
             } else if (isHoverNeighbor) {
                 ctx.save();
-                ctx.shadowColor = 'rgba(255,255,255,0.3)';
+                ctx.shadowColor = 'rgba(255,255,255,0.2)';
                 ctx.shadowBlur = 10;
-                ctx.fillStyle = 'rgba(255,255,255,0.15)';
-                ctx.fillRect(pos.x - halfSize - 1, pos.y - halfSize - 1, nodeSize + 2, nodeSize + 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                const r = 8;
+                ctx.beginPath();
+                ctx.moveTo(pos.x - halfSize - 1 + r, pos.y - halfSize - 1);
+                ctx.lineTo(pos.x + halfSize + 1 - r, pos.y - halfSize - 1);
+                ctx.quadraticCurveTo(pos.x + halfSize + 1, pos.y - halfSize - 1, pos.x + halfSize + 1, pos.y - halfSize - 1 + r);
+                ctx.lineTo(pos.x + halfSize + 1, pos.y + halfSize + 1 - r);
+                ctx.quadraticCurveTo(pos.x + halfSize + 1, pos.y + halfSize + 1, pos.x + halfSize + 1 - r, pos.y + halfSize + 1);
+                ctx.lineTo(pos.x - halfSize - 1 + r, pos.y + halfSize + 1);
+                ctx.quadraticCurveTo(pos.x - halfSize - 1, pos.y + halfSize + 1, pos.x - halfSize - 1, pos.y + halfSize + 1 - r);
+                ctx.lineTo(pos.x - halfSize - 1, pos.y - halfSize - 1 + r);
+                ctx.quadraticCurveTo(pos.x - halfSize - 1, pos.y - halfSize - 1, pos.x - halfSize - 1 + r, pos.y - halfSize - 1);
+                ctx.closePath();
+                ctx.fill();
                 ctx.restore();
                 ctx.globalAlpha = alpha;
             }
@@ -560,27 +593,51 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                 ctx.fillRect(pos.x - halfSize, pos.y - halfSize, nodeSize, nodeSize);
             }
 
-            // Border
-            ctx.strokeStyle = isSearchMatch || isSelectedNode || isHovered ? '#FA2D48' : 'rgba(255,255,255,0.12)';
+            // Rounded border
+            const borderR = 8;
+            ctx.beginPath();
+            ctx.moveTo(pos.x - halfSize + borderR, pos.y - halfSize);
+            ctx.lineTo(pos.x + halfSize - borderR, pos.y - halfSize);
+            ctx.quadraticCurveTo(pos.x + halfSize, pos.y - halfSize, pos.x + halfSize, pos.y - halfSize + borderR);
+            ctx.lineTo(pos.x + halfSize, pos.y + halfSize - borderR);
+            ctx.quadraticCurveTo(pos.x + halfSize, pos.y + halfSize, pos.x + halfSize - borderR, pos.y + halfSize);
+            ctx.lineTo(pos.x - halfSize + borderR, pos.y + halfSize);
+            ctx.quadraticCurveTo(pos.x - halfSize, pos.y + halfSize, pos.x - halfSize, pos.y + halfSize - borderR);
+            ctx.lineTo(pos.x - halfSize, pos.y - halfSize + borderR);
+            ctx.quadraticCurveTo(pos.x - halfSize, pos.y - halfSize, pos.x - halfSize + borderR, pos.y - halfSize);
+            ctx.closePath();
+            ctx.strokeStyle = isSearchMatch || isSelectedNode || isHovered ? '#FA2D48' : 'rgba(255,255,255,0.08)';
             ctx.lineWidth = isSearchMatch || isSelectedNode || isHovered ? 2 : 1;
-            ctx.strokeRect(pos.x - halfSize, pos.y - halfSize, nodeSize, nodeSize);
+            ctx.stroke();
 
             // Name label below node
             if (isHovered || isSearchMatch || isSelectedNode || isHoverNeighbor) {
-                ctx.fillStyle = '#ffffff';
+                const label = item.name.length > 18 ? item.name.slice(0, 17) + '…' : item.name;
                 ctx.font = `bold ${isHovered ? 12 : 10}px -apple-system, BlinkMacSystemFont, sans-serif`;
                 ctx.textAlign = 'center';
-                const label = item.name.length > 16 ? item.name.slice(0, 15) + '…' : item.name;
                 
-                // Label background
+                // Pill-shaped label background
                 const metrics = ctx.measureText(label);
-                const lblW = metrics.width + 8;
-                const lblH = 16;
+                const lblW = metrics.width + 12;
+                const lblH = 18;
+                const lblX = pos.x - lblW / 2;
                 const lblY = pos.y + halfSize + 6;
-                ctx.fillStyle = 'rgba(0,0,0,0.7)';
-                ctx.fillRect(pos.x - lblW / 2, lblY - 2, lblW, lblH);
+                const lblR = 6;
+                ctx.fillStyle = isSearchMatch || isHovered ? 'rgba(250,45,72,0.85)' : 'rgba(0,0,0,0.75)';
+                ctx.beginPath();
+                ctx.moveTo(lblX + lblR, lblY);
+                ctx.lineTo(lblX + lblW - lblR, lblY);
+                ctx.quadraticCurveTo(lblX + lblW, lblY, lblX + lblW, lblY + lblR);
+                ctx.lineTo(lblX + lblW, lblY + lblH - lblR);
+                ctx.quadraticCurveTo(lblX + lblW, lblY + lblH, lblX + lblW - lblR, lblY + lblH);
+                ctx.lineTo(lblX + lblR, lblY + lblH);
+                ctx.quadraticCurveTo(lblX, lblY + lblH, lblX, lblY + lblH - lblR);
+                ctx.lineTo(lblX, lblY + lblR);
+                ctx.quadraticCurveTo(lblX, lblY, lblX + lblR, lblY);
+                ctx.closePath();
+                ctx.fill();
                 ctx.fillStyle = '#ffffff';
-                ctx.fillText(label, pos.x, lblY + 10);
+                ctx.fillText(label, pos.x, lblY + 13);
             }
 
             ctx.globalAlpha = 1;
@@ -858,7 +915,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
         <div className="relative w-full max-w-[700px] mx-auto">
             {/* Search Bar + Filters */}
             <div className="relative mb-3">
-                <div className="relative flex items-center gap-2 bg-[#1C1C1E] border border-white/10 rounded-xl px-3 py-2">
+                <div className="relative flex items-center gap-2 bg-[#1C1C1E] border border-white/10 rounded-2xl px-3 py-2.5 shadow-lg">
                     <Search size={14} className="text-[#8E8E93] flex-shrink-0" />
                     <input
                         type="text"
@@ -870,11 +927,16 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                     {searchQuery && (
                         <button 
                             onClick={() => setSearchQuery('')}
-                            className="text-[#8E8E93] hover:text-white text-xs flex-shrink-0"
+                            className="text-[#8E8E93] hover:text-white text-xs flex-shrink-0 p-1 rounded-full hover:bg-white/10 transition-colors"
                         >
                             ✕
                         </button>
                     )}
+                    
+                    {/* Stats badge */}
+                    <div className="flex-shrink-0 text-[9px] font-medium text-white/30 tabular-nums">
+                        {filteredItems.length} nodes · {edges.length} edges
+                    </div>
                     
                     {/* Filter Pills integrated in search bar */}
                     {(hasType.artist || hasType.album || hasType.song) && (
@@ -924,24 +986,28 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
 
                 {/* Autocomplete suggestions */}
                 {searchSuggestions.length > 0 && (
-                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#1C1C1E] border border-white/10 rounded-xl overflow-hidden shadow-2xl">
+                    <div className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-[#1C1C1E] border border-white/10 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl">
+                        <div className="px-3 py-2 border-b border-white/5">
+                            <span className="text-[9px] font-bold text-white/30 uppercase tracking-wider">{searchSuggestions.length} matches found</span>
+                        </div>
                         {searchSuggestions.map((s) => (
                             <button
                                 key={s.item.id}
-                                className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 transition-colors text-left"
+                                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-colors text-left border-b border-white/[0.03] last:border-0"
                                 onClick={() => {
                                     setSearchQuery(s.item.name);
                                 }}
                             >
-                                <div className="w-7 h-7 rounded overflow-hidden bg-white/10 flex-shrink-0">
+                                <div className="w-8 h-8 rounded-lg overflow-hidden bg-white/10 flex-shrink-0 border border-white/5">
                                     {s.item.image && <img src={s.item.image} className="w-full h-full object-cover" alt="" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <div className="text-[12px] font-medium text-white truncate">{s.item.name}</div>
+                                    <div className="text-[12px] font-semibold text-white truncate">{s.item.name}</div>
                                     {s.item.subName && <div className="text-[10px] text-white/40 truncate">{s.item.subName}</div>}
                                 </div>
-                                <div className="flex items-center gap-1 flex-shrink-0">
-                                    <span className="text-[9px] text-white/30">{s.connectionCount} connections</span>
+                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#FA2D48]/60" />
+                                    <span className="text-[9px] text-white/40 font-medium">{s.connectionCount}</span>
                                 </div>
                             </button>
                         ))}
@@ -949,11 +1015,11 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                 )}
             </div>
 
-            {/* Canvas Container — Full width, no square constraint */}
+            {/* Canvas Container — Full width with subtle gradient background */}
             <div 
                 ref={containerRef}
-                className="relative w-full overflow-hidden rounded-xl bg-black/30 border border-white/5"
-                style={{ height: 'min(70vh, 700px)', minHeight: 400 }}
+                className="relative w-full overflow-hidden rounded-2xl border border-white/5"
+                style={{ height: 'min(70vh, 700px)', minHeight: 400, background: 'radial-gradient(ellipse at center, rgba(28,28,30,0.8) 0%, rgba(10,10,10,0.95) 70%, rgba(0,0,0,1) 100%)' }}
             >
                 <canvas
                     ref={canvasRef}
@@ -968,7 +1034,7 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
                 />
 
                 {/* Minimap */}
-                <div className="absolute bottom-3 right-3 rounded-lg overflow-hidden border border-white/10 shadow-lg" style={{ width: 120, height: 90 }}>
+                <div className="absolute bottom-3 right-3 rounded-xl overflow-hidden border border-white/10 shadow-2xl backdrop-blur-sm" style={{ width: 120, height: 90, background: 'rgba(0,0,0,0.5)' }}>
                     <canvas
                         ref={minimapRef}
                         width={120}
@@ -995,29 +1061,29 @@ export const GridView: React.FC<GridViewProps> = ({ items, plays, onItemClick })
 
             {/* Selected Edge Details Panel */}
             {selectedEdgeDetails && (
-                <div className="mt-3 bg-[#1C1C1E] border border-white/10 rounded-xl px-4 py-3">
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#FA2D48]" />
+                <div className="mt-3 bg-gradient-to-r from-[#1C1C1E] to-[#141416] border border-white/10 rounded-2xl px-5 py-4 shadow-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                        <div className="w-2 h-2 rounded-full bg-[#FA2D48] animate-pulse" />
                         <span className="text-[11px] font-bold text-[#FA2D48] uppercase tracking-wider">Connection Path</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <div className="flex-1 text-center">
+                    <div className="flex items-center gap-4">
+                        <div className="flex-1 text-center bg-white/5 rounded-xl py-2.5 px-3">
                             <div className="text-[13px] font-semibold text-white truncate">{selectedEdgeDetails.itemA.name}</div>
                             {selectedEdgeDetails.itemA.subName && <div className="text-[10px] text-white/40 truncate">{selectedEdgeDetails.itemA.subName}</div>}
                         </div>
-                        <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
-                            <div className="text-[14px] font-bold text-[#FA2D48]">{selectedEdgeDetails.simPct}%</div>
-                            <div className="text-[9px] text-white/40">similarity</div>
+                        <div className="flex flex-col items-center gap-0.5 flex-shrink-0 px-2">
+                            <div className="text-[16px] font-black text-[#FA2D48]">{selectedEdgeDetails.simPct}%</div>
+                            <div className="text-[9px] text-white/40 font-medium">similarity</div>
                         </div>
-                        <div className="flex-1 text-center">
+                        <div className="flex-1 text-center bg-white/5 rounded-xl py-2.5 px-3">
                             <div className="text-[13px] font-semibold text-white truncate">{selectedEdgeDetails.itemB.name}</div>
                             {selectedEdgeDetails.itemB.subName && <div className="text-[10px] text-white/40 truncate">{selectedEdgeDetails.itemB.subName}</div>}
                         </div>
                     </div>
-                    <div className="flex gap-3 mt-2 text-[9px] text-white/40 justify-center">
-                        <span>📍 {selectedEdgeDetails.details.peakHour}</span>
-                        <span>📅 {selectedEdgeDetails.details.dayPattern}</span>
-                        {selectedEdgeDetails.details.coSessions > 0 && <span>🔗 {selectedEdgeDetails.details.coSessions} co-sessions</span>}
+                    <div className="flex gap-4 mt-3 text-[10px] text-white/50 justify-center font-medium">
+                        <span className="flex items-center gap-1">📍 {selectedEdgeDetails.details.peakHour}</span>
+                        <span className="flex items-center gap-1">📅 {selectedEdgeDetails.details.dayPattern}</span>
+                        {selectedEdgeDetails.details.coSessions > 0 && <span className="flex items-center gap-1">🔗 {selectedEdgeDetails.details.coSessions} co-sessions</span>}
                     </div>
                 </div>
             )}

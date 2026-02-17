@@ -138,6 +138,7 @@ const LoadingDots = ({ color = 'bg-white/40', size = 'w-2 h-2' }: { color?: stri
 );
 
 export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history = [], user, initialQuery }) => {
+    console.log('[AISpotlight] Component mounted', { hasToken: !!token, hasUser: !!user, initialQuery, contextDataKeys: Object.keys(contextData) });
     const [loading, setLoading] = useState(false);
 
     // Store array of category results
@@ -295,7 +296,11 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
     const handleQuery = async (manualPrompt?: string) => {
         const promptToUse = manualPrompt || userPrompt;
-        if (!promptToUse.trim()) return;
+        console.log('[AISpotlight] handleQuery called', { promptToUse, discoveryMode, hasToken: !!token });
+        if (!promptToUse.trim()) {
+            console.warn('[AISpotlight] Empty prompt, skipping query');
+            return;
+        }
 
         if (promptToUse.trim().toLowerCase() === '@json') {
             fileInputRef.current?.click();
@@ -557,8 +562,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
             } else {
                 // Chat Mode
+                console.log('[AISpotlight] Entering Chat Mode for:', promptToUse);
                 setMode('chat');
                 const answer = await answerMusicQuestion(promptToUse, contextData);
+                console.log('[AISpotlight] Chat response received, length:', answer?.length);
                 setChatResponse(answer);
                 setChatMessages(prev => [...prev, { role: 'ai', text: answer, timestamp: new Date() }]);
                 setDisplayedText(""); // Reset text for typing
@@ -577,8 +584,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const handleQueryRef = useRef(handleQuery);
     handleQueryRef.current = handleQuery;
     useEffect(() => {
+        console.log('[AISpotlight] initialQuery effect', { initialQuery, alreadySent: initialQuerySentRef.current });
         if (initialQuery && initialQuery.trim() && !initialQuerySentRef.current) {
             initialQuerySentRef.current = true;
+            console.log('[AISpotlight] Auto-sending initial query:', initialQuery.trim());
             handleQueryRef.current(initialQuery.trim());
         }
     }, [initialQuery]);

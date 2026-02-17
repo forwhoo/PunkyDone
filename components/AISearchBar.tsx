@@ -31,15 +31,20 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
     const handleSubmit = (e?: React.FormEvent) => {
         e?.preventDefault();
         if (query.trim()) {
+            console.log('[AISearchBar] Submitting query:', query);
             setQueryToSend(query);
             // Small delay to ensure state is set before expanding
             setTimeout(() => {
+                console.log('[AISearchBar] Expanding modal with query:', query);
                 setIsExpanded(true);
             }, 10);
+        } else {
+            console.warn('[AISearchBar] Empty query, not submitting');
         }
     };
 
     const handleClose = () => {
+        console.log('[AISearchBar] Closing chat modal');
         setIsExpanded(false);
         setQuery('');
         setQueryToSend('');
