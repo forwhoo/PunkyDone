@@ -1903,7 +1903,7 @@ const Slide6: React.FC<{ albums: Album[] }> = ({ albums }) => {
                   left: 15,
                   width: 45,
                   height: 45,
-                  backgroundColor: [W.electricYellow, W.cyberCyan, W.vividGreen][i],
+                  backgroundColor: [W.electricYellow, W.cyberCyan, W.vividGreen][i % 3],
                   border: `4px solid ${W.trueBlack}`,
                   display: 'flex',
                   alignItems: 'center',
@@ -2893,7 +2893,7 @@ const Slide11: React.FC<{ albumCovers: string[] }> = ({ albumCovers }) => {
                     W.electricYellow, W.hotPink, W.cyberCyan,
                     W.neonOrange, W.deepPurple, W.electricBlue,
                     W.hotCoral, W.vividGreen, W.acidGreen
-                  ][i],
+                  ][i % 9],
                   border: `4px solid ${W.trueBlack}`,
                   borderRadius: '50%',
                   display: 'flex',
@@ -2901,7 +2901,7 @@ const Slide11: React.FC<{ albumCovers: string[] }> = ({ albumCovers }) => {
                   justifyContent: 'center',
                   fontWeight: 900,
                   fontSize: 18,
-                  color: i === 1 || i === 4 ? W.trueWhite : W.trueBlack,
+                  color: (i % 9 === 1 || i % 9 === 4) ? W.trueWhite : W.trueBlack,
                   boxShadow: '4px 4px 0px rgba(0,0,0,0.4)',
                 }}
               >
