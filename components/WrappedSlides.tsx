@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { X, TrendingUp, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence, PanInfo, useAnimation } from 'framer-motion';
+import { X, TrendingUp, ChevronUp, Headphones, Music, Disc, BarChart2, Repeat, Flame, Zap } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
 import PrismaticBurst from './reactbits/PrismaticBurst';
 
@@ -39,36 +39,7 @@ function getWeekRange(): string {
   return `${fmt(monday)} – ${fmt(sunday)}, ${now.getFullYear()}`;
 }
 
-// ─── Keyframes (injected once) ──────────────────────────────────
-const KEYFRAMES_ID = 'wrapped-slides-keyframes';
-function injectKeyframes() {
-  if (typeof document === 'undefined') return;
-  if (document.getElementById(KEYFRAMES_ID)) return;
-  const style = document.createElement('style');
-  style.id = KEYFRAMES_ID;
-  style.textContent = `
-    @keyframes ws-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-    @keyframes ws-orbit { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-    @keyframes ws-counter-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(-360deg)} }
-    @keyframes ws-scroll-up {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(-50%); }
-    }
-    @keyframes ws-chart-rise {
-      0% { height: 0; opacity: 0; }
-      100% { opacity: 1; }
-    }
-    @keyframes ws-glow-pulse {
-      0%, 100% { box-shadow: 0 0 20px rgba(250,45,72,0.0); }
-      50% { box-shadow: 0 0 40px rgba(250,45,72,0.3); }
-    }
-    @keyframes ws-slide-in-stagger {
-      0% { transform: translateX(100%); opacity: 0; }
-      100% { transform: translateX(0); opacity: 1; }
-    }
-  `;
-  document.head.appendChild(style);
-}
+// ─── Keyframes removed - now using Framer Motion exclusively ────
 
 // ─── Progress Dots ──────────────────────────────────────────────
 const ProgressDots: React.FC<{ current: number }> = ({ current }) => (
@@ -128,19 +99,16 @@ const slideVariants = {
     x: direction > 0 ? '100%' : '-100%',
     opacity: 0,
     scale: 0.95,
-    rotateY: direction > 0 ? 8 : -8,
   }),
   center: {
     x: 0,
     opacity: 1,
     scale: 1,
-    rotateY: 0,
   },
   exit: (direction: number) => ({
     x: direction > 0 ? '-100%' : '100%',
     opacity: 0,
     scale: 0.95,
-    rotateY: direction > 0 ? -8 : 8,
   }),
 };
 
@@ -235,11 +203,13 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
     return albumCovers.slice(0, count).map((src, i) => {
       const angle = (i / count) * Math.PI * 2;
       const radius = 120 + Math.random() * 80;
+      const rotation = Math.random() * 30 - 15; // Stable rotation
       return {
         src,
         x: Math.cos(angle) * radius,
         y: Math.sin(angle) * radius,
         delay: i * 0.08,
+        rotation,
       };
     });
   }, [albumCovers]);
@@ -300,8 +270,8 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
           initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
           animate={
             phase === 'burst'
-              ? { x: node.x, y: node.y, scale: 1, opacity: 0.6, rotate: Math.random() * 30 - 15 }
-              : { x: 0, y: 0, scale: 0, opacity: 0, rotate: 360 }
+              ? { x: node.x, y: node.y, scale: 1, opacity: 0.6, rotate: node.rotation }
+              : { x: node.x, y: node.y, scale: 0, opacity: 0, rotate: node.rotation }
           }
           transition={{
             duration: phase === 'burst' ? 0.6 : 0.8,
@@ -313,6 +283,21 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
         </motion.div>
       ))}
 
+      {/* Eyebrow label - persistent */}
+      <motion.span
+        className="absolute uppercase tracking-widest font-bold"
+        style={{ 
+          fontSize: 11, 
+          color: ACCENT_RED,
+          top: 'calc(50% - 120px)',
+        }}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0, duration: 0.6 }}
+      >
+        YOUR WEEK IN MUSIC
+      </motion.span>
+
       {/* Counter */}
       <motion.div
         className="relative z-10 flex flex-col items-center"
@@ -320,6 +305,17 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.5, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       >
+        {/* Headphones icon */}
+        {phase === 'final' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            <Headphones size={40} color={ACCENT_RED} strokeWidth={1.5} />
+          </motion.div>
+        )}
+
         <motion.span
           className="text-white font-bold leading-none"
           style={{
@@ -329,8 +325,10 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
           animate={phase === 'final' ? { scale: [1, 1.08, 1] } : {}}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          {phase === 'final'
-            ? (hours > 0 ? hours.toLocaleString() : totalMinutes.toLocaleString())
+          {phase === 'final' && hours > 0
+            ? `${hours}h ${remainingMins}m`
+            : phase === 'final'
+            ? totalMinutes.toLocaleString()
             : count.toLocaleString()}
         </motion.span>
 
@@ -341,31 +339,24 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
           transition={{ delay: 0.8, duration: 0.5 }}
         >
           {phase === 'final' && hours > 0
-            ? `${hours === 1 ? 'hour' : 'hours'} listened`
+            ? 'listened'
+            : phase === 'final'
+            ? 'minutes listened'
             : 'minutes listened'}
         </motion.span>
-
-        {phase === 'final' && hours > 0 && (
-          <motion.span
-            className="mt-2"
-            style={{ fontSize: 16, color: GRAY_TEXT }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.4 }}
-          >
-            ({totalMinutes.toLocaleString()} minutes)
-          </motion.span>
-        )}
       </motion.div>
     </motion.div>
   );
 };
 
 // ─── Slide 2 : Top Artist (enhanced animations) ─────────────────
-const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
+const SlideTopArtist: React.FC<{ artists: Artist[];  songs?: Song[] }> = ({ artists, songs }) => {
   const top3 = artists.slice(0, 3);
   const main = top3[0];
   if (!main) return <div className="absolute inset-0 bg-black" />;
+
+  // Get top song by main artist
+  const topSong = songs?.find(s => s.artist === main.name);
 
   return (
     <motion.div
@@ -375,7 +366,7 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Subtle image bg */}
+      {/* Improved image bg */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -383,8 +374,8 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           transform: 'scale(1.3)',
-          filter: 'blur(80px) brightness(0.2)',
-          opacity: 0.3,
+          filter: 'blur(60px) brightness(0.12) saturate(1.4)',
+          opacity: 0.8,
         }}
       />
 
@@ -398,13 +389,13 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
         Top Artist
       </motion.span>
 
-      {/* Artist images with stagger entrance */}
+      {/* Artist images with stagger entrance - NO rotation */}
       <div className="relative z-10 flex items-end justify-center gap-4 mb-6">
         {top3[1] && (
           <motion.div
             className="relative"
-            initial={{ opacity: 0, x: -60, rotate: -12 }}
-            animate={{ opacity: 1, x: 0, rotate: -6 }}
+            initial={{ opacity: 0, y: 60, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 0.85 }}
             transition={{ delay: 0.3, duration: 0.7, type: 'spring', stiffness: 200 }}
           >
             <img
@@ -413,8 +404,16 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
               className="rounded-2xl object-cover"
               style={{ width: 110, height: 110, border: `1px solid ${CARD_BORDER}` }}
             />
-            <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-white font-bold"
-              style={{ fontSize: 12, backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+            {/* Rank badge positioned outside image */}
+            <div 
+              className="absolute w-7 h-7 rounded-full flex items-center justify-center text-white font-bold z-20"
+              style={{ 
+                fontSize: 12, 
+                backgroundColor: CARD_BG, 
+                border: `1px solid ${CARD_BORDER}`,
+                bottom: -10,
+                right: -10,
+              }}>
               2
             </div>
           </motion.div>
@@ -422,22 +421,40 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
 
         <motion.div
           className="relative"
-          initial={{ opacity: 0, y: 40, scale: 0.7 }}
+          initial={{ opacity: 0, y: 60, scale: 0.7 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.7, type: 'spring', stiffness: 180 }}
         >
-          <img
+          <motion.img
             src={main.image || fallbackImage}
             alt={main.name}
             className="rounded-2xl object-cover"
             style={{
-              width: 160, height: 160,
+              width: 160, 
+              height: 160,
               border: `2px solid ${ACCENT_RED}`,
-              animation: 'ws-glow-pulse 3s ease-in-out infinite',
+            }}
+            animate={{
+              boxShadow: [
+                '0 0 20px rgba(250,45,72,0.0)',
+                '0 0 40px rgba(250,45,72,0.5)',
+                '0 0 20px rgba(250,45,72,0.0)',
+              ],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: 'easeInOut',
             }}
           />
-          <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
-            style={{ fontSize: 14, backgroundColor: ACCENT_RED }}>
+          <div 
+            className="absolute w-8 h-8 rounded-full flex items-center justify-center text-white font-bold z-20"
+            style={{ 
+              fontSize: 14, 
+              backgroundColor: ACCENT_RED,
+              bottom: -10,
+              right: -10,
+            }}>
             1
           </div>
         </motion.div>
@@ -445,8 +462,8 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
         {top3[2] && (
           <motion.div
             className="relative"
-            initial={{ opacity: 0, x: 60, rotate: 12 }}
-            animate={{ opacity: 1, x: 0, rotate: 6 }}
+            initial={{ opacity: 0, y: 60, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 0.85 }}
             transition={{ delay: 0.3, duration: 0.7, type: 'spring', stiffness: 200 }}
           >
             <img
@@ -455,8 +472,15 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
               className="rounded-2xl object-cover"
               style={{ width: 110, height: 110, border: `1px solid ${CARD_BORDER}` }}
             />
-            <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-white font-bold"
-              style={{ fontSize: 12, backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+            <div 
+              className="absolute w-7 h-7 rounded-full flex items-center justify-center text-white font-bold z-20"
+              style={{ 
+                fontSize: 12, 
+                backgroundColor: CARD_BG, 
+                border: `1px solid ${CARD_BORDER}`,
+                bottom: -10,
+                right: -10,
+              }}>
               3
             </div>
           </motion.div>
@@ -473,19 +497,29 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
           {main.name}
         </p>
         <p style={{ fontSize: 16, color: GRAY_TEXT }} className="mt-1">
-          {main.totalListens} plays this week
+          {main.totalListens.toLocaleString()} plays this week
         </p>
+        {topSong && (
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }} className="mt-1">
+            Most played: {topSong.title}
+          </p>
+        )}
         {(main.genres ?? []).length > 0 && (
           <div className="flex flex-wrap justify-center gap-2 mt-3">
             {main.genres!.slice(0, 3).map((g, i) => (
               <motion.span
                 key={g}
-                className="rounded-full px-3 py-1 text-white/70"
-                style={{ fontSize: 11, backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
+                className="rounded-full px-3 py-1 text-white/90 flex items-center gap-1"
+                style={{ 
+                  fontSize: 11, 
+                  backgroundColor: CARD_BG, 
+                  border: `1px solid rgba(255,255,255,0.12)` 
+                }}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.7 + i * 0.1, duration: 0.3 }}
               >
+                <Music size={10} />
                 {g}
               </motion.span>
             ))}
@@ -1303,10 +1337,6 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
   const interactedRef = useRef(false);
 
   useEffect(() => {
-    injectKeyframes();
-  }, []);
-
-  useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow;
     const previousHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -1364,7 +1394,7 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
       case 0:
         return <SlideTotalMinutes totalMinutes={totalMinutes || 0} albumCovers={albumCovers} />;
       case 1:
-        return <SlideTopArtist artists={artists} />;
+        return <SlideTopArtist artists={artists} songs={songs} />;
       case 2:
         return <SlideConnection artists={artists} songs={songs} connectionGraph={connectionGraph} />;
       case 3:
@@ -1379,12 +1409,12 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
         return <SlideLeapChart artists={artists} />;
       case 8:
         return (
-          <SlideOutro totalMinutes={totalMinutes || 0} artists={artists} songs={songs} />
+          <SlideOutro totalMinutes={totalMinutes || 0} artists={artists} songs={songs} onClose={onClose} />
         );
       default:
         return null;
     }
-  }, [currentSlide, totalMinutes, artists, albums, songs, albumCovers, connectionGraph]);
+  }, [currentSlide, totalMinutes, artists, albums, songs, albumCovers, connectionGraph, onClose]);
 
   return (
     <motion.div
