@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { X, TrendingUp, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence, PanInfo, useAnimation } from 'framer-motion';
+import { X, TrendingUp, ChevronUp, Headphones, Music, Disc, BarChart2, Repeat, Flame, Zap } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
 import PrismaticBurst from './reactbits/PrismaticBurst';
 
@@ -39,36 +39,7 @@ function getWeekRange(): string {
   return `${fmt(monday)} – ${fmt(sunday)}, ${now.getFullYear()}`;
 }
 
-// ─── Keyframes (injected once) ──────────────────────────────────
-const KEYFRAMES_ID = 'wrapped-slides-keyframes';
-function injectKeyframes() {
-  if (typeof document === 'undefined') return;
-  if (document.getElementById(KEYFRAMES_ID)) return;
-  const style = document.createElement('style');
-  style.id = KEYFRAMES_ID;
-  style.textContent = `
-    @keyframes ws-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-    @keyframes ws-orbit { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-    @keyframes ws-counter-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(-360deg)} }
-    @keyframes ws-scroll-up {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(-50%); }
-    }
-    @keyframes ws-chart-rise {
-      0% { height: 0; opacity: 0; }
-      100% { opacity: 1; }
-    }
-    @keyframes ws-glow-pulse {
-      0%, 100% { box-shadow: 0 0 20px rgba(250,45,72,0.0); }
-      50% { box-shadow: 0 0 40px rgba(250,45,72,0.3); }
-    }
-    @keyframes ws-slide-in-stagger {
-      0% { transform: translateX(100%); opacity: 0; }
-      100% { transform: translateX(0); opacity: 1; }
-    }
-  `;
-  document.head.appendChild(style);
-}
+// ─── Keyframes removed - now using Framer Motion exclusively ────
 
 // ─── Progress Dots ──────────────────────────────────────────────
 const ProgressDots: React.FC<{ current: number }> = ({ current }) => (
@@ -128,19 +99,16 @@ const slideVariants = {
     x: direction > 0 ? '100%' : '-100%',
     opacity: 0,
     scale: 0.95,
-    rotateY: direction > 0 ? 8 : -8,
   }),
   center: {
     x: 0,
     opacity: 1,
     scale: 1,
-    rotateY: 0,
   },
   exit: (direction: number) => ({
     x: direction > 0 ? '-100%' : '100%',
     opacity: 0,
     scale: 0.95,
-    rotateY: direction > 0 ? -8 : 8,
   }),
 };
 
@@ -234,12 +202,14 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
     const count = Math.min(albumCovers.length, 16);
     return albumCovers.slice(0, count).map((src, i) => {
       const angle = (i / count) * Math.PI * 2;
-      const radius = 120 + Math.random() * 80;
+      const radius = 120 + (i % 3) * 40; // Deterministic radius variation
+      const rotation = (i * 7) % 30 - 15; // Deterministic rotation based on index
       return {
         src,
         x: Math.cos(angle) * radius,
         y: Math.sin(angle) * radius,
         delay: i * 0.08,
+        rotation,
       };
     });
   }, [albumCovers]);
@@ -300,8 +270,8 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
           initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
           animate={
             phase === 'burst'
-              ? { x: node.x, y: node.y, scale: 1, opacity: 0.6, rotate: Math.random() * 30 - 15 }
-              : { x: 0, y: 0, scale: 0, opacity: 0, rotate: 360 }
+              ? { x: node.x, y: node.y, scale: 1, opacity: 0.6, rotate: node.rotation }
+              : { x: 0, y: 0, scale: 0, opacity: 0, rotate: node.rotation }
           }
           transition={{
             duration: phase === 'burst' ? 0.6 : 0.8,
@@ -313,6 +283,21 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
         </motion.div>
       ))}
 
+      {/* Eyebrow label - persistent */}
+      <motion.span
+        className="absolute uppercase tracking-widest font-bold"
+        style={{ 
+          fontSize: 11, 
+          color: ACCENT_RED,
+          top: 'calc(50% - 120px)',
+        }}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0, duration: 0.6 }}
+      >
+        YOUR WEEK IN MUSIC
+      </motion.span>
+
       {/* Counter */}
       <motion.div
         className="relative z-10 flex flex-col items-center"
@@ -320,6 +305,17 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.5, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       >
+        {/* Headphones icon */}
+        {phase === 'final' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            <Headphones size={40} color={ACCENT_RED} strokeWidth={1.5} />
+          </motion.div>
+        )}
+
         <motion.span
           className="text-white font-bold leading-none"
           style={{
@@ -329,8 +325,10 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
           animate={phase === 'final' ? { scale: [1, 1.08, 1] } : {}}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          {phase === 'final'
-            ? (hours > 0 ? hours.toLocaleString() : totalMinutes.toLocaleString())
+          {phase === 'final' && hours > 0
+            ? `${hours}h ${remainingMins}m`
+            : phase === 'final'
+            ? totalMinutes.toLocaleString()
             : count.toLocaleString()}
         </motion.span>
 
@@ -341,31 +339,24 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
           transition={{ delay: 0.8, duration: 0.5 }}
         >
           {phase === 'final' && hours > 0
-            ? `${hours === 1 ? 'hour' : 'hours'} listened`
+            ? 'listened'
+            : phase === 'final'
+            ? 'minutes listened'
             : 'minutes listened'}
         </motion.span>
-
-        {phase === 'final' && hours > 0 && (
-          <motion.span
-            className="mt-2"
-            style={{ fontSize: 16, color: GRAY_TEXT }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.4 }}
-          >
-            ({totalMinutes.toLocaleString()} minutes)
-          </motion.span>
-        )}
       </motion.div>
     </motion.div>
   );
 };
 
 // ─── Slide 2 : Top Artist (enhanced animations) ─────────────────
-const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
+const SlideTopArtist: React.FC<{ artists: Artist[];  songs?: Song[] }> = ({ artists, songs }) => {
   const top3 = artists.slice(0, 3);
   const main = top3[0];
   if (!main) return <div className="absolute inset-0 bg-black" />;
+
+  // Get top song by main artist
+  const topSong = songs?.find(s => s.artist === main.name);
 
   return (
     <motion.div
@@ -375,7 +366,7 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Subtle image bg */}
+      {/* Improved image bg */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -383,8 +374,8 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           transform: 'scale(1.3)',
-          filter: 'blur(80px) brightness(0.2)',
-          opacity: 0.3,
+          filter: 'blur(60px) brightness(0.12) saturate(1.4)',
+          opacity: 0.8,
         }}
       />
 
@@ -398,13 +389,13 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
         Top Artist
       </motion.span>
 
-      {/* Artist images with stagger entrance */}
+      {/* Artist images with stagger entrance - NO rotation */}
       <div className="relative z-10 flex items-end justify-center gap-4 mb-6">
         {top3[1] && (
           <motion.div
             className="relative"
-            initial={{ opacity: 0, x: -60, rotate: -12 }}
-            animate={{ opacity: 1, x: 0, rotate: -6 }}
+            initial={{ opacity: 0, y: 60, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 0.85 }}
             transition={{ delay: 0.3, duration: 0.7, type: 'spring', stiffness: 200 }}
           >
             <img
@@ -413,8 +404,16 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
               className="rounded-2xl object-cover"
               style={{ width: 110, height: 110, border: `1px solid ${CARD_BORDER}` }}
             />
-            <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-white font-bold"
-              style={{ fontSize: 12, backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+            {/* Rank badge positioned outside image */}
+            <div 
+              className="absolute w-7 h-7 rounded-full flex items-center justify-center text-white font-bold z-20"
+              style={{ 
+                fontSize: 12, 
+                backgroundColor: CARD_BG, 
+                border: `1px solid ${CARD_BORDER}`,
+                bottom: -10,
+                right: -10,
+              }}>
               2
             </div>
           </motion.div>
@@ -422,22 +421,40 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
 
         <motion.div
           className="relative"
-          initial={{ opacity: 0, y: 40, scale: 0.7 }}
+          initial={{ opacity: 0, y: 60, scale: 0.7 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.7, type: 'spring', stiffness: 180 }}
         >
-          <img
+          <motion.img
             src={main.image || fallbackImage}
             alt={main.name}
             className="rounded-2xl object-cover"
             style={{
-              width: 160, height: 160,
+              width: 160, 
+              height: 160,
               border: `2px solid ${ACCENT_RED}`,
-              animation: 'ws-glow-pulse 3s ease-in-out infinite',
+            }}
+            animate={{
+              boxShadow: [
+                '0 0 20px rgba(250,45,72,0.0)',
+                '0 0 40px rgba(250,45,72,0.5)',
+                '0 0 20px rgba(250,45,72,0.0)',
+              ],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: 'easeInOut',
             }}
           />
-          <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
-            style={{ fontSize: 14, backgroundColor: ACCENT_RED }}>
+          <div 
+            className="absolute w-8 h-8 rounded-full flex items-center justify-center text-white font-bold z-20"
+            style={{ 
+              fontSize: 14, 
+              backgroundColor: ACCENT_RED,
+              bottom: -10,
+              right: -10,
+            }}>
             1
           </div>
         </motion.div>
@@ -445,8 +462,8 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
         {top3[2] && (
           <motion.div
             className="relative"
-            initial={{ opacity: 0, x: 60, rotate: 12 }}
-            animate={{ opacity: 1, x: 0, rotate: 6 }}
+            initial={{ opacity: 0, y: 60, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 0.85 }}
             transition={{ delay: 0.3, duration: 0.7, type: 'spring', stiffness: 200 }}
           >
             <img
@@ -455,8 +472,15 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
               className="rounded-2xl object-cover"
               style={{ width: 110, height: 110, border: `1px solid ${CARD_BORDER}` }}
             />
-            <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-white font-bold"
-              style={{ fontSize: 12, backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+            <div 
+              className="absolute w-7 h-7 rounded-full flex items-center justify-center text-white font-bold z-20"
+              style={{ 
+                fontSize: 12, 
+                backgroundColor: CARD_BG, 
+                border: `1px solid ${CARD_BORDER}`,
+                bottom: -10,
+                right: -10,
+              }}>
               3
             </div>
           </motion.div>
@@ -473,19 +497,29 @@ const SlideTopArtist: React.FC<{ artists: Artist[] }> = ({ artists }) => {
           {main.name}
         </p>
         <p style={{ fontSize: 16, color: GRAY_TEXT }} className="mt-1">
-          {main.totalListens} plays this week
+          {main.totalListens.toLocaleString()} plays this week
         </p>
+        {topSong && (
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }} className="mt-1">
+            Most played: {topSong.title}
+          </p>
+        )}
         {(main.genres ?? []).length > 0 && (
           <div className="flex flex-wrap justify-center gap-2 mt-3">
             {main.genres!.slice(0, 3).map((g, i) => (
               <motion.span
                 key={g}
-                className="rounded-full px-3 py-1 text-white/70"
-                style={{ fontSize: 11, backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
+                className="rounded-full px-3 py-1 text-white/90 flex items-center gap-1"
+                style={{ 
+                  fontSize: 11, 
+                  backgroundColor: CARD_BG, 
+                  border: `1px solid rgba(255,255,255,0.12)` 
+                }}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.7 + i * 0.1, duration: 0.3 }}
               >
+                <Music size={10} />
                 {g}
               </motion.span>
             ))}
@@ -523,23 +557,17 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGr
     return null;
   }, [artists, songs, connectionGraph]);
 
-  const totalWeight = useMemo(() => {
-    if (!connectionGraph?.pairs) return 1;
-    const allWeights = Object.values(connectionGraph.pairs)
-      .flatMap((targets) => Object.values(targets || {}))
-      .filter((v) => typeof v === 'number') as number[];
-    return Math.max(...allWeights, 1);
-  }, [connectionGraph]);
-
   const artistA = artists.find((a) => a.name === bestConnection?.a) || artists[0];
   const artistB = artists.find((a) => a.name === bestConnection?.b) || artists[1] || artists[0];
   const songA = songs.find((s) => s.artist === artistA?.name) || songs[0];
   const songB = songs.find((s) => s.artist === artistB?.name) || songs[1] || songs[0];
-  const connectionPct = bestConnection
-    ? Math.max(62, Math.min(99, Math.round((bestConnection.weight / totalWeight) * 100)))
-    : 76;
+  
+  // Calculate actual combined plays instead of fake percentage
+  const combinedPlays = (artistA?.totalListens || 0) + (artistB?.totalListens || 0);
 
   const coverStrip = [songA?.cover, songB?.cover, artistA?.image, artistB?.image].filter(Boolean) as string[];
+  const stripWidth = coverStrip.length * (48 + 12); // 48px width + 12px gap
+  const STRIP_SCROLL_SPEED = 40; // pixels per second
 
   return (
     <motion.div
@@ -556,67 +584,81 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGr
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        Your Closest Connection
+        Your #1 Duo
       </motion.span>
 
-      <div className="relative z-10 mb-8" style={{ width: 260, height: 260 }}>
-        {[artistA, artistB].map((artist, idx) => {
-          const rotation = idx === 0 ? -1 : 1;
-          return (
-            <motion.div
-              key={artist?.name || idx}
-              className="absolute top-1/2 left-1/2"
-              style={{ transformOrigin: 'center center' }}
-              animate={{ rotate: [0, rotation * 360] }}
-              transition={{ duration: 14 - idx * 2, repeat: Infinity, ease: 'linear' }}
-            >
-              <motion.img
-                src={(idx === 0 ? songA?.cover : songB?.cover) || artist?.image || fallbackImage}
-                alt={artist?.name || 'Connection'}
-                className="rounded-xl object-cover"
-                style={{
-                  width: 90 - idx * 10,
-                  height: 90 - idx * 10,
-                  border: `1px solid ${CARD_BORDER}`,
-                  transform: `translateX(${idx === 0 ? 86 : -86}px) scale(${idx === 0 ? 1 : 0.86})`,
-                  boxShadow: '0 8px 26px rgba(0,0,0,0.45)',
-                }}
-              />
-            </motion.div>
-          );
-        })}
+      {/* Two artists side by side with icon between */}
+      <div className="relative z-10 flex items-center justify-center gap-6 mb-6">
+        <motion.div
+          className="relative"
+          initial={{ opacity: 0, x: -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, duration: 0.6, type: 'spring', stiffness: 200 }}
+        >
+          <img
+            src={songA?.cover || artistA?.image || fallbackImage}
+            alt={artistA?.name || 'Artist A'}
+            className="rounded-2xl object-cover"
+            style={{ width: 100, height: 100, border: `1px solid ${CARD_BORDER}`, boxShadow: '0 8px 26px rgba(0,0,0,0.45)' }}
+          />
+        </motion.div>
+
+        {/* Zap icon badge between artists */}
+        <motion.div
+          className="rounded-full flex items-center justify-center"
+          style={{ 
+            width: 40, 
+            height: 40, 
+            backgroundColor: ACCENT_RED,
+            boxShadow: '0 4px 12px rgba(250,45,72,0.4)',
+          }}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5, duration: 0.4, type: 'spring', stiffness: 300 }}
+        >
+          <Zap size={20} color="#fff" fill="#fff" />
+        </motion.div>
 
         <motion.div
-          className="absolute inset-0 m-auto rounded-full"
-          style={{ width: 120, height: 120, border: `1px solid ${ACCENT_RED}40` }}
-          animate={{ scale: [0.95, 1.06, 0.95], opacity: [0.4, 0.9, 0.4] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-        />
+          className="relative"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, duration: 0.6, type: 'spring', stiffness: 200 }}
+        >
+          <img
+            src={songB?.cover || artistB?.image || fallbackImage}
+            alt={artistB?.name || 'Artist B'}
+            className="rounded-2xl object-cover"
+            style={{ width: 100, height: 100, border: `1px solid ${CARD_BORDER}`, boxShadow: '0 8px 26px rgba(0,0,0,0.45)' }}
+          />
+        </motion.div>
       </div>
 
       <motion.div
         className="relative z-10 text-center"
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
+        transition={{ delay: 0.6, duration: 0.5 }}
       >
-        <span className="font-bold text-white" style={{ fontSize: 56 }}>
-          {connectionPct}%
-        </span>
-        <span className="text-white/70 ml-2" style={{ fontSize: 20 }}>Match</span>
-        <p className="mt-2" style={{ fontSize: 14, color: GRAY_TEXT }}>
-          {(artistA?.name || 'Your artist')} × {(artistB?.name || 'another favorite')}
+        <p className="font-bold text-white" style={{ fontSize: 24 }}>
+          {artistA?.name || 'Your artist'} × {artistB?.name || 'another favorite'}
+        </p>
+        <p className="mt-2 font-semibold" style={{ fontSize: 32, color: ACCENT_RED }}>
+          {combinedPlays.toLocaleString()}
+        </p>
+        <p style={{ fontSize: 14, color: GRAY_TEXT }}>
+          combined plays this week
         </p>
       </motion.div>
 
       <div className="relative z-10 w-full overflow-hidden mt-6" style={{ height: 56 }}>
         <motion.div
           className="flex gap-3"
-          animate={{ x: [0, -280] }}
-          transition={{ duration: 7, ease: 'linear', repeat: Infinity }}
+          animate={{ x: [0, -stripWidth] }}
+          transition={{ duration: stripWidth / STRIP_SCROLL_SPEED, ease: 'linear', repeat: Infinity }}
         >
           {[...coverStrip, ...coverStrip, ...coverStrip].map((img, i) => (
-            <div key={`${img}-${i}`} className="rounded-md overflow-hidden" style={{ width: 48, height: 48, border: `1px solid ${CARD_BORDER}` }}>
+            <div key={`${img}-${i}`} className="rounded-md overflow-hidden flex-shrink-0" style={{ width: 48, height: 48, border: `1px solid ${CARD_BORDER}` }}>
               <img src={img || fallbackImage} alt="" className="w-full h-full object-cover" />
             </div>
           ))}
@@ -648,39 +690,37 @@ const SlideAlbumRepeat: React.FC<{ albums: Album[] }> = ({ albums }) => {
         Album on Repeat
       </motion.span>
 
-      {/* Vinyl + cover animation */}
-      <div className="relative z-10" style={{ width: 220, height: 220 }}>
-        {/* Vinyl disc */}
+      {/* Album cover with rotating disc icon behind */}
+      <div className="relative z-10 mb-6" style={{ width: 240, height: 240 }}>
+        {/* Rotating Disc Icon as watermark */}
         <motion.div
-          className="absolute rounded-full"
+          className="absolute"
           style={{
-            width: 200,
-            height: 200,
-            top: 10,
-            left: 30,
-            background: 'radial-gradient(circle, #333 30%, #111 70%)',
-            border: `1px solid ${CARD_BORDER}`,
-            animation: 'ws-spin 3s linear infinite',
+            left: '60%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 0,
           }}
-          initial={{ x: 50, opacity: 0 }}
-          animate={{ x: 0, opacity: 0.5 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-        />
+          animate={{ rotate: 360 }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+        >
+          <Disc size={180} color="rgba(255,255,255,0.08)" strokeWidth={1} />
+        </motion.div>
 
         {/* Album cover */}
         <motion.img
           src={album?.cover || fallbackImage}
           alt={album?.title ?? 'Album'}
           className="relative z-10 rounded-2xl shadow-2xl object-cover"
-          style={{ width: 200, height: 200, border: `1px solid ${CARD_BORDER}` }}
-          initial={{ scale: 0.6, opacity: 0, rotate: -10 }}
-          animate={{ scale: 1, opacity: 1, rotate: 0 }}
-          transition={{ delay: 0.2, duration: 0.7, type: 'spring', stiffness: 200 }}
+          style={{ width: 240, height: 240, border: `2px solid rgba(255,255,255,0.1)` }}
+          initial={{ scale: 1.15, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.7, type: 'spring', stiffness: 120, damping: 20 }}
         />
       </div>
 
       <motion.div
-        className="relative z-10 text-center mt-6"
+        className="relative z-10 text-center mt-2"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.5 }}
@@ -691,46 +731,41 @@ const SlideAlbumRepeat: React.FC<{ albums: Album[] }> = ({ albums }) => {
         <p style={{ fontSize: 16, color: GRAY_TEXT }} className="mt-1">
           {album?.artist ?? ''}
         </p>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }} className="mt-2">
+          Your most-played album this week
+        </p>
       </motion.div>
 
       <motion.div
-        className="relative z-10 mt-4 px-5 py-2 rounded-full"
+        className="relative z-10 mt-4 px-5 py-2 rounded-full flex items-center gap-2"
         style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.7, duration: 0.4 }}
       >
+        <BarChart2 size={16} color={ACCENT_RED} />
         <span className="text-white font-semibold" style={{ fontSize: 14 }}>
-          {album?.totalListens ?? 0} plays
+          {album?.totalListens?.toLocaleString() ?? 0} plays
         </span>
       </motion.div>
     </motion.div>
   );
 };
 
-// ─── Slide 5 : Obsession Orbit (day-by-day spin) ────────────────
+// ─── Slide 5 : Top Songs Orbit (replaces fake day-by-day) ───────
 const SlideOrbit: React.FC<{ songs: Song[] }> = ({ songs }) => {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const [activeDay, setActiveDay] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const topSongs = songs.slice(0, 7);
 
-  const dayData = useMemo(
-    () =>
-      days.map((d, i) => ({
-        day: d,
-        listens: songs[i]?.listens ?? (10 + i * 3),
-        song: songs[i]?.title ?? 'No data',
-        cover: songs[i]?.cover || fallbackImage,
-      })),
-    [songs],
-  );
-
-  // Spin through days
+  // Cycle through songs
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveDay(prev => (prev + 1) % 7);
-    }, 700);
+      setActiveIndex(prev => (prev + 1) % topSongs.length);
+    }, 1200);
     return () => clearInterval(interval);
-  }, []);
+  }, [topSongs.length]);
+
+  const activeSong = topSongs[activeIndex];
 
   return (
     <motion.div
@@ -747,17 +782,17 @@ const SlideOrbit: React.FC<{ songs: Song[] }> = ({ songs }) => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1 }}
       >
-        Your Musical Orbit
+        Your Top Songs
       </motion.span>
 
       {/* Orbit visualization */}
-      <div className="relative" style={{ width: 280, height: 280 }}>
+      <div className="relative" style={{ width: 300, height: 300 }}>
         {/* Orbit ring */}
         <div
           className="absolute rounded-full"
           style={{
-            width: 260,
-            height: 260,
+            width: 280,
+            height: 280,
             top: '50%',
             left: '50%',
             transform: 'translate(-50%,-50%)',
@@ -765,92 +800,126 @@ const SlideOrbit: React.FC<{ songs: Song[] }> = ({ songs }) => {
           }}
         />
 
-        {/* Center - current day info */}
+        {/* Center - #1 song */}
         <motion.div
           className="absolute flex flex-col items-center justify-center text-center"
           style={{
             top: '50%',
             left: '50%',
             transform: 'translate(-50%,-50%)',
-            width: 100,
-            height: 100,
+            width: 120,
+            height: 120,
           }}
-          key={activeDay}
+          key={`center-${activeIndex}`}
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <span className="text-white font-bold" style={{ fontSize: 20 }}>
-            {dayData[activeDay].day}
-          </span>
-          <span style={{ fontSize: 12, color: GRAY_TEXT }} className="mt-1">
-            {dayData[activeDay].listens} plays
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{
+              width: 80,
+              height: 80,
+              border: `2px solid ${ACCENT_RED}`,
+            }}
+          >
+            <img 
+              src={topSongs[0]?.cover || fallbackImage} 
+              alt={topSongs[0]?.title} 
+              className="w-full h-full object-cover" 
+            />
+          </div>
+          <span className="text-white font-bold mt-2" style={{ fontSize: 12 }}>
+            #1
           </span>
         </motion.div>
 
-        {/* Day nodes on orbit */}
-        {dayData.map((d, i) => {
-          const angle = (i / 7) * 360 - 90;
+        {/* Songs #2-7 orbiting */}
+        {topSongs.slice(1).map((song, i) => {
+          const angle = (i / (topSongs.length - 1)) * 360 - 90;
           const rad = (angle * Math.PI) / 180;
-          const r = 125;
+          const r = 135;
           const x = Math.cos(rad) * r;
           const y = Math.sin(rad) * r;
-          const isActive = i === activeDay;
-          const sz = isActive ? 50 : 36;
+          const isActive = i + 1 === activeIndex;
+          const sz = isActive ? 56 : 42;
 
           return (
             <motion.div
-              key={d.day}
+              key={song.title || i}
               className="absolute flex flex-col items-center"
               style={{
-                top: `calc(50% + ${y}px - ${sz / 2}px)`,
-                left: `calc(50% + ${x}px - ${sz / 2}px)`,
+                top: `calc(50% + ${y}px)`,
+                left: `calc(50% + ${x}px)`,
+                transform: 'translate(-50%, -50%)',
               }}
               animate={{
                 scale: isActive ? 1.15 : 0.9,
-                opacity: isActive ? 1 : 0.5,
+                opacity: isActive ? 1 : 0.6,
               }}
               transition={{ duration: 0.3, type: 'spring', stiffness: 300 }}
             >
-              <div
-                className="rounded-full overflow-hidden"
+              <motion.div
+                className="rounded-xl overflow-hidden"
                 style={{
                   width: sz,
                   height: sz,
                   border: isActive ? `2px solid ${ACCENT_RED}` : `1px solid ${CARD_BORDER}`,
-                  animation: isActive ? 'ws-glow-pulse 2s ease-in-out infinite' : 'none',
+                }}
+                animate={isActive ? {
+                  boxShadow: [
+                    '0 0 20px rgba(250,45,72,0.0)',
+                    '0 0 40px rgba(250,45,72,0.5)',
+                    '0 0 20px rgba(250,45,72,0.0)',
+                  ],
+                } : {}}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
                 }}
               >
-                <img src={d.cover} alt={d.day} className="w-full h-full object-cover" />
-              </div>
+                <img src={song.cover || fallbackImage} alt={song.title} className="w-full h-full object-cover" />
+              </motion.div>
               <span
                 className="text-white/60 mt-1 whitespace-nowrap"
                 style={{ fontSize: 9, fontWeight: isActive ? 700 : 400, color: isActive ? '#fff' : GRAY_TEXT }}
               >
-                {d.day}
+                #{i + 2}
               </span>
             </motion.div>
           );
         })}
       </div>
 
-      <motion.p
-        className="relative z-10 font-bold text-white mt-4"
-        style={{ fontSize: 24 }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        7 Days of Vibes
-      </motion.p>
+      {/* Song title at bottom with AnimatePresence */}
+      <div className="relative z-10 mt-4" style={{ height: 60, width: '80%', maxWidth: 300 }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`song-${activeIndex}`}
+            className="text-center"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <p className="font-bold text-white truncate" style={{ fontSize: 20 }}>
+              {activeSong?.title || 'No song'}
+            </p>
+            <p style={{ fontSize: 14, color: GRAY_TEXT }} className="truncate">
+              {activeSong?.artist || ''}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 };
 
-// ─── Slide 6 : Upcoming Artists (replaces Trifecta) ─────────────
+// ─── Slide 6 : Rising Artists (replaces Upcoming) ───────────────
 const SlideUpcomingArtists: React.FC<{ artists: Artist[] }> = ({ artists }) => {
-  // Find artists with lower rank (newer/upcoming feel)
-  const upcoming = useMemo(() => {
+  // Find artists with highest trend (biggest movers)
+  const rising = useMemo(() => {
     const sorted = [...artists].sort((a, b) => (b.trend ?? 0) - (a.trend ?? 0));
     return sorted.slice(0, 5);
   }, [artists]);
@@ -863,15 +932,16 @@ const SlideUpcomingArtists: React.FC<{ artists: Artist[] }> = ({ artists }) => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <motion.span
-        className="relative z-10 uppercase tracking-widest font-bold mb-2"
+      <motion.div
+        className="relative z-10 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"
         style={{ fontSize: 11, color: ACCENT_RED }}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        Trending This Week
-      </motion.span>
+        <Flame size={14} />
+        <span>Trending This Week</span>
+      </motion.div>
 
       <motion.h2
         className="relative z-10 font-bold text-white mb-6"
@@ -880,27 +950,30 @@ const SlideUpcomingArtists: React.FC<{ artists: Artist[] }> = ({ artists }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
       >
-        Upcoming Artists
+        Rising This Week
       </motion.h2>
 
       <div className="relative z-10 flex flex-col gap-3 w-full max-w-md">
-        {upcoming.map((artist, i) => (
+        {rising.map((artist, i) => (
           <motion.div
-            key={artist.id}
-            initial={{ x: 100, opacity: 0 }}
+            key={artist.name}
+            initial={{ x: 30, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{
-              delay: 0.3 + i * 0.12,
+              delay: 0.3 + i * 0.1,
               type: 'spring',
               stiffness: 200,
               damping: 20,
             }}
           >
-            <SolidCard className="flex items-center p-3 gap-3 relative overflow-hidden">
+            <SolidCard 
+              className="flex items-center p-3 gap-3 relative overflow-hidden"
+              style={{ border: `1px solid rgba(255,255,255,0.10)` }}
+            >
               {/* Background rank number */}
               <div
                 className="absolute left-1 top-0 font-black italic select-none pointer-events-none"
-                style={{ fontSize: 40, color: 'rgba(255,255,255,0.03)' }}
+                style={{ fontSize: 60, color: 'rgba(255,255,255,0.06)' }}
               >
                 {i + 1}
               </div>
@@ -919,7 +992,7 @@ const SlideUpcomingArtists: React.FC<{ artists: Artist[] }> = ({ artists }) => {
                   {artist.name}
                 </p>
                 <p className="truncate" style={{ fontSize: 12, color: GRAY_TEXT }}>
-                  {artist.totalListens} plays
+                  {artist.totalListens.toLocaleString()} plays
                 </p>
               </div>
 
@@ -927,7 +1000,7 @@ const SlideUpcomingArtists: React.FC<{ artists: Artist[] }> = ({ artists }) => {
                 <div className="flex items-center gap-1" style={{ color: ACCENT_RED }}>
                   <TrendingUp size={14} />
                   <span style={{ fontSize: 12, fontWeight: 600 }}>
-                    +{artist.trend}
+                    +{artist.trend} plays
                   </span>
                 </div>
               )}
@@ -941,6 +1014,9 @@ const SlideUpcomingArtists: React.FC<{ artists: Artist[] }> = ({ artists }) => {
 
 // ─── Slide 7 : The Obsession (only song you played by artist) ───
 const SlideObsession: React.FC<{ songs: Song[]; artists: Artist[] }> = ({ songs, artists }) => {
+  const [playCount, setPlayCount] = useState(0);
+  const rafRef = useRef(0);
+  
   // Find an artist where you only played ONE song
   const obsession = useMemo(() => {
     const artistSongs: Record<string, Song[]> = {};
@@ -950,25 +1026,44 @@ const SlideObsession: React.FC<{ songs: Song[]; artists: Artist[] }> = ({ songs,
     });
 
     // Find artist with exactly 1 song but high listens
-    let best: { artist: string; song: Song } | null = null;
+    let best: { artist: string; song: Song; isSingleSong: boolean } | null = null;
     Object.entries(artistSongs).forEach(([artistName, artistSongList]) => {
       if (artistSongList.length === 1) {
         const song = artistSongList[0];
         if (!best || song.listens > best.song.listens) {
-          best = { artist: artistName, song };
+          best = { artist: artistName, song, isSingleSong: true };
         }
       }
     });
 
     // Fallback to top song if no single-song artist
     if (!best && songs.length > 0) {
-      best = { artist: songs[0].artist, song: songs[0] };
+      best = { artist: songs[0].artist, song: songs[0], isSingleSong: false };
     }
 
     return best;
   }, [songs]);
 
   const artistData = artists.find(a => a.name === obsession?.artist);
+
+  // Animate play count
+  useEffect(() => {
+    if (!obsession) return;
+    const start = performance.now();
+    const duration = 1500;
+    const targetCount = obsession.song.listens;
+    
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setPlayCount(Math.round(eased * targetCount));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [obsession]);
 
   if (!obsession) return <div className="absolute inset-0 bg-black" />;
 
@@ -990,20 +1085,31 @@ const SlideObsession: React.FC<{ songs: Song[]; artists: Artist[] }> = ({ songs,
         The Obsession
       </motion.span>
 
-      {/* Pulsing album cover */}
+      {/* Pulsing album cover with cinematic entrance */}
       <motion.div
         className="relative z-10"
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ delay: 0.3, duration: 0.8, type: 'spring', stiffness: 150 }}
+        initial={{ scale: 1.15, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.8, type: 'spring', stiffness: 120, damping: 20 }}
       >
-        <div
+        <motion.div
           className="rounded-2xl overflow-hidden"
           style={{
             width: 200,
             height: 200,
             border: `2px solid ${ACCENT_RED}`,
-            animation: 'ws-glow-pulse 2s ease-in-out infinite',
+          }}
+          animate={{
+            boxShadow: [
+              '0 0 20px rgba(250,45,72,0.0)',
+              '0 0 40px rgba(250,45,72,0.5)',
+              '0 0 20px rgba(250,45,72,0.0)',
+            ],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'easeInOut',
           }}
         >
           <img
@@ -1011,7 +1117,7 @@ const SlideObsession: React.FC<{ songs: Song[]; artists: Artist[] }> = ({ songs,
             alt={obsession.song.title}
             className="w-full h-full object-cover"
           />
-        </div>
+        </motion.div>
       </motion.div>
 
       <motion.div
@@ -1023,63 +1129,83 @@ const SlideObsession: React.FC<{ songs: Song[]; artists: Artist[] }> = ({ songs,
         <p className="font-bold text-white" style={{ fontSize: 26 }}>
           {obsession.song.title}
         </p>
-        <p style={{ fontSize: 16, color: GRAY_TEXT }} className="mt-1">
-          {obsession.artist}
-        </p>
+        <div className="flex items-center justify-center gap-2 mt-1">
+          {artistData?.image && (
+            <div 
+              className="rounded-full overflow-hidden" 
+              style={{ width: 20, height: 20, border: `1px solid ${CARD_BORDER}` }}
+            >
+              <img src={artistData.image} alt={obsession.artist} className="w-full h-full object-cover" />
+            </div>
+          )}
+          <p style={{ fontSize: 16, color: GRAY_TEXT }}>
+            {obsession.artist}
+          </p>
+        </div>
       </motion.div>
 
       <motion.div
-        className="relative z-10 mt-4 px-5 py-2 rounded-full"
+        className="relative z-10 mt-4 px-5 py-2 rounded-full flex items-center gap-2"
         style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.8, duration: 0.4 }}
       >
+        <Repeat size={14} color="rgba(255,255,255,0.7)" />
         <span className="text-white/70" style={{ fontSize: 13 }}>
-          The only song you played by this artist
+          {obsession.isSingleSong ? 'The only song you played by this artist' : 'Your most-played song this week'}
         </span>
       </motion.div>
 
-      <motion.p
-        className="relative z-10 mt-3 font-bold"
-        style={{ fontSize: 18, color: ACCENT_RED }}
+      <motion.div
+        className="relative z-10 mt-3 flex flex-col items-center"
         initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 1, 0.7, 1] }}
-        transition={{ delay: 1, duration: 1 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1, duration: 0.5 }}
       >
-        {obsession.song.listens} plays on repeat
-      </motion.p>
+        <p className="font-bold" style={{ fontSize: 32, color: ACCENT_RED }}>
+          {playCount.toLocaleString()}
+        </p>
+        <p style={{ fontSize: 14, color: GRAY_TEXT }}>
+          plays on repeat
+        </p>
+      </motion.div>
+
+      {/* Progress bar */}
+      <motion.div
+        className="relative z-10 mt-4"
+        style={{ width: 200, height: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.2, duration: 0.4 }}
+      >
+        <motion.div
+          style={{ 
+            height: '100%', 
+            backgroundColor: ACCENT_RED, 
+            borderRadius: 2,
+          }}
+          initial={{ width: 0 }}
+          animate={{ width: '100%' }}
+          transition={{ delay: 1.4, duration: 1.5, ease: 'easeOut' }}
+        />
+      </motion.div>
     </motion.div>
   );
 };
 
-// ─── Slide 8 : Leap Chart (artist with highest chart growth) ────
-const SlideLeapChart: React.FC<{ artists: Artist[] }> = ({ artists }) => {
-  const leapArtist = useMemo(() => {
-    const sorted = [...artists].sort((a, b) => {
-      const trendDelta = (b.trend ?? 0) - (a.trend ?? 0);
-      if (trendDelta !== 0) return trendDelta;
-      return (b.totalListens || 0) - (a.totalListens || 0);
-    });
-    return sorted[0] || null;
-  }, [artists]);
+// ─── Slide 8 : Top Song (replaces fake Leap Chart) ──────────────
+const SlideLeapChart: React.FC<{ artists: Artist[]; songs: Song[] }> = ({ artists, songs }) => {
+  const topSong = songs[0];
+  const topArtist = artists.find(a => a.name === topSong?.artist);
 
-  const [barHeights, setBarHeights] = useState<number[]>([]);
+  // Generate animated waveform bars
+  const waveformBars = Array.from({ length: 12 }, (_, i) => {
+    const baseHeight = 8 + Math.sin(i * 0.5) * 6;
+    return { id: i, baseHeight };
+  });
 
-  // Animate chart bars showing growth trajectory based on trend
-  useEffect(() => {
-    if (!leapArtist) return;
-    const trend = Math.max(leapArtist.trend ?? 0, 1);
-    const heights = Array.from({ length: 7 }, (_, i) => {
-      // Simulate growth from low to high, scaled by actual trend
-      const progress = i / 6;
-      return 15 + progress * progress * 85 * Math.min(trend / 10, 1);
-    });
-    const max = Math.max(...heights, 1);
-    setBarHeights(heights.map(h => (h / max) * 100));
-  }, [leapArtist]);
-
-  if (!leapArtist) return <div className="absolute inset-0 bg-black" />;
+  if (!topSong) return <div className="absolute inset-0 bg-black" />;
 
   return (
     <motion.div
@@ -1096,7 +1222,7 @@ const SlideLeapChart: React.FC<{ artists: Artist[] }> = ({ artists }) => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1 }}
       >
-        Leap Chart
+        Your Top Song
       </motion.span>
 
       <motion.h2
@@ -1106,93 +1232,118 @@ const SlideLeapChart: React.FC<{ artists: Artist[] }> = ({ artists }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
       >
-        Biggest Growth
+        Most Played This Week
       </motion.h2>
 
-      {/* Artist card */}
+      {/* Album cover */}
       <motion.div
-        className="relative z-10 flex items-center gap-4 mb-8"
-        initial={{ opacity: 0, x: -30 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
+        className="relative z-10 mb-4"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3, duration: 0.6, type: 'spring', stiffness: 180 }}
       >
         <div
-          className="rounded-full overflow-hidden flex-shrink-0"
-          style={{ width: 60, height: 60, border: `2px solid ${ACCENT_RED}` }}
+          className="rounded-2xl overflow-hidden"
+          style={{ width: 200, height: 200, border: `2px solid ${ACCENT_RED}` }}
         >
           <img
-            src={leapArtist.image || fallbackImage}
-            alt={leapArtist.name}
+            src={topSong.cover || fallbackImage}
+            alt={topSong.title}
             className="w-full h-full object-cover"
           />
         </div>
-        <div>
-          <p className="font-bold text-white" style={{ fontSize: 20 }}>
-            {leapArtist.name}
-          </p>
-          <div className="flex items-center gap-1 mt-1" style={{ color: ACCENT_RED }}>
-            <ChevronUp size={16} />
-            <span style={{ fontSize: 14, fontWeight: 600 }}>
-              +{leapArtist.trend ?? 0} this week
-            </span>
-          </div>
-        </div>
       </motion.div>
 
-      {/* Animated bar chart */}
-      <div className="relative z-10 flex items-end gap-2 w-full max-w-xs" style={{ height: 120 }}>
-        {barHeights.map((h, i) => (
+      {/* Animated waveform visualization */}
+      <motion.div
+        className="relative z-10 flex items-end gap-1 mb-4"
+        style={{ height: 40 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+      >
+        {waveformBars.map((bar, i) => (
           <motion.div
-            key={i}
-            className="flex-1 rounded-t-md"
+            key={bar.id}
+            className="rounded-t-sm"
             style={{
-              backgroundColor: i === barHeights.length - 1 ? ACCENT_RED : CARD_BG,
-              border: `1px solid ${i === barHeights.length - 1 ? ACCENT_RED : CARD_BORDER}`,
+              width: 4,
+              backgroundColor: ACCENT_RED,
             }}
-            initial={{ height: 0 }}
-            animate={{ height: `${h}%` }}
+            animate={{
+              height: [
+                `${bar.baseHeight}px`,
+                `${bar.baseHeight * 2.5}px`,
+                `${bar.baseHeight}px`,
+              ],
+            }}
             transition={{
-              delay: 0.5 + i * 0.1,
-              duration: 0.6,
-              ease: [0.16, 1, 0.3, 1],
+              duration: 1.2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: i * 0.08,
             }}
           />
         ))}
-      </div>
+      </motion.div>
 
-      {/* Day labels */}
-      <div className="relative z-10 flex gap-2 w-full max-w-xs mt-2">
-        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-          <span key={i} className="flex-1 text-center" style={{ fontSize: 10, color: GRAY_TEXT }}>
-            {d}
-          </span>
-        ))}
-      </div>
-
-      <motion.p
-        className="relative z-10 mt-6 text-center"
-        style={{ fontSize: 14, color: GRAY_TEXT }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.5 }}
+      {/* Song info */}
+      <motion.div
+        className="relative z-10 text-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7, duration: 0.5 }}
       >
-        {leapArtist.totalListens} total plays this week
-      </motion.p>
+        <p className="font-bold text-white" style={{ fontSize: 24 }}>
+          {topSong.title}
+        </p>
+        <p style={{ fontSize: 16, color: GRAY_TEXT }} className="mt-1">
+          {topSong.artist}
+        </p>
+        <p className="font-bold mt-3" style={{ fontSize: 32, color: ACCENT_RED }}>
+          {topSong.listens.toLocaleString()}
+        </p>
+        <p style={{ fontSize: 14, color: GRAY_TEXT }}>
+          plays this week
+        </p>
+      </motion.div>
     </motion.div>
   );
 };
 
 // ─── Slide 9 : Outro (clean, no emojis, no gradient text) ───────
-const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[] }> = ({
+const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; onClose: () => void }> = ({
   totalMinutes,
   artists,
   songs,
+  onClose,
 }) => {
-  const stats = [
-    { label: 'songs', value: songs.length },
-    { label: 'artists', value: artists.length },
-    { label: 'minutes', value: totalMinutes },
-  ];
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  const handleShare = async () => {
+    const shareText = `I listened to ${totalMinutes.toLocaleString()} minutes of music this week on Punky!`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'My Punky Wrapped',
+          text: shareText,
+        });
+      } catch (err) {
+        // User cancelled or share failed
+        console.log('Share cancelled');
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(shareText);
+        // Successfully copied - you could add a toast notification here
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+  };
 
   return (
     <motion.div
@@ -1202,10 +1353,10 @@ const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Son
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="absolute inset-0 opacity-35 pointer-events-none">
+      <div className="absolute inset-0 opacity-50 pointer-events-none">
         <PrismaticBurst animationType="rotate3d" intensity={1.2} speed={0.22} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
       </div>
-      <div className="absolute inset-0 bg-black/65" />
+      <div className="absolute inset-0 bg-black/50" />
 
       {/* Subtle accent */}
       <div
@@ -1228,8 +1379,18 @@ const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Son
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ delay: 0.2, duration: 0.7, type: 'spring', stiffness: 150 }}
       >
-        See You Next Week
+        That's a Wrap!
       </motion.h1>
+
+      <motion.p
+        className="relative z-10 text-center px-6 mt-3"
+        style={{ fontSize: 18, color: GRAY_TEXT }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+      >
+        Another week, another story
+      </motion.p>
 
       <motion.div
         className="mt-3 mx-auto"
@@ -1239,28 +1400,19 @@ const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Son
         transition={{ delay: 0.6, duration: 0.4 }}
       />
 
-      {/* Stats row */}
+      {/* Hero stat - total minutes */}
       <motion.div
-        className="relative z-10 flex gap-3 mt-8 flex-wrap justify-center px-4"
+        className="relative z-10 text-center mt-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8, duration: 0.5 }}
       >
-        {stats.map((s, i) => (
-          <motion.div
-            key={s.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 + i * 0.15, duration: 0.4 }}
-          >
-            <SolidCard className="px-5 py-3 text-center" style={{ minWidth: 80 }}>
-              <p className="font-bold text-white" style={{ fontSize: 20 }}>
-                {typeof s.value === 'number' ? s.value.toLocaleString() : s.value}
-              </p>
-              <p style={{ fontSize: 11, color: GRAY_TEXT }}>{s.label}</p>
-            </SolidCard>
-          </motion.div>
-        ))}
+        <p className="font-bold" style={{ fontSize: 56, color: ACCENT_RED }}>
+          {hours > 0 ? `${hours}h ${minutes}m` : `${totalMinutes}m`}
+        </p>
+        <p style={{ fontSize: 16, color: GRAY_TEXT }}>
+          from {songs.length} {songs.length === 1 ? 'song' : 'songs'} by {artists.length} {artists.length === 1 ? 'artist' : 'artists'}
+        </p>
       </motion.div>
 
       {/* CTA */}
@@ -1271,16 +1423,18 @@ const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Son
         transition={{ delay: 1.2, duration: 0.5 }}
       >
         <button
-          className="font-semibold rounded-full px-6 py-3 transition-opacity"
+          onClick={handleShare}
+          className="font-semibold rounded-full px-6 py-3 transition-transform hover:scale-105 active:scale-95"
           style={{ fontSize: 14, backgroundColor: ACCENT_RED, color: '#fff' }}
         >
           Share Your Week
         </button>
         <button
-          className="font-semibold rounded-full px-6 py-3 text-white transition-colors"
+          onClick={onClose}
+          className="font-semibold rounded-full px-6 py-3 text-white transition-all hover:border-white/30"
           style={{ fontSize: 14, backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
         >
-          Explore More
+          Done
         </button>
       </motion.div>
     </motion.div>
@@ -1301,10 +1455,6 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
   const [direction, setDirection] = useState(1);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interactedRef = useRef(false);
-
-  useEffect(() => {
-    injectKeyframes();
-  }, []);
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow;
@@ -1364,7 +1514,7 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
       case 0:
         return <SlideTotalMinutes totalMinutes={totalMinutes || 0} albumCovers={albumCovers} />;
       case 1:
-        return <SlideTopArtist artists={artists} />;
+        return <SlideTopArtist artists={artists} songs={songs} />;
       case 2:
         return <SlideConnection artists={artists} songs={songs} connectionGraph={connectionGraph} />;
       case 3:
@@ -1376,15 +1526,15 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
       case 6:
         return <SlideObsession songs={songs} artists={artists} />;
       case 7:
-        return <SlideLeapChart artists={artists} />;
+        return <SlideLeapChart artists={artists} songs={songs} />;
       case 8:
         return (
-          <SlideOutro totalMinutes={totalMinutes || 0} artists={artists} songs={songs} />
+          <SlideOutro totalMinutes={totalMinutes || 0} artists={artists} songs={songs} onClose={onClose} />
         );
       default:
         return null;
     }
-  }, [currentSlide, totalMinutes, artists, albums, songs, albumCovers, connectionGraph]);
+  }, [currentSlide, totalMinutes, artists, albums, songs, albumCovers, connectionGraph, onClose]);
 
   return (
     <motion.div
