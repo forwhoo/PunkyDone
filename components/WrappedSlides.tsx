@@ -4,11 +4,21 @@ import { X, TrendingUp, ChevronUp, Headphones, Music, Disc, BarChart2, Repeat, F
 import { Artist, Album, Song } from '../types';
 import PrismaticBurst from './reactbits/PrismaticBurst';
 
-// ─── Style Constants (matching app UI) ──────────────────────────
+// ─── Style Constants ────────────────────────────────────────────
+// Main app colors
 const ACCENT_RED = '#FA2D48';
 const GRAY_TEXT = '#8E8E93';
 const CARD_BG = '#1C1C1E';
 const CARD_BORDER = 'rgba(255,255,255,0.05)';
+
+// ─── Wrapped Mode Color Palette (Spotify 2024 Inspired) ─────────
+const WRAPPED_COLORS = {
+  bloodRed: '#C8102E',
+  neonPink: '#FF3EA5',
+  canaryYellow: '#FFE030',
+  deepBlack: '#000000',
+  cream: '#F5F0E8',
+};
 
 const TOTAL_SLIDES = 14; // Updated: Removed 1 genre slide, added 4 new slides
 const AUTO_ADVANCE_MS = 6000;
@@ -41,24 +51,33 @@ function getWeekRange(): string {
 
 // ─── Keyframes removed - now using Framer Motion exclusively ────
 
-// ─── Progress Dots ──────────────────────────────────────────────
-const ProgressDots: React.FC<{ current: number }> = ({ current }) => (
-  <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2 z-50">
-    {Array.from({ length: TOTAL_SLIDES }).map((_, i) => (
-      <motion.div
+// ─── Instagram Stories Style Progress Bar ───────────────────────
+const StoryProgressBar: React.FC<{ current: number; total: number }> = ({ current, total }) => (
+  <div className="absolute top-2 left-4 right-4 z-50 flex gap-1">
+    {Array.from({ length: total }).map((_, i) => (
+      <div
         key={i}
-        className="rounded-full"
+        className="flex-1 rounded-full overflow-hidden"
         style={{
-          width: i === current ? 24 : 8,
-          height: 8,
-          backgroundColor: i === current ? ACCENT_RED : 'rgba(255,255,255,0.1)',
+          height: 3,
+          backgroundColor: 'rgba(255,255,255,0.3)',
         }}
-        animate={{
-          width: i === current ? 24 : 8,
-          backgroundColor: i === current ? ACCENT_RED : 'rgba(255,255,255,0.1)',
-        }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
-      />
+      >
+        <motion.div
+          className="h-full rounded-full"
+          style={{
+            backgroundColor: '#fff',
+            width: i < current ? '100%' : i === current ? '0%' : '0%',
+          }}
+          animate={{
+            width: i < current ? '100%' : i === current ? '100%' : '0%',
+          }}
+          transition={{
+            duration: i === current ? AUTO_ADVANCE_MS / 1000 : 0.3,
+            ease: i === current ? 'linear' : 'easeOut',
+          }}
+        />
+      </div>
     ))}
   </div>
 );
@@ -105,29 +124,25 @@ const DotPattern: React.FC<{ opacity?: number }> = ({ opacity = 0.03 }) => (
 );
 
 // ─── Slide Transition Variants ──────────────────────────────────
+// ─── Spotify Wrapped 2024 Style Slide Transitions ───────────────
 const slideVariants = {
   enter: (direction: number) => ({
-    x: direction > 0 ? '100%' : '-100%',
     opacity: 0,
-    scale: 0.95,
+    scale: 1.08, // Spring in from slightly scaled up
   }),
   center: {
-    x: 0,
     opacity: 1,
     scale: 1,
   },
   exit: (direction: number) => ({
-    x: direction > 0 ? '-100%' : '100%',
     opacity: 0,
-    scale: 0.95,
+    scale: 0.94, // Exit by scaling down
   }),
 };
 
 const slideTransition = {
-  type: 'spring' as const,
-  stiffness: 300,
-  damping: 30,
-  mass: 0.8,
+  duration: 0.3,
+  ease: [0.6, 0.05, 0.01, 0.99], // Spotify's signature easing
 };
 
 // ─── Slide 0 : Weekly Intro ─────────────────────────────────────
@@ -671,15 +686,15 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGr
       </div>
 
       <motion.div
-        className="relative z-10 text-center"
+        className="relative z-10 text-center px-6"
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.5 }}
       >
-        <p className="font-bold text-white" style={{ fontSize: 24 }}>
+        <p className="font-bold text-white truncate max-w-sm mx-auto" style={{ fontSize: 22 }}>
           {artistA?.name || 'Your artist'} × {artistB?.name || 'another favorite'}
         </p>
-        <p className="mt-2 font-semibold" style={{ fontSize: 32, color: ACCENT_RED }}>
+        <p className="mt-3 font-semibold" style={{ fontSize: 40, color: ACCENT_RED }}>
           {combinedPlays.toLocaleString()}
         </p>
         <p style={{ fontSize: 14, color: GRAY_TEXT }}>
@@ -687,7 +702,14 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGr
         </p>
       </motion.div>
 
-      <div className="relative z-10 w-full overflow-hidden mt-6" style={{ height: 56 }}>
+      {/* Scrolling cover strip */}
+      <motion.div
+        className="relative z-10 w-full overflow-hidden mt-6"
+        style={{ height: 56 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.8, duration: 0.5 }}
+      >
         <motion.div
           className="flex gap-3"
           animate={{ x: [0, -stripWidth] }}
@@ -699,7 +721,7 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGr
             </div>
           ))}
         </motion.div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 };
@@ -2171,7 +2193,7 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
       onPanEnd={handleDragEnd}
       style={{ touchAction: 'pan-y' }}
     >
-      <ProgressDots current={currentSlide} />
+      <StoryProgressBar current={currentSlide} total={TOTAL_SLIDES} />
       <CloseButton onClick={onClose} />
 
       <AnimatePresence mode="wait" custom={direction}>
