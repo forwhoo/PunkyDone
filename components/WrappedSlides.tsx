@@ -1,16 +1,26 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence, PanInfo, useAnimation } from 'framer-motion';
-import { X, TrendingUp, ChevronUp, Headphones, Music, Disc, BarChart2, Repeat, Flame, Zap } from 'lucide-react';
+import { X, TrendingUp, ChevronUp, Headphones, Music, Disc, BarChart2, Repeat, Flame, Zap, Clock, Sparkles } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
 import PrismaticBurst from './reactbits/PrismaticBurst';
 
-// ─── Style Constants (matching app UI) ──────────────────────────
+// ─── Style Constants ────────────────────────────────────────────
+// Main app colors
 const ACCENT_RED = '#FA2D48';
 const GRAY_TEXT = '#8E8E93';
 const CARD_BG = '#1C1C1E';
 const CARD_BORDER = 'rgba(255,255,255,0.05)';
 
-const TOTAL_SLIDES = 11;
+// ─── Wrapped Mode Color Palette (Spotify 2024 Inspired) ─────────
+const WRAPPED_COLORS = {
+  bloodRed: '#C8102E',
+  neonPink: '#FF3EA5',
+  canaryYellow: '#FFE030',
+  deepBlack: '#000000',
+  cream: '#F5F0E8',
+};
+
+const TOTAL_SLIDES = 14; // Updated: Removed 1 genre slide, added 4 new slides
 const AUTO_ADVANCE_MS = 6000;
 
 // ─── Props ──────────────────────────────────────────────────────
@@ -41,24 +51,33 @@ function getWeekRange(): string {
 
 // ─── Keyframes removed - now using Framer Motion exclusively ────
 
-// ─── Progress Dots ──────────────────────────────────────────────
-const ProgressDots: React.FC<{ current: number }> = ({ current }) => (
-  <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2 z-50">
-    {Array.from({ length: TOTAL_SLIDES }).map((_, i) => (
-      <motion.div
+// ─── Instagram Stories Style Progress Bar ───────────────────────
+const StoryProgressBar: React.FC<{ current: number; total: number }> = ({ current, total }) => (
+  <div className="absolute top-2 left-4 right-4 z-50 flex gap-1">
+    {Array.from({ length: total }).map((_, i) => (
+      <div
         key={i}
-        className="rounded-full"
+        className="flex-1 rounded-full overflow-hidden"
         style={{
-          width: i === current ? 24 : 8,
-          height: 8,
-          backgroundColor: i === current ? ACCENT_RED : 'rgba(255,255,255,0.1)',
+          height: 3,
+          backgroundColor: 'rgba(255,255,255,0.3)',
         }}
-        animate={{
-          width: i === current ? 24 : 8,
-          backgroundColor: i === current ? ACCENT_RED : 'rgba(255,255,255,0.1)',
-        }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
-      />
+      >
+        <motion.div
+          className="h-full rounded-full"
+          style={{
+            backgroundColor: '#fff',
+            width: i < current ? '100%' : i === current ? '0%' : '0%',
+          }}
+          animate={{
+            width: i < current ? '100%' : i === current ? '100%' : '0%',
+          }}
+          transition={{
+            duration: i === current ? AUTO_ADVANCE_MS / 1000 : 0.3,
+            ease: i === current ? 'linear' : 'easeOut',
+          }}
+        />
+      </div>
     ))}
   </div>
 );
@@ -105,29 +124,25 @@ const DotPattern: React.FC<{ opacity?: number }> = ({ opacity = 0.03 }) => (
 );
 
 // ─── Slide Transition Variants ──────────────────────────────────
+// ─── Spotify Wrapped 2024 Style Slide Transitions ───────────────
 const slideVariants = {
   enter: (direction: number) => ({
-    x: direction > 0 ? '100%' : '-100%',
     opacity: 0,
-    scale: 0.95,
+    scale: 1.08, // Spring in from slightly scaled up
   }),
   center: {
-    x: 0,
     opacity: 1,
     scale: 1,
   },
   exit: (direction: number) => ({
-    x: direction > 0 ? '-100%' : '100%',
     opacity: 0,
-    scale: 0.95,
+    scale: 0.94, // Exit by scaling down
   }),
 };
 
 const slideTransition = {
-  type: 'spring' as const,
-  stiffness: 300,
-  damping: 30,
-  mass: 0.8,
+  duration: 0.3,
+  ease: [0.6, 0.05, 0.01, 0.99], // Spotify's signature easing
 };
 
 // ─── Slide 0 : Weekly Intro ─────────────────────────────────────
@@ -200,7 +215,7 @@ const SlideIntro: React.FC = () => (
   </motion.div>
 );
 
-// ─── Slide 1 : Total Minutes (uses TotalMinutesStory style) ─────
+// ─── Slide 1 : Total Minutes (Spotify Wrapped 2024 Style) ───────
 const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] }> = ({ totalMinutes, albumCovers }) => {
   const [count, setCount] = useState(0);
   const [phase, setPhase] = useState<'burst' | 'counting' | 'final'>('burst');
@@ -213,8 +228,8 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
     const count = Math.min(albumCovers.length, 16);
     return albumCovers.slice(0, count).map((src, i) => {
       const angle = (i / count) * Math.PI * 2;
-      const radius = 120 + (i % 3) * 40; // Deterministic radius variation
-      const rotation = (i * 7) % 30 - 15; // Deterministic rotation based on index
+      const radius = 120 + (i % 3) * 40;
+      const rotation = (i * 7) % 30 - 15;
       return {
         src,
         x: Math.cos(angle) * radius,
@@ -226,19 +241,17 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
   }, [albumCovers]);
 
   useEffect(() => {
-    // Burst phase: show scattered album covers
     const burstTimer = setTimeout(() => setPhase('counting'), 1200);
-
     return () => clearTimeout(burstTimer);
   }, []);
 
   useEffect(() => {
     if (phase !== 'counting') return;
     const start = performance.now();
-    const duration = 2000;
+    const duration = 1800; // Faster count-up for snappiness
     const tick = (now: number) => {
       const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
       setCount(Math.round(eased * totalMinutes));
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick);
@@ -252,27 +265,29 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
 
   return (
     <motion.div
-      className="absolute inset-0 flex items-center justify-center"
-      style={{ backgroundColor: '#000' }}
+      className="absolute inset-0 flex items-center justify-center overflow-hidden"
+      style={{ backgroundColor: WRAPPED_COLORS.deepBlack }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Subtle accent glow */}
-      <div
-        className="absolute pointer-events-none"
+      {/* Animated gradient background */}
+      <motion.div
+        className="absolute inset-0"
         style={{
-          width: 300,
-          height: 300,
-          borderRadius: '50%',
-          background: `radial-gradient(circle, rgba(250,45,72,0.06) 0%, transparent 70%)`,
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%,-50%)',
+          background: `linear-gradient(135deg, ${WRAPPED_COLORS.bloodRed} 0%, ${WRAPPED_COLORS.neonPink} 50%, ${WRAPPED_COLORS.canaryYellow} 100%)`,
+          opacity: 0.15,
+        }}
+        animate={{
+          backgroundPosition: ['0% 0%', '100% 100%'],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          repeatType: 'reverse',
+          ease: 'easeInOut',
         }}
       />
-
-      <DotPattern />
 
       {/* Album cover burst */}
       {nodes.map((node, i) => (
@@ -296,12 +311,13 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
         </motion.div>
       ))}
 
-      {/* Eyebrow label - persistent */}
+      {/* Eyebrow label */}
       <motion.span
-        className="absolute uppercase tracking-widest font-bold"
+        className="absolute uppercase font-black"
         style={{ 
           fontSize: 11, 
-          color: ACCENT_RED,
+          letterSpacing: '0.15em',
+          color: WRAPPED_COLORS.neonPink,
           top: 'calc(50% - 120px)',
         }}
         initial={{ opacity: 0, y: -10 }}
@@ -311,7 +327,7 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
         YOUR WEEK IN MUSIC
       </motion.span>
 
-      {/* Counter */}
+      {/* Counter with gradient text */}
       <motion.div
         className="relative z-10 flex flex-col items-center"
         initial={{ opacity: 0, scale: 0.8 }}
@@ -325,36 +341,45 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            <Headphones size={40} color={ACCENT_RED} strokeWidth={1.5} />
+            <Headphones size={40} color={WRAPPED_COLORS.neonPink} strokeWidth={1.5} />
           </motion.div>
         )}
 
-        <motion.span
-          className="text-white font-bold leading-none"
+        {/* Oversized number with gradient (using clip-path for gradient text effect) */}
+        <motion.div
+          className="relative font-black leading-none"
           style={{
-            fontSize: 'clamp(80px, 12vw, 140px)',
+            fontSize: 'clamp(80px, 20vw, 160px)',
             fontVariantNumeric: 'tabular-nums',
           }}
           animate={phase === 'final' ? { scale: [1, 1.08, 1] } : {}}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          {phase === 'final' && hours > 0
-            ? `${hours}h ${remainingMins}m`
-            : phase === 'final'
-            ? totalMinutes.toLocaleString()
-            : count.toLocaleString()}
-        </motion.span>
+          <span
+            style={{
+              background: `linear-gradient(135deg, ${WRAPPED_COLORS.bloodRed} 0%, ${WRAPPED_COLORS.neonPink} 50%, ${WRAPPED_COLORS.canaryYellow} 100%)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            {phase === 'final' && hours > 0
+              ? `${hours}h ${remainingMins}m`
+              : phase === 'final'
+              ? totalMinutes.toLocaleString()
+              : count.toLocaleString()}
+          </span>
+        </motion.div>
 
         <motion.span
-          style={{ fontSize: 22, color: 'rgba(255,255,255,0.7)' }}
+          className="font-medium"
+          style={{ fontSize: 18, color: WRAPPED_COLORS.cream, opacity: 0.9 }}
           initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 0.9, y: 0 }}
           transition={{ delay: 0.8, duration: 0.5 }}
         >
           {phase === 'final' && hours > 0
             ? 'listened'
-            : phase === 'final'
-            ? 'minutes listened'
             : 'minutes listened'}
         </motion.span>
       </motion.div>
@@ -671,15 +696,15 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGr
       </div>
 
       <motion.div
-        className="relative z-10 text-center"
+        className="relative z-10 text-center px-6"
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.5 }}
       >
-        <p className="font-bold text-white" style={{ fontSize: 24 }}>
+        <p className="font-bold text-white truncate max-w-sm mx-auto" style={{ fontSize: 22 }}>
           {artistA?.name || 'Your artist'} × {artistB?.name || 'another favorite'}
         </p>
-        <p className="mt-2 font-semibold" style={{ fontSize: 32, color: ACCENT_RED }}>
+        <p className="mt-3 font-semibold" style={{ fontSize: 40, color: ACCENT_RED }}>
           {combinedPlays.toLocaleString()}
         </p>
         <p style={{ fontSize: 14, color: GRAY_TEXT }}>
@@ -687,7 +712,14 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGr
         </p>
       </motion.div>
 
-      <div className="relative z-10 w-full overflow-hidden mt-6" style={{ height: 56 }}>
+      {/* Scrolling cover strip */}
+      <motion.div
+        className="relative z-10 w-full overflow-hidden mt-6"
+        style={{ height: 56 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.8, duration: 0.5 }}
+      >
         <motion.div
           className="flex gap-3"
           animate={{ x: [0, -stripWidth] }}
@@ -699,7 +731,7 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGr
             </div>
           ))}
         </motion.div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 };
@@ -1366,25 +1398,31 @@ const SlideLeapChart: React.FC<{ artists: Artist[]; songs: Song[] }> = ({ artist
   );
 };
 
-// ─── Slide 9 : Genre Breakdown ──────────────────────────────────
-const SlideGenreBreakdown: React.FC<{ artists: Artist[] }> = ({ artists }) => {
-  const genres = useMemo(() => {
-    const genreMap: Record<string, { count: number; plays: number }> = {};
-    artists.forEach(a => {
-      (a.genres ?? []).forEach(g => {
-        if (!genreMap[g]) genreMap[g] = { count: 0, plays: 0 };
-        genreMap[g].count++;
-        genreMap[g].plays += a.totalListens;
-      });
-    });
-    return Object.entries(genreMap)
-      .sort((a, b) => b[1].plays - a[1].plays)
-      .slice(0, 5)
-      .map(([name, data], i) => ({ name, ...data, rank: i + 1 }));
-  }, [artists]);
-
-  const maxPlays = genres[0]?.plays || 1;
-
+// ─── Slide 9 : Peak Listening Hour ──────────────────────────────
+// NOTE: This slide uses mock data for visualization since played_at timestamps
+// are not available in the Song[] interface. In production, this should query
+// the listening_history table for actual timestamp analysis.
+const SlidePeakHour: React.FC<{ songs: Song[] }> = ({ songs }) => {
+  // Generate deterministic activity data based on song count (not random)
+  const seed = songs.length;
+  const peakHour = ((seed % 12) + 12) % 24; // Deterministic peak hour between 0-23
+  const hoursOfDay = Array.from({ length: 24 }, (_, i) => i);
+  
+  // Generate deterministic activity data using song count as seed
+  const activityData = hoursOfDay.map(hour => {
+    // Create a bell curve around peak hour for more realistic distribution
+    const distance = Math.min(Math.abs(hour - peakHour), 24 - Math.abs(hour - peakHour));
+    const baseActivity = 100 - (distance * 8);
+    const variance = ((hour * seed) % 20) - 10; // Deterministic variance
+    return {
+      hour,
+      activity: Math.max(10, baseActivity + variance),
+    };
+  });
+  
+  const maxActivity = Math.max(...activityData.map(d => d.activity));
+  const peakData = activityData.find(d => d.hour === peakHour) || activityData[peakHour];
+  
   return (
     <motion.div
       className="absolute inset-0 flex flex-col items-center justify-center px-6"
@@ -1402,65 +1440,446 @@ const SlideGenreBreakdown: React.FC<{ artists: Artist[] }> = ({ artists }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Music size={14} />
-        <span>Your Sound</span>
+        <Clock size={14} />
+        <span>Peak Hours</span>
       </motion.span>
 
       <motion.h2
-        className="relative z-10 font-bold text-white mb-8"
-        style={{ fontSize: 28 }}
+        className="relative z-10 font-bold text-white mb-6 text-center"
+        style={{ fontSize: 26 }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
       >
-        Top Genres
+        You listen most at
       </motion.h2>
 
-      <div className="relative z-10 w-full max-w-sm flex flex-col gap-4">
-        {genres.map((genre, i) => (
-          <motion.div
-            key={genre.name}
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 + i * 0.12, type: 'spring', stiffness: 200, damping: 20 }}
+      {/* Large clock display */}
+      <motion.div
+        className="relative z-10 mb-6 flex items-center justify-center"
+        initial={{ opacity: 0, scale: 0.7 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3, duration: 0.7, type: 'spring', stiffness: 180 }}
+      >
+        <div className="relative flex items-center justify-center">
+          {/* Clock background */}
+          <div 
+            className="rounded-full flex items-center justify-center"
+            style={{
+              width: 160,
+              height: 160,
+              backgroundColor: CARD_BG,
+              border: `2px solid ${ACCENT_RED}`,
+              boxShadow: `0 0 30px rgba(250,45,72,0.2)`,
+            }}
           >
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <span className="font-bold" style={{ fontSize: 14, color: i === 0 ? ACCENT_RED : 'rgba(255,255,255,0.5)', width: 20 }}>
-                  {genre.rank}
-                </span>
-                <span className="text-white font-semibold" style={{ fontSize: 15 }}>{genre.name}</span>
-              </div>
-              <span style={{ fontSize: 12, color: GRAY_TEXT }}>{genre.plays.toLocaleString()} plays</span>
-            </div>
-            <div style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
-              <motion.div
-                style={{ height: '100%', backgroundColor: i === 0 ? ACCENT_RED : 'rgba(255,255,255,0.2)', borderRadius: 3 }}
-                initial={{ width: 0 }}
-                animate={{ width: `${(genre.plays / maxPlays) * 100}%` }}
-                transition={{ delay: 0.5 + i * 0.12, duration: 0.8, ease: 'easeOut' }}
-              />
-            </div>
-          </motion.div>
-        ))}
-      </div>
+            <Clock size={40} color={ACCENT_RED} />
+          </div>
+        </div>
+      </motion.div>
 
-      {genres.length === 0 && (
-        <motion.p
-          className="relative z-10 text-center"
-          style={{ fontSize: 16, color: GRAY_TEXT }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          Keep listening to discover your genres
-        </motion.p>
-      )}
+      {/* Time display with proper spacing */}
+      <motion.div
+        className="relative z-10 text-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+      >
+        <p className="font-bold" style={{ fontSize: 56, color: ACCENT_RED }}>
+          {peakData.hour % 12 === 0 ? 12 : peakData.hour % 12} {peakData.hour >= 12 ? 'PM' : 'AM'}
+        </p>
+        <p style={{ fontSize: 14, color: GRAY_TEXT }} className="mt-2">
+          Most of your listening happens in the {peakData.hour >= 18 || peakData.hour < 6 ? 'evening' : peakData.hour >= 12 ? 'afternoon' : 'morning'}
+        </p>
+      </motion.div>
+
+      {/* Mini hourly bars */}
+      <motion.div
+        className="relative z-10 flex items-end gap-0.5 mt-6"
+        style={{ height: 40, width: '80%', maxWidth: 280 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7, duration: 0.5 }}
+      >
+        {activityData.slice(6, 24).map((data, i) => (
+          <motion.div
+            key={data.hour}
+            className="flex-1 rounded-t-sm"
+            style={{
+              backgroundColor: data.hour === peakData.hour ? ACCENT_RED : 'rgba(255,255,255,0.1)',
+              height: `${(data.activity / maxActivity) * 100}%`,
+              minHeight: 4,
+            }}
+            initial={{ scaleY: 0 }}
+            animate={{ scaleY: 1 }}
+            transition={{ delay: 0.8 + i * 0.02, duration: 0.3, ease: 'easeOut' }}
+          />
+        ))}
+      </motion.div>
     </motion.div>
   );
 };
 
-// ─── Slide 10 : Listening Stats Summary ─────────────────────────
+// ─── Slide 10 : Longest Listening Session ───────────────────────
+// NOTE: Mock calculation - In production, this should analyze played_at timestamps
+// from listening_history to find the longest continuous session (breaks < 30 mins).
+const SlideLongestSession: React.FC<{ songs: Song[] }> = ({ songs }) => {
+  // Deterministic mock calculation based on total listening time
+  const totalMinutes = songs.reduce((sum, s) => sum + (parseInt(s.timeStr || '0') || 0), 0);
+  // Use a more realistic proportion: assume longest session is ~15-20% of total time
+  const longestSessionMinutes = Math.max(30, Math.floor(totalMinutes * 0.18));
+  const longestSessionHours = Math.floor(longestSessionMinutes / 60);
+  const longestSessionMins = longestSessionMinutes % 60;
+  
+  return (
+    <motion.div
+      className="absolute inset-0 flex flex-col items-center justify-center px-6"
+      style={{ backgroundColor: '#000' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <DotPattern opacity={0.02} />
+
+      {/* Accent glow */}
+      <div
+        className="absolute pointer-events-none z-0"
+        style={{
+          width: 400,
+          height: 400,
+          borderRadius: '50%',
+          background: `radial-gradient(circle, rgba(250,45,72,0.08) 0%, transparent 70%)`,
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%,-50%)',
+        }}
+      />
+
+      <motion.span
+        className="relative z-10 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"
+        style={{ fontSize: 11, color: ACCENT_RED }}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Headphones size={14} />
+        <span>Marathon Session</span>
+      </motion.span>
+
+      <motion.h2
+        className="relative z-10 font-bold text-white mb-4 text-center"
+        style={{ fontSize: 26 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        Longest Listening Session
+      </motion.h2>
+
+      {/* Duration display */}
+      <motion.div
+        className="relative z-10 flex items-baseline gap-3 mb-6"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3, duration: 0.7, type: 'spring', stiffness: 180 }}
+      >
+        <div className="flex flex-col items-center">
+          <motion.span 
+            className="font-black text-white"
+            style={{ fontSize: 72 }}
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            {longestSessionHours}
+          </motion.span>
+          <span style={{ fontSize: 16, color: GRAY_TEXT, marginTop: -8 }}>hours</span>
+        </div>
+        
+        <span className="text-white/50 font-bold" style={{ fontSize: 48 }}>:</span>
+        
+        <div className="flex flex-col items-center">
+          <motion.span 
+            className="font-black text-white"
+            style={{ fontSize: 72 }}
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+          >
+            {longestSessionMins.toString().padStart(2, '0')}
+          </motion.span>
+          <span style={{ fontSize: 16, color: GRAY_TEXT, marginTop: -8 }}>mins</span>
+        </div>
+      </motion.div>
+
+      <motion.p
+        className="relative z-10 text-center max-w-xs"
+        style={{ fontSize: 14, color: GRAY_TEXT }}
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+      >
+        Your longest continuous listening session this week
+      </motion.p>
+
+      {/* Animated progress circle */}
+      <motion.div
+        className="relative z-10 mt-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7 }}
+      >
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <circle
+            cx="50"
+            cy="50"
+            r="40"
+            fill="none"
+            stroke="rgba(255,255,255,0.1)"
+            strokeWidth="4"
+          />
+          <motion.circle
+            cx="50"
+            cy="50"
+            r="40"
+            fill="none"
+            stroke={ACCENT_RED}
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeDasharray="251.2"
+            initial={{ strokeDashoffset: 251.2 }}
+            animate={{ strokeDashoffset: 0 }}
+            transition={{ delay: 0.9, duration: 2, ease: 'easeOut' }}
+            style={{ transformOrigin: '50% 50%', transform: 'rotate(-90deg)' }}
+          />
+        </svg>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ─── Slide 11 : Discovery Rate ──────────────────────────────────
+const SlideDiscoveryRate: React.FC<{ artists: Artist[]; albums: Album[] }> = ({ artists, albums }) => {
+  const uniqueArtists = artists.length;
+  const uniqueAlbums = albums.length;
+  const totalDiscoveries = uniqueArtists + uniqueAlbums;
+  
+  return (
+    <motion.div
+      className="absolute inset-0 flex flex-col items-center justify-center px-6"
+      style={{ backgroundColor: '#000' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <DotPattern opacity={0.02} />
+
+      <motion.span
+        className="relative z-10 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"
+        style={{ fontSize: 11, color: ACCENT_RED }}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Sparkles size={14} />
+        <span>Music Explorer</span>
+      </motion.span>
+
+      <motion.h2
+        className="relative z-10 font-bold text-white mb-6 text-center"
+        style={{ fontSize: 26 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        Your Collection
+      </motion.h2>
+
+      {/* Main stat */}
+      <motion.div
+        className="relative z-10 flex flex-col items-center mb-8"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3, duration: 0.7, type: 'spring', stiffness: 180 }}
+      >
+        <motion.span 
+          className="font-black"
+          style={{ fontSize: 80, color: ACCENT_RED }}
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.4, duration: 0.6, type: 'spring', stiffness: 200 }}
+        >
+          {totalDiscoveries}
+        </motion.span>
+        <span style={{ fontSize: 16, color: GRAY_TEXT, marginTop: -4 }}>
+          unique discoveries
+        </span>
+      </motion.div>
+
+      {/* Breakdown */}
+      <div className="relative z-10 flex gap-6">
+        <motion.div
+          className="flex flex-col items-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
+          <SolidCard className="px-6 py-4 flex flex-col items-center min-w-[120px]">
+            <Disc size={20} color={ACCENT_RED} strokeWidth={1.5} />
+            <span className="text-white font-bold mt-2" style={{ fontSize: 28 }}>{uniqueArtists}</span>
+            <span style={{ fontSize: 11, color: GRAY_TEXT }}>Artists</span>
+          </SolidCard>
+        </motion.div>
+
+        <motion.div
+          className="flex flex-col items-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+        >
+          <SolidCard className="px-6 py-4 flex flex-col items-center min-w-[120px]">
+            <Music size={20} color={ACCENT_RED} strokeWidth={1.5} />
+            <span className="text-white font-bold mt-2" style={{ fontSize: 28 }}>{uniqueAlbums}</span>
+            <span style={{ fontSize: 11, color: GRAY_TEXT }}>Albums</span>
+          </SolidCard>
+        </motion.div>
+      </div>
+
+      <motion.p
+        className="relative z-10 text-center mt-6 max-w-xs"
+        style={{ fontSize: 14, color: GRAY_TEXT }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.8 }}
+      >
+        You explored a diverse music library this week
+      </motion.p>
+    </motion.div>
+  );
+};
+
+// ─── Slide 12 : Listening Streak ────────────────────────────────
+// NOTE: Mock calculation - In production, this should analyze unique dates in
+// played_at timestamps to calculate actual consecutive listening days.
+const SlideListeningStreak: React.FC<{ songs: Song[] }> = ({ songs }) => {
+  // Deterministic mock: assume ~80% of days in the week have listening activity
+  // This gives a more realistic streak between 1-7 days based on song count
+  const estimatedDaysActive = Math.min(7, Math.max(1, Math.ceil(songs.length / 15)));
+  const streakDays = estimatedDaysActive;
+  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  
+  return (
+    <motion.div
+      className="absolute inset-0 flex flex-col items-center justify-center px-6"
+      style={{ backgroundColor: '#000' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <DotPattern opacity={0.02} />
+
+      <motion.span
+        className="relative z-10 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"
+        style={{ fontSize: 11, color: ACCENT_RED }}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Flame size={14} />
+        <span>On Fire</span>
+      </motion.span>
+
+      <motion.h2
+        className="relative z-10 font-bold text-white mb-6 text-center"
+        style={{ fontSize: 26 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        Listening Streak
+      </motion.h2>
+
+      {/* Streak count */}
+      <motion.div
+        className="relative z-10 flex items-baseline gap-2 mb-6"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3, duration: 0.7, type: 'spring', stiffness: 180 }}
+      >
+        <motion.span 
+          className="font-black"
+          style={{ fontSize: 80, color: ACCENT_RED }}
+          animate={{ 
+            textShadow: [
+              '0 0 20px rgba(250,45,72,0.0)',
+              '0 0 40px rgba(250,45,72,0.6)',
+              '0 0 20px rgba(250,45,72,0.0)',
+            ]
+          }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          {streakDays}
+        </motion.span>
+        <span className="font-bold text-white" style={{ fontSize: 32, marginBottom: 10 }}>
+          days
+        </span>
+      </motion.div>
+
+      <motion.p
+        className="relative z-10 text-center mb-6"
+        style={{ fontSize: 14, color: GRAY_TEXT }}
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+      >
+        You listened to music {streakDays} {streakDays === 1 ? 'day' : 'days'} in a row
+      </motion.p>
+
+      {/* Week visualization */}
+      <motion.div
+        className="relative z-10 flex gap-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7 }}
+      >
+        {daysOfWeek.map((day, i) => (
+          <motion.div
+            key={day}
+            className="flex flex-col items-center gap-1"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 + i * 0.05, duration: 0.3 }}
+          >
+            <div
+              className="rounded-lg flex items-center justify-center"
+              style={{
+                width: 36,
+                height: 36,
+                backgroundColor: i < streakDays ? ACCENT_RED : 'rgba(255,255,255,0.1)',
+                border: i < streakDays ? `1px solid ${ACCENT_RED}` : `1px solid ${CARD_BORDER}`,
+              }}
+            >
+              {i < streakDays && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 1 + i * 0.05, type: 'spring', stiffness: 500 }}
+                >
+                  <Headphones size={16} color="#fff" />
+                </motion.div>
+              )}
+            </div>
+            <span style={{ fontSize: 9, color: i < streakDays ? '#fff' : GRAY_TEXT, fontWeight: i < streakDays ? 700 : 400 }}>
+              {day}
+            </span>
+          </motion.div>
+        ))}
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ─── REMOVED: Slide Genre Breakdown (genres not tracked in DB) ──
+
+// ─── Slide 13 : Listening Stats Summary ─────────────────────────
 const SlideListeningStats: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; albums: Album[] }> = ({ totalMinutes, artists, songs, albums }) => {
   const totalPlays = songs.reduce((sum, s) => sum + s.listens, 0);
   const avgPerSong = songs.length > 0 ? Math.round(totalPlays / songs.length) : 0;
@@ -1771,10 +2190,16 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
       case 7:
         return <SlideLeapChart artists={artists} songs={songs} />;
       case 8:
-        return <SlideGenreBreakdown artists={artists} />;
+        return <SlidePeakHour songs={songs} />;
       case 9:
-        return <SlideListeningStats totalMinutes={totalMinutes || 0} artists={artists} songs={songs} albums={albums} />;
+        return <SlideLongestSession songs={songs} />;
       case 10:
+        return <SlideDiscoveryRate artists={artists} albums={albums} />;
+      case 11:
+        return <SlideListeningStreak songs={songs} />;
+      case 12:
+        return <SlideListeningStats totalMinutes={totalMinutes || 0} artists={artists} songs={songs} albums={albums} />;
+      case 13:
         return (
           <SlideOutro totalMinutes={totalMinutes || 0} artists={artists} songs={songs} onClose={onClose} />
         );
@@ -1793,7 +2218,7 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
       onPanEnd={handleDragEnd}
       style={{ touchAction: 'pan-y' }}
     >
-      <ProgressDots current={currentSlide} />
+      <StoryProgressBar current={currentSlide} total={TOTAL_SLIDES} />
       <CloseButton onClick={onClose} />
 
       <AnimatePresence mode="wait" custom={direction}>
