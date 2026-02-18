@@ -1399,21 +1399,29 @@ const SlideLeapChart: React.FC<{ artists: Artist[]; songs: Song[] }> = ({ artist
 };
 
 // ─── Slide 9 : Peak Listening Hour ──────────────────────────────
+// NOTE: This slide uses mock data for visualization since played_at timestamps
+// are not available in the Song[] interface. In production, this should query
+// the listening_history table for actual timestamp analysis.
 const SlidePeakHour: React.FC<{ songs: Song[] }> = ({ songs }) => {
-  // Since we don't have timestamp data in songs, we'll create a visual representation
-  // In a real implementation, this would come from the listening_history table
-  const peakHour = 18; // 6 PM as example
+  // Generate deterministic activity data based on song count (not random)
+  const seed = songs.length;
+  const peakHour = ((seed % 12) + 12) % 24; // Deterministic peak hour between 0-23
   const hoursOfDay = Array.from({ length: 24 }, (_, i) => i);
   
-  // Generate mock activity data - in real implementation, calculate from played_at timestamps
-  const activityData = hoursOfDay.map(hour => ({
-    hour,
-    activity: Math.random() * 100,
-  }));
+  // Generate deterministic activity data using song count as seed
+  const activityData = hoursOfDay.map(hour => {
+    // Create a bell curve around peak hour for more realistic distribution
+    const distance = Math.min(Math.abs(hour - peakHour), 24 - Math.abs(hour - peakHour));
+    const baseActivity = 100 - (distance * 8);
+    const variance = ((hour * seed) % 20) - 10; // Deterministic variance
+    return {
+      hour,
+      activity: Math.max(10, baseActivity + variance),
+    };
+  });
   
-  // Find peak hour
   const maxActivity = Math.max(...activityData.map(d => d.activity));
-  const peakData = activityData.find(d => d.activity === maxActivity) || activityData[peakHour];
+  const peakData = activityData.find(d => d.hour === peakHour) || activityData[peakHour];
   
   return (
     <motion.div
@@ -1470,7 +1478,7 @@ const SlidePeakHour: React.FC<{ songs: Song[] }> = ({ songs }) => {
         </div>
       </motion.div>
 
-      {/* Time display */}
+      {/* Time display with proper spacing */}
       <motion.div
         className="relative z-10 text-center"
         initial={{ opacity: 0, y: 20 }}
@@ -1478,7 +1486,7 @@ const SlidePeakHour: React.FC<{ songs: Song[] }> = ({ songs }) => {
         transition={{ delay: 0.5, duration: 0.5 }}
       >
         <p className="font-bold" style={{ fontSize: 56, color: ACCENT_RED }}>
-          {peakData.hour % 12 === 0 ? 12 : peakData.hour % 12}{peakData.hour >= 12 ? 'PM' : 'AM'}
+          {peakData.hour % 12 === 0 ? 12 : peakData.hour % 12} {peakData.hour >= 12 ? 'PM' : 'AM'}
         </p>
         <p style={{ fontSize: 14, color: GRAY_TEXT }} className="mt-2">
           Most of your listening happens in the {peakData.hour >= 18 || peakData.hour < 6 ? 'evening' : peakData.hour >= 12 ? 'afternoon' : 'morning'}
@@ -1513,12 +1521,15 @@ const SlidePeakHour: React.FC<{ songs: Song[] }> = ({ songs }) => {
 };
 
 // ─── Slide 10 : Longest Listening Session ───────────────────────
+// NOTE: Mock calculation - In production, this should analyze played_at timestamps
+// from listening_history to find the longest continuous session (breaks < 30 mins).
 const SlideLongestSession: React.FC<{ songs: Song[] }> = ({ songs }) => {
-  // Calculate longest session from song duration data
-  // In real implementation, this would come from analyzing played_at timestamps
+  // Deterministic mock calculation based on total listening time
   const totalMinutes = songs.reduce((sum, s) => sum + (parseInt(s.timeStr || '0') || 0), 0);
-  const longestSessionHours = Math.max(2, Math.floor(totalMinutes / songs.length * 0.3)); // Mock calculation
-  const longestSessionMins = Math.floor((longestSessionHours * 60) % 60);
+  // Use a more realistic proportion: assume longest session is ~15-20% of total time
+  const longestSessionMinutes = Math.max(30, Math.floor(totalMinutes * 0.18));
+  const longestSessionHours = Math.floor(longestSessionMinutes / 60);
+  const longestSessionMins = longestSessionMinutes % 60;
   
   return (
     <motion.div
@@ -1746,9 +1757,13 @@ const SlideDiscoveryRate: React.FC<{ artists: Artist[]; albums: Album[] }> = ({ 
 };
 
 // ─── Slide 12 : Listening Streak ────────────────────────────────
+// NOTE: Mock calculation - In production, this should analyze unique dates in
+// played_at timestamps to calculate actual consecutive listening days.
 const SlideListeningStreak: React.FC<{ songs: Song[] }> = ({ songs }) => {
-  // Mock streak calculation - in real implementation, analyze played_at dates
-  const streakDays = Math.min(7, Math.max(1, Math.floor(songs.length / 10)));
+  // Deterministic mock: assume ~80% of days in the week have listening activity
+  // This gives a more realistic streak between 1-7 days based on song count
+  const estimatedDaysActive = Math.min(7, Math.max(1, Math.ceil(songs.length / 15)));
+  const streakDays = estimatedDaysActive;
   const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   
   return (
