@@ -327,7 +327,7 @@ const SlideConnection: React.FC<{
         if (!strongest || weight > strongest.weight) strongest = { a: from, b: to, weight };
       });
     });
-    if (strongest && (strongest as { a: string; b: string }).a !== (strongest as { a: string; b: string }).b) return strongest;
+    if (strongest && strongest.a !== strongest.b) return strongest;
     const fb = artists[0]?.name;
     const fb2 = songs.find((s) => s.artist && s.artist !== fb)?.artist;
     if (fb && fb2) return { a: fb, b: fb2, weight: 1 };
@@ -1354,9 +1354,13 @@ const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Son
   const handleShare = async () => {
     const shareText = `I listened to ${totalMinutes.toLocaleString()} minutes of music this week on Punky!`;
     if (navigator.share) {
-      try { await navigator.share({ title: 'My Punky Wrapped', text: shareText }); } catch { /* cancelled */ }
+      try { await navigator.share({ title: 'My Punky Wrapped', text: shareText }); } catch { /* user cancelled */ }
     } else {
-      try { await navigator.clipboard.writeText(shareText); } catch { /* failed */ }
+      try {
+        await navigator.clipboard.writeText(shareText);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
     }
   };
 
@@ -1520,7 +1524,10 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
   );
 
   const handleTap = useCallback((e: React.MouseEvent) => {
-    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    // Skip navigation if user clicked an interactive element (button, link)
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a')) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     if (clickX < rect.width * 0.3) {
       goTo(currentSlide - 1);
