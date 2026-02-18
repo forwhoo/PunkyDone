@@ -1065,57 +1065,227 @@ const Slide3: React.FC<{ artists: Artist[] }> = ({ artists }) => {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.deepPurple, overflow: 'hidden' }}>
-      <AnimatedDots color={W.trueWhite} />
+      {/* Enhanced backgrounds */}
+      <DiagonalStripes color={W.trueWhite} direction="left" />
+      <AnimatedDots color={W.trueWhite} density={50} />
       <MovingShapes color={W.trueWhite} />
+      <FloatingBlobs color={W.hotPink} />
       
-      <FloatingZigzag color={W.electricYellow} top="10%" left="75%" size={80} />
-      <PulsingCircle color={W.hotCoral} top="60%" left="10%" size={100} />
-      <RotatingStar color={W.vividGreen} top="20%" left="15%" size={70} />
-      <BouncingDiamond color={W.hotPink} top="75%" left="70%" size={85} />
-      <GlitchSquare color={W.electricBlue} top="40%" left="80%" size={75} />
-      <WavyLine color={W.trueWhite} top="50%" left="30%" width={130} />
+      {/* More dynamic shapes */}
+      <FloatingZigzag color={W.electricYellow} top="10%" left="75%" size={90} />
+      <PulsingCircle color={W.hotCoral} top="60%" left="10%" size={110} />
+      <RotatingStar color={W.vividGreen} top="20%" left="15%" size={80} />
+      <BouncingDiamond color={W.hotPink} top="75%" left="70%" size={95} />
+      <GlitchSquare color={W.electricBlue} top="40%" left="80%" size={85} />
+      <WavyLine color={W.trueWhite} top="50%" left="30%" width={150} />
+      <CrossShape color={W.cyberCyan} top="5%" left="45%" size={85} />
+      <StripePattern color={W.neonOrange} top="85%" left="50%" size={110} />
 
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 48 }}>
+        {/* Artist image with enhanced styling */}
         <motion.div
-          initial={{ scale: 0, rotate: 180 }}
+          initial={{ scale: 0, rotate: 360 }}
           animate={{ scale: 1, rotate: 0 }}
-          transition={{ duration: 0.7, type: 'spring' }}
+          transition={{ duration: 0.9, type: 'spring', bounce: 0.5 }}
           style={{
-            width: 280,
-            height: 280,
-            backgroundImage: `url(${artist.image || fallbackImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            border: `8px solid ${W.electricYellow}`,
-            boxShadow: '12px 12px 0px rgba(0,0,0,0.5)',
-            transform: 'rotate(5deg)',
-          }}
-        />
-
-        <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          style={{
-            marginTop: 40,
-            backgroundColor: W.trueWhite,
-            border: `6px solid ${W.trueBlack}`,
-            padding: '24px 40px',
-            boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
-            transform: 'rotate(-3deg)',
-            textAlign: 'center',
+            position: 'relative',
+            width: 300,
+            height: 300,
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 700, color: W.deepPurple, marginBottom: 8, textTransform: 'uppercase' }}>
-            Your #1 Artist
-          </div>
-          <GlitchText>
-            <div style={{ fontSize: 48, fontWeight: 900, color: W.trueBlack }}>
-              {artist.name}
+          <motion.div
+            style={{
+              width: '100%',
+              height: '100%',
+              backgroundImage: `url(${artist.image || fallbackImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              border: `10px solid ${W.electricYellow}`,
+              boxShadow: '16px 16px 0px rgba(0,0,0,0.6)',
+              transform: 'rotate(5deg)',
+            }}
+            animate={{
+              rotate: [5, 8, 2, 5],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+          
+          {/* Decorative corner elements */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -15,
+              left: -15,
+              width: 40,
+              height: 40,
+              backgroundColor: W.hotCoral,
+              border: `5px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+            }}
+            animate={{
+              scale: [1, 1.3, 1],
+              rotate: [0, 360],
+            }}
+            transition={{
+              scale: { duration: 2, repeat: Infinity },
+              rotate: { duration: 6, repeat: Infinity, ease: 'linear' },
+            }}
+          />
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -15,
+              right: -15,
+              width: 40,
+              height: 40,
+              backgroundColor: W.vividGreen,
+              border: `5px solid ${W.trueBlack}`,
+              transform: 'rotate(45deg)',
+            }}
+            animate={{
+              rotate: [45, 135, 225, 315, 45],
+            }}
+            transition={{
+              duration: 5,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+          />
+          <motion.div
+            style={{
+              position: 'absolute',
+              bottom: -15,
+              left: -15,
+              width: 40,
+              height: 40,
+              backgroundColor: W.cyberCyan,
+              border: `5px solid ${W.trueBlack}`,
+              transform: 'rotate(45deg)',
+            }}
+            animate={{
+              scale: [1, 1.4, 1],
+            }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+            }}
+          />
+          <motion.div
+            style={{
+              position: 'absolute',
+              bottom: -15,
+              right: -15,
+              width: 40,
+              height: 40,
+              backgroundColor: W.hotPink,
+              border: `5px solid ${W.trueBlack}`,
+            }}
+            animate={{
+              rotate: [0, 90, 180, 270, 360],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+          />
+        </motion.div>
+
+        {/* Artist name card */}
+        <motion.div
+          initial={{ y: 80, opacity: 0, scale: 0.5 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4, type: 'spring', bounce: 0.6 }}
+          style={{
+            marginTop: 48,
+            backgroundColor: W.trueWhite,
+            border: `8px solid ${W.trueBlack}`,
+            padding: '28px 48px',
+            boxShadow: '12px 12px 0px rgba(0,0,0,0.5)',
+            transform: 'rotate(-3deg)',
+            textAlign: 'center',
+            position: 'relative',
+          }}
+        >
+          {/* Badge */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -20,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: W.electricYellow,
+              border: `4px solid ${W.trueBlack}`,
+              padding: '8px 20px',
+              boxShadow: '4px 4px 0px rgba(0,0,0,0.3)',
+            }}
+            animate={{
+              y: [0, -5, 0],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 900, color: W.trueBlack, textTransform: 'uppercase', letterSpacing: '2px' }}>
+              👑 Your #1 Artist
             </div>
-          </GlitchText>
-          <div style={{ fontSize: 20, fontWeight: 700, color: W.deepPurple, marginTop: 12 }}>
-            {artist.totalListens.toLocaleString()} plays
+          </motion.div>
+
+          <div style={{ marginTop: 16 }}>
+            <GlitchText>
+              <div style={{ fontSize: 52, fontWeight: 900, color: W.trueBlack, lineHeight: 1.1 }}>
+                {artist.name}
+              </div>
+            </GlitchText>
+          </div>
+          
+          <motion.div
+            style={{
+              marginTop: 16,
+              backgroundColor: W.deepPurple,
+              border: `3px solid ${W.trueBlack}`,
+              padding: '10px 24px',
+              display: 'inline-block',
+              boxShadow: '4px 4px 0px rgba(0,0,0,0.3)',
+            }}
+            animate={{
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+            }}
+          >
+            <StretchText>
+              <div style={{ fontSize: 24, fontWeight: 900, color: W.trueWhite }}>
+                {artist.totalListens.toLocaleString()} plays
+              </div>
+            </StretchText>
+          </motion.div>
+        </motion.div>
+
+        {/* Additional decorative element */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.7 }}
+          style={{
+            marginTop: 28,
+            backgroundColor: W.hotCoral,
+            border: `4px solid ${W.trueBlack}`,
+            padding: '8px 20px',
+            boxShadow: '5px 5px 0px rgba(0,0,0,0.3)',
+            transform: 'rotate(2deg)',
+          }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 800, color: W.trueWhite, letterSpacing: '1px' }}>
+            🎸 LEGEND STATUS
           </div>
         </motion.div>
       </div>
@@ -1128,82 +1298,258 @@ const Slide4: React.FC<{ songs: Song[] }> = ({ songs }) => {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.vividGreen, overflow: 'hidden' }}>
-      <AnimatedDots color={W.trueBlack} />
+      {/* Enhanced backgrounds */}
+      <GridPattern color={W.trueBlack} />
+      <AnimatedDots color={W.trueBlack} density={55} />
       <MovingShapes color={W.trueBlack} />
+      <DiagonalStripes color={W.trueBlack} direction="right" />
       
-      <FloatingZigzag color={W.electricYellow} top="5%" left="10%" size={70} />
-      <PulsingCircle color={W.hotCoral} top="50%" left="85%" size={90} />
-      <RotatingStar color={W.deepPurple} top="70%" left="15%" size={65} />
-      <BouncingDiamond color={W.hotPink} top="20%" left="80%" size={75} />
-      <GlitchSquare color={W.electricBlue} top="80%" left="45%" size={80} />
-      <WavyLine color={W.trueBlack} top="35%" left="25%" width={120} />
+      {/* More dynamic shapes */}
+      <FloatingZigzag color={W.electricYellow} top="5%" left="10%" size={80} />
+      <PulsingCircle color={W.hotCoral} top="50%" left="85%" size={100} />
+      <RotatingStar color={W.deepPurple} top="70%" left="15%" size={75} />
+      <BouncingDiamond color={W.hotPink} top="20%" left="80%" size={85} />
+      <GlitchSquare color={W.electricBlue} top="80%" left="45%" size={90} />
+      <WavyLine color={W.trueBlack} top="35%" left="25%" width={140} />
+      <CrossShape color={W.neonOrange} top="10%" left="50%" size={90} />
+      <PixelatedSquare color={W.cyberCyan} top="60%" left="5%" size={70} />
 
-      <div style={{ position: 'relative', zIndex: 10, padding: 40, height: '100%', overflowY: 'auto' }}>
+      <div style={{ position: 'relative', zIndex: 10, padding: 44, height: '100%', overflowY: 'auto' }}>
+        {/* Header */}
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 2 }}
+          transition={{ type: 'spring', bounce: 0.6 }}
           style={{
             backgroundColor: W.trueBlack,
-            border: `6px solid ${W.trueWhite}`,
-            padding: '16px 32px',
-            marginBottom: 32,
-            boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
-            transform: 'rotate(2deg)',
+            border: `7px solid ${W.trueWhite}`,
+            padding: '20px 40px',
+            marginBottom: 40,
+            boxShadow: '10px 10px 0px rgba(0,0,0,0.5)',
             display: 'inline-block',
+            position: 'relative',
           }}
         >
-          <RepeatedText>
-            <div style={{ fontSize: 40, fontWeight: 900, color: W.vividGreen }}>
+          {/* Decorative element on header */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -12,
+              right: -12,
+              width: 28,
+              height: 28,
+              backgroundColor: W.hotCoral,
+              border: `3px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+            }}
+            animate={{
+              scale: [1, 1.5, 1],
+              rotate: [0, 360],
+            }}
+            transition={{
+              scale: { duration: 2, repeat: Infinity },
+              rotate: { duration: 4, repeat: Infinity, ease: 'linear' },
+            }}
+          />
+          <RepeatedText count={5}>
+            <div style={{ fontSize: 48, fontWeight: 900, color: W.vividGreen, letterSpacing: '2px' }}>
               TOP SONGS
             </div>
           </RepeatedText>
         </motion.div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Songs list */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {top5.map((song, i) => (
             <motion.div
               key={song.id}
-              initial={{ x: -100, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: stagger(i, 0.2) }}
+              initial={{ x: -150, opacity: 0, rotate: -15 }}
+              animate={{ x: 0, opacity: 1, rotate: i % 2 === 0 ? -1 : 1 }}
+              transition={{ delay: stagger(i, 0.15), type: 'spring', bounce: 0.4 }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 16,
+                gap: 20,
                 backgroundColor: W.trueWhite,
-                border: `5px solid ${W.trueBlack}`,
-                padding: 12,
-                boxShadow: '5px 5px 0px rgba(0,0,0,0.3)',
-                transform: `rotate(${i % 2 === 0 ? -1 : 1}deg)`,
+                border: `6px solid ${W.trueBlack}`,
+                padding: 16,
+                boxShadow: '7px 7px 0px rgba(0,0,0,0.4)',
+                position: 'relative',
+                overflow: 'visible',
               }}
             >
-              <div style={{ fontSize: 40, fontWeight: 900, color: W.vividGreen, minWidth: 50 }}>
-                {i + 1}
-              </div>
-              <div
+              {/* Rank badge */}
+              <motion.div
                 style={{
-                  width: 60,
-                  height: 60,
+                  minWidth: 65,
+                  height: 65,
+                  backgroundColor: i === 0 ? W.electricYellow : i === 1 ? W.hotCoral : i === 2 ? W.deepPurple : W.hotPink,
+                  border: `4px solid ${W.trueBlack}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '4px 4px 0px rgba(0,0,0,0.3)',
+                  transform: 'rotate(-5deg)',
+                }}
+                animate={{
+                  rotate: [-5, 0, -5],
+                  scale: [1, 1.05, 1],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                }}
+              >
+                <GlitchText>
+                  <div style={{ fontSize: 36, fontWeight: 900, color: W.trueBlack }}>
+                    {i + 1}
+                  </div>
+                </GlitchText>
+              </motion.div>
+
+              {/* Album cover */}
+              <motion.div
+                style={{
+                  width: 70,
+                  height: 70,
                   backgroundImage: `url(${song.cover || fallbackImage})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
-                  border: `4px solid ${W.trueBlack}`,
+                  border: `5px solid ${W.trueBlack}`,
+                  position: 'relative',
                 }}
-              />
+                animate={{
+                  rotate: [0, 3, -3, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  delay: i * 0.3,
+                }}
+              >
+                {/* Corner decoration */}
+                <motion.div
+                  style={{
+                    position: 'absolute',
+                    top: -6,
+                    right: -6,
+                    width: 15,
+                    height: 15,
+                    backgroundColor: i < 3 ? W.electricYellow : W.cyberCyan,
+                    border: `2px solid ${W.trueBlack}`,
+                    transform: 'rotate(45deg)',
+                  }}
+                  animate={{
+                    scale: [1, 1.3, 1],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                  }}
+                />
+              </motion.div>
+
+              {/* Song info */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 20, fontWeight: 900, color: W.trueBlack, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {song.title}
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: W.vividGreen }}>
+                <StretchText>
+                  <div style={{ 
+                    fontSize: 24, 
+                    fontWeight: 900, 
+                    color: W.trueBlack, 
+                    overflow: 'hidden', 
+                    textOverflow: 'ellipsis', 
+                    whiteSpace: 'nowrap',
+                    marginBottom: 4
+                  }}>
+                    {song.title}
+                  </div>
+                </StretchText>
+                <div style={{ 
+                  fontSize: 16, 
+                  fontWeight: 800, 
+                  color: W.vividGreen,
+                  backgroundColor: W.trueBlack,
+                  padding: '4px 12px',
+                  display: 'inline-block',
+                  border: `2px solid ${W.trueBlack}`,
+                  boxShadow: '2px 2px 0px rgba(0,0,0,0.2)'
+                }}>
                   {song.artist}
                 </div>
               </div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: W.trueBlack }}>
-                {song.listens}×
-              </div>
+
+              {/* Play count badge */}
+              <motion.div
+                style={{
+                  backgroundColor: W.trueBlack,
+                  border: `3px solid ${W.trueBlack}`,
+                  padding: '8px 16px',
+                  boxShadow: '3px 3px 0px rgba(0,0,0,0.3)',
+                  transform: 'rotate(3deg)',
+                }}
+                animate={{
+                  y: [0, -3, 0],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  delay: i * 0.15,
+                }}
+              >
+                <PixelText>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: W.vividGreen, whiteSpace: 'nowrap' }}>
+                    {song.plays?.toLocaleString() || 0} 🎵
+                  </div>
+                </PixelText>
+              </motion.div>
+
+              {/* Decorative corner element */}
+              <motion.div
+                style={{
+                  position: 'absolute',
+                  bottom: -8,
+                  right: -8,
+                  width: 25,
+                  height: 25,
+                  backgroundColor: i % 2 === 0 ? W.hotPink : W.electricBlue,
+                  border: `3px solid ${W.trueBlack}`,
+                  borderRadius: '50%',
+                }}
+                animate={{
+                  rotate: [0, 360],
+                }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+              />
             </motion.div>
           ))}
         </div>
+
+        {/* Bottom decorative element */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1 }}
+          style={{
+            marginTop: 32,
+            backgroundColor: W.electricYellow,
+            border: `5px solid ${W.trueBlack}`,
+            padding: '12px 28px',
+            boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+            display: 'inline-block',
+            transform: 'rotate(-2deg)',
+          }}
+        >
+          <WarpText>
+            <div style={{ fontSize: 16, fontWeight: 800, color: W.trueBlack, letterSpacing: '2px' }}>
+              🎧 YOUR SOUNDTRACK
+            </div>
+          </WarpText>
+        </motion.div>
       </div>
     </div>
   );
@@ -1215,61 +1561,234 @@ const Slide5: React.FC<{ songs: Song[] }> = ({ songs }) => {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.hotPink, overflow: 'hidden' }}>
-      <AnimatedDots color={W.trueWhite} />
+      {/* Enhanced backgrounds */}
+      <FloatingBlobs color={W.deepPurple} />
+      <AnimatedDots color={W.trueWhite} density={60} />
       <MovingShapes color={W.trueWhite} />
+      <DiagonalStripes color={W.trueWhite} direction="left" />
       
-      <FloatingZigzag color={W.electricYellow} top="12%" left="70%" size={75} />
-      <PulsingCircle color={W.electricBlue} top="65%" left="15%" size={95} />
-      <RotatingStar color={W.vividGreen} top="25%" left="10%" size={70} />
-      <BouncingDiamond color={W.deepPurple} top="75%" left="75%" size={80} />
-      <GlitchSquare color={W.trueWhite} top="45%" left="85%" size={85} />
-      <WavyLine color={W.trueWhite} top="55%" left="35%" width={140} />
+      {/* More dynamic shapes */}
+      <FloatingZigzag color={W.electricYellow} top="12%" left="70%" size={85} />
+      <PulsingCircle color={W.electricBlue} top="65%" left="15%" size={105} />
+      <RotatingStar color={W.vividGreen} top="25%" left="10%" size={80} />
+      <BouncingDiamond color={W.deepPurple} top="75%" left="75%" size={90} />
+      <GlitchSquare color={W.trueWhite} top="45%" left="85%" size={95} />
+      <WavyLine color={W.trueWhite} top="55%" left="35%" width={160} />
+      <CrossShape color={W.cyberCyan} top="5%" left="40%" size={90} />
+      <StripePattern color={W.neonOrange} top="80%" left="45%" size={120} />
 
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 48 }}>
+        {/* Album cover with enhanced styling */}
         <motion.div
-          initial={{ scale: 0, rotate: -90 }}
+          initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
-          transition={{ duration: 0.8, type: 'spring' }}
+          transition={{ duration: 0.9, type: 'spring', bounce: 0.5 }}
           style={{
-            width: 300,
-            height: 300,
-            backgroundImage: `url(${song.cover || fallbackImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            border: `10px solid ${W.trueBlack}`,
-            boxShadow: '15px 15px 0px rgba(0,0,0,0.5)',
-            transform: 'rotate(-5deg)',
-          }}
-        />
-
-        <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          style={{
-            marginTop: 40,
-            backgroundColor: W.trueBlack,
-            border: `6px solid ${W.electricYellow}`,
-            padding: '24px 40px',
-            boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
-            transform: 'rotate(3deg)',
-            textAlign: 'center',
-            maxWidth: '80%',
+            position: 'relative',
+            width: 320,
+            height: 320,
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 700, color: W.hotPink, marginBottom: 12, textTransform: 'uppercase' }}>
-            Your #1 Song
-          </div>
-          <GlitchText>
-            <div style={{ fontSize: 36, fontWeight: 900, color: W.trueWhite, marginBottom: 8 }}>
-              {song.title}
+          <motion.div
+            style={{
+              width: '100%',
+              height: '100%',
+              backgroundImage: `url(${song.cover || fallbackImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              border: `12px solid ${W.trueBlack}`,
+              boxShadow: '18px 18px 0px rgba(0,0,0,0.6)',
+              transform: 'rotate(-5deg)',
+            }}
+            animate={{
+              rotate: [-5, -2, -8, -5],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+          
+          {/* Enhanced corner decorations */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -18,
+              left: -18,
+              width: 45,
+              height: 45,
+              backgroundColor: W.electricYellow,
+              border: `5px solid ${W.trueBlack}`,
+              transform: 'rotate(45deg)',
+            }}
+            animate={{
+              rotate: [45, 225, 45],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 5,
+              repeat: Infinity,
+            }}
+          />
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -18,
+              right: -18,
+              width: 45,
+              height: 45,
+              backgroundColor: W.vividGreen,
+              border: `5px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+            }}
+            animate={{
+              scale: [1, 1.4, 1],
+            }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+            }}
+          />
+          <motion.div
+            style={{
+              position: 'absolute',
+              bottom: -18,
+              left: -18,
+              width: 45,
+              height: 45,
+              backgroundColor: W.cyberCyan,
+              border: `5px solid ${W.trueBlack}`,
+            }}
+            animate={{
+              rotate: [0, 90, 180, 270, 360],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+          />
+          <motion.div
+            style={{
+              position: 'absolute',
+              bottom: -18,
+              right: -18,
+              width: 45,
+              height: 45,
+              backgroundColor: W.electricBlue,
+              border: `5px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+            }}
+            animate={{
+              scale: [1, 1.3, 1],
+              rotate: [0, 360],
+            }}
+            transition={{
+              scale: { duration: 2, repeat: Infinity },
+              rotate: { duration: 4, repeat: Infinity, ease: 'linear' },
+            }}
+          />
+        </motion.div>
+
+        {/* Song info card */}
+        <motion.div
+          initial={{ y: 100, opacity: 0, scale: 0.5 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4, type: 'spring', bounce: 0.5 }}
+          style={{
+            marginTop: 48,
+            backgroundColor: W.trueBlack,
+            border: `8px solid ${W.electricYellow}`,
+            padding: '32px 48px',
+            boxShadow: '14px 14px 0px rgba(0,0,0,0.5)',
+            transform: 'rotate(3deg)',
+            textAlign: 'center',
+            maxWidth: '85%',
+            position: 'relative',
+          }}
+        >
+          {/* Badge */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -22,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: W.hotPink,
+              border: `5px solid ${W.trueBlack}`,
+              padding: '10px 24px',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.4)',
+            }}
+            animate={{
+              y: [0, -6, 0],
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
+            <div style={{ fontSize: 16, fontWeight: 900, color: W.trueWhite, textTransform: 'uppercase', letterSpacing: '2px' }}>
+              🎵 Your #1 Song
             </div>
-          </GlitchText>
-          <div style={{ fontSize: 20, fontWeight: 700, color: W.hotPink }}>
-            {song.artist}
+          </motion.div>
+
+          <div style={{ marginTop: 18 }}>
+            <GlitchText>
+              <div style={{ fontSize: 42, fontWeight: 900, color: W.trueWhite, marginBottom: 12, lineHeight: 1.1 }}>
+                {song.title}
+              </div>
+            </GlitchText>
           </div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: W.trueWhite, marginTop: 12 }}>
-            {song.listens} plays
+          
+          <StretchText>
+            <div style={{ fontSize: 24, fontWeight: 800, color: W.hotPink, marginBottom: 16 }}>
+              {song.artist}
+            </div>
+          </StretchText>
+
+          <motion.div
+            style={{
+              backgroundColor: W.electricYellow,
+              border: `3px solid ${W.trueBlack}`,
+              padding: '10px 24px',
+              display: 'inline-block',
+              boxShadow: '4px 4px 0px rgba(0,0,0,0.3)',
+            }}
+            animate={{
+              scale: [1, 1.08, 1],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+            }}
+          >
+            <WarpText>
+              <div style={{ fontSize: 22, fontWeight: 900, color: W.trueBlack }}>
+                {song.listens} plays
+              </div>
+            </WarpText>
+          </motion.div>
+        </motion.div>
+
+        {/* Additional decoration */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.8 }}
+          style={{
+            marginTop: 32,
+            backgroundColor: W.deepPurple,
+            border: `4px solid ${W.trueBlack}`,
+            padding: '10px 24px',
+            boxShadow: '5px 5px 0px rgba(0,0,0,0.3)',
+            transform: 'rotate(-2deg)',
+          }}
+        >
+          <div style={{ fontSize: 15, fontWeight: 800, color: W.trueWhite, letterSpacing: '1px' }}>
+            🔥 ON REPEAT
           </div>
         </motion.div>
       </div>
@@ -1281,78 +1800,164 @@ const Slide6: React.FC<{ albums: Album[] }> = ({ albums }) => {
   const top3 = albums.slice(0, 3);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.electricBlue, overflow: 'hidden' }}>
-      <AnimatedDots color={W.trueWhite} />
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.hotPink, overflow: 'hidden' }}>
+      {/* Enhanced layered backgrounds */}
+      <GridPattern color={W.trueWhite} />
+      <AnimatedDots color={W.trueWhite} density={65} />
       <MovingShapes color={W.trueWhite} />
+      <DiagonalStripes color={W.trueWhite} direction="left" />
+      <FloatingBlobs color={W.trueWhite} />
       
-      <FloatingZigzag color={W.electricYellow} top="8%" left="80%" size={70} />
-      <PulsingCircle color={W.hotCoral} top="60%" left="10%" size={100} />
-      <RotatingStar color={W.vividGreen} top="25%" left="15%" size={65} />
-      <BouncingDiamond color={W.hotPink} top="75%" left="80%" size={75} />
-      <GlitchSquare color={W.trueWhite} top="40%" left="50%" size={80} />
-      <WavyLine color={W.trueWhite} top="85%" left="30%" width={130} />
+      {/* 8+ animated shape components */}
+      <FloatingZigzag color={W.electricYellow} top="8%" left="85%" size={85} />
+      <PulsingCircle color={W.cyberCyan} top="60%" left="8%" size={105} />
+      <RotatingStar color={W.vividGreen} top="25%" left="12%" size={70} />
+      <BouncingDiamond color={W.neonOrange} top="78%" left="82%" size={80} />
+      <GlitchSquare color={W.trueWhite} top="42%" left="88%" size={90} />
+      <WavyLine color={W.trueWhite} top="88%" left="25%" width={150} />
+      <CrossShape color={W.electricBlue} top="15%" left="5%" size={95} />
+      <PixelatedSquare color={W.acidGreen} top="70%" left="10%" size={75} />
+      <StripePattern color={W.deepPurple} top="5%" left="45%" size={100} />
 
       <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        {/* Title card with enhanced effects */}
         <motion.div
-          initial={{ x: 100, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
+          initial={{ x: 100, opacity: 0, rotate: 15 }}
+          animate={{ x: 0, opacity: 1, rotate: -2 }}
+          transition={{ duration: 0.7, type: 'spring', bounce: 0.5 }}
           style={{
             backgroundColor: W.trueWhite,
-            border: `6px solid ${W.trueBlack}`,
-            padding: '16px 32px',
+            border: `8px solid ${W.trueBlack}`,
+            padding: '20px 40px',
             marginBottom: 40,
-            boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
-            transform: 'rotate(2deg)',
+            boxShadow: '12px 12px 0px rgba(0,0,0,0.5)',
+            transform: 'rotate(-2deg)',
             alignSelf: 'flex-start',
+            position: 'relative',
           }}
         >
-          <RepeatedText>
-            <div style={{ fontSize: 48, fontWeight: 900, color: W.electricBlue }}>
+          {/* Decorative corner badges */}
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -12,
+              right: -12,
+              width: 35,
+              height: 35,
+              backgroundColor: W.electricYellow,
+              border: `4px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+            }}
+            animate={{ rotate: [0, 360], scale: [1, 1.2, 1] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              bottom: -10,
+              left: -10,
+              width: 28,
+              height: 28,
+              backgroundColor: W.cyberCyan,
+              border: `3px solid ${W.trueBlack}`,
+              transform: 'rotate(45deg)',
+            }}
+            animate={{ rotate: [45, 405], scale: [1, 1.3, 1] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
+          />
+          <GlitchText>
+            <div style={{ fontSize: 52, fontWeight: 900, color: W.hotPink, textShadow: '5px 5px 0px rgba(0,0,0,0.15)' }}>
               TOP ALBUMS
             </div>
-          </RepeatedText>
+          </GlitchText>
         </motion.div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {/* Album cards with enhanced design */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
           {top3.map((album, i) => (
             <motion.div
               key={album.id}
-              initial={{ scale: 0, rotate: 180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: stagger(i, 0.3), type: 'spring' }}
+              initial={{ scale: 0, rotate: 180, x: -200 }}
+              animate={{ scale: 1, rotate: 0, x: 0 }}
+              transition={{ delay: stagger(i, 0.3, 0.15), type: 'spring', bounce: 0.5 }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 20,
+                gap: 24,
                 backgroundColor: W.trueWhite,
-                border: `5px solid ${W.trueBlack}`,
-                padding: 16,
-                boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
-                transform: `rotate(${i % 2 === 0 ? -1 : 1}deg)`,
+                border: `7px solid ${W.trueBlack}`,
+                padding: 20,
+                boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
+                transform: `rotate(${i % 2 === 0 ? -2 : 2}deg)`,
+                position: 'relative',
               }}
             >
-              <div
+              {/* Rank badge */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: stagger(i, 0.3, 0.15) + 0.2, type: 'spring', bounce: 0.6 }}
                 style={{
-                  width: 90,
-                  height: 90,
+                  position: 'absolute',
+                  top: -15,
+                  left: 15,
+                  width: 45,
+                  height: 45,
+                  backgroundColor: [W.electricYellow, W.cyberCyan, W.vividGreen][i],
+                  border: `4px solid ${W.trueBlack}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 900,
+                  fontSize: 24,
+                  color: W.trueBlack,
+                  transform: 'rotate(-10deg)',
+                  boxShadow: '4px 4px 0px rgba(0,0,0,0.3)',
+                }}
+              >
+                {i + 1}
+              </motion.div>
+
+              {/* Album cover with enhanced styling */}
+              <motion.div
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                style={{
+                  width: 100,
+                  height: 100,
                   backgroundImage: `url(${album.cover || fallbackImage})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
-                  border: `5px solid ${W.trueBlack}`,
-                  transform: 'rotate(45deg)',
+                  border: `6px solid ${W.trueBlack}`,
+                  boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+                  flexShrink: 0,
                 }}
               />
+              
+              {/* Album info */}
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: W.electricBlue }}>
-                  #{i + 1}
-                </div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: W.trueBlack }}>
-                  {album.title}
-                </div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: W.electricBlue }}>
+                <StretchText>
+                  <div style={{ fontSize: 32, fontWeight: 900, color: W.trueBlack, lineHeight: 1.1, marginBottom: 8 }}>
+                    {album.title}
+                  </div>
+                </StretchText>
+                <div style={{ fontSize: 20, fontWeight: 700, color: W.hotPink, letterSpacing: '1px' }}>
                   {album.artist}
                 </div>
               </div>
+
+              {/* Decorative element */}
+              <motion.div
+                style={{
+                  width: 25,
+                  height: 25,
+                  backgroundColor: W.neonOrange,
+                  border: `3px solid ${W.trueBlack}`,
+                  transform: 'rotate(45deg)',
+                }}
+                animate={{ rotate: [45, 405] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+              />
             </motion.div>
           ))}
         </div>
@@ -1366,59 +1971,159 @@ const Slide7: React.FC<{ albums: Album[] }> = ({ albums }) => {
   if (!album) return null;
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.electricYellow, overflow: 'hidden' }}>
-      <AnimatedDots color={W.trueBlack} />
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.neonOrange, overflow: 'hidden' }}>
+      {/* Enhanced layered backgrounds */}
+      <GridPattern color={W.trueBlack} />
+      <AnimatedDots color={W.trueBlack} density={70} />
       <MovingShapes color={W.trueBlack} />
+      <DiagonalStripes color={W.trueBlack} direction="right" />
+      <FloatingBlobs color={W.trueBlack} />
       
-      <FloatingZigzag color={W.electricBlue} top="10%" left="10%" size={80} />
-      <PulsingCircle color={W.hotCoral} top="70%" left="75%" size={95} />
-      <RotatingStar color={W.deepPurple} top="30%" left="80%" size={70} />
-      <BouncingDiamond color={W.vividGreen} top="60%" left="15%" size={85} />
-      <GlitchSquare color={W.hotPink} top="15%" left="50%" size={75} />
-      <WavyLine color={W.trueBlack} top="85%" left="40%" width={140} />
+      {/* 8+ animated shape components */}
+      <FloatingZigzag color={W.electricBlue} top="8%" left="8%" size={90} />
+      <PulsingCircle color={W.hotCoral} top="72%" left="78%" size={110} />
+      <RotatingStar color={W.deepPurple} top="28%" left="85%" size={75} />
+      <BouncingDiamond color={W.vividGreen} top="65%" left="10%" size={90} />
+      <GlitchSquare color={W.hotPink} top="12%" left="48%" size={85} />
+      <WavyLine color={W.trueBlack} top="88%" left="35%" width={160} />
+      <CrossShape color={W.cyberCyan} top="35%" left="5%" size={100} />
+      <PixelatedSquare color={W.electricYellow} top="80%" left="85%" size={70} />
+      <StripePattern color={W.acidGreen} top="5%" left="75%" size={110} />
 
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 48 }}>
+        {/* Enhanced album cover with multiple decorative elements */}
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.6, type: 'spring' }}
+          initial={{ scale: 0, rotate: 360 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ duration: 0.8, type: 'spring', bounce: 0.5 }}
           style={{
-            width: 280,
-            height: 280,
-            backgroundImage: `url(${album.cover || fallbackImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            border: `8px solid ${W.trueBlack}`,
-            boxShadow: '12px 12px 0px rgba(0,0,0,0.5)',
-            clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)',
-          }}
-        />
-
-        <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          style={{
-            marginTop: 40,
-            backgroundColor: W.trueBlack,
-            border: `6px solid ${W.electricBlue}`,
-            padding: '24px 40px',
-            boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
-            transform: 'rotate(-2deg)',
-            textAlign: 'center',
+            position: 'relative',
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 700, color: W.electricYellow, marginBottom: 8, textTransform: 'uppercase' }}>
-            Your #1 Album
-          </div>
-          <GlitchText>
-            <div style={{ fontSize: 40, fontWeight: 900, color: W.trueWhite }}>
+          {/* Main album cover */}
+          <motion.div
+            animate={{ y: [-8, 8, -8] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+            style={{
+              width: 300,
+              height: 300,
+              backgroundImage: `url(${album.cover || fallbackImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              border: `10px solid ${W.trueBlack}`,
+              boxShadow: '16px 16px 0px rgba(0,0,0,0.6)',
+              transform: 'rotate(-4deg)',
+            }}
+          />
+
+          {/* Decorative corner elements */}
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -20,
+              left: -20,
+              width: 50,
+              height: 50,
+              backgroundColor: W.electricYellow,
+              border: `5px solid ${W.trueBlack}`,
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.4)',
+            }}
+            animate={{ rotate: [0, 90, 180, 270, 360], scale: [1, 1.2, 1] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -20,
+              right: -20,
+              width: 50,
+              height: 50,
+              backgroundColor: W.cyberCyan,
+              border: `5px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.4)',
+            }}
+            animate={{ scale: [1, 1.4, 1], rotate: [0, 180, 360] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              bottom: -20,
+              left: -20,
+              width: 50,
+              height: 50,
+              backgroundColor: W.hotPink,
+              border: `5px solid ${W.trueBlack}`,
+              transform: 'rotate(45deg)',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.4)',
+            }}
+            animate={{ rotate: [45, 405], scale: [1, 1.3, 1] }}
+            transition={{ duration: 5, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              bottom: -20,
+              right: -20,
+              width: 50,
+              height: 50,
+              backgroundColor: W.vividGreen,
+              border: `5px solid ${W.trueBlack}`,
+              clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.4)',
+            }}
+            animate={{ rotate: [0, -360], scale: [1, 1.25, 1] }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
+          />
+        </motion.div>
+
+        {/* Enhanced info card */}
+        <motion.div
+          initial={{ y: 80, opacity: 0, rotate: 15 }}
+          animate={{ y: 0, opacity: 1, rotate: 3 }}
+          transition={{ delay: 0.4, type: 'spring', bounce: 0.5 }}
+          style={{
+            marginTop: 50,
+            backgroundColor: W.trueBlack,
+            border: `8px solid ${W.electricYellow}`,
+            padding: '28px 48px',
+            boxShadow: '14px 14px 0px rgba(0,0,0,0.5)',
+            transform: 'rotate(3deg)',
+            textAlign: 'center',
+            position: 'relative',
+          }}
+        >
+          {/* Badge decorations */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -15,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: W.hotCoral,
+              border: `4px solid ${W.trueBlack}`,
+              padding: '8px 20px',
+              boxShadow: '4px 4px 0px rgba(0,0,0,0.4)',
+            }}
+            animate={{ y: [-5, 5, -5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <div style={{ fontSize: 16, fontWeight: 900, color: W.trueWhite, letterSpacing: '2px' }}>
+              #1 ALBUM
+            </div>
+          </motion.div>
+
+          <WarpText>
+            <div style={{ fontSize: 44, fontWeight: 900, color: W.trueWhite, lineHeight: 1.2, marginTop: 10 }}>
               {album.title}
             </div>
-          </GlitchText>
-          <div style={{ fontSize: 20, fontWeight: 700, color: W.electricYellow, marginTop: 8 }}>
-            {album.artist}
-          </div>
+          </WarpText>
+          <StretchText>
+            <div style={{ fontSize: 24, fontWeight: 700, color: W.electricYellow, marginTop: 12, letterSpacing: '1px' }}>
+              {album.artist}
+            </div>
+          </StretchText>
         </motion.div>
       </div>
     </div>
@@ -1429,59 +2134,162 @@ const Slide8: React.FC<{ artists: Artist[] }> = ({ artists }) => {
   const genres = artists.flatMap(a => a.genres || []).slice(0, 6);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.hotCoral, overflow: 'hidden' }}>
-      <AnimatedDots color={W.trueWhite} />
-      <MovingShapes color={W.trueWhite} />
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.cyberCyan, overflow: 'hidden' }}>
+      {/* Enhanced layered backgrounds */}
+      <GridPattern color={W.trueBlack} />
+      <AnimatedDots color={W.trueBlack} density={75} />
+      <MovingShapes color={W.trueBlack} />
+      <DiagonalStripes color={W.trueBlack} direction="left" />
+      <FloatingBlobs color={W.trueBlack} />
       
-      <FloatingZigzag color={W.electricYellow} top="5%" left="75%" size={75} />
-      <PulsingCircle color={W.deepPurple} top="65%" left="10%" size={90} />
-      <RotatingStar color={W.vividGreen} top="20%" left="15%" size={65} />
-      <BouncingDiamond color={W.electricBlue} top="75%" left="80%" size={80} />
-      <GlitchSquare color={W.hotPink} top="40%" left="50%" size={85} />
-      <WavyLine color={W.trueWhite} top="55%" left="25%" width={120} />
+      {/* 8+ animated shape components */}
+      <FloatingZigzag color={W.electricYellow} top="6%" left="78%" size={80} />
+      <PulsingCircle color={W.deepPurple} top="68%" left="8%" size={100} />
+      <RotatingStar color={W.vividGreen} top="18%" left="10%" size={70} />
+      <BouncingDiamond color={W.hotCoral} top="78%" left="85%" size={85} />
+      <GlitchSquare color={W.hotPink} top="38%" left="52%" size={95} />
+      <WavyLine color={W.trueBlack} top="52%" left="20%" width={140} />
+      <CrossShape color={W.neonOrange} top="10%" left="40%" size={85} />
+      <PixelatedSquare color={W.electricBlue} top="85%" left="45%" size={65} />
+      <StripePattern color={W.acidGreen} top="25%" left="85%" size={105} />
 
       <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        {/* Enhanced title card */}
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ duration: 0.8, type: 'spring', bounce: 0.6 }}
           style={{
             backgroundColor: W.trueBlack,
-            border: `6px solid ${W.trueWhite}`,
-            padding: '20px 40px',
-            marginBottom: 40,
-            boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
+            border: `8px solid ${W.trueWhite}`,
+            padding: '24px 48px',
+            marginBottom: 48,
+            boxShadow: '14px 14px 0px rgba(0,0,0,0.5)',
             transform: 'rotate(-3deg)',
+            position: 'relative',
           }}
         >
-          <RepeatedText>
-            <div style={{ fontSize: 48, fontWeight: 900, color: W.hotCoral }}>
+          {/* Corner decorations */}
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -12,
+              left: -12,
+              width: 38,
+              height: 38,
+              backgroundColor: W.hotCoral,
+              border: `4px solid ${W.trueWhite}`,
+              transform: 'rotate(45deg)',
+            }}
+            animate={{ rotate: [45, 405], scale: [1, 1.3, 1] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -12,
+              right: -12,
+              width: 38,
+              height: 38,
+              backgroundColor: W.electricYellow,
+              border: `4px solid ${W.trueWhite}`,
+              borderRadius: '50%',
+            }}
+            animate={{ scale: [1, 1.4, 1], rotate: [0, 180, 360] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
+          />
+
+          <WarpText>
+            <div style={{ fontSize: 54, fontWeight: 900, color: W.cyberCyan, textShadow: '4px 4px 0px rgba(0,0,0,0.2)' }}>
               YOUR GENRES
             </div>
-          </RepeatedText>
+          </WarpText>
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxWidth: 600 }}>
+        {/* Genre grid with enhanced styling */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 650 }}>
           {genres.map((genre, i) => (
             <motion.div
               key={i}
-              initial={{ scale: 0, rotate: 90 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: stagger(i, 0.2), type: 'spring' }}
+              initial={{ scale: 0, rotate: 90, y: 100 }}
+              animate={{ scale: 1, rotate: 0, y: 0 }}
+              transition={{ delay: stagger(i, 0.2, 0.12), type: 'spring', bounce: 0.6 }}
               style={{
                 backgroundColor: W.trueWhite,
-                border: `5px solid ${W.trueBlack}`,
-                padding: '20px 24px',
-                boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+                border: `7px solid ${W.trueBlack}`,
+                padding: '24px 28px',
+                boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
                 transform: `rotate(${i % 2 === 0 ? 2 : -2}deg)`,
                 textAlign: 'center',
+                position: 'relative',
               }}
             >
-              <div style={{ fontSize: 24, fontWeight: 900, color: W.trueBlack, textTransform: 'uppercase' }}>
-                {genre}
-              </div>
+              {/* Genre badge decoration */}
+              <motion.div
+                style={{
+                  position: 'absolute',
+                  top: -12,
+                  right: -12,
+                  width: 32,
+                  height: 32,
+                  backgroundColor: [W.hotPink, W.electricYellow, W.vividGreen, W.neonOrange, W.deepPurple, W.hotCoral][i % 6],
+                  border: `3px solid ${W.trueBlack}`,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 900,
+                  fontSize: 16,
+                  color: W.trueBlack,
+                  boxShadow: '3px 3px 0px rgba(0,0,0,0.3)',
+                }}
+                animate={{ rotate: [0, 360], scale: [1, 1.2, 1] }}
+                transition={{ duration: 4, repeat: Infinity, delay: i * 0.2 }}
+              >
+                {i + 1}
+              </motion.div>
+
+              <StretchText>
+                <div style={{ fontSize: 26, fontWeight: 900, color: W.trueBlack, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  {genre}
+                </div>
+              </StretchText>
+
+              {/* Bottom accent */}
+              <motion.div
+                style={{
+                  marginTop: 12,
+                  height: 6,
+                  backgroundColor: [W.hotPink, W.electricYellow, W.vividGreen, W.neonOrange, W.deepPurple, W.hotCoral][i % 6],
+                  border: `2px solid ${W.trueBlack}`,
+                }}
+                animate={{ scaleX: [1, 0.8, 1] }}
+                transition={{ duration: 2, repeat: Infinity, delay: i * 0.15 }}
+              />
             </motion.div>
           ))}
         </div>
+
+        {/* Additional decorative badge */}
+        <motion.div
+          initial={{ scale: 0, rotate: 180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 1, type: 'spring', bounce: 0.5 }}
+          style={{
+            marginTop: 40,
+            backgroundColor: W.trueBlack,
+            border: `5px solid ${W.trueWhite}`,
+            padding: '12px 32px',
+            boxShadow: '6px 6px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(2deg)',
+          }}
+        >
+          <PixelText>
+            <div style={{ fontSize: 18, fontWeight: 800, color: W.cyberCyan, letterSpacing: '2px' }}>
+              🎧 YOUR SONIC UNIVERSE
+            </div>
+          </PixelText>
+        </motion.div>
       </div>
     </div>
   );
@@ -1493,90 +2301,211 @@ const Slide9: React.FC<{ totalMinutes: number }> = ({ totalMinutes }) => {
   const avgPerDay = Math.round(totalMinutes / 365);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.deepPurple, overflow: 'hidden' }}>
-      <AnimatedDots color={W.trueWhite} />
-      <MovingShapes color={W.trueWhite} />
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.vividGreen, overflow: 'hidden' }}>
+      {/* Enhanced layered backgrounds */}
+      <GridPattern color={W.trueBlack} />
+      <AnimatedDots color={W.trueBlack} density={80} />
+      <MovingShapes color={W.trueBlack} />
+      <DiagonalStripes color={W.trueBlack} direction="right" />
+      <FloatingBlobs color={W.trueBlack} />
       
-      <FloatingZigzag color={W.electricYellow} top="12%" left="10%" size={70} />
-      <PulsingCircle color={W.hotCoral} top="55%" left="80%" size={100} />
-      <RotatingStar color={W.vividGreen} top="70%" left="15%" size={65} />
-      <BouncingDiamond color={W.hotPink} top="25%" left="75%" size={75} />
-      <GlitchSquare color={W.electricBlue} top="80%" left="50%" size={80} />
-      <WavyLine color={W.trueWhite} top="40%" left="35%" width={130} />
+      {/* 8+ animated shape components */}
+      <FloatingZigzag color={W.electricYellow} top="10%" left="8%" size={75} />
+      <PulsingCircle color={W.hotCoral} top="58%" left="85%" size={115} />
+      <RotatingStar color={W.deepPurple} top="72%" left="12%" size={68} />
+      <BouncingDiamond color={W.hotPink} top="22%" left="78%" size={82} />
+      <GlitchSquare color={W.electricBlue} top="82%" left="48%" size={88} />
+      <WavyLine color={W.trueBlack} top="38%" left="32%" width={145} />
+      <CrossShape color={W.cyberCyan} top="5%" left="50%" size={92} />
+      <PixelatedSquare color={W.neonOrange} top="68%" left="5%" size={72} />
+      <StripePattern color={W.acidGreen} top="18%" left="85%" size={115} />
 
       <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        {/* Enhanced title card */}
         <motion.div
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+          initial={{ y: -100, opacity: 0, rotate: 20 }}
+          animate={{ y: 0, opacity: 1, rotate: 2 }}
+          transition={{ duration: 0.8, type: 'spring', bounce: 0.6 }}
           style={{
             backgroundColor: W.trueWhite,
-            border: `6px solid ${W.trueBlack}`,
-            padding: '20px 40px',
-            marginBottom: 40,
-            boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+            border: `10px solid ${W.trueBlack}`,
+            padding: '24px 52px',
+            marginBottom: 48,
+            boxShadow: '16px 16px 0px rgba(0,0,0,0.6)',
             transform: 'rotate(2deg)',
+            position: 'relative',
           }}
         >
+          {/* Decorative corner elements */}
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -15,
+              left: -15,
+              width: 45,
+              height: 45,
+              backgroundColor: W.electricYellow,
+              border: `5px solid ${W.trueBlack}`,
+              boxShadow: '5px 5px 0px rgba(0,0,0,0.4)',
+            }}
+            animate={{ rotate: [0, 90, 180, 270, 360], scale: [1, 1.25, 1] }}
+            transition={{ duration: 5, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -15,
+              right: -15,
+              width: 45,
+              height: 45,
+              backgroundColor: W.hotPink,
+              border: `5px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+              boxShadow: '5px 5px 0px rgba(0,0,0,0.4)',
+            }}
+            animate={{ scale: [1, 1.4, 1], rotate: [0, -360] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          />
+
           <GlitchText>
-            <div style={{ fontSize: 48, fontWeight: 900, color: W.deepPurple }}>
+            <div style={{ fontSize: 56, fontWeight: 900, color: W.vividGreen, textShadow: '6px 6px 0px rgba(0,0,0,0.15)' }}>
               BY THE NUMBERS
             </div>
           </GlitchText>
         </motion.div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%', maxWidth: 500 }}>
+        {/* Stat cards with enhanced design */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%', maxWidth: 550 }}>
+          {/* Hours stat */}
           <motion.div
-            initial={{ x: -100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            initial={{ x: -150, opacity: 0, rotate: -20 }}
+            animate={{ x: 0, opacity: 1, rotate: -2 }}
+            transition={{ delay: 0.2, type: 'spring', bounce: 0.5 }}
             style={{
               backgroundColor: W.electricYellow,
-              border: `5px solid ${W.trueBlack}`,
-              padding: '20px 32px',
-              boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+              border: `8px solid ${W.trueBlack}`,
+              padding: '24px 36px',
+              boxShadow: '12px 12px 0px rgba(0,0,0,0.5)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              transform: 'rotate(-2deg)',
+              position: 'relative',
             }}
           >
-            <div style={{ fontSize: 20, fontWeight: 700, color: W.trueBlack }}>Total Hours</div>
-            <div style={{ fontSize: 48, fontWeight: 900, color: W.trueBlack }}>{hours.toLocaleString()}</div>
+            {/* Icon decoration */}
+            <motion.div
+              style={{
+                position: 'absolute',
+                top: -18,
+                left: 20,
+                backgroundColor: W.hotCoral,
+                border: `4px solid ${W.trueBlack}`,
+                padding: '8px 16px',
+                boxShadow: '4px 4px 0px rgba(0,0,0,0.4)',
+              }}
+              animate={{ y: [-3, 3, -3] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Clock size={24} color={W.trueWhite} strokeWidth={3} />
+            </motion.div>
+
+            <StretchText>
+              <div style={{ fontSize: 24, fontWeight: 800, color: W.trueBlack, letterSpacing: '1px' }}>Total Hours</div>
+            </StretchText>
+            <PixelText>
+              <div style={{ fontSize: 52, fontWeight: 900, color: W.trueBlack, textShadow: '4px 4px 0px rgba(255,255,255,0.4)' }}>
+                {hours.toLocaleString()}
+              </div>
+            </PixelText>
           </motion.div>
 
+          {/* Months stat */}
           <motion.div
-            initial={{ x: 100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
+            initial={{ x: 150, opacity: 0, rotate: 20 }}
+            animate={{ x: 0, opacity: 1, rotate: 2 }}
+            transition={{ delay: 0.4, type: 'spring', bounce: 0.5 }}
             style={{
               backgroundColor: W.hotCoral,
-              border: `5px solid ${W.trueBlack}`,
-              padding: '20px 32px',
-              boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+              border: `8px solid ${W.trueBlack}`,
+              padding: '24px 36px',
+              boxShadow: '12px 12px 0px rgba(0,0,0,0.5)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              transform: 'rotate(2deg)',
+              position: 'relative',
             }}
           >
-            <div style={{ fontSize: 20, fontWeight: 700, color: W.trueWhite }}>Months Active</div>
-            <div style={{ fontSize: 48, fontWeight: 900, color: W.trueWhite }}>{months}</div>
+            {/* Icon decoration */}
+            <motion.div
+              style={{
+                position: 'absolute',
+                top: -18,
+                left: 20,
+                backgroundColor: W.cyberCyan,
+                border: `4px solid ${W.trueBlack}`,
+                padding: '8px 16px',
+                boxShadow: '4px 4px 0px rgba(0,0,0,0.4)',
+              }}
+              animate={{ y: [-3, 3, -3], rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
+            >
+              <Sparkles size={24} color={W.trueBlack} strokeWidth={3} />
+            </motion.div>
+
+            <WarpText>
+              <div style={{ fontSize: 24, fontWeight: 800, color: W.trueWhite, letterSpacing: '1px' }}>Months Active</div>
+            </WarpText>
+            <StretchText>
+              <div style={{ fontSize: 52, fontWeight: 900, color: W.trueWhite, textShadow: '4px 4px 0px rgba(0,0,0,0.3)' }}>
+                {months}
+              </div>
+            </StretchText>
           </motion.div>
 
+          {/* Average stat */}
           <motion.div
-            initial={{ x: -100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.6 }}
+            initial={{ x: -150, opacity: 0, rotate: -20 }}
+            animate={{ x: 0, opacity: 1, rotate: -2 }}
+            transition={{ delay: 0.6, type: 'spring', bounce: 0.5 }}
             style={{
-              backgroundColor: W.vividGreen,
-              border: `5px solid ${W.trueBlack}`,
-              padding: '20px 32px',
-              boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+              backgroundColor: W.deepPurple,
+              border: `8px solid ${W.trueBlack}`,
+              padding: '24px 36px',
+              boxShadow: '12px 12px 0px rgba(0,0,0,0.5)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              transform: 'rotate(-2deg)',
+              position: 'relative',
             }}
           >
-            <div style={{ fontSize: 20, fontWeight: 700, color: W.trueBlack }}>Avg Per Day</div>
-            <div style={{ fontSize: 48, fontWeight: 900, color: W.trueBlack }}>{avgPerDay}m</div>
+            {/* Icon decoration */}
+            <motion.div
+              style={{
+                position: 'absolute',
+                top: -18,
+                left: 20,
+                backgroundColor: W.acidGreen,
+                border: `4px solid ${W.trueBlack}`,
+                padding: '8px 16px',
+                boxShadow: '4px 4px 0px rgba(0,0,0,0.4)',
+              }}
+              animate={{ y: [-3, 3, -3], scale: [1, 1.1, 1] }}
+              transition={{ duration: 2.2, repeat: Infinity }}
+            >
+              <TrendingUp size={24} color={W.trueBlack} strokeWidth={3} />
+            </motion.div>
+
+            <StretchText>
+              <div style={{ fontSize: 24, fontWeight: 800, color: W.trueWhite, letterSpacing: '1px' }}>Avg Per Day</div>
+            </StretchText>
+            <GlitchText>
+              <div style={{ fontSize: 52, fontWeight: 900, color: W.acidGreen }}>
+                {avgPerDay}m
+              </div>
+            </GlitchText>
           </motion.div>
         </div>
       </div>
@@ -1591,54 +2520,226 @@ const Slide10: React.FC<{ artists: Artist[] }> = ({ artists }) => {
   const insight = topArtist.museInsight || `You spent ${topArtist.timeStr || 'countless hours'} listening to ${topArtist.name}. That's dedication!`;
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.vividGreen, overflow: 'hidden' }}>
-      <AnimatedDots color={W.trueBlack} />
-      <MovingShapes color={W.trueBlack} />
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.deepPurple, overflow: 'hidden' }}>
+      {/* Enhanced layered backgrounds */}
+      <GridPattern color={W.trueWhite} />
+      <AnimatedDots color={W.trueWhite} density={70} />
+      <MovingShapes color={W.trueWhite} />
+      <DiagonalStripes color={W.trueWhite} direction="left" />
+      <FloatingBlobs color={W.trueWhite} />
       
-      <FloatingZigzag color={W.electricYellow} top="8%" left="80%" size={75} />
-      <PulsingCircle color={W.hotCoral} top="60%" left="10%" size={95} />
-      <RotatingStar color={W.deepPurple} top="25%" left="15%" size={70} />
-      <BouncingDiamond color={W.hotPink} top="75%" left="75%" size={80} />
-      <GlitchSquare color={W.electricBlue} top="40%" left="85%" size={85} />
-      <WavyLine color={W.trueBlack} top="85%" left="30%" width={140} />
+      {/* 8+ animated shape components */}
+      <FloatingZigzag color={W.electricYellow} top="7%" left="82%" size={88} />
+      <PulsingCircle color={W.hotCoral} top="62%" left="9%" size={108} />
+      <RotatingStar color={W.acidGreen} top="23%" left="13%" size={73} />
+      <BouncingDiamond color={W.hotPink} top="77%" left="79%" size={87} />
+      <GlitchSquare color={W.electricBlue} top="38%" left="88%" size={93} />
+      <WavyLine color={W.trueWhite} top="87%" left="27%" width={155} />
+      <CrossShape color={W.cyberCyan} top="12%" left="45%" size={97} />
+      <PixelatedSquare color={W.neonOrange} top="73%" left="15%" size={68} />
+      <StripePattern color={W.vividGreen} top="6%" left="5%" size={108} />
 
       <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        {/* Enhanced artist image with decorations */}
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring' }}
+          initial={{ scale: 0, rotate: 360 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ duration: 0.9, type: 'spring', bounce: 0.5 }}
           style={{
-            width: 200,
-            height: 200,
-            backgroundImage: `url(${topArtist.image || fallbackImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            border: `8px solid ${W.trueBlack}`,
-            boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
-            transform: 'rotate(-5deg)',
-          }}
-        />
-
-        <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          style={{
-            marginTop: 40,
-            backgroundColor: W.trueBlack,
-            border: `6px solid ${W.trueWhite}`,
-            padding: '24px 32px',
-            boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
-            transform: 'rotate(2deg)',
-            maxWidth: '80%',
+            position: 'relative',
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 700, color: W.vividGreen, marginBottom: 12, textTransform: 'uppercase', textAlign: 'center' }}>
-            ✨ Insight ✨
+          {/* Main artist image */}
+          <motion.div
+            animate={{ rotate: [-5, 5, -5] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+            style={{
+              width: 240,
+              height: 240,
+              backgroundImage: `url(${topArtist.image || fallbackImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              border: `10px solid ${W.trueBlack}`,
+              boxShadow: '16px 16px 0px rgba(0,0,0,0.6)',
+              transform: 'rotate(-5deg)',
+              position: 'relative',
+            }}
+          />
+
+          {/* Corner decorations */}
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -18,
+              left: -18,
+              width: 50,
+              height: 50,
+              backgroundColor: W.electricYellow,
+              border: `5px solid ${W.trueBlack}`,
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ rotate: [0, 90, 180, 270, 360], scale: [1, 1.3, 1] }}
+            transition={{ duration: 6, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -18,
+              right: -18,
+              width: 50,
+              height: 50,
+              backgroundColor: W.cyberCyan,
+              border: `5px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ scale: [1, 1.5, 1], rotate: [0, 180, 360] }}
+            transition={{ duration: 4.5, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              bottom: -18,
+              left: -18,
+              width: 50,
+              height: 50,
+              backgroundColor: W.hotPink,
+              border: `5px solid ${W.trueBlack}`,
+              transform: 'rotate(45deg)',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ rotate: [45, 405], scale: [1, 1.35, 1] }}
+            transition={{ duration: 5.5, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              bottom: -18,
+              right: -18,
+              width: 50,
+              height: 50,
+              backgroundColor: W.vividGreen,
+              border: `5px solid ${W.trueBlack}`,
+              clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ rotate: [0, -360], scale: [1, 1.4, 1] }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
+          />
+
+          {/* Artist badge */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.5, type: 'spring', bounce: 0.6 }}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: W.trueWhite,
+              border: `5px solid ${W.trueBlack}`,
+              padding: '8px 20px',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.5)',
+            }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 900, color: W.deepPurple, letterSpacing: '2px' }}>
+              TOP ARTIST
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Enhanced insight card */}
+        <motion.div
+          initial={{ y: 80, opacity: 0, rotate: 20 }}
+          animate={{ y: 0, opacity: 1, rotate: -2 }}
+          transition={{ delay: 0.4, type: 'spring', bounce: 0.5 }}
+          style={{
+            marginTop: 50,
+            backgroundColor: W.trueBlack,
+            border: `8px solid ${W.trueWhite}`,
+            padding: '32px 40px',
+            boxShadow: '14px 14px 0px rgba(0,0,0,0.6)',
+            transform: 'rotate(-2deg)',
+            maxWidth: '85%',
+            position: 'relative',
+          }}
+        >
+          {/* Top badge decoration */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -18,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: W.acidGreen,
+              border: `5px solid ${W.trueBlack}`,
+              padding: '10px 28px',
+              boxShadow: '5px 5px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ y: [-4, 4, -4], rotate: [-2, 2, -2] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            <Sparkles size={24} color={W.trueBlack} strokeWidth={3} />
+          </motion.div>
+
+          {/* Corner accents */}
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -12,
+              right: -12,
+              width: 35,
+              height: 35,
+              backgroundColor: W.hotCoral,
+              border: `4px solid ${W.trueWhite}`,
+              transform: 'rotate(45deg)',
+            }}
+            animate={{ rotate: [45, 405], scale: [1, 1.3, 1] }}
+            transition={{ duration: 3.5, repeat: Infinity }}
+          />
+
+          <div style={{ fontSize: 16, fontWeight: 800, color: W.acidGreen, marginBottom: 16, textTransform: 'uppercase', textAlign: 'center', letterSpacing: '3px' }}>
+            ✨ AI Insight ✨
           </div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: W.trueWhite, lineHeight: 1.4, textAlign: 'center' }}>
-            {insight}
-          </div>
+          <WarpText>
+            <div style={{ fontSize: 24, fontWeight: 700, color: W.trueWhite, lineHeight: 1.5, textAlign: 'center' }}>
+              {insight}
+            </div>
+          </WarpText>
+
+          {/* Bottom decoration bar */}
+          <motion.div
+            style={{
+              marginTop: 20,
+              height: 8,
+              backgroundColor: W.deepPurple,
+              border: `3px solid ${W.trueWhite}`,
+            }}
+            animate={{ scaleX: [1, 0.9, 1] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
+          />
+        </motion.div>
+
+        {/* Additional artist name badge */}
+        <motion.div
+          initial={{ scale: 0, rotate: 180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 0.7, type: 'spring', bounce: 0.6 }}
+          style={{
+            marginTop: 32,
+            backgroundColor: W.electricYellow,
+            border: `6px solid ${W.trueBlack}`,
+            padding: '16px 40px',
+            boxShadow: '8px 8px 0px rgba(0,0,0,0.5)',
+            transform: 'rotate(2deg)',
+          }}
+        >
+          <GlitchText>
+            <div style={{ fontSize: 28, fontWeight: 900, color: W.trueBlack, letterSpacing: '1px' }}>
+              {topArtist.name}
+            </div>
+          </GlitchText>
         </motion.div>
       </div>
     </div>
@@ -1649,56 +2750,218 @@ const Slide11: React.FC<{ albumCovers: string[] }> = ({ albumCovers }) => {
   const covers = albumCovers.slice(0, 9);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.electricYellow, overflow: 'hidden' }}>
-      <AnimatedDots color={W.trueBlack} />
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.acidGreen, overflow: 'hidden' }}>
+      {/* Enhanced layered backgrounds */}
+      <GridPattern color={W.trueBlack} />
+      <AnimatedDots color={W.trueBlack} density={65} />
       <MovingShapes color={W.trueBlack} />
+      <DiagonalStripes color={W.trueBlack} direction="right" />
+      <FloatingBlobs color={W.trueBlack} />
       
-      <FloatingZigzag color={W.electricBlue} top="5%" left="5%" size={70} />
-      <PulsingCircle color={W.hotCoral} top="70%" left="85%" size={90} />
-      <RotatingStar color={W.deepPurple} top="50%" left="90%" size={65} />
-      <BouncingDiamond color={W.vividGreen} top="80%" left="10%" size={75} />
-      <GlitchSquare color={W.hotPink} top="15%" left="85%" size={80} />
+      {/* 8+ animated shape components */}
+      <FloatingZigzag color={W.electricBlue} top="4%" left="4%" size={78} />
+      <PulsingCircle color={W.hotCoral} top="72%" left="88%" size={102} />
+      <RotatingStar color={W.deepPurple} top="52%" left="92%" size={68} />
+      <BouncingDiamond color={W.hotPink} top="82%" left="8%" size={83} />
+      <GlitchSquare color={W.neonOrange} top="13%" left="88%" size={88} />
+      <WavyLine color={W.trueBlack} top="90%" left="30%" width={135} />
+      <CrossShape color={W.cyberCyan} top="35%" left="3%" size={95} />
+      <PixelatedSquare color={W.electricYellow} top="8%" left="45%" size={70} />
+      <StripePattern color={W.vividGreen} top="60%" left="5%" size={100} />
 
       <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        {/* Enhanced title card */}
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={{ scale: 0, rotate: 180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ duration: 0.8, type: 'spring', bounce: 0.6 }}
           style={{
             backgroundColor: W.trueBlack,
-            border: `6px solid ${W.trueWhite}`,
-            padding: '20px 40px',
-            marginBottom: 40,
-            boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
+            border: `8px solid ${W.trueWhite}`,
+            padding: '24px 52px',
+            marginBottom: 48,
+            boxShadow: '14px 14px 0px rgba(0,0,0,0.6)',
             transform: 'rotate(-2deg)',
+            position: 'relative',
           }}
         >
-          <RepeatedText>
-            <div style={{ fontSize: 48, fontWeight: 900, color: W.electricYellow }}>
+          {/* Decorative badges */}
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -15,
+              left: -15,
+              width: 42,
+              height: 42,
+              backgroundColor: W.hotPink,
+              border: `5px solid ${W.trueWhite}`,
+              borderRadius: '50%',
+            }}
+            animate={{ scale: [1, 1.4, 1], rotate: [0, 360] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -15,
+              right: -15,
+              width: 42,
+              height: 42,
+              backgroundColor: W.electricYellow,
+              border: `5px solid ${W.trueWhite}`,
+              transform: 'rotate(45deg)',
+            }}
+            animate={{ rotate: [45, 405], scale: [1, 1.35, 1] }}
+            transition={{ duration: 3.5, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              bottom: -15,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: W.cyberCyan,
+              border: `5px solid ${W.trueWhite}`,
+              padding: '6px 18px',
+            }}
+            animate={{ y: [-4, 4, -4] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <Music size={20} color={W.trueBlack} strokeWidth={3} />
+          </motion.div>
+
+          <GlitchText>
+            <div style={{ fontSize: 52, fontWeight: 900, color: W.acidGreen, textShadow: '5px 5px 0px rgba(0,0,0,0.2)' }}>
               YOUR COLLAGE
             </div>
-          </RepeatedText>
+          </GlitchText>
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, maxWidth: 500 }}>
+        {/* Enhanced album grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, maxWidth: 550 }}>
           {covers.map((cover, i) => (
             <motion.div
               key={i}
-              initial={{ scale: 0, rotate: 180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: stagger(i, 0.1), type: 'spring' }}
+              initial={{ scale: 0, rotate: 180, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{ delay: stagger(i, 0.1, 0.08), type: 'spring', bounce: 0.5 }}
               style={{
-                width: 140,
-                height: 140,
-                backgroundImage: `url(${cover || fallbackImage})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                border: `5px solid ${W.trueBlack}`,
-                boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
-                transform: `rotate(${(i % 3) * 2 - 2}deg)`,
+                position: 'relative',
               }}
-            />
+            >
+              {/* Album cover */}
+              <motion.div
+                animate={{ 
+                  rotate: [(i % 3) * 2 - 2, (i % 3) * 2 + 2, (i % 3) * 2 - 2],
+                  y: [0, -5, 0]
+                }}
+                transition={{ 
+                  duration: 3 + i * 0.3, 
+                  repeat: Infinity, 
+                  ease: 'easeInOut' 
+                }}
+                style={{
+                  width: 155,
+                  height: 155,
+                  backgroundImage: `url(${cover || fallbackImage})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  border: `6px solid ${W.trueBlack}`,
+                  boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+                  transform: `rotate(${(i % 3) * 2 - 2}deg)`,
+                }}
+              />
+
+              {/* Number badge */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ 
+                  scale: 1,
+                  rotate: [0, 360]
+                }}
+                transition={{ 
+                  scale: { delay: stagger(i, 0.1, 0.08) + 0.2, type: 'spring', bounce: 0.7 },
+                  rotate: { duration: 5, repeat: Infinity, delay: i * 0.3, ease: 'linear' }
+                }}
+                style={{
+                  position: 'absolute',
+                  top: -12,
+                  right: -12,
+                  width: 38,
+                  height: 38,
+                  backgroundColor: [
+                    W.electricYellow, W.hotPink, W.cyberCyan,
+                    W.neonOrange, W.deepPurple, W.electricBlue,
+                    W.hotCoral, W.vividGreen, W.acidGreen
+                  ][i],
+                  border: `4px solid ${W.trueBlack}`,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 900,
+                  fontSize: 18,
+                  color: i === 1 || i === 4 ? W.trueWhite : W.trueBlack,
+                  boxShadow: '4px 4px 0px rgba(0,0,0,0.4)',
+                }}
+              >
+                {i + 1}
+              </motion.div>
+
+              {/* Corner accent */}
+              <motion.div
+                style={{
+                  position: 'absolute',
+                  bottom: -8,
+                  left: -8,
+                  width: 24,
+                  height: 24,
+                  backgroundColor: W.trueBlack,
+                  border: `3px solid ${W.trueWhite}`,
+                  transform: 'rotate(45deg)',
+                }}
+                animate={{ rotate: [45, 405] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+              />
+            </motion.div>
           ))}
         </div>
+
+        {/* Bottom decorative badge */}
+        <motion.div
+          initial={{ y: 50, opacity: 0, scale: 0 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          transition={{ delay: 1, type: 'spring', bounce: 0.5 }}
+          style={{
+            marginTop: 40,
+            backgroundColor: W.trueBlack,
+            border: `6px solid ${W.trueWhite}`,
+            padding: '14px 36px',
+            boxShadow: '8px 8px 0px rgba(0,0,0,0.5)',
+            transform: 'rotate(2deg)',
+            position: 'relative',
+          }}
+        >
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -10,
+              left: -10,
+              width: 28,
+              height: 28,
+              backgroundColor: W.hotCoral,
+              border: `3px solid ${W.trueWhite}`,
+              borderRadius: '50%',
+            }}
+            animate={{ scale: [1, 1.3, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+          <PixelText>
+            <div style={{ fontSize: 20, fontWeight: 900, color: W.acidGreen, letterSpacing: '2px' }}>
+              💿 YOUR TOP ALBUMS
+            </div>
+          </PixelText>
+        </motion.div>
       </div>
     </div>
   );
@@ -1708,76 +2971,250 @@ const Slide12: React.FC<{ connectionGraph?: { artistInfo: Record<string, any>; p
   const artists = connectionGraph ? Object.keys(connectionGraph.artistInfo).slice(0, 6) : [];
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.electricBlue, overflow: 'hidden' }}>
-      <AnimatedDots color={W.trueWhite} />
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.hotCoral, overflow: 'hidden' }}>
+      {/* Enhanced layered backgrounds */}
+      <GridPattern color={W.trueWhite} />
+      <AnimatedDots color={W.trueWhite} density={75} />
       <MovingShapes color={W.trueWhite} />
+      <DiagonalStripes color={W.trueWhite} direction="left" />
+      <FloatingBlobs color={W.trueWhite} />
       
-      <FloatingZigzag color={W.electricYellow} top="10%" left="75%" size={80} />
-      <PulsingCircle color={W.hotCoral} top="65%" left="15%" size={100} />
-      <RotatingStar color={W.vividGreen} top="30%" left="10%" size={70} />
-      <BouncingDiamond color={W.hotPink} top="75%" left="80%" size={85} />
-      <GlitchSquare color={W.trueWhite} top="45%" left="85%" size={75} />
-      <WavyLine color={W.trueWhite} top="20%" left="35%" width={130} />
+      {/* 8+ animated shape components */}
+      <FloatingZigzag color={W.electricYellow} top="9%" left="77%" size={85} />
+      <PulsingCircle color={W.cyberCyan} top="67%" left="13%" size={112} />
+      <RotatingStar color={W.vividGreen} top="28%" left="8%" size={72} />
+      <BouncingDiamond color={W.deepPurple} top="77%" left="82%" size={90} />
+      <GlitchSquare color={W.trueWhite} top="43%" left="88%" size={85} />
+      <WavyLine color={W.trueWhite} top="18%" left="32%" width={145} />
+      <CrossShape color={W.neonOrange} top="55%" left="5%" size={98} />
+      <PixelatedSquare color={W.acidGreen} top="10%" left="45%" size={68} />
+      <StripePattern color={W.electricBlue} top="85%" left="60%" size={105} />
 
       <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        {/* Enhanced title card */}
         <motion.div
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+          initial={{ y: -80, opacity: 0, rotate: -20 }}
+          animate={{ y: 0, opacity: 1, rotate: 2 }}
+          transition={{ duration: 0.8, type: 'spring', bounce: 0.6 }}
           style={{
             backgroundColor: W.trueWhite,
-            border: `6px solid ${W.trueBlack}`,
-            padding: '20px 40px',
-            marginBottom: 40,
-            boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+            border: `10px solid ${W.trueBlack}`,
+            padding: '24px 56px',
+            marginBottom: 48,
+            boxShadow: '16px 16px 0px rgba(0,0,0,0.6)',
             transform: 'rotate(2deg)',
+            position: 'relative',
           }}
         >
-          <GlitchText>
-            <div style={{ fontSize: 48, fontWeight: 900, color: W.electricBlue }}>
+          {/* Decorative elements */}
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -18,
+              left: -18,
+              width: 48,
+              height: 48,
+              backgroundColor: W.electricYellow,
+              border: `5px solid ${W.trueBlack}`,
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ rotate: [0, 90, 180, 270, 360], scale: [1, 1.3, 1] }}
+            transition={{ duration: 6, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -18,
+              right: -18,
+              width: 48,
+              height: 48,
+              backgroundColor: W.cyberCyan,
+              border: `5px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ scale: [1, 1.5, 1], rotate: [0, 180, 360] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              bottom: -18,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: W.hotPink,
+              border: `5px solid ${W.trueBlack}`,
+              padding: '8px 22px',
+              boxShadow: '5px 5px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ y: [-4, 4, -4], scale: [1, 1.1, 1] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
+          >
+            <Zap size={24} color={W.trueWhite} strokeWidth={3} />
+          </motion.div>
+
+          <WarpText>
+            <div style={{ fontSize: 56, fontWeight: 900, color: W.hotCoral, textShadow: '6px 6px 0px rgba(0,0,0,0.12)' }}>
               CONNECTIONS
             </div>
-          </GlitchText>
+          </WarpText>
         </motion.div>
 
         {artists.length > 0 ? (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', maxWidth: 600 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'center', maxWidth: 650 }}>
             {artists.map((artist, i) => (
               <motion.div
                 key={i}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: stagger(i, 0.15), type: 'spring' }}
+                initial={{ scale: 0, rotate: 90, y: 80 }}
+                animate={{ scale: 1, rotate: 0, y: 0 }}
+                transition={{ delay: stagger(i, 0.15, 0.1), type: 'spring', bounce: 0.6 }}
                 style={{
                   backgroundColor: W.trueWhite,
-                  border: `5px solid ${W.trueBlack}`,
-                  padding: '16px 24px',
-                  boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+                  border: `7px solid ${W.trueBlack}`,
+                  padding: '20px 32px',
+                  boxShadow: '10px 10px 0px rgba(0,0,0,0.5)',
                   transform: `rotate(${i % 2 === 0 ? -2 : 2}deg)`,
+                  position: 'relative',
                 }}
               >
-                <div style={{ fontSize: 20, fontWeight: 900, color: W.trueBlack }}>
-                  {artist}
-                </div>
+                {/* Badge decoration */}
+                <motion.div
+                  style={{
+                    position: 'absolute',
+                    top: -14,
+                    left: -14,
+                    width: 36,
+                    height: 36,
+                    backgroundColor: [W.electricYellow, W.cyberCyan, W.vividGreen, W.deepPurple, W.neonOrange, W.hotPink][i % 6],
+                    border: `4px solid ${W.trueBlack}`,
+                    borderRadius: '50%',
+                    boxShadow: '4px 4px 0px rgba(0,0,0,0.4)',
+                  }}
+                  animate={{ rotate: [0, 360], scale: [1, 1.3, 1] }}
+                  transition={{ duration: 4 + i * 0.5, repeat: Infinity }}
+                />
+
+                {/* Connection lines decoration */}
+                <motion.div
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    right: -8,
+                    width: 20,
+                    height: 4,
+                    backgroundColor: W.trueBlack,
+                  }}
+                  animate={{ scaleX: [1, 1.5, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                />
+
+                <StretchText>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: W.trueBlack, letterSpacing: '0.5px' }}>
+                    {artist}
+                  </div>
+                </StretchText>
+
+                {/* Bottom accent bar */}
+                <motion.div
+                  style={{
+                    marginTop: 10,
+                    height: 5,
+                    backgroundColor: [W.electricYellow, W.cyberCyan, W.vividGreen, W.deepPurple, W.neonOrange, W.hotPink][i % 6],
+                    border: `2px solid ${W.trueBlack}`,
+                  }}
+                  animate={{ scaleX: [1, 0.85, 1] }}
+                  transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.15 }}
+                />
               </motion.div>
             ))}
           </div>
         ) : (
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
+            initial={{ scale: 0, rotate: 180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', bounce: 0.6 }}
             style={{
               backgroundColor: W.trueWhite,
-              border: `6px solid ${W.trueBlack}`,
-              padding: '32px 48px',
-              boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+              border: `8px solid ${W.trueBlack}`,
+              padding: '40px 56px',
+              boxShadow: '14px 14px 0px rgba(0,0,0,0.6)',
               textAlign: 'center',
+              position: 'relative',
             }}
           >
-            <div style={{ fontSize: 24, fontWeight: 700, color: W.trueBlack }}>
-              Your music taste is eclectic and unique!
-            </div>
+            {/* Corner decorations */}
+            <motion.div 
+              style={{
+                position: 'absolute',
+                top: -12,
+                left: -12,
+                width: 40,
+                height: 40,
+                backgroundColor: W.electricYellow,
+                border: `4px solid ${W.trueBlack}`,
+                transform: 'rotate(45deg)',
+              }}
+              animate={{ rotate: [45, 405], scale: [1, 1.3, 1] }}
+              transition={{ duration: 4, repeat: Infinity }}
+            />
+            <motion.div 
+              style={{
+                position: 'absolute',
+                bottom: -12,
+                right: -12,
+                width: 40,
+                height: 40,
+                backgroundColor: W.cyberCyan,
+                border: `4px solid ${W.trueBlack}`,
+                borderRadius: '50%',
+              }}
+              animate={{ scale: [1, 1.4, 1], rotate: [0, 360] }}
+              transition={{ duration: 3.5, repeat: Infinity }}
+            />
+
+            <GlitchText>
+              <div style={{ fontSize: 28, fontWeight: 800, color: W.trueBlack, lineHeight: 1.4 }}>
+                Your music taste is eclectic and unique!
+              </div>
+            </GlitchText>
           </motion.div>
         )}
+
+        {/* Additional decorative badge */}
+        <motion.div
+          initial={{ scale: 0, y: 50 }}
+          animate={{ scale: 1, y: 0 }}
+          transition={{ delay: 1, type: 'spring', bounce: 0.5 }}
+          style={{
+            marginTop: 40,
+            backgroundColor: W.trueBlack,
+            border: `6px solid ${W.trueWhite}`,
+            padding: '14px 38px',
+            boxShadow: '8px 8px 0px rgba(0,0,0,0.5)',
+            transform: 'rotate(-2deg)',
+            position: 'relative',
+          }}
+        >
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -10,
+              right: -10,
+              width: 28,
+              height: 28,
+              backgroundColor: W.vividGreen,
+              border: `3px solid ${W.trueWhite}`,
+              transform: 'rotate(45deg)',
+            }}
+            animate={{ rotate: [45, 405] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+          />
+          <PixelText>
+            <div style={{ fontSize: 18, fontWeight: 900, color: W.trueWhite, letterSpacing: '2px' }}>
+              🎵 YOUR MUSICAL WEB
+            </div>
+          </PixelText>
+        </motion.div>
       </div>
     </div>
   );
@@ -1786,74 +3223,243 @@ const Slide12: React.FC<{ connectionGraph?: { artistInfo: Record<string, any>; p
 const Slide13: React.FC = () => {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.trueBlack, overflow: 'hidden' }}>
-      <AnimatedDots color={W.electricYellow} />
+      {/* Enhanced layered backgrounds */}
+      <GridPattern color={W.electricYellow} />
+      <AnimatedDots color={W.electricYellow} density={85} />
       <MovingShapes color={W.electricYellow} />
+      <DiagonalStripes color={W.electricYellow} direction="right" />
+      <FloatingBlobs color={W.electricYellow} />
       
-      <FloatingZigzag color={W.electricYellow} top="10%" left="10%" size={90} />
-      <PulsingCircle color={W.hotCoral} top="60%" left="70%" size={110} />
-      <RotatingStar color={W.vividGreen} top="25%" left="75%" size={80} />
-      <BouncingDiamond color={W.hotPink} top="70%" left="20%" size={95} />
-      <GlitchSquare color={W.electricBlue} top="15%" left="60%" size={100} />
-      <WavyLine color={W.deepPurple} top="80%" left="40%" width={160} />
+      {/* 8+ animated shape components */}
+      <FloatingZigzag color={W.electricYellow} top="8%" left="8%" size={95} />
+      <PulsingCircle color={W.hotCoral} top="62%" left="72%" size={120} />
+      <RotatingStar color={W.vividGreen} top="23%" left="78%" size={85} />
+      <BouncingDiamond color={W.hotPink} top="72%" left="18%" size={100} />
+      <GlitchSquare color={W.electricBlue} top="13%" left="62%" size={105} />
+      <WavyLine color={W.deepPurple} top="82%" left="38%" width={170} />
+      <CrossShape color={W.cyberCyan} top="45%" left="5%" size={110} />
+      <PixelatedSquare color={W.neonOrange} top="35%" left="88%" size={75} />
+      <StripePattern color={W.acidGreen} top="55%" left="50%" size={120} />
 
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 48 }}>
+        {/* Main year card with enhanced effects */}
         <motion.div
           initial={{ scale: 0, rotate: 360 }}
           animate={{ scale: 1, rotate: 0 }}
-          transition={{ duration: 1, type: 'spring', bounce: 0.6 }}
+          transition={{ duration: 1.2, type: 'spring', bounce: 0.7 }}
           style={{
             backgroundColor: W.electricYellow,
-            border: `8px solid ${W.hotCoral}`,
-            padding: '32px 64px',
-            boxShadow: '15px 15px 0px rgba(255, 215, 0, 0.3)',
+            border: `12px solid ${W.hotCoral}`,
+            padding: '40px 80px',
+            boxShadow: '20px 20px 0px rgba(255, 215, 0, 0.4)',
             transform: 'rotate(-3deg)',
             textAlign: 'center',
+            position: 'relative',
           }}
         >
-          <GlitchText>
-            <div style={{ fontSize: 72, fontWeight: 900, color: W.trueBlack, lineHeight: 1 }}>
+          {/* Corner decorations */}
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -20,
+              left: -20,
+              width: 55,
+              height: 55,
+              backgroundColor: W.cyberCyan,
+              border: `6px solid ${W.trueBlack}`,
+              boxShadow: '8px 8px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ rotate: [0, 90, 180, 270, 360], scale: [1, 1.3, 1] }}
+            transition={{ duration: 8, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -20,
+              right: -20,
+              width: 55,
+              height: 55,
+              backgroundColor: W.hotPink,
+              border: `6px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+              boxShadow: '8px 8px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ scale: [1, 1.5, 1], rotate: [0, 180, 360] }}
+            transition={{ duration: 5, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              bottom: -20,
+              left: -20,
+              width: 55,
+              height: 55,
+              backgroundColor: W.vividGreen,
+              border: `6px solid ${W.trueBlack}`,
+              transform: 'rotate(45deg)',
+              boxShadow: '8px 8px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ rotate: [45, 405], scale: [1, 1.4, 1] }}
+            transition={{ duration: 6, repeat: Infinity }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              bottom: -20,
+              right: -20,
+              width: 55,
+              height: 55,
+              backgroundColor: W.deepPurple,
+              border: `6px solid ${W.trueBlack}`,
+              clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+              boxShadow: '8px 8px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ rotate: [0, -360], scale: [1, 1.45, 1] }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
+          />
+
+          {/* Year badge */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -25,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: W.neonOrange,
+              border: `6px solid ${W.trueBlack}`,
+              padding: '10px 28px',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.5)',
+            }}
+            animate={{ y: [-5, 5, -5], rotate: [-3, 3, -3] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            <Flame size={28} color={W.trueWhite} strokeWidth={3} />
+          </motion.div>
+
+          <WarpText>
+            <div style={{ fontSize: 86, fontWeight: 900, color: W.trueBlack, lineHeight: 0.9, textShadow: '8px 8px 0px rgba(0,0,0,0.1)' }}>
               {CURRENT_YEAR}
             </div>
+          </WarpText>
+          <GlitchText>
+            <div style={{ fontSize: 58, fontWeight: 900, color: W.trueBlack, marginTop: 12, letterSpacing: '4px' }}>
+              WRAPPED
+            </div>
           </GlitchText>
-          <div style={{ fontSize: 48, fontWeight: 900, color: W.trueBlack, marginTop: 8 }}>
-            WRAPPED
-          </div>
         </motion.div>
 
+        {/* Thanks message with enhanced styling */}
         <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          initial={{ y: 80, opacity: 0, rotate: 20 }}
+          animate={{ y: 0, opacity: 1, rotate: -2 }}
+          transition={{ delay: 0.6, type: 'spring', bounce: 0.6 }}
           style={{
-            marginTop: 48,
+            marginTop: 56,
             backgroundColor: W.trueWhite,
-            border: `6px solid ${W.electricBlue}`,
-            padding: '24px 48px',
-            boxShadow: '10px 10px 0px rgba(255, 255, 255, 0.2)',
-            transform: 'rotate(2deg)',
+            border: `10px solid ${W.electricBlue}`,
+            padding: '28px 56px',
+            boxShadow: '16px 16px 0px rgba(255, 255, 255, 0.2)',
+            transform: 'rotate(-2deg)',
+            position: 'relative',
           }}
         >
-          <RepeatedText>
-            <div style={{ fontSize: 36, fontWeight: 900, color: W.trueBlack }}>
+          {/* Decorative accents */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -15,
+              left: -15,
+              width: 42,
+              height: 42,
+              backgroundColor: W.hotPink,
+              border: `5px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+            }}
+            animate={{ scale: [1, 1.4, 1], rotate: [0, 360] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          />
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -15,
+              right: -15,
+              width: 42,
+              height: 42,
+              backgroundColor: W.acidGreen,
+              border: `5px solid ${W.trueBlack}`,
+              transform: 'rotate(45deg)',
+            }}
+            animate={{ rotate: [45, 405], scale: [1, 1.35, 1] }}
+            transition={{ duration: 3.5, repeat: Infinity }}
+          />
+
+          <RepeatedText count={3}>
+            <div style={{ fontSize: 42, fontWeight: 900, color: W.trueBlack, letterSpacing: '2px' }}>
               THANKS FOR LISTENING
             </div>
           </RepeatedText>
         </motion.div>
 
+        {/* Final message */}
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.8, type: 'spring' }}
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 0.9, type: 'spring', bounce: 0.6 }}
           style={{
-            marginTop: 32,
-            fontSize: 18,
-            fontWeight: 700,
-            color: W.electricYellow,
-            textTransform: 'uppercase',
-            letterSpacing: 2,
+            marginTop: 40,
+            backgroundColor: W.deepPurple,
+            border: `6px solid ${W.electricYellow}`,
+            padding: '16px 44px',
+            boxShadow: '10px 10px 0px rgba(157, 0, 255, 0.4)',
+            transform: 'rotate(2deg)',
+            position: 'relative',
           }}
         >
-          See you next year! 🎵
+          {/* Corner badge */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -12,
+              right: -12,
+              width: 35,
+              height: 35,
+              backgroundColor: W.cyberCyan,
+              border: `4px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            animate={{ rotate: [0, 360], scale: [1, 1.3, 1] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          >
+            <Headphones size={20} color={W.trueBlack} strokeWidth={3} />
+          </motion.div>
+
+          <StretchText>
+            <div style={{ fontSize: 20, fontWeight: 800, color: W.electricYellow, textTransform: 'uppercase', letterSpacing: '3px' }}>
+              See you next year! 🎵
+            </div>
+          </StretchText>
+        </motion.div>
+
+        {/* Additional floating decorations */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0] }}
+          transition={{ delay: 1.5, duration: 2, repeat: Infinity }}
+          style={{
+            position: 'absolute',
+            bottom: 60,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontSize: 16,
+            fontWeight: 700,
+            color: W.electricYellow,
+            letterSpacing: '2px',
+          }}
+        >
+          ⭐ ⭐ ⭐
         </motion.div>
       </div>
     </div>
