@@ -202,8 +202,8 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
     const count = Math.min(albumCovers.length, 16);
     return albumCovers.slice(0, count).map((src, i) => {
       const angle = (i / count) * Math.PI * 2;
-      const radius = 120 + Math.random() * 80;
-      const rotation = Math.random() * 30 - 15; // Stable rotation
+      const radius = 120 + (i % 3) * 40; // Deterministic radius variation
+      const rotation = (i * 7) % 30 - 15; // Deterministic rotation based on index
       return {
         src,
         x: Math.cos(angle) * radius,
@@ -271,7 +271,7 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
           animate={
             phase === 'burst'
               ? { x: node.x, y: node.y, scale: 1, opacity: 0.6, rotate: node.rotation }
-              : { x: node.x, y: node.y, scale: 0, opacity: 0, rotate: node.rotation }
+              : { x: 0, y: 0, scale: 0, opacity: 0, rotate: node.rotation }
           }
           transition={{
             duration: phase === 'burst' ? 0.6 : 0.8,
@@ -567,6 +567,7 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGr
 
   const coverStrip = [songA?.cover, songB?.cover, artistA?.image, artistB?.image].filter(Boolean) as string[];
   const stripWidth = coverStrip.length * (48 + 12); // 48px width + 12px gap
+  const STRIP_SCROLL_SPEED = 40; // pixels per second
 
   return (
     <motion.div
@@ -654,7 +655,7 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGr
         <motion.div
           className="flex gap-3"
           animate={{ x: [0, -stripWidth] }}
-          transition={{ duration: stripWidth / 40, ease: 'linear', repeat: Infinity }}
+          transition={{ duration: stripWidth / STRIP_SCROLL_SPEED, ease: 'linear', repeat: Infinity }}
         >
           {[...coverStrip, ...coverStrip, ...coverStrip].map((img, i) => (
             <div key={`${img}-${i}`} className="rounded-md overflow-hidden flex-shrink-0" style={{ width: 48, height: 48, border: `1px solid ${CARD_BORDER}` }}>
@@ -1321,7 +1322,7 @@ const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Son
   const minutes = totalMinutes % 60;
 
   const handleShare = async () => {
-    const shareText = `I listened to ${totalMinutes.toLocaleString()} minutes of music this week on Punky! 🎵`;
+    const shareText = `I listened to ${totalMinutes.toLocaleString()} minutes of music this week on Punky!`;
     
     if (navigator.share) {
       try {
@@ -1337,7 +1338,7 @@ const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Son
       // Fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(shareText);
-        alert('Copied to clipboard!');
+        // Successfully copied - you could add a toast notification here
       } catch (err) {
         console.error('Failed to copy:', err);
       }
