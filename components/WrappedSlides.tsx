@@ -215,7 +215,7 @@ const SlideIntro: React.FC = () => (
   </motion.div>
 );
 
-// ─── Slide 1 : Total Minutes (uses TotalMinutesStory style) ─────
+// ─── Slide 1 : Total Minutes (Spotify Wrapped 2024 Style) ───────
 const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] }> = ({ totalMinutes, albumCovers }) => {
   const [count, setCount] = useState(0);
   const [phase, setPhase] = useState<'burst' | 'counting' | 'final'>('burst');
@@ -228,8 +228,8 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
     const count = Math.min(albumCovers.length, 16);
     return albumCovers.slice(0, count).map((src, i) => {
       const angle = (i / count) * Math.PI * 2;
-      const radius = 120 + (i % 3) * 40; // Deterministic radius variation
-      const rotation = (i * 7) % 30 - 15; // Deterministic rotation based on index
+      const radius = 120 + (i % 3) * 40;
+      const rotation = (i * 7) % 30 - 15;
       return {
         src,
         x: Math.cos(angle) * radius,
@@ -241,19 +241,17 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
   }, [albumCovers]);
 
   useEffect(() => {
-    // Burst phase: show scattered album covers
     const burstTimer = setTimeout(() => setPhase('counting'), 1200);
-
     return () => clearTimeout(burstTimer);
   }, []);
 
   useEffect(() => {
     if (phase !== 'counting') return;
     const start = performance.now();
-    const duration = 2000;
+    const duration = 1800; // Faster count-up for snappiness
     const tick = (now: number) => {
       const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
       setCount(Math.round(eased * totalMinutes));
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick);
@@ -267,27 +265,29 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
 
   return (
     <motion.div
-      className="absolute inset-0 flex items-center justify-center"
-      style={{ backgroundColor: '#000' }}
+      className="absolute inset-0 flex items-center justify-center overflow-hidden"
+      style={{ backgroundColor: WRAPPED_COLORS.deepBlack }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Subtle accent glow */}
-      <div
-        className="absolute pointer-events-none"
+      {/* Animated gradient background */}
+      <motion.div
+        className="absolute inset-0"
         style={{
-          width: 300,
-          height: 300,
-          borderRadius: '50%',
-          background: `radial-gradient(circle, rgba(250,45,72,0.06) 0%, transparent 70%)`,
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%,-50%)',
+          background: `linear-gradient(135deg, ${WRAPPED_COLORS.bloodRed} 0%, ${WRAPPED_COLORS.neonPink} 50%, ${WRAPPED_COLORS.canaryYellow} 100%)`,
+          opacity: 0.15,
+        }}
+        animate={{
+          backgroundPosition: ['0% 0%', '100% 100%'],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          repeatType: 'reverse',
+          ease: 'easeInOut',
         }}
       />
-
-      <DotPattern />
 
       {/* Album cover burst */}
       {nodes.map((node, i) => (
@@ -311,12 +311,13 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
         </motion.div>
       ))}
 
-      {/* Eyebrow label - persistent */}
+      {/* Eyebrow label */}
       <motion.span
-        className="absolute uppercase tracking-widest font-bold"
+        className="absolute uppercase font-black"
         style={{ 
           fontSize: 11, 
-          color: ACCENT_RED,
+          letterSpacing: '0.15em',
+          color: WRAPPED_COLORS.neonPink,
           top: 'calc(50% - 120px)',
         }}
         initial={{ opacity: 0, y: -10 }}
@@ -326,7 +327,7 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
         YOUR WEEK IN MUSIC
       </motion.span>
 
-      {/* Counter */}
+      {/* Counter with gradient text */}
       <motion.div
         className="relative z-10 flex flex-col items-center"
         initial={{ opacity: 0, scale: 0.8 }}
@@ -340,36 +341,45 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            <Headphones size={40} color={ACCENT_RED} strokeWidth={1.5} />
+            <Headphones size={40} color={WRAPPED_COLORS.neonPink} strokeWidth={1.5} />
           </motion.div>
         )}
 
-        <motion.span
-          className="text-white font-bold leading-none"
+        {/* Oversized number with gradient (using clip-path for gradient text effect) */}
+        <motion.div
+          className="relative font-black leading-none"
           style={{
-            fontSize: 'clamp(80px, 12vw, 140px)',
+            fontSize: 'clamp(80px, 20vw, 160px)',
             fontVariantNumeric: 'tabular-nums',
           }}
           animate={phase === 'final' ? { scale: [1, 1.08, 1] } : {}}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          {phase === 'final' && hours > 0
-            ? `${hours}h ${remainingMins}m`
-            : phase === 'final'
-            ? totalMinutes.toLocaleString()
-            : count.toLocaleString()}
-        </motion.span>
+          <span
+            style={{
+              background: `linear-gradient(135deg, ${WRAPPED_COLORS.bloodRed} 0%, ${WRAPPED_COLORS.neonPink} 50%, ${WRAPPED_COLORS.canaryYellow} 100%)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            {phase === 'final' && hours > 0
+              ? `${hours}h ${remainingMins}m`
+              : phase === 'final'
+              ? totalMinutes.toLocaleString()
+              : count.toLocaleString()}
+          </span>
+        </motion.div>
 
         <motion.span
-          style={{ fontSize: 22, color: 'rgba(255,255,255,0.7)' }}
+          className="font-medium"
+          style={{ fontSize: 18, color: WRAPPED_COLORS.cream, opacity: 0.9 }}
           initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 0.9, y: 0 }}
           transition={{ delay: 0.8, duration: 0.5 }}
         >
           {phase === 'final' && hours > 0
             ? 'listened'
-            : phase === 'final'
-            ? 'minutes listened'
             : 'minutes listened'}
         </motion.span>
       </motion.div>
