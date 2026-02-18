@@ -4,9 +4,9 @@ import { X, Play, Clock, TrendingUp, Mic2, Disc, Music } from 'lucide-react';
 const getItemImage = (item: any) => item.cover || item.image || item.art || item.album_cover || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name || item.title || '')}&background=1C1C1E&color=fff`;
 
 const getTypeIcon = (type: string) => {
-    if (type === 'artist') return <Mic2 size={14} className="text-[#FA2D48]" />;
-    if (type === 'album') return <Disc size={14} className="text-[#FA2D48]" />;
-    return <Music size={14} className="text-[#FA2D48]" />;
+    if (type === 'artist') return <Mic2 size={14} className="text-white" />;
+    if (type === 'album') return <Disc size={14} className="text-white" />;
+    return <Music size={14} className="text-white" />;
 };
 
 interface SeeAllModalProps {
