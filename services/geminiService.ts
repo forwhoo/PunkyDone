@@ -50,6 +50,26 @@ const getAiClient = () => {
     });
 };
 
+// ─── AI MODEL DEFINITIONS ────────────────────────────────────────
+export interface AIModel {
+    id: string;
+    label: string;
+    isReasoning: boolean;
+}
+
+export const AI_MODELS: AIModel[] = [
+    { id: "moonshotai/kimi-k2-instruct-0905", label: "Kimi K2", isReasoning: false },
+    { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", isReasoning: false },
+    { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B", isReasoning: false },
+    { id: "groq/compound", label: "Groq Compound", isReasoning: false },
+    { id: "groq/compound-mini", label: "Groq Compound Mini", isReasoning: false },
+    { id: "openai/gpt-oss-20b", label: "GPT-OSS 20B", isReasoning: true },
+    { id: "openai/gpt-oss-120b", label: "GPT-OSS 120B", isReasoning: true },
+    { id: "qwen/qwen3-32b", label: "Qwen3 32B", isReasoning: true },
+];
+
+export const DEFAULT_MODEL_ID = "moonshotai/kimi-k2-instruct-0905";
+
 // ─── TOOL CALL TYPES ──────────────────────────────────────────────
 export interface ToolCallInfo {
     id: string;
@@ -1479,9 +1499,10 @@ export const answerMusicQuestionWithTools = async (
             extraStats?: { longestGapHours: string, longestSessionHours: string }
         }
     },
-    token?: string | null
+    token?: string | null,
+    modelId?: string
 ): Promise<AgentResponse> => {
-    console.log('[agentTools] answerMusicQuestionWithTools called', { question });
+    console.log('[agentTools] answerMusicQuestionWithTools called', { question, modelId });
 
     const fallbackResponse: AgentResponse = { text: "Unable to answer right now. Try again!", toolCalls: [] };
 
@@ -1490,6 +1511,9 @@ export const answerMusicQuestionWithTools = async (
         if (!client) {
             return { text: "Configure VITE_GROQ_API_KEY to use chat features.", toolCalls: [] };
         }
+
+        const selectedModelId = modelId || DEFAULT_MODEL_ID;
+        const modelInfo = AI_MODELS.find(m => m.id === selectedModelId);
 
         const messages: any[] = [
             { role: "system", content: AGENT_SYSTEM_PROMPT },
@@ -1507,14 +1531,19 @@ export const answerMusicQuestionWithTools = async (
         while (iterations < MAX_ITERATIONS) {
             iterations++;
 
-            const response = await client.chat.completions.create({
-                model: "moonshotai/kimi-k2-instruct-0905",
+            const requestParams: any = {
+                model: selectedModelId,
                 messages,
                 tools: AGENT_TOOLS,
-                tool_choice: iterations === 1 ? "auto" : "auto",
+                tool_choice: "auto",
                 temperature: 0.5,
                 max_tokens: 800
-            });
+            };
+            if (modelInfo?.isReasoning) {
+                requestParams.reasoning_effort = "default";
+            }
+
+            const response = await client.chat.completions.create(requestParams);
 
             const assistantMessage = response.choices[0]?.message;
             if (!assistantMessage) break;

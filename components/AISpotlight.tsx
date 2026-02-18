@@ -9,9 +9,9 @@ import {
     Network, History, ArrowLeftRight, ImageIcon, Timer,
     ArrowUpDown, Heart, PieChart as PieChartIcon, Calendar, Play, Star, CheckCircle, Repeat,
     Briefcase, CloudSun, CalendarClock, Car, Sparkles as SparklesIcon, LineChart,
-    FastForward, DoorOpen, Users, Target, type LucideIcon
+    FastForward, DoorOpen, Users, Target, ChevronDown, type LucideIcon
 } from 'lucide-react';
-import { generateDynamicCategoryQuery, answerMusicQuestion, answerMusicQuestionWithTools, generateWeeklyInsightStory, generateWrappedVibe, generateWrappedWithTools, WrappedSlide, ToolCallInfo } from '../services/geminiService';
+import { generateDynamicCategoryQuery, answerMusicQuestion, answerMusicQuestionWithTools, generateWeeklyInsightStory, generateWrappedVibe, generateWrappedWithTools, WrappedSlide, ToolCallInfo, AI_MODELS, DEFAULT_MODEL_ID } from '../services/geminiService';
 import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import { generateCanvasComponent, CanvasComponent } from '../services/canvasService';
@@ -265,7 +265,17 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const [mode, setMode] = useState<'discover' | 'chat'>('discover');
     const [typing, setTyping] = useState(false);
     const [discoveryMode, setDiscoveryMode] = useState(false);
+    const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
+    const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
     const sectionRef = useRef<HTMLDivElement>(null);
+
+    // Close model dropdown when clicking outside
+    useEffect(() => {
+        if (!modelDropdownOpen) return;
+        const handler = () => setModelDropdownOpen(false);
+        document.addEventListener('click', handler);
+        return () => document.removeEventListener('click', handler);
+    }, [modelDropdownOpen]);
 
     // Chat message history
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -640,7 +650,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 // Chat Mode — Agent with Tool Calls
                 console.log('[AISpotlight] Entering Agent Chat Mode for:', promptToUse);
                 setMode('chat');
-                const agentResult = await answerMusicQuestionWithTools(promptToUse, contextData, token);
+                const agentResult = await answerMusicQuestionWithTools(promptToUse, contextData, token, selectedModel);
                 console.log('[AISpotlight] Agent response received, tools used:', agentResult.toolCalls.length);
                 setChatResponse(agentResult.text);
                 setChatMessages(prev => [...prev, {
@@ -676,7 +686,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     return (
         <div className="flex flex-col h-full" id="ai-spotlight" ref={sectionRef}>
             {/* Header with Discovery Toggle */}
-            <div className="flex-shrink-0 flex items-center justify-center py-3 px-4 border-b border-white/5">
+            <div className="flex-shrink-0 flex items-center justify-between py-3 px-4 border-b border-white/5">
                 <div className="flex items-center gap-0 border border-white/10 bg-white/5 rounded-xl p-1 backdrop-blur-md">
                     <button
                         onClick={() => { setDiscoveryMode(false); setCanvasMode(false); }}
@@ -698,6 +708,37 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                         <Palette size={12} />
                         Canvas
                     </button>
+                </div>
+
+                {/* Model Selector */}
+                <div className="relative">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setModelDropdownOpen(prev => !prev); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-semibold text-[#8E8E93] hover:text-white hover:border-white/20 transition-all backdrop-blur-md"
+                    >
+                        <Zap size={11} className={AI_MODELS.find(m => m.id === selectedModel)?.isReasoning ? 'text-[#FF9F0A]' : 'text-[#8E8E93]'} />
+                        <span className="max-w-[90px] truncate">{AI_MODELS.find(m => m.id === selectedModel)?.label || 'Model'}</span>
+                        <ChevronDown size={11} />
+                    </button>
+                    {modelDropdownOpen && (
+                        <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[200px] bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl">
+                            {AI_MODELS.map(model => (
+                                <button
+                                    key={model.id}
+                                    onClick={(e) => { e.stopPropagation(); setSelectedModel(model.id); setModelDropdownOpen(false); }}
+                                    className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-left text-[12px] font-medium transition-colors hover:bg-white/5 ${selectedModel === model.id ? 'text-white bg-white/5' : 'text-[#8E8E93]'}`}
+                                >
+                                    <span>{model.label}</span>
+                                    {model.isReasoning && (
+                                        <span className="text-[10px] font-semibold text-[#FF9F0A] bg-[#FF9F0A]/10 px-1.5 py-0.5 rounded-md">Reasoning</span>
+                                    )}
+                                    {selectedModel === model.id && (
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[#FA2D48] flex-shrink-0" />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
