@@ -1540,7 +1540,7 @@ export const answerMusicQuestionWithTools = async (
                 max_tokens: 800
             };
             if (modelInfo?.isReasoning) {
-                requestParams.reasoning_effort = "default";
+                requestParams.reasoning_effort = "medium";
             }
 
             const response = await client.chat.completions.create(requestParams);
