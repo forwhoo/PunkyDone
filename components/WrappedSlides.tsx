@@ -10,7 +10,7 @@ const GRAY_TEXT = '#8E8E93';
 const CARD_BG = '#1C1C1E';
 const CARD_BORDER = 'rgba(255,255,255,0.05)';
 
-const TOTAL_SLIDES = 9;
+const TOTAL_SLIDES = 11;
 const AUTO_ADVANCE_MS = 6000;
 
 // ─── Props ──────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ interface WrappedSlidesProps {
 }
 
 // ─── Helpers ────────────────────────────────────────────────────
-const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzFDMUMxRSIvPjx0ZXh0IHg9IjEwMCIgeT0iMTA1IiBmb250LXNpemU9IjQwIiBmaWxsPSIjOEU4RTkzIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn461PC90ZXh0Pjwvc3ZnPg==';
+const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzFDMUMxRSIvPjxwYXRoIGQ9Ik0xMzAgNjB2NzBjMCAxMS05IDIwLTIwIDIwcy0yMC05LTIwLTIwIDktMjAgMjAtMjBjNCAwIDcgMSAxMCAzVjcwbC00MCAxMHY2MGMwIDExLTkgMjAtMjAgMjBzLTIwLTktMjAtMjAgOS0yMCAyMC0yMGM0IDAgNyAxIDEwIDNWNjBsNjAtMTV6IiBmaWxsPSIjOEU4RTkzIi8+PC9zdmc+';
 
 function getWeekRange(): string {
   const now = new Date();
@@ -91,6 +91,17 @@ const SolidCard: React.FC<{ children: React.ReactNode; className?: string; style
   >
     {children}
   </div>
+);
+
+// ─── Dot Pattern Background ─────────────────────────────────────
+const DotPattern: React.FC<{ opacity?: number }> = ({ opacity = 0.03 }) => (
+  <div
+    className="absolute inset-0 pointer-events-none z-0"
+    style={{
+      backgroundImage: `radial-gradient(circle, rgba(255,255,255,${opacity}) 1px, transparent 1px)`,
+      backgroundSize: '24px 24px',
+    }}
+  />
 );
 
 // ─── Slide Transition Variants ──────────────────────────────────
@@ -261,6 +272,8 @@ const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] 
         }}
       />
 
+      <DotPattern />
+
       {/* Album cover burst */}
       {nodes.map((node, i) => (
         <motion.div
@@ -357,6 +370,7 @@ const SlideTopArtist: React.FC<{ artists: Artist[];  songs?: Song[] }> = ({ arti
 
   // Get top song by main artist
   const topSong = songs?.find(s => s.artist === main.name);
+  const top3Plays = top3.reduce((sum, a) => sum + a.totalListens, 0);
 
   return (
     <motion.div
@@ -378,6 +392,8 @@ const SlideTopArtist: React.FC<{ artists: Artist[];  songs?: Song[] }> = ({ arti
           opacity: 0.8,
         }}
       />
+
+      <DotPattern opacity={0.02} />
 
       <motion.span
         className="relative z-10 uppercase tracking-widest font-bold mb-6"
@@ -526,6 +542,24 @@ const SlideTopArtist: React.FC<{ artists: Artist[];  songs?: Song[] }> = ({ arti
           </div>
         )}
       </motion.div>
+
+      {/* Stats row */}
+      <motion.div
+        className="relative z-10 flex items-center justify-center gap-6 mt-6"
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9, duration: 0.5 }}
+      >
+        <div className="flex flex-col items-center">
+          <span className="text-white font-bold" style={{ fontSize: 20 }}>{top3Plays.toLocaleString()}</span>
+          <span style={{ fontSize: 11, color: GRAY_TEXT }}>top 3 plays</span>
+        </div>
+        <div style={{ width: 1, height: 24, backgroundColor: 'rgba(255,255,255,0.08)' }} />
+        <div className="flex flex-col items-center">
+          <span className="text-white font-bold" style={{ fontSize: 20 }}>{artists.length}</span>
+          <span style={{ fontSize: 11, color: GRAY_TEXT }}>artists</span>
+        </div>
+      </motion.div>
     </motion.div>
   );
 };
@@ -577,6 +611,8 @@ const SlideConnection: React.FC<{ artists: Artist[]; songs: Song[]; connectionGr
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      <DotPattern opacity={0.02} />
+
       <motion.span
         className="relative z-10 uppercase tracking-widest font-bold mb-6"
         style={{ fontSize: 11, color: ACCENT_RED }}
@@ -680,6 +716,8 @@ const SlideAlbumRepeat: React.FC<{ albums: Album[] }> = ({ albums }) => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      <DotPattern opacity={0.02} />
+
       <motion.span
         className="relative z-10 uppercase tracking-widest font-bold mb-6"
         style={{ fontSize: 11, color: ACCENT_RED }}
@@ -748,6 +786,19 @@ const SlideAlbumRepeat: React.FC<{ albums: Album[] }> = ({ albums }) => {
           {album?.totalListens?.toLocaleString() ?? 0} plays
         </span>
       </motion.div>
+
+      {album?.year && (
+        <motion.div
+          className="relative z-10 mt-3 flex items-center justify-center gap-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.9, duration: 0.4 }}
+        >
+          <span style={{ fontSize: 12, color: GRAY_TEXT }}>{album.year}</span>
+          <div style={{ width: 3, height: 3, borderRadius: '50%', backgroundColor: GRAY_TEXT }} />
+          <span style={{ fontSize: 12, color: GRAY_TEXT }}>{album.artist}</span>
+        </motion.div>
+      )}
     </motion.div>
   );
 };
@@ -775,6 +826,8 @@ const SlideOrbit: React.FC<{ songs: Song[] }> = ({ songs }) => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      <DotPattern opacity={0.02} />
+
       <motion.span
         className="relative z-10 uppercase tracking-widest font-bold mb-4"
         style={{ fontSize: 11, color: ACCENT_RED }}
@@ -1075,6 +1128,8 @@ const SlideObsession: React.FC<{ songs: Song[]; artists: Artist[] }> = ({ songs,
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      <DotPattern opacity={0.02} />
+
       <motion.span
         className="relative z-10 uppercase tracking-widest font-bold mb-6"
         style={{ fontSize: 11, color: ACCENT_RED }}
@@ -1311,7 +1366,195 @@ const SlideLeapChart: React.FC<{ artists: Artist[]; songs: Song[] }> = ({ artist
   );
 };
 
-// ─── Slide 9 : Outro (clean, no emojis, no gradient text) ───────
+// ─── Slide 9 : Genre Breakdown ──────────────────────────────────
+const SlideGenreBreakdown: React.FC<{ artists: Artist[] }> = ({ artists }) => {
+  const genres = useMemo(() => {
+    const genreMap: Record<string, { count: number; plays: number }> = {};
+    artists.forEach(a => {
+      (a.genres ?? []).forEach(g => {
+        if (!genreMap[g]) genreMap[g] = { count: 0, plays: 0 };
+        genreMap[g].count++;
+        genreMap[g].plays += a.totalListens;
+      });
+    });
+    return Object.entries(genreMap)
+      .sort((a, b) => b[1].plays - a[1].plays)
+      .slice(0, 5)
+      .map(([name, data], i) => ({ name, ...data, rank: i + 1 }));
+  }, [artists]);
+
+  const maxPlays = genres[0]?.plays || 1;
+
+  return (
+    <motion.div
+      className="absolute inset-0 flex flex-col items-center justify-center px-6"
+      style={{ backgroundColor: '#000' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <DotPattern opacity={0.02} />
+
+      <motion.span
+        className="relative z-10 uppercase tracking-widest font-bold mb-2 flex items-center gap-2"
+        style={{ fontSize: 11, color: ACCENT_RED }}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Music size={14} />
+        <span>Your Sound</span>
+      </motion.span>
+
+      <motion.h2
+        className="relative z-10 font-bold text-white mb-8"
+        style={{ fontSize: 28 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        Top Genres
+      </motion.h2>
+
+      <div className="relative z-10 w-full max-w-sm flex flex-col gap-4">
+        {genres.map((genre, i) => (
+          <motion.div
+            key={genre.name}
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 + i * 0.12, type: 'spring', stiffness: 200, damping: 20 }}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <span className="font-bold" style={{ fontSize: 14, color: i === 0 ? ACCENT_RED : 'rgba(255,255,255,0.5)', width: 20 }}>
+                  {genre.rank}
+                </span>
+                <span className="text-white font-semibold" style={{ fontSize: 15 }}>{genre.name}</span>
+              </div>
+              <span style={{ fontSize: 12, color: GRAY_TEXT }}>{genre.plays.toLocaleString()} plays</span>
+            </div>
+            <div style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+              <motion.div
+                style={{ height: '100%', backgroundColor: i === 0 ? ACCENT_RED : 'rgba(255,255,255,0.2)', borderRadius: 3 }}
+                initial={{ width: 0 }}
+                animate={{ width: `${(genre.plays / maxPlays) * 100}%` }}
+                transition={{ delay: 0.5 + i * 0.12, duration: 0.8, ease: 'easeOut' }}
+              />
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {genres.length === 0 && (
+        <motion.p
+          className="relative z-10 text-center"
+          style={{ fontSize: 16, color: GRAY_TEXT }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          Keep listening to discover your genres
+        </motion.p>
+      )}
+    </motion.div>
+  );
+};
+
+// ─── Slide 10 : Listening Stats Summary ─────────────────────────
+const SlideListeningStats: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; albums: Album[] }> = ({ totalMinutes, artists, songs, albums }) => {
+  const totalPlays = songs.reduce((sum, s) => sum + s.listens, 0);
+  const avgPerSong = songs.length > 0 ? Math.round(totalPlays / songs.length) : 0;
+  const topGenres = useMemo(() => {
+    const genreSet = new Set<string>();
+    artists.forEach(a => (a.genres ?? []).forEach(g => genreSet.add(g)));
+    return genreSet.size;
+  }, [artists]);
+
+  const stats = [
+    { label: 'Minutes', value: totalMinutes.toLocaleString(), icon: Headphones },
+    { label: 'Songs', value: songs.length.toString(), icon: Music },
+    { label: 'Artists', value: artists.length.toString(), icon: Disc },
+    { label: 'Albums', value: albums.length.toString(), icon: Repeat },
+  ];
+
+  return (
+    <motion.div
+      className="absolute inset-0 flex flex-col items-center justify-center px-6"
+      style={{ backgroundColor: '#000' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <DotPattern opacity={0.02} />
+
+      <motion.span
+        className="relative z-10 uppercase tracking-widest font-bold mb-2"
+        style={{ fontSize: 11, color: ACCENT_RED }}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        By the Numbers
+      </motion.span>
+
+      <motion.h2
+        className="relative z-10 font-bold text-white mb-8"
+        style={{ fontSize: 28 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        Your Week at a Glance
+      </motion.h2>
+
+      <div className="relative z-10 grid grid-cols-2 gap-4 w-full max-w-xs">
+        {stats.map((stat, i) => {
+          const IconComponent = stat.icon;
+          return (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.3 + i * 0.1, type: 'spring', stiffness: 200, damping: 20 }}
+            >
+              <SolidCard className="p-4 flex flex-col items-center text-center">
+                <IconComponent size={20} color={ACCENT_RED} strokeWidth={1.5} />
+                <span className="text-white font-bold mt-2" style={{ fontSize: 24 }}>{stat.value}</span>
+                <span style={{ fontSize: 11, color: GRAY_TEXT }}>{stat.label}</span>
+              </SolidCard>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      <motion.div
+        className="relative z-10 mt-6 flex flex-col items-center"
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.5 }}
+      >
+        <span className="font-bold" style={{ fontSize: 18, color: ACCENT_RED }}>{avgPerSong}</span>
+        <span style={{ fontSize: 12, color: GRAY_TEXT }}>avg plays per song</span>
+      </motion.div>
+
+      {topGenres > 0 && (
+        <motion.div
+          className="relative z-10 mt-3 px-4 py-2 rounded-full flex items-center gap-2"
+          style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1, duration: 0.4 }}
+        >
+          <span style={{ fontSize: 12, color: GRAY_TEXT }}>
+            Across {topGenres} {topGenres === 1 ? 'genre' : 'genres'}
+          </span>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+};
+
+// ─── Slide 11 : Outro (clean, no emojis, no gradient text) ──────
 const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; onClose: () => void }> = ({
   totalMinutes,
   artists,
@@ -1528,6 +1771,10 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
       case 7:
         return <SlideLeapChart artists={artists} songs={songs} />;
       case 8:
+        return <SlideGenreBreakdown artists={artists} />;
+      case 9:
+        return <SlideListeningStats totalMinutes={totalMinutes || 0} artists={artists} songs={songs} albums={albums} />;
+      case 10:
         return (
           <SlideOutro totalMinutes={totalMinutes || 0} artists={artists} songs={songs} onClose={onClose} />
         );
