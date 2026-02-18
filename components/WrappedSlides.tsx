@@ -2,21 +2,24 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { X, TrendingUp, Headphones, Music, Disc, Repeat, Flame, Zap, Clock, Sparkles } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
-import PrismaticBurst from './reactbits/PrismaticBurst';
 
-// ─── Wrapped 2024 Color Tokens ──────────────────────────────────
+// ─── BRUTALIST COLOR PALETTE ────────────────────────────────────
 const W = {
-  bloodRed: '#C8102E',
-  neonPink: '#FF3EA5',
-  canaryYellow: '#FFE030',
-  deepBlack: '#000000',
-  cream: '#F5F0E8',
+  electricYellow: '#FFD700',
+  electricBlue: '#2839DB',
+  hotCoral: '#E63946',
+  vividGreen: '#00C853',
+  deepPurple: '#6C3CE1',
+  hotPink: '#FF3EA5',
+  offWhite: '#F5F0E8',
+  trueBlack: '#000000',
+  trueWhite: '#FFFFFF',
 };
 
 const TOTAL_SLIDES = 14;
 const AUTO_ADVANCE_MS = 6000;
 const CURRENT_YEAR = new Date().getFullYear();
-const LEFT_TAP_ZONE = 0.3; // Fraction of screen width for "go back" tap zone
+const LEFT_TAP_ZONE = 0.3;
 
 // ─── Props ──────────────────────────────────────────────────────
 interface WrappedSlidesProps {
@@ -32,15 +35,7 @@ interface WrappedSlidesProps {
 // ─── Helpers ────────────────────────────────────────────────────
 const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzFDMUMxRSIvPjxwYXRoIGQ9Ik0xMzAgNjB2NzBjMCAxMS05IDIwLTIwIDIwcy0yMC05LTIwLTIwIDktMjAgMjAtMjBjNCAwIDcgMSAxMCAzVjcwbC00MCAxMHY2MGMwIDExLTkgMjAtMjAgMjBzLTIwLTktMjAtMjAgOS0yMCAyMC0yMGM0IDAgNyAxIDEwIDNWNjBsNjAtMTV6IiBmaWxsPSIjOEU4RTkzIi8+PC9zdmc+';
 
-// Gradient text helper style
-const gradientText = (gradient: string): React.CSSProperties => ({
-  background: gradient,
-  WebkitBackgroundClip: 'text',
-  WebkitTextFillColor: 'transparent',
-  backgroundClip: 'text',
-});
-
-// Odometer hook: counts from 0 to target with ease-out
+// Odometer hook
 function useOdometer(target: number, durationMs = 1500): number {
   const [value, setValue] = useState(0);
   const rafRef = useRef(0);
@@ -58,1547 +53,1405 @@ function useOdometer(target: number, durationMs = 1500): number {
   return value;
 }
 
-// ─── Slide Transition Variants (spring) ─────────────────────────
-const slideVariants = {
-  enter: () => ({ opacity: 0, scale: 1.08 }),
-  center: { opacity: 1, scale: 1 },
-  exit: () => ({ opacity: 0, scale: 0.94 }),
-};
-
-const slideTransition = {
-  type: 'spring' as const,
-  stiffness: 300,
-  damping: 30,
-  duration: 0.3,
-};
-
 // Stagger delay helper
 const stagger = (i: number, base = 0.2, step = 0.1) => base + i * step;
 
-// ─── Rotating Year Watermark (global, behind content) ───────────
-const YearWatermark: React.FC = () => (
-  <motion.div
-    className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 select-none overflow-hidden"
-    aria-hidden="true"
-  >
-    <motion.span
-      className="font-black"
-      style={{ fontSize: 'clamp(200px, 50vw, 500px)', opacity: 0.04, color: '#fff', lineHeight: 1 }}
-      animate={{ rotate: [0, 360] }}
-      transition={{ duration: 60, ease: 'linear', repeat: Infinity }}
+// ─── ANIMATED SHAPE COMPONENTS ──────────────────────────────────
+
+const FloatingZigzag: React.FC<{ color: string; top: string; left: string; size?: number }> = ({ color, top, left, size = 60 }) => {
+  return useMemo(() => (
+    <motion.svg
+      style={{ position: 'absolute', top, left, width: size, height: size }}
+      animate={{ y: [-10, 10, -10], rotate: [0, 15, -15, 0] }}
+      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
     >
-      {CURRENT_YEAR}
-    </motion.span>
-  </motion.div>
-);
+      <path d="M10 10 L30 30 L50 10" stroke={color} strokeWidth="5" fill="none" />
+    </motion.svg>
+  ), [color, top, left, size]);
+};
 
-// ─── Animated Gradient Background ───────────────────────────────
-const AnimatedGradientBg: React.FC<{ colors: string[]; angle?: number }> = ({ colors, angle = 135 }) => (
-  <motion.div
-    className="absolute inset-0 pointer-events-none z-0"
-    style={{
-      background: `linear-gradient(${angle}deg, ${colors.join(', ')})`,
-      backgroundSize: '400% 400%',
-    }}
-    animate={{ backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'] }}
-    transition={{ duration: 7, ease: 'easeInOut', repeat: Infinity }}
-  />
-);
+const PulsingCircle: React.FC<{ color: string; top: string; left: string; size?: number }> = ({ color, top, left, size = 80 }) => {
+  return useMemo(() => (
+    <motion.div
+      style={{
+        position: 'absolute',
+        top,
+        left,
+        width: size,
+        height: size,
+        border: `5px solid ${color}`,
+        borderRadius: '50%',
+      }}
+      animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
+      transition={{ duration: 2, repeat: Infinity }}
+    />
+  ), [color, top, left, size]);
+};
 
-// ─── Floating Particles ─────────────────────────────────────────
-const FloatingParticles: React.FC<{ count?: number }> = ({ count = 20 }) => {
-  const particles = useMemo(() =>
-    Array.from({ length: count }, (_, i) => ({
-      id: i,
-      left: `${(i * 37 + 13) % 100}%`,
-      size: 2 + (i % 3),
-      delay: (i * 0.4) % 5,
-      duration: 4 + (i % 4),
-    })), [count]);
+const RotatingStar: React.FC<{ color: string; top: string; left: string; size?: number }> = ({ color, top, left, size = 50 }) => {
+  return useMemo(() => (
+    <motion.svg
+      style={{ position: 'absolute', top, left, width: size, height: size }}
+      animate={{ rotate: 360 }}
+      transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+    >
+      <polygon points="25,5 30,20 45,20 33,30 38,45 25,35 12,45 17,30 5,20 20,20" fill={color} />
+    </motion.svg>
+  ), [color, top, left, size]);
+};
+
+const BouncingDiamond: React.FC<{ color: string; top: string; left: string; size?: number }> = ({ color, top, left, size = 60 }) => {
+  return useMemo(() => (
+    <motion.div
+      style={{
+        position: 'absolute',
+        top,
+        left,
+        width: size,
+        height: size,
+        backgroundColor: color,
+        transform: 'rotate(45deg)',
+      }}
+      animate={{ y: [-15, 15, -15] }}
+      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+    />
+  ), [color, top, left, size]);
+};
+
+const GlitchSquare: React.FC<{ color: string; top: string; left: string; size?: number }> = ({ color, top, left, size = 70 }) => {
+  return useMemo(() => (
+    <motion.div
+      style={{
+        position: 'absolute',
+        top,
+        left,
+        width: size,
+        height: size,
+        border: `6px solid ${color}`,
+      }}
+      animate={{
+        x: [0, -5, 5, 0, 3, -3, 0],
+        y: [0, 3, -3, 5, 0, -5, 0],
+      }}
+      transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
+    />
+  ), [color, top, left, size]);
+};
+
+const WavyLine: React.FC<{ color: string; top: string; left: string; width?: number }> = ({ color, top, left, width = 100 }) => {
+  return useMemo(() => (
+    <motion.svg
+      style={{ position: 'absolute', top, left, width, height: 30 }}
+      animate={{ x: [0, 10, 0] }}
+      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+    >
+      <path d={`M0 15 Q${width / 4} 5, ${width / 2} 15 T${width} 15`} stroke={color} strokeWidth="4" fill="none" />
+    </motion.svg>
+  ), [color, top, left, width]);
+};
+
+// ─── BACKGROUND ANIMATION COMPONENTS ────────────────────────────
+
+const AnimatedDots: React.FC<{ color: string }> = ({ color }) => {
+  const dots = useMemo(() => Array.from({ length: 30 }, (_, i) => ({
+    key: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    delay: Math.random() * 2,
+  })), []);
+
   return (
-    <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden">
-      {particles.map(p => (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+      {dots.map((dot) => (
         <motion.div
-          key={p.id}
-          className="absolute rounded-full bg-white"
-          style={{ left: p.left, width: p.size, height: p.size, bottom: -10, opacity: 0.15 }}
-          animate={{ y: [0, -800], opacity: [0.15, 0] }}
-          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'linear' }}
+          key={dot.key}
+          style={{
+            position: 'absolute',
+            left: `${dot.x}%`,
+            top: `${dot.y}%`,
+            width: 6,
+            height: 6,
+            backgroundColor: color,
+            borderRadius: '50%',
+          }}
+          animate={{
+            scale: [1, 1.5, 1],
+            opacity: [0.3, 0.7, 0.3],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            delay: dot.delay,
+          }}
         />
       ))}
     </div>
   );
 };
 
-// ─── Progress Bar ───────────────────────────────────────────────
-const StoryProgressBar: React.FC<{ current: number; total: number }> = ({ current, total }) => (
-  <div className="absolute top-2 left-4 right-4 z-50 flex gap-1">
-    {Array.from({ length: total }).map((_, i) => (
-      <div key={i} className="flex-1 h-[3px] rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.3)' }}>
-        <motion.div
-          className="h-full rounded-full bg-white"
-          style={{ width: i < current ? '100%' : '0%' }}
-          animate={{ width: i < current ? '100%' : i === current ? '100%' : '0%' }}
-          transition={{ duration: i === current ? AUTO_ADVANCE_MS / 1000 : 0.3, ease: i === current ? 'linear' : 'easeOut' }}
-        />
-      </div>
-    ))}
-  </div>
-);
-
-// ─── Close Button ───────────────────────────────────────────────
-const CloseButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
-  <button
-    onClick={(e) => { e.stopPropagation(); onClick(); }}
-    className="absolute top-6 right-6 z-50 p-2 rounded-full transition-colors"
-    style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
-    aria-label="Close"
-  >
-    <X size={20} color="#fff" />
-  </button>
-);
-
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 0 — SlideTotalMinutes
-// Black bg + diagonal gradient overlay (bloodRed → neonPink → black)
-// Oversized minutes number, gradient-filled, bleeds off right edge
-// ═══════════════════════════════════════════════════════════════
-const SlideTotalMinutes: React.FC<{ totalMinutes: number; albumCovers: string[] }> = ({ totalMinutes }) => {
-  const count = useOdometer(totalMinutes, 1800);
+const MovingShapes: React.FC<{ color: string }> = ({ color }) => {
+  const shapes = useMemo(() => [
+    { type: 'circle', size: 40, y: 10, duration: 15 },
+    { type: 'square', size: 35, y: 25, duration: 18 },
+    { type: 'rounded', size: 50, y: 45, duration: 20 },
+    { type: 'circle', size: 30, y: 60, duration: 16 },
+    { type: 'square', size: 45, y: 75, duration: 22 },
+    { type: 'rounded', size: 38, y: 15, duration: 19 },
+    { type: 'circle', size: 42, y: 85, duration: 17 },
+    { type: 'square', size: 33, y: 50, duration: 21 },
+  ], []);
 
   return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      {/* Diagonal gradient overlay */}
-      <AnimatedGradientBg colors={[W.bloodRed, W.neonPink, W.deepBlack]} angle={135} />
-      <YearWatermark />
-      <FloatingParticles count={24} />
-
-      {/* Oversized number — bleeds off right edge */}
-      <div className="absolute inset-0 flex items-center z-[2] overflow-hidden">
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+      {shapes.map((shape, i) => (
         <motion.div
-          className="absolute right-[-10%] flex items-center"
-          initial={{ opacity: 0, x: 60 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3, duration: 0.8, type: 'spring', stiffness: 200, damping: 25 }}
-        >
-          <span
-            className="font-black leading-none select-none"
-            style={{
-              fontSize: 'clamp(120px, 30vw, 280px)',
-              fontVariantNumeric: 'tabular-nums',
-              ...gradientText(`linear-gradient(135deg, ${W.bloodRed}, ${W.neonPink}, ${W.canaryYellow})`),
-            }}
-          >
-            {count.toLocaleString()}
-          </span>
-        </motion.div>
-      </div>
-
-      {/* Label — bottom left */}
-      <motion.div
-        className="absolute bottom-[15%] left-8 z-[3]"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.5 }}
-      >
-        <span
-          className="uppercase font-bold block"
-          style={{ fontSize: 11, letterSpacing: '0.15em', color: W.cream, opacity: 0.8 }}
-        >
-          MINUTES LISTENED
-        </span>
-        <span style={{ fontSize: 13, color: W.cream, opacity: 0.5 }}>this week</span>
-      </motion.div>
-    </motion.div>
+          key={i}
+          style={{
+            position: 'absolute',
+            left: -60,
+            top: `${shape.y}%`,
+            width: shape.size,
+            height: shape.size,
+            border: `4px solid ${color}`,
+            borderRadius: shape.type === 'circle' ? '50%' : shape.type === 'rounded' ? '12px' : '0',
+            opacity: 0.2,
+          }}
+          animate={{ x: ['0vw', '110vw'] }}
+          transition={{ duration: shape.duration, repeat: Infinity, ease: 'linear' }}
+        />
+      ))}
+    </div>
   );
 };
 
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 1 — SlideTopArtist
-// Artist photo fills top 70%, massive gradient name overlaps bottom
-// ═══════════════════════════════════════════════════════════════
-const SlideTopArtist: React.FC<{ artists: Artist[]; songs?: Song[] }> = ({ artists, songs }) => {
-  const main = artists[0];
-  if (!main) return <div className="absolute inset-0 bg-black" />;
+// ─── TYPOGRAPHY EFFECT COMPONENTS ───────────────────────────────
 
+const GlitchText: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => {
   return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      <YearWatermark />
+    <div
+      className={className}
+      style={{
+        textShadow: '3px 3px 0 cyan, -3px -3px 0 magenta',
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
-      {/* Blurred duplicate behind everything */}
-      <div
-        className="absolute inset-0 pointer-events-none z-0"
-        style={{
-          backgroundImage: `url(${main.image || fallbackImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          filter: 'blur(40px) brightness(0.15) saturate(1.3)',
-          opacity: 0.3,
-          transform: 'scale(1.3)',
-        }}
-      />
-
-      {/* Artist photo — top 70% edge-to-edge */}
-      <motion.div
-        className="absolute top-0 left-0 right-0 z-[1] overflow-hidden"
-        style={{ height: '70%' }}
-        initial={{ scale: 1.15, filter: 'blur(8px)' }}
-        animate={{ scale: 1, filter: 'blur(0px)' }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-      >
-        <img
-          src={main.image || fallbackImage}
-          alt={main.name}
-          className="w-full h-full object-cover"
-          style={{ filter: 'contrast(1.15) saturate(1.3)' }}
-        />
-        {/* Bottom gradient fade */}
+const RepeatedText: React.FC<{ children: React.ReactNode; count?: number; className?: string }> = ({ children, count = 3, className = '' }) => {
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      {Array.from({ length: count }).map((_, i) => (
         <div
-          className="absolute bottom-0 left-0 right-0"
-          style={{ height: '40%', background: `linear-gradient(to top, ${W.deepBlack}, transparent)` }}
-        />
-      </motion.div>
-
-      {/* Artist name — overlaps photo/black boundary */}
-      <motion.div
-        className="absolute z-[2] left-8 right-8"
-        style={{ top: '55%' }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
-      >
-        <h2
-          className="font-black leading-none"
+          key={i}
+          className={className}
           style={{
-            fontSize: 'clamp(40px, 10vw, 72px)',
-            ...gradientText(`linear-gradient(135deg, ${W.canaryYellow}, ${W.neonPink})`),
+            position: i === count - 1 ? 'relative' : 'absolute',
+            top: i * 4,
+            left: i * 4,
+            opacity: 1 - (i * 0.3),
+            zIndex: count - i,
           }}
         >
-          {main.name}
-        </h2>
-      </motion.div>
-
-      {/* Stats — tiny uppercase */}
-      <motion.div
-        className="absolute bottom-[12%] left-8 z-[3] flex gap-6"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7, duration: 0.5 }}
-      >
-        <div>
-          <span className="block font-bold text-white" style={{ fontSize: 22 }}>
-            {main.totalListens.toLocaleString()}
-          </span>
-          <span className="uppercase" style={{ fontSize: 11, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.5)' }}>
-            plays
-          </span>
+          {children}
         </div>
-        {(main.genres ?? []).length > 0 && (
-          <div>
-            <span className="block font-bold text-white" style={{ fontSize: 22 }}>
-              {main.genres![0]}
-            </span>
-            <span className="uppercase" style={{ fontSize: 11, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.5)' }}>
-              genre
-            </span>
-          </div>
-        )}
-      </motion.div>
-    </motion.div>
+      ))}
+    </div>
   );
 };
 
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 2 — SlideConnection
-// Asymmetric layout, neon pink glow on artist images
-// ═══════════════════════════════════════════════════════════════
-const SlideConnection: React.FC<{
-  artists: Artist[];
-  songs: Song[];
-  connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> };
-}> = ({ artists, songs, connectionGraph }) => {
-  const bestConnection = useMemo(() => {
-    const pairs = connectionGraph?.pairs || {};
-    const artistNames = new Set(artists.map((a) => a.name));
-    let strongest: { a: string; b: string; weight: number } | null = null;
-    Object.entries(pairs).forEach(([from, targets]) => {
-      Object.entries(targets || {}).forEach(([to, weight]) => {
-        if (from >= to) return;
-        if (!artistNames.has(from) && !artistNames.has(to)) return;
-        if (!strongest || weight > strongest.weight) strongest = { a: from, b: to, weight };
-      });
-    });
-    if (strongest && strongest.a !== strongest.b) return strongest;
-    const fb = artists[0]?.name;
-    const fb2 = songs.find((s) => s.artist && s.artist !== fb)?.artist;
-    if (fb && fb2) return { a: fb, b: fb2, weight: 1 };
-    return null;
-  }, [artists, songs, connectionGraph]);
+// ─── UI COMPONENTS ──────────────────────────────────────────────
 
-  const artistA = artists.find((a) => a.name === bestConnection?.a) || artists[0];
-  const artistB = artists.find((a) => a.name === bestConnection?.b) || artists[1] || artists[0];
-  const combinedPlays = (artistA?.totalListens || 0) + (artistB?.totalListens || 0);
-  const countUp = useOdometer(combinedPlays, 1500);
-
+const StoryProgressBar: React.FC<{ current: number; total: number }> = ({ current, total }) => {
   return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      <AnimatedGradientBg colors={[W.neonPink, W.bloodRed, W.deepBlack]} angle={160} />
-      <YearWatermark />
-
-      {/* Artist images with neon pink glow — asymmetric positioning */}
-      <div className="absolute z-[2] top-[18%] left-8 flex gap-4">
-        {[artistA, artistB].map((artist, idx) => (
-          <motion.div
-            key={idx}
-            className="relative"
-            initial={{ opacity: 0, x: idx === 0 ? -30 : 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: stagger(idx, 0.3, 0.15), type: 'spring', stiffness: 200 }}
-          >
-            <img
-              src={artist?.image || fallbackImage}
-              alt={artist?.name || ''}
-              className="object-cover"
-              style={{
-                width: 100, height: 100, borderRadius: 16,
-                boxShadow: `0 0 30px ${W.neonPink}66, 0 0 60px ${W.neonPink}22`,
-              }}
-            />
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Combined plays — massive gradient number, center-left, slight rotation */}
-      <motion.div
-        className="absolute z-[3] left-8"
-        style={{ top: '45%', transform: 'rotate(-2deg)' }}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5, duration: 0.6, type: 'spring', stiffness: 180 }}
-      >
-        <span
-          className="font-black leading-none"
-          style={{
-            fontSize: 'clamp(64px, 18vw, 140px)',
-            ...gradientText(`linear-gradient(135deg, ${W.neonPink}, ${W.canaryYellow})`),
-          }}
-        >
-          {countUp.toLocaleString()}
-        </span>
-      </motion.div>
-
-      {/* Label — bottom right */}
-      <motion.div
-        className="absolute z-[3] bottom-[14%] right-8 text-right"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7, duration: 0.5 }}
-      >
-        <p className="font-bold text-white" style={{ fontSize: 20 }}>
-          {artistA?.name} × {artistB?.name}
-        </p>
-        <span className="uppercase" style={{ fontSize: 11, letterSpacing: '0.15em', color: W.cream, opacity: 0.6 }}>
-          COMBINED PLAYS
-        </span>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 3 — SlideAlbumRepeat
-// Album art fills top 65% edge-to-edge, NO border-radius
-// Black bar below with title + red play count
-// Neon pink glow bleeding upward
-// ═══════════════════════════════════════════════════════════════
-const SlideAlbumRepeat: React.FC<{ albums: Album[] }> = ({ albums }) => {
-  const album = albums[0];
-  const listens = useOdometer(album?.totalListens || 0, 1400);
-
-  return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      <YearWatermark />
-
-      {/* Album art — top 65% edge-to-edge, no border-radius */}
-      <motion.div
-        className="absolute top-0 left-0 right-0 z-[1] overflow-hidden"
-        style={{ height: '65%' }}
-        initial={{ scale: 1.1, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-      >
-        <img
-          src={album?.cover || fallbackImage}
-          alt={album?.title ?? 'Album'}
-          className="w-full h-full object-cover"
-        />
-        {/* Neon glow bleeding upward from bottom edge */}
+    <div style={{ display: 'flex', gap: 4, padding: '12px 16px' }}>
+      {Array.from({ length: total }, (_, i) => (
         <div
-          className="absolute bottom-0 left-0 right-0"
+          key={i}
           style={{
-            height: '50%',
-            background: `linear-gradient(to top, ${W.deepBlack}, transparent)`,
-            boxShadow: `0 -80px 120px ${W.neonPink}44`,
+            flex: 1,
+            height: 5,
+            backgroundColor: 'rgba(0,0,0,0.2)',
+            overflow: 'hidden',
           }}
-        />
-      </motion.div>
-
-      {/* Black bar below — album info */}
-      <motion.div
-        className="absolute bottom-0 left-0 right-0 z-[2] px-8 pb-[15%] pt-8"
-        style={{ background: W.deepBlack }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
-      >
-        <h3 className="font-bold text-white" style={{ fontSize: 'clamp(24px, 6vw, 36px)', lineHeight: 1.1 }}>
-          {album?.title ?? 'No Album'}
-        </h3>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
-          {album?.artist ?? ''}
-        </p>
-        <motion.p
-          className="uppercase font-bold mt-3"
-          style={{ fontSize: 13, letterSpacing: '0.15em', color: W.bloodRed }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
         >
-          {listens.toLocaleString()} PLAYS
-        </motion.p>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 4 — SlideOrbit (Top Songs)
-// Asymmetric layout, wrapped gradient bg, active song large
-// Song titles stacked full-width uppercase
-// ═══════════════════════════════════════════════════════════════
-const SlideOrbit: React.FC<{ songs: Song[] }> = ({ songs }) => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const topSongs = songs.slice(0, 5);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveIndex(prev => (prev + 1) % topSongs.length);
-    }, 1200);
-    return () => clearInterval(interval);
-  }, [topSongs.length]);
-
-  const activeSong = topSongs[activeIndex];
-
-  return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      <AnimatedGradientBg colors={[W.canaryYellow, W.neonPink, W.bloodRed]} angle={150} />
-      <YearWatermark />
-
-      {/* Active song cover — large, cinematic entrance */}
-      <motion.div
-        className="absolute z-[2] top-[12%] right-6"
-        style={{ width: '55%', maxWidth: 240, aspectRatio: '1' }}
-      >
-        <AnimatePresence mode="wait">
-          <motion.img
-            key={`cover-${activeIndex}`}
-            src={activeSong?.cover || fallbackImage}
-            alt={activeSong?.title || ''}
-            className="w-full h-full object-cover"
-            style={{ borderRadius: 4 }}
-            initial={{ scale: 1.15, opacity: 0, filter: 'blur(6px)' }}
-            animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-          />
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Eyebrow label */}
-      <motion.span
-        className="absolute z-[3] top-[12%] left-8 uppercase font-bold"
-        style={{ fontSize: 11, letterSpacing: '0.15em', color: W.deepBlack }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.8 }}
-        transition={{ delay: 0.2 }}
-      >
-        YOUR TOP SONGS
-      </motion.span>
-
-      {/* Song titles — stacked full-width uppercase at varying sizes */}
-      <motion.div className="absolute z-[3] left-8 right-8 bottom-[12%] flex flex-col gap-1">
-        {topSongs.map((song, i) => {
-          const isActive = i === activeIndex;
-          const sizes = [28, 22, 18, 16, 14];
-          return (
+          {i < current && (
             <motion.div
-              key={song.title || i}
-              className="flex items-baseline gap-2 overflow-hidden"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: isActive ? 1 : 0.4, y: 0 }}
-              transition={{ delay: stagger(i, 0.3, 0.08), duration: 0.4 }}
-            >
-              <span
-                className="font-black uppercase truncate"
-                style={{
-                  fontSize: sizes[i] || 14,
-                  color: isActive ? W.deepBlack : 'rgba(0,0,0,0.5)',
-                  lineHeight: 1.2,
-                }}
-              >
-                {song.title}
-              </span>
-            </motion.div>
-          );
-        })}
-      </motion.div>
-    </motion.div>
+              style={{ width: '100%', height: '100%', backgroundColor: W.trueBlack }}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.3 }}
+            />
+          )}
+          {i === current && (
+            <motion.div
+              style={{ width: '100%', height: '100%', backgroundColor: W.trueBlack }}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: AUTO_ADVANCE_MS / 1000, ease: 'linear' }}
+            />
+          )}
+        </div>
+      ))}
+    </div>
   );
 };
 
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 5 — SlideUpcomingArtists
-// Trending list with gradient left borders, oversized numbers
-// ═══════════════════════════════════════════════════════════════
-const SlideUpcomingArtists: React.FC<{ artists: Artist[] }> = ({ artists }) => {
-  const rising = useMemo(() => {
-    const sorted = [...artists].sort((a, b) => (b.trend ?? 0) - (a.trend ?? 0));
-    return sorted.slice(0, 5);
-  }, [artists]);
-
+const CloseButton: React.FC<{ onClick: () => void; color?: string }> = ({ onClick, color = W.trueBlack }) => {
   return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      <AnimatedGradientBg colors={[W.deepBlack, W.bloodRed + '33', W.deepBlack]} angle={180} />
-      <YearWatermark />
+    <motion.button
+      onClick={onClick}
+      style={{
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        backgroundColor: W.trueWhite,
+        border: `3px solid ${color}`,
+        padding: 12,
+        cursor: 'pointer',
+        zIndex: 50,
+        boxShadow: '4px 4px 0px rgba(0,0,0,0.4)',
+      }}
+      whileHover={{ scale: 1.1, boxShadow: '6px 6px 0px rgba(0,0,0,0.5)' }}
+      whileTap={{ scale: 0.95, boxShadow: '2px 2px 0px rgba(0,0,0,0.3)' }}
+    >
+      <X size={24} color={color} strokeWidth={3} />
+    </motion.button>
+  );
+};
 
-      <motion.div
-        className="absolute z-[2] top-[14%] left-8"
-        initial={{ opacity: 0, y: -16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <span className="uppercase font-bold flex items-center gap-2" style={{ fontSize: 11, letterSpacing: '0.15em', color: W.neonPink }}>
-          <Flame size={14} /> TRENDING
-        </span>
-        <h2 className="font-bold text-white mt-1" style={{ fontSize: 28 }}>Rising This Week</h2>
-      </motion.div>
+// ─── SLIDE COMPONENTS ───────────────────────────────────────────
 
-      <div className="absolute z-[2] top-[28%] left-8 right-8 flex flex-col gap-3">
-        {rising.map((artist, i) => (
-          <motion.div
-            key={artist.name}
-            className="flex items-center gap-4 relative overflow-hidden py-3 px-4"
-            style={{
-              borderLeft: `3px solid`,
-              borderImage: `linear-gradient(to bottom, ${W.neonPink}, ${W.canaryYellow}) 1`,
-              backgroundColor: 'rgba(255,255,255,0.03)',
-            }}
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: stagger(i, 0.3, 0.1), type: 'spring', stiffness: 200, damping: 20 }}
-          >
-            {/* Oversized rank number */}
-            <span
-              className="font-black select-none"
-              style={{ fontSize: 48, color: W.neonPink, opacity: 0.2, lineHeight: 1, minWidth: 40 }}
-            >
-              {i + 1}
-            </span>
+const Slide0: React.FC<WrappedSlidesProps> = () => {
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.electricYellow, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueBlack} />
+      <MovingShapes color={W.trueBlack} />
+      
+      <FloatingZigzag color={W.electricBlue} top="10%" left="10%" size={80} />
+      <PulsingCircle color={W.hotCoral} top="20%" left="70%" size={100} />
+      <RotatingStar color={W.deepPurple} top="60%" left="15%" size={70} />
+      <BouncingDiamond color={W.vividGreen} top="70%" left="75%" size={80} />
+      <GlitchSquare color={W.hotPink} top="40%" left="50%" size={90} />
+      <WavyLine color={W.electricBlue} top="85%" left="20%" width={150} />
 
-            <img
-              src={artist.image || fallbackImage}
-              alt={artist.name}
-              className="w-11 h-11 rounded-full object-cover flex-shrink-0"
-            />
-
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-white truncate" style={{ fontSize: 14 }}>{artist.name}</p>
-              <p className="truncate" style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
-                {artist.totalListens.toLocaleString()} plays
-              </p>
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 32 }}>
+        <motion.div
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ duration: 0.8, type: 'spring', bounce: 0.5 }}
+          style={{
+            backgroundColor: W.trueBlack,
+            border: `6px solid ${W.trueWhite}`,
+            padding: '24px 48px',
+            boxShadow: '10px 10px 0px rgba(0,0,0,0.3)',
+            transform: 'rotate(-3deg)',
+          }}
+        >
+          <GlitchText>
+            <div style={{ fontSize: 72, fontWeight: 900, color: W.electricYellow, lineHeight: 1 }}>
+              {CURRENT_YEAR}
             </div>
-
-            {(artist.trend ?? 0) > 0 && (
-              <div className="flex items-center gap-1" style={{ color: W.neonPink }}>
-                <TrendingUp size={14} />
-                <span style={{ fontSize: 12, fontWeight: 600 }}>+{artist.trend}</span>
-              </div>
-            )}
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 6 — SlideObsession
-// Full cinematic: focus-pull entrance, gradient bg, pulsing border
-// ═══════════════════════════════════════════════════════════════
-const SlideObsession: React.FC<{ songs: Song[]; artists: Artist[] }> = ({ songs, artists }) => {
-  const obsession = useMemo(() => {
-    const artistSongs: Record<string, Song[]> = {};
-    songs.forEach(s => {
-      if (!artistSongs[s.artist]) artistSongs[s.artist] = [];
-      artistSongs[s.artist].push(s);
-    });
-    let best: { artist: string; song: Song; isSingleSong: boolean } | null = null;
-    Object.entries(artistSongs).forEach(([name, list]) => {
-      if (list.length === 1) {
-        const song = list[0];
-        if (!best || song.listens > best.song.listens) best = { artist: name, song, isSingleSong: true };
-      }
-    });
-    if (!best && songs.length > 0) best = { artist: songs[0].artist, song: songs[0], isSingleSong: false };
-    return best;
-  }, [songs]);
-
-  const playCount = useOdometer(obsession?.song.listens || 0, 1500);
-  if (!obsession) return <div className="absolute inset-0 bg-black" />;
-
-  return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      <AnimatedGradientBg colors={[W.bloodRed, W.deepBlack, W.deepBlack]} angle={145} />
-      <YearWatermark />
-
-      {/* Eyebrow */}
-      <motion.span
-        className="absolute z-[3] top-[14%] left-8 uppercase font-bold"
-        style={{ fontSize: 11, letterSpacing: '0.15em', color: W.neonPink }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-      >
-        THE OBSESSION
-      </motion.span>
-
-      {/* Album cover with focus-pull + pulsing neonPink border */}
-      <motion.div
-        className="absolute z-[2] left-1/2 top-[30%]"
-        style={{ transform: 'translateX(-50%)' }}
-        initial={{ scale: 1.15, opacity: 0, filter: 'blur(8px)' }}
-        animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
-        transition={{ delay: 0.2, duration: 0.6, ease: 'easeOut' }}
-      >
-        <motion.div
-          className="overflow-hidden"
-          style={{ width: 200, height: 200, borderRadius: 8, border: `3px solid ${W.neonPink}` }}
-          animate={{
-            boxShadow: [
-              `0 0 20px ${W.neonPink}00`, `0 0 40px ${W.neonPink}88`, `0 0 20px ${W.neonPink}00`,
-            ],
-          }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <img src={obsession.song.cover || fallbackImage} alt={obsession.song.title} className="w-full h-full object-cover" />
-        </motion.div>
-      </motion.div>
-
-      {/* Song title + artist */}
-      <motion.div
-        className="absolute z-[3] left-8 right-8 text-center"
-        style={{ top: '62%' }}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-      >
-        <p className="font-bold text-white" style={{ fontSize: 24 }}>{obsession.song.title}</p>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>{obsession.artist}</p>
-      </motion.div>
-
-      {/* Oversized play count with gradient text */}
-      <motion.div
-        className="absolute z-[3] left-8 bottom-[14%]"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.7, duration: 0.5 }}
-      >
-        <span
-          className="font-black leading-none"
-          style={{
-            fontSize: 'clamp(48px, 14vw, 80px)',
-            ...gradientText(`linear-gradient(135deg, ${W.neonPink}, ${W.canaryYellow})`),
-          }}
-        >
-          {playCount.toLocaleString()}
-        </span>
-        <span className="block uppercase" style={{ fontSize: 11, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.5)' }}>
-          plays on repeat
-        </span>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 7 — SlideLeapChart
-// Full-bleed album art top 65%, black bar with song title
-// Animated waveform bars in canaryYellow, glow effect
-// ═══════════════════════════════════════════════════════════════
-const SlideLeapChart: React.FC<{ artists: Artist[]; songs: Song[] }> = ({ artists, songs }) => {
-  const topSong = songs[0];
-  const waveformBars = useMemo(() => Array.from({ length: 16 }, (_, i) => ({
-    id: i, baseHeight: 8 + Math.sin(i * 0.6) * 6,
-  })), []);
-
-  if (!topSong) return <div className="absolute inset-0 bg-black" />;
-
-  return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      <YearWatermark />
-
-      {/* Full-bleed art top 65% */}
-      <motion.div
-        className="absolute top-0 left-0 right-0 z-[1] overflow-hidden"
-        style={{ height: '65%' }}
-        initial={{ scale: 1.05, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
-        <img
-          src={topSong.cover || fallbackImage}
-          alt={topSong.title}
-          className="w-full h-full object-cover"
-        />
-        <div
-          className="absolute bottom-0 left-0 right-0"
-          style={{
-            height: '40%',
-            background: `linear-gradient(to top, ${W.deepBlack}, transparent)`,
-            boxShadow: `0 -60px 100px ${W.canaryYellow}33`,
-          }}
-        />
-      </motion.div>
-
-      {/* Black bar — song info */}
-      <motion.div
-        className="absolute bottom-0 left-0 right-0 z-[2] px-8 pb-[14%] pt-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
-      >
-        <p className="font-bold text-white" style={{ fontSize: 'clamp(22px, 5vw, 32px)' }}>{topSong.title}</p>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>{topSong.artist}</p>
-
-        {/* Waveform bars in canaryYellow */}
-        <motion.div
-          className="flex items-end gap-[3px] mt-4"
-          style={{ height: 36 }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.4 }}
-        >
-          {waveformBars.map((bar, i) => (
-            <motion.div
-              key={bar.id}
-              className="rounded-t-sm flex-1"
-              style={{ backgroundColor: W.canaryYellow }}
-              animate={{ height: [`${bar.baseHeight}px`, `${bar.baseHeight * 2.5}px`, `${bar.baseHeight}px`] }}
-              transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.06 }}
-            />
-          ))}
+          </GlitchText>
         </motion.div>
 
-        <motion.p
-          className="font-bold mt-3"
-          style={{ fontSize: 28, color: W.canaryYellow }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-        >
-          {topSong.listens.toLocaleString()} <span style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.4)' }}>plays</span>
-        </motion.p>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 8 — SlidePeakHour
-// Abstract gradient bg, massive stacked time type, hour bars
-// ═══════════════════════════════════════════════════════════════
-const SlidePeakHour: React.FC<{ songs: Song[] }> = ({ songs }) => {
-  // Deterministic mock: peak hour derived from song count since played_at timestamps aren't available
-  const seed = songs.length;
-  const peakHour = ((seed % 12) + 12) % 24;
-  const activityData = useMemo(() =>
-    Array.from({ length: 24 }, (_, hour) => {
-      const distance = Math.min(Math.abs(hour - peakHour), 24 - Math.abs(hour - peakHour));
-      const base = 100 - (distance * 8);
-      const variance = ((hour * seed) % 20) - 10;
-      return { hour, activity: Math.max(10, base + variance) };
-    }),
-  [seed, peakHour]);
-  const maxActivity = Math.max(...activityData.map(d => d.activity));
-  const peakData = activityData[peakHour];
-  const timeStr = `${peakData.hour % 12 === 0 ? 12 : peakData.hour % 12}`;
-  const ampm = peakData.hour >= 12 ? 'PM' : 'AM';
-
-  return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      {/* Fully abstract gradient bg with all 3 colors */}
-      <AnimatedGradientBg colors={[W.bloodRed, W.neonPink, W.canaryYellow, W.deepBlack]} angle={120} />
-      <YearWatermark />
-
-      {/* Massive stacked time — anti-design energy */}
-      <div className="absolute z-[2] inset-0 flex flex-col items-center justify-center">
         <motion.div
-          className="relative"
-          initial={{ opacity: 0, rotate: -5 }}
-          animate={{ opacity: 1, rotate: -3 }}
+          initial={{ x: -100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.6 }}
+          style={{
+            marginTop: 40,
+            backgroundColor: W.trueWhite,
+            border: `5px solid ${W.trueBlack}`,
+            padding: '16px 32px',
+            boxShadow: '8px 8px 0px rgba(0,0,0,0.3)',
+            transform: 'rotate(2deg)',
+          }}
         >
-          <span
-            className="font-black leading-none block"
-            style={{
-              fontSize: 'clamp(100px, 28vw, 200px)',
-              ...gradientText(`linear-gradient(135deg, ${W.canaryYellow}, ${W.neonPink})`),
-            }}
-          >
-            {timeStr}
-          </span>
+          <RepeatedText>
+            <div style={{ fontSize: 48, fontWeight: 900, color: W.trueBlack }}>
+              WRAPPED
+            </div>
+          </RepeatedText>
         </motion.div>
-        <motion.span
-          className="font-black uppercase"
-          style={{ fontSize: 'clamp(40px, 10vw, 72px)', color: W.cream, opacity: 0.7, marginTop: -16 }}
-          initial={{ opacity: 0, rotate: 2 }}
-          animate={{ opacity: 0.7, rotate: 2 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
+
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.6 }}
+          style={{
+            marginTop: 32,
+            fontSize: 20,
+            fontWeight: 700,
+            color: W.trueBlack,
+            textTransform: 'uppercase',
+            letterSpacing: 3,
+          }}
         >
-          {ampm}
-        </motion.span>
+          Your Year in Music
+        </motion.div>
       </div>
-
-      {/* Eyebrow */}
-      <motion.div
-        className="absolute z-[3] top-[14%] left-8 flex items-center gap-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-      >
-        <Clock size={14} color={W.canaryYellow} />
-        <span className="uppercase font-bold" style={{ fontSize: 11, letterSpacing: '0.15em', color: W.canaryYellow }}>
-          PEAK HOUR
-        </span>
-      </motion.div>
-
-      {/* Hour bars — gradient colors */}
-      <motion.div
-        className="absolute z-[3] bottom-[10%] left-8 right-8 flex items-end gap-[2px]"
-        style={{ height: 50 }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
-      >
-        {activityData.slice(6, 24).map((d, i) => {
-          const isPeak = d.hour === peakHour;
-          const barColor = isPeak
-            ? W.canaryYellow
-            : `linear-gradient(to top, ${W.bloodRed}, ${W.neonPink})`;
-          return (
-            <motion.div
-              key={d.hour}
-              className="flex-1 rounded-t-sm"
-              style={{
-                background: barColor,
-                minHeight: 4,
-                opacity: isPeak ? 1 : 0.35,
-              }}
-              initial={{ height: 0 }}
-              animate={{ height: `${(d.activity / maxActivity) * 100}%` }}
-              transition={{ delay: 0.8 + i * 0.025, duration: 0.4, ease: 'easeOut' }}
-            />
-          );
-        })}
-      </motion.div>
-
-      {/* Descriptive text */}
-      <motion.p
-        className="absolute z-[3] bottom-[6%] left-8"
-        style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-      >
-        Most listening happens in the {peakData.hour >= 18 || peakData.hour < 6 ? 'evening' : peakData.hour >= 12 ? 'afternoon' : 'morning'}
-      </motion.p>
-    </motion.div>
+    </div>
   );
 };
 
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 9 — SlideLongestSession
-// Horizontal color bands, oversized gradient duration numbers
-// ═══════════════════════════════════════════════════════════════
-const SlideLongestSession: React.FC<{ songs: Song[] }> = ({ songs }) => {
-  // Mock: assume longest session is ~18% of total listening time.
-  // Production should analyze played_at timestamps to find continuous sessions (<30min breaks).
-  const totalMins = songs.reduce((sum, s) => sum + (parseInt(s.timeStr || '0') || 0), 0);
-  const sessionMinutes = Math.max(30, Math.floor(totalMins * 0.18));
-  const sessionHours = Math.floor(sessionMinutes / 60);
-  const sessionMins = sessionMinutes % 60;
-  const hoursCount = useOdometer(sessionHours, 1200);
-  const minsCount = useOdometer(sessionMins, 1400);
+const Slide1: React.FC<{ totalMinutes: number }> = ({ totalMinutes }) => {
+  const displayMinutes = useOdometer(totalMinutes);
+  const hours = Math.floor(displayMinutes / 60);
+  const days = Math.floor(hours / 24);
 
   return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      <YearWatermark />
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.electricBlue, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueWhite} />
+      <MovingShapes color={W.trueWhite} />
+      
+      <FloatingZigzag color={W.electricYellow} top="5%" left="80%" size={70} />
+      <PulsingCircle color={W.hotCoral} top="15%" left="10%" size={90} />
+      <RotatingStar color={W.vividGreen} top="75%" left="70%" size={60} />
+      <BouncingDiamond color={W.hotPink} top="50%" left="85%" size={75} />
+      <GlitchSquare color={W.electricYellow} top="65%" left="15%" size={85} />
+      <WavyLine color={W.trueWhite} top="30%" left="40%" width={120} />
 
-      {/* Horizontal color bands */}
-      <div className="absolute inset-0 z-0 flex flex-col">
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 32 }}>
         <motion.div
-          className="flex-1"
-          style={{ background: W.bloodRed }}
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: 1 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        />
-        <motion.div
-          className="flex-1"
-          style={{ background: W.canaryYellow }}
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: 1 }}
-          transition={{ delay: 0.1, duration: 0.5, ease: 'easeOut' }}
-        />
-        <motion.div
-          className="flex-[1.5]"
-          style={{ background: W.deepBlack }}
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: 1 }}
-          transition={{ delay: 0.2, duration: 0.5, ease: 'easeOut' }}
-        />
-      </div>
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.5, type: 'spring' }}
+          style={{
+            backgroundColor: W.trueWhite,
+            border: `6px solid ${W.trueBlack}`,
+            padding: 48,
+            boxShadow: '12px 12px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(-2deg)',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ fontSize: 24, fontWeight: 700, color: W.trueBlack, marginBottom: 16, textTransform: 'uppercase' }}>
+            You Listened For
+          </div>
+          <GlitchText>
+            <div style={{ fontSize: 96, fontWeight: 900, color: W.electricBlue, lineHeight: 1 }}>
+              {displayMinutes.toLocaleString()}
+            </div>
+          </GlitchText>
+          <div style={{ fontSize: 32, fontWeight: 700, color: W.trueBlack, marginTop: 8 }}>
+            MINUTES
+          </div>
+        </motion.div>
 
-      {/* Eyebrow */}
-      <motion.div
-        className="absolute z-[3] top-[14%] left-8 flex items-center gap-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Headphones size={14} color={W.cream} />
-        <span className="uppercase font-bold" style={{ fontSize: 11, letterSpacing: '0.15em', color: W.cream }}>
-          MARATHON SESSION
-        </span>
-      </motion.div>
-
-      {/* Duration — oversized gradient text */}
-      <motion.div
-        className="absolute z-[3] inset-0 flex items-center justify-center"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.4, duration: 0.6, type: 'spring', stiffness: 180 }}
-      >
-        <div className="flex items-baseline gap-3">
-          <span
-            className="font-black leading-none"
+        <div style={{ marginTop: 40, display: 'flex', gap: 24 }}>
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
             style={{
-              fontSize: 'clamp(72px, 22vw, 160px)',
-              ...gradientText(`linear-gradient(135deg, ${W.deepBlack}, ${W.bloodRed})`),
+              backgroundColor: W.electricYellow,
+              border: `5px solid ${W.trueBlack}`,
+              padding: '16px 24px',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
             }}
           >
-            {hoursCount}
-          </span>
-          <span className="font-bold" style={{ fontSize: 24, color: W.deepBlack, opacity: 0.6 }}>h</span>
-          <span
-            className="font-black leading-none"
+            <div style={{ fontSize: 40, fontWeight: 900, color: W.trueBlack }}>{hours.toLocaleString()}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: W.trueBlack }}>HOURS</div>
+          </motion.div>
+
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
             style={{
-              fontSize: 'clamp(72px, 22vw, 160px)',
-              ...gradientText(`linear-gradient(135deg, ${W.deepBlack}, ${W.bloodRed})`),
+              backgroundColor: W.hotCoral,
+              border: `5px solid ${W.trueBlack}`,
+              padding: '16px 24px',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
             }}
           >
-            {minsCount.toString().padStart(2, '0')}
-          </span>
-          <span className="font-bold" style={{ fontSize: 24, color: W.deepBlack, opacity: 0.6 }}>m</span>
+            <div style={{ fontSize: 40, fontWeight: 900, color: W.trueWhite }}>{days}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: W.trueWhite }}>DAYS</div>
+          </motion.div>
         </div>
-      </motion.div>
-
-      {/* Bottom label */}
-      <motion.p
-        className="absolute z-[3] bottom-[14%] left-8 right-8 text-center"
-        style={{ fontSize: 13, color: W.cream, opacity: 0.6 }}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 0.6, y: 0 }}
-        transition={{ delay: 0.7 }}
-      >
-        Longest continuous listening session this week
-      </motion.p>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 10 — SlideDiscoveryRate
-// Oversized gradient number centered, bold color blocks
-// Stats scattered asymmetrically
-// ═══════════════════════════════════════════════════════════════
-const SlideDiscoveryRate: React.FC<{ artists: Artist[]; albums: Album[] }> = ({ artists, albums }) => {
-  const uniqueArtists = artists.length;
-  const uniqueAlbums = albums.length;
-  const totalDiscoveries = uniqueArtists + uniqueAlbums;
-  const discoverCount = useOdometer(totalDiscoveries, 1500);
+const Slide2: React.FC<{ artists: Artist[] }> = ({ artists }) => {
+  const top3 = artists.slice(0, 3);
 
   return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      <AnimatedGradientBg colors={[W.deepBlack, W.canaryYellow + '22', W.deepBlack]} angle={90} />
-      <YearWatermark />
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.hotCoral, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueWhite} />
+      <MovingShapes color={W.trueWhite} />
+      
+      <FloatingZigzag color={W.electricYellow} top="8%" left="5%" size={75} />
+      <PulsingCircle color={W.deepPurple} top="70%" left="80%" size={95} />
+      <RotatingStar color={W.vividGreen} top="50%" left="10%" size={65} />
+      <BouncingDiamond color={W.electricBlue} top="15%" left="75%" size={70} />
+      <GlitchSquare color={W.hotPink} top="80%" left="50%" size={80} />
+      <WavyLine color={W.trueWhite} top="40%" left="30%" width={140} />
 
-      {/* Bold color block accent */}
-      <motion.div
-        className="absolute z-[1] top-0 right-0"
-        style={{ width: '35%', height: '25%', background: W.canaryYellow }}
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-      />
-
-      {/* Eyebrow */}
-      <motion.div
-        className="absolute z-[3] top-[14%] left-8 flex items-center gap-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Sparkles size={14} color={W.canaryYellow} />
-        <span className="uppercase font-bold" style={{ fontSize: 11, letterSpacing: '0.15em', color: W.canaryYellow }}>
-          MUSIC EXPLORER
-        </span>
-      </motion.div>
-
-      {/* Oversized gradient number — centered */}
-      <motion.div
-        className="absolute z-[3] inset-0 flex items-center justify-center"
-        initial={{ opacity: 0, scale: 0.7 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.3, duration: 0.6, type: 'spring', stiffness: 200 }}
-      >
-        <span
-          className="font-black leading-none"
-          style={{
-            fontSize: 'clamp(100px, 30vw, 220px)',
-            ...gradientText(`linear-gradient(135deg, ${W.canaryYellow}, ${W.neonPink})`),
-          }}
-        >
-          {discoverCount}
-        </span>
-      </motion.div>
-
-      {/* Stats scattered asymmetrically */}
-      <motion.div
-        className="absolute z-[3] bottom-[22%] left-8"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.4 }}
-      >
-        <span className="block font-bold text-white" style={{ fontSize: 28 }}>{uniqueArtists}</span>
-        <span className="uppercase" style={{ fontSize: 11, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)' }}>
-          ARTISTS
-        </span>
-      </motion.div>
-
-      <motion.div
-        className="absolute z-[3] bottom-[14%] right-8 text-right"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7, duration: 0.4 }}
-      >
-        <span className="block font-bold text-white" style={{ fontSize: 28 }}>{uniqueAlbums}</span>
-        <span className="uppercase" style={{ fontSize: 11, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)' }}>
-          ALBUMS
-        </span>
-      </motion.div>
-
-      <motion.span
-        className="absolute z-[3] bottom-[8%] left-8"
-        style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.9 }}
-      >
-        unique discoveries this week
-      </motion.span>
-    </motion.div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 11 — SlideListeningStreak
-// Full gradient bg, oversized streak number, bold day blocks
-// ═══════════════════════════════════════════════════════════════
-const SlideListeningStreak: React.FC<{ songs: Song[] }> = ({ songs }) => {
-  // Mock: estimate active days from song count. Production should use played_at timestamps.
-  const streakDays = Math.min(7, Math.max(1, Math.ceil(songs.length / 15)));
-  const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-  return (
-    <motion.div className="absolute inset-0 overflow-hidden">
-      {/* Full gradient bg */}
-      <AnimatedGradientBg colors={[W.neonPink, W.canaryYellow, W.neonPink]} angle={135} />
-      <YearWatermark />
-
-      {/* Oversized streak number — fills screen */}
-      <motion.div
-        className="absolute z-[2] inset-0 flex items-center justify-center"
-        initial={{ opacity: 0, scale: 0.6 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2, duration: 0.7, type: 'spring', stiffness: 150 }}
-      >
-        <span
-          className="font-black leading-none select-none"
-          style={{
-            fontSize: 'clamp(160px, 45vw, 340px)',
-            color: W.deepBlack,
-            opacity: 0.15,
-          }}
-        >
-          {streakDays}
-        </span>
-      </motion.div>
-
-      {/* Foreground content */}
-      <div className="absolute z-[3] inset-0 flex flex-col items-center justify-center">
+      <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <motion.div
-          className="flex items-center gap-2 mb-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
+          initial={{ x: -100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          style={{
+            backgroundColor: W.trueBlack,
+            border: `6px solid ${W.trueWhite}`,
+            padding: '16px 32px',
+            marginBottom: 40,
+            boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(-2deg)',
+            alignSelf: 'flex-start',
+          }}
         >
-          <Flame size={16} color={W.deepBlack} />
-          <span className="uppercase font-bold" style={{ fontSize: 11, letterSpacing: '0.15em', color: W.deepBlack }}>
-            ON FIRE
-          </span>
+          <RepeatedText>
+            <div style={{ fontSize: 48, fontWeight: 900, color: W.hotCoral }}>
+              TOP ARTISTS
+            </div>
+          </RepeatedText>
         </motion.div>
 
-        <motion.span
-          className="font-black"
-          style={{ fontSize: 'clamp(72px, 20vw, 120px)', color: W.deepBlack, lineHeight: 1 }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-        >
-          {streakDays}
-        </motion.span>
-        <motion.span
-          className="font-bold uppercase"
-          style={{ fontSize: 20, letterSpacing: '0.2em', color: W.deepBlack, opacity: 0.7 }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.7 }}
-          transition={{ delay: 0.5 }}
-        >
-          DAY STREAK
-        </motion.span>
-
-        {/* Day indicator blocks */}
-        <motion.div
-          className="flex gap-3 mt-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          {daysOfWeek.map((day, i) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {top3.map((artist, i) => (
             <motion.div
-              key={`${day}-${i}`}
-              className="flex flex-col items-center gap-1"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: stagger(i, 0.7, 0.06) }}
+              key={artist.id}
+              initial={{ x: 100, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: stagger(i, 0.3) }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 24,
+                backgroundColor: W.trueWhite,
+                border: `5px solid ${W.trueBlack}`,
+                padding: 16,
+                boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+                transform: `rotate(${i % 2 === 0 ? 1 : -1}deg)`,
+              }}
+            >
+              <div style={{ fontSize: 56, fontWeight: 900, color: W.hotCoral, minWidth: 60 }}>
+                #{i + 1}
+              </div>
+              <div
+                style={{
+                  width: 80,
+                  height: 80,
+                  backgroundImage: `url(${artist.image || fallbackImage})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  border: `4px solid ${W.trueBlack}`,
+                  clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+                }}
+              />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 28, fontWeight: 900, color: W.trueBlack }}>
+                  {artist.name}
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: W.hotCoral }}>
+                  {artist.totalListens.toLocaleString()} plays
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Slide3: React.FC<{ artists: Artist[] }> = ({ artists }) => {
+  const artist = artists[0];
+  if (!artist) return null;
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.deepPurple, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueWhite} />
+      <MovingShapes color={W.trueWhite} />
+      
+      <FloatingZigzag color={W.electricYellow} top="10%" left="75%" size={80} />
+      <PulsingCircle color={W.hotCoral} top="60%" left="10%" size={100} />
+      <RotatingStar color={W.vividGreen} top="20%" left="15%" size={70} />
+      <BouncingDiamond color={W.hotPink} top="75%" left="70%" size={85} />
+      <GlitchSquare color={W.electricBlue} top="40%" left="80%" size={75} />
+      <WavyLine color={W.trueWhite} top="50%" left="30%" width={130} />
+
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 48 }}>
+        <motion.div
+          initial={{ scale: 0, rotate: 180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ duration: 0.7, type: 'spring' }}
+          style={{
+            width: 280,
+            height: 280,
+            backgroundImage: `url(${artist.image || fallbackImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            border: `8px solid ${W.electricYellow}`,
+            boxShadow: '12px 12px 0px rgba(0,0,0,0.5)',
+            transform: 'rotate(5deg)',
+          }}
+        />
+
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          style={{
+            marginTop: 40,
+            backgroundColor: W.trueWhite,
+            border: `6px solid ${W.trueBlack}`,
+            padding: '24px 40px',
+            boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(-3deg)',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ fontSize: 16, fontWeight: 700, color: W.deepPurple, marginBottom: 8, textTransform: 'uppercase' }}>
+            Your #1 Artist
+          </div>
+          <GlitchText>
+            <div style={{ fontSize: 48, fontWeight: 900, color: W.trueBlack }}>
+              {artist.name}
+            </div>
+          </GlitchText>
+          <div style={{ fontSize: 20, fontWeight: 700, color: W.deepPurple, marginTop: 12 }}>
+            {artist.totalListens.toLocaleString()} plays
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+const Slide4: React.FC<{ songs: Song[] }> = ({ songs }) => {
+  const top5 = songs.slice(0, 5);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.vividGreen, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueBlack} />
+      <MovingShapes color={W.trueBlack} />
+      
+      <FloatingZigzag color={W.electricYellow} top="5%" left="10%" size={70} />
+      <PulsingCircle color={W.hotCoral} top="50%" left="85%" size={90} />
+      <RotatingStar color={W.deepPurple} top="70%" left="15%" size={65} />
+      <BouncingDiamond color={W.hotPink} top="20%" left="80%" size={75} />
+      <GlitchSquare color={W.electricBlue} top="80%" left="45%" size={80} />
+      <WavyLine color={W.trueBlack} top="35%" left="25%" width={120} />
+
+      <div style={{ position: 'relative', zIndex: 10, padding: 40, height: '100%', overflowY: 'auto' }}>
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          style={{
+            backgroundColor: W.trueBlack,
+            border: `6px solid ${W.trueWhite}`,
+            padding: '16px 32px',
+            marginBottom: 32,
+            boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(2deg)',
+            display: 'inline-block',
+          }}
+        >
+          <RepeatedText>
+            <div style={{ fontSize: 40, fontWeight: 900, color: W.vividGreen }}>
+              TOP SONGS
+            </div>
+          </RepeatedText>
+        </motion.div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {top5.map((song, i) => (
+            <motion.div
+              key={song.id}
+              initial={{ x: -100, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: stagger(i, 0.2) }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                backgroundColor: W.trueWhite,
+                border: `5px solid ${W.trueBlack}`,
+                padding: 12,
+                boxShadow: '5px 5px 0px rgba(0,0,0,0.3)',
+                transform: `rotate(${i % 2 === 0 ? -1 : 1}deg)`,
+              }}
+            >
+              <div style={{ fontSize: 40, fontWeight: 900, color: W.vividGreen, minWidth: 50 }}>
+                {i + 1}
+              </div>
+              <div
+                style={{
+                  width: 60,
+                  height: 60,
+                  backgroundImage: `url(${song.cover || fallbackImage})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  border: `4px solid ${W.trueBlack}`,
+                }}
+              />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: W.trueBlack, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {song.title}
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: W.vividGreen }}>
+                  {song.artist}
+                </div>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: W.trueBlack }}>
+                {song.listens}×
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Slide5: React.FC<{ songs: Song[] }> = ({ songs }) => {
+  const song = songs[0];
+  if (!song) return null;
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.hotPink, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueWhite} />
+      <MovingShapes color={W.trueWhite} />
+      
+      <FloatingZigzag color={W.electricYellow} top="12%" left="70%" size={75} />
+      <PulsingCircle color={W.electricBlue} top="65%" left="15%" size={95} />
+      <RotatingStar color={W.vividGreen} top="25%" left="10%" size={70} />
+      <BouncingDiamond color={W.deepPurple} top="75%" left="75%" size={80} />
+      <GlitchSquare color={W.trueWhite} top="45%" left="85%" size={85} />
+      <WavyLine color={W.trueWhite} top="55%" left="35%" width={140} />
+
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 48 }}>
+        <motion.div
+          initial={{ scale: 0, rotate: -90 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ duration: 0.8, type: 'spring' }}
+          style={{
+            width: 300,
+            height: 300,
+            backgroundImage: `url(${song.cover || fallbackImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            border: `10px solid ${W.trueBlack}`,
+            boxShadow: '15px 15px 0px rgba(0,0,0,0.5)',
+            transform: 'rotate(-5deg)',
+          }}
+        />
+
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          style={{
+            marginTop: 40,
+            backgroundColor: W.trueBlack,
+            border: `6px solid ${W.electricYellow}`,
+            padding: '24px 40px',
+            boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(3deg)',
+            textAlign: 'center',
+            maxWidth: '80%',
+          }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 700, color: W.hotPink, marginBottom: 12, textTransform: 'uppercase' }}>
+            Your #1 Song
+          </div>
+          <GlitchText>
+            <div style={{ fontSize: 36, fontWeight: 900, color: W.trueWhite, marginBottom: 8 }}>
+              {song.title}
+            </div>
+          </GlitchText>
+          <div style={{ fontSize: 20, fontWeight: 700, color: W.hotPink }}>
+            {song.artist}
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: W.trueWhite, marginTop: 12 }}>
+            {song.listens} plays
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+const Slide6: React.FC<{ albums: Album[] }> = ({ albums }) => {
+  const top3 = albums.slice(0, 3);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.electricBlue, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueWhite} />
+      <MovingShapes color={W.trueWhite} />
+      
+      <FloatingZigzag color={W.electricYellow} top="8%" left="80%" size={70} />
+      <PulsingCircle color={W.hotCoral} top="60%" left="10%" size={100} />
+      <RotatingStar color={W.vividGreen} top="25%" left="15%" size={65} />
+      <BouncingDiamond color={W.hotPink} top="75%" left="80%" size={75} />
+      <GlitchSquare color={W.trueWhite} top="40%" left="50%" size={80} />
+      <WavyLine color={W.trueWhite} top="85%" left="30%" width={130} />
+
+      <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <motion.div
+          initial={{ x: 100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          style={{
+            backgroundColor: W.trueWhite,
+            border: `6px solid ${W.trueBlack}`,
+            padding: '16px 32px',
+            marginBottom: 40,
+            boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(2deg)',
+            alignSelf: 'flex-start',
+          }}
+        >
+          <RepeatedText>
+            <div style={{ fontSize: 48, fontWeight: 900, color: W.electricBlue }}>
+              TOP ALBUMS
+            </div>
+          </RepeatedText>
+        </motion.div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {top3.map((album, i) => (
+            <motion.div
+              key={album.id}
+              initial={{ scale: 0, rotate: 180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: stagger(i, 0.3), type: 'spring' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 20,
+                backgroundColor: W.trueWhite,
+                border: `5px solid ${W.trueBlack}`,
+                padding: 16,
+                boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+                transform: `rotate(${i % 2 === 0 ? -1 : 1}deg)`,
+              }}
             >
               <div
-                className="flex items-center justify-center"
                 style={{
-                  width: 36, height: 36, borderRadius: 8,
-                  backgroundColor: i < streakDays ? W.deepBlack : 'rgba(0,0,0,0.15)',
+                  width: 90,
+                  height: 90,
+                  backgroundImage: `url(${album.cover || fallbackImage})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  border: `5px solid ${W.trueBlack}`,
+                  transform: 'rotate(45deg)',
                 }}
-              >
-                {i < streakDays && <Headphones size={16} color={W.canaryYellow} />}
+              />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: W.electricBlue }}>
+                  #{i + 1}
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: W.trueBlack }}>
+                  {album.title}
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: W.electricBlue }}>
+                  {album.artist}
+                </div>
               </div>
-              <span style={{ fontSize: 10, fontWeight: i < streakDays ? 700 : 400, color: W.deepBlack, opacity: i < streakDays ? 1 : 0.4 }}>
-                {day}
-              </span>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 12 — SlideListeningStats
-// Compressed summary with editorial layout, color-block sections
-// Stats in oversized type
-// ═══════════════════════════════════════════════════════════════
-const SlideListeningStats: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; albums: Album[] }> = ({ totalMinutes, artists, songs, albums }) => {
-  const totalPlays = songs.reduce((sum, s) => sum + s.listens, 0);
-  const avgPerSong = songs.length > 0 ? Math.round(totalPlays / songs.length) : 0;
-  const topGenres = useMemo(() => {
-    const genreSet = new Set<string>();
-    artists.forEach(a => (a.genres ?? []).forEach(g => genreSet.add(g)));
-    return genreSet.size;
-  }, [artists]);
-
-  const minutesCount = useOdometer(totalMinutes, 1200);
-  const playsCount = useOdometer(totalPlays, 1400);
+const Slide7: React.FC<{ albums: Album[] }> = ({ albums }) => {
+  const album = albums[0];
+  if (!album) return null;
 
   return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      <YearWatermark />
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.electricYellow, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueBlack} />
+      <MovingShapes color={W.trueBlack} />
+      
+      <FloatingZigzag color={W.electricBlue} top="10%" left="10%" size={80} />
+      <PulsingCircle color={W.hotCoral} top="70%" left="75%" size={95} />
+      <RotatingStar color={W.deepPurple} top="30%" left="80%" size={70} />
+      <BouncingDiamond color={W.vividGreen} top="60%" left="15%" size={85} />
+      <GlitchSquare color={W.hotPink} top="15%" left="50%" size={75} />
+      <WavyLine color={W.trueBlack} top="85%" left="40%" width={140} />
 
-      {/* Color block accent strip */}
-      <motion.div
-        className="absolute z-[1] top-0 left-0 right-0 flex"
-        style={{ height: 6 }}
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex-1" style={{ background: W.bloodRed }} />
-        <div className="flex-1" style={{ background: W.neonPink }} />
-        <div className="flex-1" style={{ background: W.canaryYellow }} />
-      </motion.div>
-
-      {/* Eyebrow */}
-      <motion.span
-        className="absolute z-[3] top-[14%] left-8 uppercase font-bold"
-        style={{ fontSize: 11, letterSpacing: '0.15em', color: W.neonPink }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-      >
-        BY THE NUMBERS
-      </motion.span>
-
-      {/* Editorial stat layout */}
-      <div className="absolute z-[3] top-[22%] left-8 right-8 flex flex-col gap-6">
-        {/* Minutes */}
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 48 }}>
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: stagger(0) }}
-        >
-          <span
-            className="font-black leading-none"
-            style={{ fontSize: 'clamp(48px, 14vw, 80px)', ...gradientText(`linear-gradient(135deg, ${W.bloodRed}, ${W.neonPink})`) }}
-          >
-            {minutesCount.toLocaleString()}
-          </span>
-          <span className="block uppercase" style={{ fontSize: 11, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)' }}>
-            MINUTES
-          </span>
-        </motion.div>
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.6, type: 'spring' }}
+          style={{
+            width: 280,
+            height: 280,
+            backgroundImage: `url(${album.cover || fallbackImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            border: `8px solid ${W.trueBlack}`,
+            boxShadow: '12px 12px 0px rgba(0,0,0,0.5)',
+            clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)',
+          }}
+        />
 
-        {/* Plays */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: stagger(1) }}
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          style={{
+            marginTop: 40,
+            backgroundColor: W.trueBlack,
+            border: `6px solid ${W.electricBlue}`,
+            padding: '24px 40px',
+            boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(-2deg)',
+            textAlign: 'center',
+          }}
         >
-          <span className="font-black leading-none text-white" style={{ fontSize: 'clamp(36px, 10vw, 56px)' }}>
-            {playsCount.toLocaleString()}
-          </span>
-          <span className="block uppercase" style={{ fontSize: 11, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)' }}>
-            TOTAL PLAYS
-          </span>
-        </motion.div>
-
-        {/* Songs / Artists / Albums row */}
-        <motion.div
-          className="flex gap-8 mt-2"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: stagger(2) }}
-        >
-          {[
-            { value: songs.length, label: 'SONGS', icon: Music },
-            { value: artists.length, label: 'ARTISTS', icon: Disc },
-            { value: albums.length, label: 'ALBUMS', icon: Repeat },
-          ].map((stat, i) => (
-            <div key={stat.label}>
-              <span className="block font-bold text-white" style={{ fontSize: 28 }}>{stat.value}</span>
-              <span className="uppercase" style={{ fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.35)' }}>
-                {stat.label}
-              </span>
+          <div style={{ fontSize: 14, fontWeight: 700, color: W.electricYellow, marginBottom: 8, textTransform: 'uppercase' }}>
+            Your #1 Album
+          </div>
+          <GlitchText>
+            <div style={{ fontSize: 40, fontWeight: 900, color: W.trueWhite }}>
+              {album.title}
             </div>
-          ))}
+          </GlitchText>
+          <div style={{ fontSize: 20, fontWeight: 700, color: W.electricYellow, marginTop: 8 }}>
+            {album.artist}
+          </div>
         </motion.div>
       </div>
-
-      {/* Bottom stats */}
-      <motion.div
-        className="absolute z-[3] bottom-[14%] left-8 right-8 flex justify-between"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-      >
-        <div>
-          <span className="block font-bold" style={{ fontSize: 18, color: W.canaryYellow }}>{avgPerSong}</span>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>AVG PER SONG</span>
-        </div>
-        {topGenres > 0 && (
-          <div className="text-right">
-            <span className="block font-bold" style={{ fontSize: 18, color: W.canaryYellow }}>{topGenres}</span>
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>GENRES</span>
-          </div>
-        )}
-      </motion.div>
-    </motion.div>
+    </div>
   );
 };
 
-// ═══════════════════════════════════════════════════════════════
-// SLIDE 13 — SlideOutro
-// Screenshot-ready share card with gradient border
-// "PUNKY" logo top, key stats center, SHARE button prominent
-// ═══════════════════════════════════════════════════════════════
-const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; onClose: () => void }> = ({
-  totalMinutes, artists, songs, onClose,
-}) => {
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
+const Slide8: React.FC<{ artists: Artist[] }> = ({ artists }) => {
+  const genres = artists.flatMap(a => a.genres || []).slice(0, 6);
 
-  const handleShare = async () => {
-    const shareText = `I listened to ${totalMinutes.toLocaleString()} minutes of music this week on Punky!`;
-    if (navigator.share) {
-      try { await navigator.share({ title: 'My Punky Wrapped', text: shareText }); } catch (err) { console.log('Share cancelled or failed:', err); }
-    } else {
-      try {
-        await navigator.clipboard.writeText(shareText);
-      } catch (err) {
-        console.error('Failed to copy:', err);
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.hotCoral, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueWhite} />
+      <MovingShapes color={W.trueWhite} />
+      
+      <FloatingZigzag color={W.electricYellow} top="5%" left="75%" size={75} />
+      <PulsingCircle color={W.deepPurple} top="65%" left="10%" size={90} />
+      <RotatingStar color={W.vividGreen} top="20%" left="15%" size={65} />
+      <BouncingDiamond color={W.electricBlue} top="75%" left="80%" size={80} />
+      <GlitchSquare color={W.hotPink} top="40%" left="50%" size={85} />
+      <WavyLine color={W.trueWhite} top="55%" left="25%" width={120} />
+
+      <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          style={{
+            backgroundColor: W.trueBlack,
+            border: `6px solid ${W.trueWhite}`,
+            padding: '20px 40px',
+            marginBottom: 40,
+            boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(-3deg)',
+          }}
+        >
+          <RepeatedText>
+            <div style={{ fontSize: 48, fontWeight: 900, color: W.hotCoral }}>
+              YOUR GENRES
+            </div>
+          </RepeatedText>
+        </motion.div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxWidth: 600 }}>
+          {genres.map((genre, i) => (
+            <motion.div
+              key={i}
+              initial={{ scale: 0, rotate: 90 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: stagger(i, 0.2), type: 'spring' }}
+              style={{
+                backgroundColor: W.trueWhite,
+                border: `5px solid ${W.trueBlack}`,
+                padding: '20px 24px',
+                boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+                transform: `rotate(${i % 2 === 0 ? 2 : -2}deg)`,
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: 24, fontWeight: 900, color: W.trueBlack, textTransform: 'uppercase' }}>
+                {genre}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Slide9: React.FC<{ totalMinutes: number }> = ({ totalMinutes }) => {
+  const hours = Math.floor(totalMinutes / 60);
+  const months = 12;
+  const avgPerDay = Math.round(totalMinutes / 365);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.deepPurple, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueWhite} />
+      <MovingShapes color={W.trueWhite} />
+      
+      <FloatingZigzag color={W.electricYellow} top="12%" left="10%" size={70} />
+      <PulsingCircle color={W.hotCoral} top="55%" left="80%" size={100} />
+      <RotatingStar color={W.vividGreen} top="70%" left="15%" size={65} />
+      <BouncingDiamond color={W.hotPink} top="25%" left="75%" size={75} />
+      <GlitchSquare color={W.electricBlue} top="80%" left="50%" size={80} />
+      <WavyLine color={W.trueWhite} top="40%" left="35%" width={130} />
+
+      <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <motion.div
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          style={{
+            backgroundColor: W.trueWhite,
+            border: `6px solid ${W.trueBlack}`,
+            padding: '20px 40px',
+            marginBottom: 40,
+            boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(2deg)',
+          }}
+        >
+          <GlitchText>
+            <div style={{ fontSize: 48, fontWeight: 900, color: W.deepPurple }}>
+              BY THE NUMBERS
+            </div>
+          </GlitchText>
+        </motion.div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%', maxWidth: 500 }}>
+          <motion.div
+            initial={{ x: -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            style={{
+              backgroundColor: W.electricYellow,
+              border: `5px solid ${W.trueBlack}`,
+              padding: '20px 32px',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div style={{ fontSize: 20, fontWeight: 700, color: W.trueBlack }}>Total Hours</div>
+            <div style={{ fontSize: 48, fontWeight: 900, color: W.trueBlack }}>{hours.toLocaleString()}</div>
+          </motion.div>
+
+          <motion.div
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            style={{
+              backgroundColor: W.hotCoral,
+              border: `5px solid ${W.trueBlack}`,
+              padding: '20px 32px',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div style={{ fontSize: 20, fontWeight: 700, color: W.trueWhite }}>Months Active</div>
+            <div style={{ fontSize: 48, fontWeight: 900, color: W.trueWhite }}>{months}</div>
+          </motion.div>
+
+          <motion.div
+            initial={{ x: -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            style={{
+              backgroundColor: W.vividGreen,
+              border: `5px solid ${W.trueBlack}`,
+              padding: '20px 32px',
+              boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div style={{ fontSize: 20, fontWeight: 700, color: W.trueBlack }}>Avg Per Day</div>
+            <div style={{ fontSize: 48, fontWeight: 900, color: W.trueBlack }}>{avgPerDay}m</div>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Slide10: React.FC<{ artists: Artist[] }> = ({ artists }) => {
+  const topArtist = artists[0];
+  if (!topArtist) return null;
+
+  const insight = topArtist.museInsight || `You spent ${topArtist.timeStr || 'countless hours'} listening to ${topArtist.name}. That's dedication!`;
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.vividGreen, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueBlack} />
+      <MovingShapes color={W.trueBlack} />
+      
+      <FloatingZigzag color={W.electricYellow} top="8%" left="80%" size={75} />
+      <PulsingCircle color={W.hotCoral} top="60%" left="10%" size={95} />
+      <RotatingStar color={W.deepPurple} top="25%" left="15%" size={70} />
+      <BouncingDiamond color={W.hotPink} top="75%" left="75%" size={80} />
+      <GlitchSquare color={W.electricBlue} top="40%" left="85%" size={85} />
+      <WavyLine color={W.trueBlack} top="85%" left="30%" width={140} />
+
+      <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring' }}
+          style={{
+            width: 200,
+            height: 200,
+            backgroundImage: `url(${topArtist.image || fallbackImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            border: `8px solid ${W.trueBlack}`,
+            boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(-5deg)',
+          }}
+        />
+
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          style={{
+            marginTop: 40,
+            backgroundColor: W.trueBlack,
+            border: `6px solid ${W.trueWhite}`,
+            padding: '24px 32px',
+            boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(2deg)',
+            maxWidth: '80%',
+          }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 700, color: W.vividGreen, marginBottom: 12, textTransform: 'uppercase', textAlign: 'center' }}>
+            ✨ Insight ✨
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: W.trueWhite, lineHeight: 1.4, textAlign: 'center' }}>
+            {insight}
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+const Slide11: React.FC<{ albumCovers: string[] }> = ({ albumCovers }) => {
+  const covers = albumCovers.slice(0, 9);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.electricYellow, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueBlack} />
+      <MovingShapes color={W.trueBlack} />
+      
+      <FloatingZigzag color={W.electricBlue} top="5%" left="5%" size={70} />
+      <PulsingCircle color={W.hotCoral} top="70%" left="85%" size={90} />
+      <RotatingStar color={W.deepPurple} top="50%" left="90%" size={65} />
+      <BouncingDiamond color={W.vividGreen} top="80%" left="10%" size={75} />
+      <GlitchSquare color={W.hotPink} top="15%" left="85%" size={80} />
+
+      <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          style={{
+            backgroundColor: W.trueBlack,
+            border: `6px solid ${W.trueWhite}`,
+            padding: '20px 40px',
+            marginBottom: 40,
+            boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(-2deg)',
+          }}
+        >
+          <RepeatedText>
+            <div style={{ fontSize: 48, fontWeight: 900, color: W.electricYellow }}>
+              YOUR COLLAGE
+            </div>
+          </RepeatedText>
+        </motion.div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, maxWidth: 500 }}>
+          {covers.map((cover, i) => (
+            <motion.div
+              key={i}
+              initial={{ scale: 0, rotate: 180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: stagger(i, 0.1), type: 'spring' }}
+              style={{
+                width: 140,
+                height: 140,
+                backgroundImage: `url(${cover || fallbackImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                border: `5px solid ${W.trueBlack}`,
+                boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+                transform: `rotate(${(i % 3) * 2 - 2}deg)`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Slide12: React.FC<{ connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> } }> = ({ connectionGraph }) => {
+  const artists = connectionGraph ? Object.keys(connectionGraph.artistInfo).slice(0, 6) : [];
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.electricBlue, overflow: 'hidden' }}>
+      <AnimatedDots color={W.trueWhite} />
+      <MovingShapes color={W.trueWhite} />
+      
+      <FloatingZigzag color={W.electricYellow} top="10%" left="75%" size={80} />
+      <PulsingCircle color={W.hotCoral} top="65%" left="15%" size={100} />
+      <RotatingStar color={W.vividGreen} top="30%" left="10%" size={70} />
+      <BouncingDiamond color={W.hotPink} top="75%" left="80%" size={85} />
+      <GlitchSquare color={W.trueWhite} top="45%" left="85%" size={75} />
+      <WavyLine color={W.trueWhite} top="20%" left="35%" width={130} />
+
+      <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <motion.div
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          style={{
+            backgroundColor: W.trueWhite,
+            border: `6px solid ${W.trueBlack}`,
+            padding: '20px 40px',
+            marginBottom: 40,
+            boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+            transform: 'rotate(2deg)',
+          }}
+        >
+          <GlitchText>
+            <div style={{ fontSize: 48, fontWeight: 900, color: W.electricBlue }}>
+              CONNECTIONS
+            </div>
+          </GlitchText>
+        </motion.div>
+
+        {artists.length > 0 ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', maxWidth: 600 }}>
+            {artists.map((artist, i) => (
+              <motion.div
+                key={i}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: stagger(i, 0.15), type: 'spring' }}
+                style={{
+                  backgroundColor: W.trueWhite,
+                  border: `5px solid ${W.trueBlack}`,
+                  padding: '16px 24px',
+                  boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+                  transform: `rotate(${i % 2 === 0 ? -2 : 2}deg)`,
+                }}
+              >
+                <div style={{ fontSize: 20, fontWeight: 900, color: W.trueBlack }}>
+                  {artist}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            style={{
+              backgroundColor: W.trueWhite,
+              border: `6px solid ${W.trueBlack}`,
+              padding: '32px 48px',
+              boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ fontSize: 24, fontWeight: 700, color: W.trueBlack }}>
+              Your music taste is eclectic and unique!
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const Slide13: React.FC = () => {
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.trueBlack, overflow: 'hidden' }}>
+      <AnimatedDots color={W.electricYellow} />
+      <MovingShapes color={W.electricYellow} />
+      
+      <FloatingZigzag color={W.electricYellow} top="10%" left="10%" size={90} />
+      <PulsingCircle color={W.hotCoral} top="60%" left="70%" size={110} />
+      <RotatingStar color={W.vividGreen} top="25%" left="75%" size={80} />
+      <BouncingDiamond color={W.hotPink} top="70%" left="20%" size={95} />
+      <GlitchSquare color={W.electricBlue} top="15%" left="60%" size={100} />
+      <WavyLine color={W.deepPurple} top="80%" left="40%" width={160} />
+
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 48 }}>
+        <motion.div
+          initial={{ scale: 0, rotate: 360 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ duration: 1, type: 'spring', bounce: 0.6 }}
+          style={{
+            backgroundColor: W.electricYellow,
+            border: `8px solid ${W.hotCoral}`,
+            padding: '32px 64px',
+            boxShadow: '15px 15px 0px rgba(255, 215, 0, 0.3)',
+            transform: 'rotate(-3deg)',
+            textAlign: 'center',
+          }}
+        >
+          <GlitchText>
+            <div style={{ fontSize: 72, fontWeight: 900, color: W.trueBlack, lineHeight: 1 }}>
+              {CURRENT_YEAR}
+            </div>
+          </GlitchText>
+          <div style={{ fontSize: 48, fontWeight: 900, color: W.trueBlack, marginTop: 8 }}>
+            WRAPPED
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          style={{
+            marginTop: 48,
+            backgroundColor: W.trueWhite,
+            border: `6px solid ${W.electricBlue}`,
+            padding: '24px 48px',
+            boxShadow: '10px 10px 0px rgba(255, 255, 255, 0.2)',
+            transform: 'rotate(2deg)',
+          }}
+        >
+          <RepeatedText>
+            <div style={{ fontSize: 36, fontWeight: 900, color: W.trueBlack }}>
+              THANKS FOR LISTENING
+            </div>
+          </RepeatedText>
+        </motion.div>
+
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.8, type: 'spring' }}
+          style={{
+            marginTop: 32,
+            fontSize: 18,
+            fontWeight: 700,
+            color: W.electricYellow,
+            textTransform: 'uppercase',
+            letterSpacing: 2,
+          }}
+        >
+          See you next year! 🎵
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+// ─── MAIN COMPONENT ─────────────────────────────────────────────
+
+export default function WrappedSlides(props: WrappedSlidesProps) {
+  const { onClose } = props;
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout>();
+
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (currentSlide < TOTAL_SLIDES - 1) {
+      timerRef.current = setTimeout(() => {
+        setCurrentSlide((prev) => Math.min(prev + 1, TOTAL_SLIDES - 1));
+      }, AUTO_ADVANCE_MS);
+    }
+  }, [currentSlide]);
+
+  useEffect(() => {
+    resetTimer();
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [currentSlide, resetTimer]);
+
+  const handleTap = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const tapZone = rect.width * LEFT_TAP_ZONE;
+      if (x < tapZone) {
+        setCurrentSlide((prev) => Math.max(prev - 1, 0));
+      } else {
+        setCurrentSlide((prev) => Math.min(prev + 1, TOTAL_SLIDES - 1));
       }
+    },
+    []
+  );
+
+  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
+    if (info.offset.x < -50) {
+      setCurrentSlide((prev) => Math.min(prev + 1, TOTAL_SLIDES - 1));
+    } else if (info.offset.x > 50) {
+      setCurrentSlide((prev) => Math.max(prev - 1, 0));
+    }
+  }, []);
+
+  const renderSlide = () => {
+    switch (currentSlide) {
+      case 0: return <Slide0 {...props} />;
+      case 1: return <Slide1 totalMinutes={props.totalMinutes} />;
+      case 2: return <Slide2 artists={props.artists} />;
+      case 3: return <Slide3 artists={props.artists} />;
+      case 4: return <Slide4 songs={props.songs} />;
+      case 5: return <Slide5 songs={props.songs} />;
+      case 6: return <Slide6 albums={props.albums} />;
+      case 7: return <Slide7 albums={props.albums} />;
+      case 8: return <Slide8 artists={props.artists} />;
+      case 9: return <Slide9 totalMinutes={props.totalMinutes} />;
+      case 10: return <Slide10 artists={props.artists} />;
+      case 11: return <Slide11 albumCovers={props.albumCovers} />;
+      case 12: return <Slide12 connectionGraph={props.connectionGraph} />;
+      case 13: return <Slide13 />;
+      default: return null;
     }
   };
 
   return (
-    <motion.div className="absolute inset-0 overflow-hidden" style={{ backgroundColor: W.deepBlack }}>
-      {/* Subtle PrismaticBurst background */}
-      <div className="absolute inset-0 opacity-30 pointer-events-none">
-        <PrismaticBurst animationType="rotate3d" intensity={1.2} speed={0.22} colors={[W.bloodRed, W.neonPink, W.canaryYellow]} mixBlendMode="lighten" />
-      </div>
-      <div className="absolute inset-0 bg-black/40" />
-
-      {/* Share card — rounded, gradient border */}
-      <div className="absolute z-[3] inset-0 flex items-center justify-center px-6">
-        <motion.div
-          className="w-full max-w-sm p-[3px] rounded-2xl"
-          style={{
-            background: `linear-gradient(135deg, ${W.bloodRed}, ${W.neonPink}, ${W.canaryYellow})`,
-          }}
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6, type: 'spring', stiffness: 200, damping: 25 }}
-        >
-          <div className="rounded-2xl px-8 py-10 flex flex-col items-center" style={{ backgroundColor: W.deepBlack }}>
-            {/* PUNKY logo */}
-            <motion.span
-              className="font-black uppercase"
-              style={{
-                fontSize: 28, letterSpacing: '0.2em',
-                ...gradientText(`linear-gradient(135deg, ${W.bloodRed}, ${W.neonPink}, ${W.canaryYellow})`),
-              }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              PUNKY
-            </motion.span>
-
-            <motion.div
-              className="w-12 h-[2px] my-4"
-              style={{ background: `linear-gradient(90deg, ${W.bloodRed}, ${W.neonPink})` }}
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ delay: 0.5, duration: 0.4 }}
-            />
-
-            {/* Key stats stacked */}
-            <motion.div
-              className="text-center flex flex-col gap-4 w-full"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <div>
-                <span
-                  className="font-black block"
-                  style={{
-                    fontSize: 48,
-                    ...gradientText(`linear-gradient(135deg, ${W.neonPink}, ${W.canaryYellow})`),
-                  }}
-                >
-                  {hours > 0 ? `${hours}h ${minutes}m` : `${totalMinutes}m`}
-                </span>
-                <span className="uppercase" style={{ fontSize: 11, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)' }}>
-                  LISTENED
-                </span>
-              </div>
-
-              <div className="flex justify-center gap-8">
-                <div className="text-center">
-                  <span className="block font-bold text-white" style={{ fontSize: 24 }}>{songs.length}</span>
-                  <span className="uppercase" style={{ fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.35)' }}>SONGS</span>
-                </div>
-                <div className="text-center">
-                  <span className="block font-bold text-white" style={{ fontSize: 24 }}>{artists.length}</span>
-                  <span className="uppercase" style={{ fontSize: 10, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.35)' }}>ARTISTS</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* SHARE button */}
-            <motion.button
-              onClick={(e) => { e.stopPropagation(); handleShare(); }}
-              className="mt-6 w-full font-bold rounded-full py-3 transition-transform hover:scale-105 active:scale-95"
-              style={{
-                fontSize: 15,
-                background: `linear-gradient(135deg, ${W.bloodRed}, ${W.neonPink})`,
-                color: '#fff',
-                border: 'none',
-                letterSpacing: '0.1em',
-              }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9, duration: 0.4 }}
-            >
-              SHARE
-            </motion.button>
-
-            {/* Done link */}
-            <motion.button
-              onClick={(e) => { e.stopPropagation(); onClose(); }}
-              className="mt-3 text-white/40 transition-colors hover:text-white/60"
-              style={{ fontSize: 13, background: 'none', border: 'none', cursor: 'pointer' }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.1 }}
-            >
-              Done
-            </motion.button>
-          </div>
-        </motion.div>
-      </div>
-    </motion.div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════
-const WrappedSlides: React.FC<WrappedSlidesProps> = ({
-  onClose, totalMinutes, artists, albums, songs, albumCovers, connectionGraph,
-}) => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [direction, setDirection] = useState(1);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const interactedRef = useRef(false);
-
-  useEffect(() => {
-    const prevBody = document.body.style.overflow;
-    const prevHtml = document.documentElement.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prevBody;
-      document.documentElement.style.overflow = prevHtml;
-    };
-  }, []);
-
-  const resetTimer = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setDirection(1);
-      setCurrentSlide((prev) => (prev < TOTAL_SLIDES - 1 ? prev + 1 : prev));
-    }, AUTO_ADVANCE_MS);
-  }, []);
-
-  useEffect(() => {
-    if (!interactedRef.current) resetTimer();
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [currentSlide, resetTimer]);
-
-  const goTo = useCallback(
-    (slide: number) => {
-      const clamped = Math.max(0, Math.min(TOTAL_SLIDES - 1, slide));
-      interactedRef.current = true;
-      setDirection(clamped > currentSlide ? 1 : -1);
-      setCurrentSlide(clamped);
-      resetTimer();
-      interactedRef.current = false;
-    },
-    [currentSlide, resetTimer],
-  );
-
-  const handleTap = useCallback((e: React.MouseEvent) => {
-    // Skip navigation if user clicked an interactive element (button, link)
-    const target = e.target as HTMLElement;
-    if (target.closest('button') || target.closest('a')) return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    if (clickX < rect.width * LEFT_TAP_ZONE) {
-      goTo(currentSlide - 1);
-    } else {
-      goTo(currentSlide + 1);
-    }
-  }, [currentSlide, goTo]);
-
-  const handleDragEnd = useCallback(
-    (_e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-      const threshold = 50;
-      if (info.offset.x < -threshold) goTo(currentSlide + 1);
-      else if (info.offset.x > threshold) goTo(currentSlide - 1);
-    },
-    [currentSlide, goTo],
-  );
-
-  const slideContent = useMemo(() => {
-    switch (currentSlide) {
-      case 0: return <SlideTotalMinutes totalMinutes={totalMinutes || 0} albumCovers={albumCovers} />;
-      case 1: return <SlideTopArtist artists={artists} songs={songs} />;
-      case 2: return <SlideConnection artists={artists} songs={songs} connectionGraph={connectionGraph} />;
-      case 3: return <SlideAlbumRepeat albums={albums} />;
-      case 4: return <SlideOrbit songs={songs} />;
-      case 5: return <SlideUpcomingArtists artists={artists} />;
-      case 6: return <SlideObsession songs={songs} artists={artists} />;
-      case 7: return <SlideLeapChart artists={artists} songs={songs} />;
-      case 8: return <SlidePeakHour songs={songs} />;
-      case 9: return <SlideLongestSession songs={songs} />;
-      case 10: return <SlideDiscoveryRate artists={artists} albums={albums} />;
-      case 11: return <SlideListeningStreak songs={songs} />;
-      case 12: return <SlideListeningStats totalMinutes={totalMinutes || 0} artists={artists} songs={songs} albums={albums} />;
-      case 13: return <SlideOutro totalMinutes={totalMinutes || 0} artists={artists} songs={songs} onClose={onClose} />;
-      default: return null;
-    }
-  }, [currentSlide, totalMinutes, artists, albums, songs, albumCovers, connectionGraph, onClose]);
-
-  return (
-    <motion.div
-      className="fixed inset-0 z-[9999] bg-black overflow-hidden select-none"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={handleTap}
-      onPanEnd={handleDragEnd}
-      style={{ touchAction: 'pan-y' }}
-    >
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, backgroundColor: W.trueBlack }}>
       <StoryProgressBar current={currentSlide} total={TOTAL_SLIDES} />
       <CloseButton onClick={onClose} />
 
-      <AnimatePresence mode="wait" custom={direction}>
-        <motion.div
-          key={currentSlide}
-          className="absolute inset-0"
-          custom={direction}
-          variants={slideVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={slideTransition}
-        >
-          {slideContent}
-        </motion.div>
-      </AnimatePresence>
-    </motion.div>
+      <motion.div
+        onClick={handleTap}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.2}
+        onDragEnd={handleDragEnd}
+        style={{ width: '100%', height: '100%', cursor: 'pointer' }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentSlide}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+            style={{ width: '100%', height: '100%' }}
+          >
+            {renderSlide()}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+    </div>
   );
-};
-
-export default WrappedSlides;
+}
