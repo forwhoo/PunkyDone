@@ -3,17 +3,24 @@ import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { X, TrendingUp, Headphones, Music, Disc, Repeat, Flame, Zap, Clock, Sparkles } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
 
-// ─── BRUTALIST COLOR PALETTE ────────────────────────────────────
+// ─── ENHANCED BRUTALIST COLOR PALETTE ────────────────────────────────────
 const W = {
-  electricYellow: '#FFD700',
-  electricBlue: '#2839DB',
-  hotCoral: '#E63946',
-  vividGreen: '#00C853',
-  deepPurple: '#6C3CE1',
-  hotPink: '#FF3EA5',
+  // Core brutalist colors
+  electricYellow: '#FFE500',
+  electricBlue: '#0047FF',
+  hotCoral: '#FF3366',
+  vividGreen: '#00FF85',
+  deepPurple: '#9D00FF',
+  hotPink: '#FF0090',
+  neonOrange: '#FF6B00',
+  cyberCyan: '#00FFFF',
+  acidGreen: '#CCFF00',
+  
+  // Base colors
   offWhite: '#F5F0E8',
   trueBlack: '#000000',
   trueWhite: '#FFFFFF',
+  darkGray: '#1A1A1A',
 };
 
 const TOTAL_SLIDES = 14;
@@ -56,16 +63,20 @@ function useOdometer(target: number, durationMs = 1500): number {
 // Stagger delay helper
 const stagger = (i: number, base = 0.2, step = 0.1) => base + i * step;
 
-// ─── ANIMATED SHAPE COMPONENTS ──────────────────────────────────
+// ─── ENHANCED ANIMATED SHAPE COMPONENTS ──────────────────────────────────
 
 const FloatingZigzag: React.FC<{ color: string; top: string; left: string; size?: number }> = ({ color, top, left, size = 60 }) => {
   return useMemo(() => (
     <motion.svg
       style={{ position: 'absolute', top, left, width: size, height: size }}
-      animate={{ y: [-10, 10, -10], rotate: [0, 15, -15, 0] }}
-      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+      animate={{ 
+        y: [-20, 20, -20], 
+        rotate: [0, 25, -25, 0],
+        x: [-10, 10, -10]
+      }}
+      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
     >
-      <path d="M10 10 L30 30 L50 10" stroke={color} strokeWidth="5" fill="none" />
+      <path d="M10 10 L30 30 L50 10 L70 30 L90 10" stroke={color} strokeWidth="8" fill="none" strokeLinecap="round" />
     </motion.svg>
   ), [color, top, left, size]);
 };
@@ -79,11 +90,15 @@ const PulsingCircle: React.FC<{ color: string; top: string; left: string; size?:
         left,
         width: size,
         height: size,
-        border: `5px solid ${color}`,
+        border: `8px solid ${color}`,
         borderRadius: '50%',
       }}
-      animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
-      transition={{ duration: 2, repeat: Infinity }}
+      animate={{ 
+        scale: [1, 1.4, 1], 
+        opacity: [0.5, 1, 0.5],
+        rotate: [0, 180, 360]
+      }}
+      transition={{ duration: 3, repeat: Infinity }}
     />
   ), [color, top, left, size]);
 };
@@ -92,8 +107,14 @@ const RotatingStar: React.FC<{ color: string; top: string; left: string; size?: 
   return useMemo(() => (
     <motion.svg
       style={{ position: 'absolute', top, left, width: size, height: size }}
-      animate={{ rotate: 360 }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+      animate={{ 
+        rotate: 360,
+        scale: [1, 1.2, 1]
+      }}
+      transition={{ 
+        rotate: { duration: 10, repeat: Infinity, ease: 'linear' },
+        scale: { duration: 2, repeat: Infinity, ease: 'easeInOut' }
+      }}
     >
       <polygon points="25,5 30,20 45,20 33,30 38,45 25,35 12,45 17,30 5,20 20,20" fill={color} />
     </motion.svg>
@@ -112,8 +133,11 @@ const BouncingDiamond: React.FC<{ color: string; top: string; left: string; size
         backgroundColor: color,
         transform: 'rotate(45deg)',
       }}
-      animate={{ y: [-15, 15, -15] }}
-      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+      animate={{ 
+        y: [-25, 25, -25],
+        rotate: [45, 225, 45]
+      }}
+      transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
     />
   ), [color, top, left, size]);
 };
@@ -127,13 +151,14 @@ const GlitchSquare: React.FC<{ color: string; top: string; left: string; size?: 
         left,
         width: size,
         height: size,
-        border: `6px solid ${color}`,
+        border: `8px solid ${color}`,
       }}
       animate={{
-        x: [0, -5, 5, 0, 3, -3, 0],
-        y: [0, 3, -3, 5, 0, -5, 0],
+        x: [0, -8, 8, 0, 5, -5, 0],
+        y: [0, 5, -5, 8, 0, -8, 0],
+        rotate: [0, 5, -5, 0]
       }}
-      transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
+      transition={{ duration: 2, repeat: Infinity, repeatDelay: 0.5 }}
     />
   ), [color, top, left, size]);
 };
@@ -141,24 +166,101 @@ const GlitchSquare: React.FC<{ color: string; top: string; left: string; size?: 
 const WavyLine: React.FC<{ color: string; top: string; left: string; width?: number }> = ({ color, top, left, width = 100 }) => {
   return useMemo(() => (
     <motion.svg
-      style={{ position: 'absolute', top, left, width, height: 30 }}
-      animate={{ x: [0, 10, 0] }}
-      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+      style={{ position: 'absolute', top, left, width, height: 40 }}
+      animate={{ 
+        x: [0, 15, 0],
+        y: [0, -5, 0]
+      }}
+      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
     >
-      <path d={`M0 15 Q${width / 4} 5, ${width / 2} 15 T${width} 15`} stroke={color} strokeWidth="4" fill="none" />
+      <path d={`M0 20 Q${width / 4} 5, ${width / 2} 20 T${width} 20`} stroke={color} strokeWidth="6" fill="none" strokeLinecap="round" />
     </motion.svg>
   ), [color, top, left, width]);
 };
 
-// ─── BACKGROUND ANIMATION COMPONENTS ────────────────────────────
+// New enhanced shape components
+const CrossShape: React.FC<{ color: string; top: string; left: string; size?: number }> = ({ color, top, left, size = 80 }) => {
+  return useMemo(() => (
+    <motion.div
+      style={{
+        position: 'absolute',
+        top,
+        left,
+      }}
+      animate={{ 
+        rotate: [0, 90, 180, 270, 360],
+        scale: [1, 1.1, 1]
+      }}
+      transition={{ 
+        rotate: { duration: 8, repeat: Infinity, ease: 'linear' },
+        scale: { duration: 2, repeat: Infinity, ease: 'easeInOut' }
+      }}
+    >
+      <svg width={size} height={size}>
+        <rect x={size * 0.35} y={0} width={size * 0.3} height={size} fill={color} />
+        <rect x={0} y={size * 0.35} width={size} height={size * 0.3} fill={color} />
+      </svg>
+    </motion.div>
+  ), [color, top, left, size]);
+};
 
-const AnimatedDots: React.FC<{ color: string }> = ({ color }) => {
-  const dots = useMemo(() => Array.from({ length: 30 }, (_, i) => ({
+const PixelatedSquare: React.FC<{ color: string; top: string; left: string; size?: number }> = ({ color, top, left, size = 60 }) => {
+  return useMemo(() => (
+    <motion.div
+      style={{
+        position: 'absolute',
+        top,
+        left,
+        width: size,
+        height: size,
+        backgroundColor: color,
+        imageRendering: 'pixelated',
+      }}
+      animate={{
+        scale: [1, 1.3, 1],
+        rotate: [0, 90, 180, 270, 360]
+      }}
+      transition={{ 
+        scale: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+        rotate: { duration: 6, repeat: Infinity, ease: 'linear' }
+      }}
+    />
+  ), [color, top, left, size]);
+};
+
+const StripePattern: React.FC<{ color: string; top: string; left: string; size?: number }> = ({ color, top, left, size = 100 }) => {
+  return useMemo(() => (
+    <motion.div
+      style={{
+        position: 'absolute',
+        top,
+        left,
+        width: size,
+        height: size,
+        background: `repeating-linear-gradient(45deg, ${color}, ${color} 10px, transparent 10px, transparent 20px)`,
+      }}
+      animate={{
+        rotate: [0, 360],
+        scale: [1, 1.2, 1]
+      }}
+      transition={{ 
+        rotate: { duration: 10, repeat: Infinity, ease: 'linear' },
+        scale: { duration: 3, repeat: Infinity, ease: 'easeInOut' }
+      }}
+    />
+  ), [color, top, left, size]);
+};
+
+// ─── ENHANCED BACKGROUND ANIMATION COMPONENTS ────────────────────────────
+
+const AnimatedDots: React.FC<{ color: string; density?: number }> = ({ color, density = 50 }) => {
+  const dots = useMemo(() => Array.from({ length: density }, (_, i) => ({
     key: i,
     x: Math.random() * 100,
     y: Math.random() * 100,
-    delay: Math.random() * 2,
-  })), []);
+    delay: Math.random() * 3,
+    size: 4 + Math.random() * 8,
+  })), [density]);
 
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
@@ -169,19 +271,21 @@ const AnimatedDots: React.FC<{ color: string }> = ({ color }) => {
             position: 'absolute',
             left: `${dot.x}%`,
             top: `${dot.y}%`,
-            width: 6,
-            height: 6,
+            width: dot.size,
+            height: dot.size,
             backgroundColor: color,
             borderRadius: '50%',
           }}
           animate={{
-            scale: [1, 1.5, 1],
-            opacity: [0.3, 0.7, 0.3],
+            scale: [1, 2, 1],
+            opacity: [0.2, 0.9, 0.2],
+            y: [0, -20, 0]
           }}
           transition={{
-            duration: 3,
+            duration: 4,
             repeat: Infinity,
             delay: dot.delay,
+            ease: 'easeInOut'
           }}
         />
       ))}
@@ -189,16 +293,44 @@ const AnimatedDots: React.FC<{ color: string }> = ({ color }) => {
   );
 };
 
+const GridPattern: React.FC<{ color: string }> = ({ color }) => {
+  return (
+    <motion.div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        backgroundImage: `
+          linear-gradient(${color} 2px, transparent 2px),
+          linear-gradient(90deg, ${color} 2px, transparent 2px)
+        `,
+        backgroundSize: '60px 60px',
+        opacity: 0.15,
+      }}
+      animate={{
+        x: [0, 60, 0],
+        y: [0, 60, 0]
+      }}
+      transition={{
+        duration: 10,
+        repeat: Infinity,
+        ease: 'linear'
+      }}
+    />
+  );
+};
+
 const MovingShapes: React.FC<{ color: string }> = ({ color }) => {
   const shapes = useMemo(() => [
-    { type: 'circle', size: 40, y: 10, duration: 15 },
-    { type: 'square', size: 35, y: 25, duration: 18 },
-    { type: 'rounded', size: 50, y: 45, duration: 20 },
-    { type: 'circle', size: 30, y: 60, duration: 16 },
-    { type: 'square', size: 45, y: 75, duration: 22 },
-    { type: 'rounded', size: 38, y: 15, duration: 19 },
-    { type: 'circle', size: 42, y: 85, duration: 17 },
-    { type: 'square', size: 33, y: 50, duration: 21 },
+    { type: 'circle', size: 60, y: 10, duration: 20 },
+    { type: 'square', size: 50, y: 25, duration: 22 },
+    { type: 'rounded', size: 70, y: 45, duration: 25 },
+    { type: 'circle', size: 45, y: 60, duration: 18 },
+    { type: 'square', size: 65, y: 75, duration: 28 },
+    { type: 'rounded', size: 55, y: 15, duration: 23 },
+    { type: 'circle', size: 58, y: 85, duration: 21 },
+    { type: 'square', size: 48, y: 50, duration: 26 },
+    { type: 'rounded', size: 62, y: 35, duration: 24 },
+    { type: 'circle', size: 52, y: 5, duration: 19 },
   ], []);
 
   return (
@@ -208,13 +340,13 @@ const MovingShapes: React.FC<{ color: string }> = ({ color }) => {
           key={i}
           style={{
             position: 'absolute',
-            left: -60,
+            left: -80,
             top: `${shape.y}%`,
             width: shape.size,
             height: shape.size,
-            border: `4px solid ${color}`,
-            borderRadius: shape.type === 'circle' ? '50%' : shape.type === 'rounded' ? '12px' : '0',
-            opacity: 0.2,
+            border: `5px solid ${color}`,
+            borderRadius: shape.type === 'circle' ? '50%' : shape.type === 'rounded' ? '16px' : '0',
+            opacity: 0.3,
           }}
           animate={{ x: ['0vw', '110vw'] }}
           transition={{ duration: shape.duration, repeat: Infinity, ease: 'linear' }}
@@ -224,40 +356,177 @@ const MovingShapes: React.FC<{ color: string }> = ({ color }) => {
   );
 };
 
-// ─── TYPOGRAPHY EFFECT COMPONENTS ───────────────────────────────
-
-const GlitchText: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => {
+const DiagonalStripes: React.FC<{ color: string; direction?: 'left' | 'right' }> = ({ color, direction = 'right' }) => {
+  const angle = direction === 'right' ? '45deg' : '-45deg';
   return (
-    <div
-      className={className}
+    <motion.div
       style={{
-        textShadow: '3px 3px 0 cyan, -3px -3px 0 magenta',
+        position: 'absolute',
+        inset: 0,
+        background: `repeating-linear-gradient(
+          ${angle},
+          transparent,
+          transparent 30px,
+          ${color} 30px,
+          ${color} 35px
+        )`,
+        opacity: 0.1,
       }}
-    >
-      {children}
+      animate={{
+        x: direction === 'right' ? [0, 50, 0] : [0, -50, 0],
+      }}
+      transition={{
+        duration: 8,
+        repeat: Infinity,
+        ease: 'linear'
+      }}
+    />
+  );
+};
+
+const FloatingBlobs: React.FC<{ color: string }> = ({ color }) => {
+  const blobs = useMemo(() => [
+    { x: 10, y: 20, scale: 1.5, duration: 15 },
+    { x: 70, y: 60, scale: 1.2, duration: 18 },
+    { x: 30, y: 80, scale: 1.8, duration: 20 },
+    { x: 85, y: 15, scale: 1.3, duration: 16 },
+  ], []);
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+      {blobs.map((blob, i) => (
+        <motion.div
+          key={i}
+          style={{
+            position: 'absolute',
+            left: `${blob.x}%`,
+            top: `${blob.y}%`,
+            width: 150 * blob.scale,
+            height: 150 * blob.scale,
+            backgroundColor: color,
+            borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%',
+            opacity: 0.15,
+            filter: 'blur(40px)',
+          }}
+          animate={{
+            x: [0, 50, -30, 0],
+            y: [0, -40, 30, 0],
+            scale: [1, 1.1, 0.9, 1],
+            rotate: [0, 90, 180, 270, 360]
+          }}
+          transition={{
+            duration: blob.duration,
+            repeat: Infinity,
+            ease: 'easeInOut'
+          }}
+        />
+      ))}
     </div>
   );
 };
 
-const RepeatedText: React.FC<{ children: React.ReactNode; count?: number; className?: string }> = ({ children, count = 3, className = '' }) => {
+// ─── ENHANCED TYPOGRAPHY EFFECT COMPONENTS ───────────────────────────────
+
+const GlitchText: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => {
+  return (
+    <motion.div
+      className={className}
+      style={{
+        textShadow: '4px 4px 0 cyan, -4px -4px 0 magenta, 2px -2px 0 yellow',
+      }}
+      animate={{
+        textShadow: [
+          '4px 4px 0 cyan, -4px -4px 0 magenta, 2px -2px 0 yellow',
+          '5px 3px 0 cyan, -3px -5px 0 magenta, 3px -3px 0 yellow',
+          '3px 5px 0 cyan, -5px -3px 0 magenta, 2px -4px 0 yellow',
+          '4px 4px 0 cyan, -4px -4px 0 magenta, 2px -2px 0 yellow',
+        ]
+      }}
+      transition={{ duration: 0.3, repeat: Infinity, repeatType: 'mirror' }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+const StretchText: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => {
+  return (
+    <motion.div
+      className={className}
+      animate={{
+        scaleX: [1, 1.1, 1],
+        scaleY: [1, 0.95, 1]
+      }}
+      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+const WarpText: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => {
+  return (
+    <motion.div
+      className={className}
+      animate={{
+        rotateX: [0, 5, -5, 0],
+        rotateY: [0, -5, 5, 0]
+      }}
+      style={{ perspective: '1000px' }}
+      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+const RepeatedText: React.FC<{ children: React.ReactNode; count?: number; className?: string }> = ({ children, count = 4, className = '' }) => {
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
       {Array.from({ length: count }).map((_, i) => (
-        <div
+        <motion.div
           key={i}
           className={className}
           style={{
             position: i === count - 1 ? 'relative' : 'absolute',
-            top: i * 4,
-            left: i * 4,
-            opacity: 1 - (i * 0.3),
+            top: i * 5,
+            left: i * 5,
+            opacity: 1 - (i * 0.25),
             zIndex: count - i,
+          }}
+          animate={{
+            x: [0, 2, 0],
+            y: [0, -2, 0]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            delay: i * 0.1,
+            ease: 'easeInOut'
           }}
         >
           {children}
-        </div>
+        </motion.div>
       ))}
     </div>
+  );
+};
+
+const PixelText: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => {
+  return (
+    <motion.div
+      className={className}
+      style={{
+        imageRendering: 'pixelated',
+        filter: 'contrast(1.2)',
+      }}
+      animate={{
+        filter: ['contrast(1.2)', 'contrast(1.5)', 'contrast(1.2)']
+      }}
+      transition={{ duration: 1.5, repeat: Infinity }}
+    >
+      {children}
+    </motion.div>
   );
 };
 
@@ -403,74 +672,174 @@ const Slide1: React.FC<{ totalMinutes: number }> = ({ totalMinutes }) => {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.electricBlue, overflow: 'hidden' }}>
-      <AnimatedDots color={W.trueWhite} />
+      {/* Enhanced layered backgrounds */}
+      <GridPattern color={W.trueWhite} />
+      <AnimatedDots color={W.trueWhite} density={60} />
       <MovingShapes color={W.trueWhite} />
+      <DiagonalStripes color={W.trueWhite} direction="right" />
       
-      <FloatingZigzag color={W.electricYellow} top="5%" left="80%" size={70} />
-      <PulsingCircle color={W.hotCoral} top="15%" left="10%" size={90} />
-      <RotatingStar color={W.vividGreen} top="75%" left="70%" size={60} />
-      <BouncingDiamond color={W.hotPink} top="50%" left="85%" size={75} />
-      <GlitchSquare color={W.electricYellow} top="65%" left="15%" size={85} />
-      <WavyLine color={W.trueWhite} top="30%" left="40%" width={120} />
+      {/* More dynamic shapes - at least 8 animated elements */}
+      <FloatingZigzag color={W.electricYellow} top="5%" left="80%" size={90} />
+      <PulsingCircle color={W.hotCoral} top="15%" left="10%" size={110} />
+      <RotatingStar color={W.vividGreen} top="75%" left="70%" size={75} />
+      <BouncingDiamond color={W.hotPink} top="50%" left="85%" size={85} />
+      <GlitchSquare color={W.electricYellow} top="65%" left="15%" size={95} />
+      <WavyLine color={W.trueWhite} top="30%" left="40%" width={140} />
+      <CrossShape color={W.neonOrange} top="10%" left="45%" size={90} />
+      <PixelatedSquare color={W.cyberCyan} top="80%" left="50%" size={70} />
+      <StripePattern color={W.acidGreen} top="35%" left="5%" size={120} />
 
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 32 }}>
+        {/* Main stat card with enhanced effects */}
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.5, type: 'spring' }}
+          initial={{ scale: 0, rotate: 180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ duration: 0.7, type: 'spring', bounce: 0.4 }}
           style={{
             backgroundColor: W.trueWhite,
-            border: `6px solid ${W.trueBlack}`,
-            padding: 48,
-            boxShadow: '12px 12px 0px rgba(0,0,0,0.4)',
-            transform: 'rotate(-2deg)',
+            border: `8px solid ${W.trueBlack}`,
+            padding: 56,
+            boxShadow: '16px 16px 0px rgba(0,0,0,0.5)',
+            transform: 'rotate(-3deg)',
             textAlign: 'center',
+            position: 'relative',
           }}
         >
-          <div style={{ fontSize: 24, fontWeight: 700, color: W.trueBlack, marginBottom: 16, textTransform: 'uppercase' }}>
-            You Listened For
-          </div>
+          {/* Decorative corner elements */}
+          <motion.div 
+            style={{
+              position: 'absolute',
+              top: -10,
+              left: -10,
+              width: 30,
+              height: 30,
+              backgroundColor: W.hotCoral,
+              border: `3px solid ${W.trueBlack}`,
+            }}
+            animate={{ rotate: [0, 90, 180, 270, 360] }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+          />
+          <motion.div 
+            style={{
+              position: 'absolute',
+              bottom: -10,
+              right: -10,
+              width: 30,
+              height: 30,
+              backgroundColor: W.vividGreen,
+              border: `3px solid ${W.trueBlack}`,
+              borderRadius: '50%',
+            }}
+            animate={{ scale: [1, 1.3, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          />
+
+          <StretchText>
+            <div style={{ fontSize: 28, fontWeight: 800, color: W.trueBlack, marginBottom: 20, textTransform: 'uppercase', letterSpacing: '2px' }}>
+              You Listened For
+            </div>
+          </StretchText>
           <GlitchText>
-            <div style={{ fontSize: 96, fontWeight: 900, color: W.electricBlue, lineHeight: 1 }}>
+            <div style={{ fontSize: 110, fontWeight: 900, color: W.electricBlue, lineHeight: 0.9, textShadow: '6px 6px 0px rgba(0,0,0,0.1)' }}>
               {displayMinutes.toLocaleString()}
             </div>
           </GlitchText>
-          <div style={{ fontSize: 32, fontWeight: 700, color: W.trueBlack, marginTop: 8 }}>
-            MINUTES
-          </div>
+          <WarpText>
+            <div style={{ fontSize: 38, fontWeight: 900, color: W.trueBlack, marginTop: 12, letterSpacing: '4px' }}>
+              MINUTES
+            </div>
+          </WarpText>
         </motion.div>
 
-        <div style={{ marginTop: 40, display: 'flex', gap: 24 }}>
+        {/* Enhanced stat cards with more visual interest */}
+        <div style={{ marginTop: 48, display: 'flex', gap: 28 }}>
           <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            initial={{ y: 80, opacity: 0, rotate: -10 }}
+            animate={{ y: 0, opacity: 1, rotate: 2 }}
+            transition={{ delay: 0.3, type: 'spring' }}
             style={{
               backgroundColor: W.electricYellow,
-              border: `5px solid ${W.trueBlack}`,
-              padding: '16px 24px',
-              boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+              border: `6px solid ${W.trueBlack}`,
+              padding: '20px 32px',
+              boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+              position: 'relative',
             }}
           >
-            <div style={{ fontSize: 40, fontWeight: 900, color: W.trueBlack }}>{hours.toLocaleString()}</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: W.trueBlack }}>HOURS</div>
+            <motion.div 
+              style={{
+                position: 'absolute',
+                top: -8,
+                right: -8,
+                width: 20,
+                height: 20,
+                backgroundColor: W.hotPink,
+                border: `2px solid ${W.trueBlack}`,
+                transform: 'rotate(45deg)',
+              }}
+              animate={{ scale: [1, 1.4, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+            <PixelText>
+              <div style={{ fontSize: 48, fontWeight: 900, color: W.trueBlack, textShadow: '3px 3px 0px rgba(255,255,255,0.3)' }}>
+                {hours.toLocaleString()}
+              </div>
+            </PixelText>
+            <div style={{ fontSize: 16, fontWeight: 800, color: W.trueBlack, letterSpacing: '2px' }}>HOURS</div>
           </motion.div>
 
           <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5 }}
+            initial={{ y: 80, opacity: 0, rotate: 10 }}
+            animate={{ y: 0, opacity: 1, rotate: -2 }}
+            transition={{ delay: 0.5, type: 'spring' }}
             style={{
               backgroundColor: W.hotCoral,
-              border: `5px solid ${W.trueBlack}`,
-              padding: '16px 24px',
-              boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+              border: `6px solid ${W.trueBlack}`,
+              padding: '20px 32px',
+              boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
+              position: 'relative',
             }}
           >
-            <div style={{ fontSize: 40, fontWeight: 900, color: W.trueWhite }}>{days}</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: W.trueWhite }}>DAYS</div>
+            <motion.div 
+              style={{
+                position: 'absolute',
+                top: -8,
+                left: -8,
+                width: 20,
+                height: 20,
+                backgroundColor: W.cyberCyan,
+                border: `2px solid ${W.trueBlack}`,
+                borderRadius: '50%',
+              }}
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+            />
+            <StretchText>
+              <div style={{ fontSize: 48, fontWeight: 900, color: W.trueWhite, textShadow: '3px 3px 0px rgba(0,0,0,0.3)' }}>
+                {days}
+              </div>
+            </StretchText>
+            <div style={{ fontSize: 16, fontWeight: 800, color: W.trueWhite, letterSpacing: '2px' }}>DAYS</div>
           </motion.div>
         </div>
+
+        {/* Additional decorative element */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          style={{
+            marginTop: 32,
+            backgroundColor: W.deepPurple,
+            border: `4px solid ${W.trueBlack}`,
+            padding: '10px 24px',
+            boxShadow: '5px 5px 0px rgba(0,0,0,0.3)',
+            transform: 'rotate(1deg)',
+          }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 700, color: W.trueWhite, letterSpacing: '1px' }}>
+            🎵 YOUR MUSIC STATS
+          </div>
+        </motion.div>
       </div>
     </div>
   );
@@ -481,80 +850,210 @@ const Slide2: React.FC<{ artists: Artist[] }> = ({ artists }) => {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: W.hotCoral, overflow: 'hidden' }}>
-      <AnimatedDots color={W.trueWhite} />
+      {/* Enhanced backgrounds */}
+      <FloatingBlobs color={W.trueBlack} />
+      <AnimatedDots color={W.trueWhite} density={55} />
       <MovingShapes color={W.trueWhite} />
+      <GridPattern color={W.trueBlack} />
       
-      <FloatingZigzag color={W.electricYellow} top="8%" left="5%" size={75} />
-      <PulsingCircle color={W.deepPurple} top="70%" left="80%" size={95} />
-      <RotatingStar color={W.vividGreen} top="50%" left="10%" size={65} />
-      <BouncingDiamond color={W.electricBlue} top="15%" left="75%" size={70} />
-      <GlitchSquare color={W.hotPink} top="80%" left="50%" size={80} />
-      <WavyLine color={W.trueWhite} top="40%" left="30%" width={140} />
+      {/* More dynamic shapes */}
+      <FloatingZigzag color={W.electricYellow} top="8%" left="5%" size={85} />
+      <PulsingCircle color={W.deepPurple} top="70%" left="80%" size={105} />
+      <RotatingStar color={W.vividGreen} top="50%" left="10%" size={75} />
+      <BouncingDiamond color={W.electricBlue} top="15%" left="75%" size={80} />
+      <GlitchSquare color={W.hotPink} top="80%" left="50%" size={90} />
+      <WavyLine color={W.trueWhite} top="40%" left="30%" width={160} />
+      <CrossShape color={W.cyberCyan} top="25%" left="85%" size={85} />
+      <PixelatedSquare color={W.neonOrange} top="5%" left="40%" size={65} />
 
       <div style={{ position: 'relative', zIndex: 10, padding: 48, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <motion.div
-          initial={{ x: -100, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
+          initial={{ x: -150, opacity: 0, rotate: -20 }}
+          animate={{ x: 0, opacity: 1, rotate: -3 }}
+          transition={{ type: 'spring', bounce: 0.5 }}
           style={{
             backgroundColor: W.trueBlack,
-            border: `6px solid ${W.trueWhite}`,
-            padding: '16px 32px',
-            marginBottom: 40,
-            boxShadow: '8px 8px 0px rgba(0,0,0,0.4)',
-            transform: 'rotate(-2deg)',
+            border: `8px solid ${W.trueWhite}`,
+            padding: '20px 40px',
+            marginBottom: 48,
+            boxShadow: '12px 12px 0px rgba(0,0,0,0.5)',
             alignSelf: 'flex-start',
+            position: 'relative',
           }}
         >
-          <RepeatedText>
-            <div style={{ fontSize: 48, fontWeight: 900, color: W.hotCoral }}>
+          {/* Decorative elements on header */}
+          <motion.div
+            style={{
+              position: 'absolute',
+              top: -12,
+              right: -12,
+              width: 25,
+              height: 25,
+              backgroundColor: W.electricYellow,
+              border: `3px solid ${W.trueBlack}`,
+              transform: 'rotate(45deg)',
+            }}
+            animate={{ rotate: [45, 225, 45] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          />
+          <RepeatedText count={5}>
+            <div style={{ fontSize: 56, fontWeight: 900, color: W.hotCoral, letterSpacing: '3px' }}>
               TOP ARTISTS
             </div>
           </RepeatedText>
         </motion.div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
           {top3.map((artist, i) => (
             <motion.div
               key={artist.id}
-              initial={{ x: 100, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: stagger(i, 0.3) }}
+              initial={{ x: 150, opacity: 0, rotate: 20 }}
+              animate={{ x: 0, opacity: 1, rotate: i % 2 === 0 ? 2 : -2 }}
+              transition={{ delay: stagger(i, 0.3), type: 'spring', bounce: 0.4 }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 24,
+                gap: 28,
                 backgroundColor: W.trueWhite,
-                border: `5px solid ${W.trueBlack}`,
-                padding: 16,
-                boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
-                transform: `rotate(${i % 2 === 0 ? 1 : -1}deg)`,
+                border: `7px solid ${W.trueBlack}`,
+                padding: 20,
+                boxShadow: '10px 10px 0px rgba(0,0,0,0.4)',
+                position: 'relative',
+                overflow: 'visible',
               }}
             >
-              <div style={{ fontSize: 56, fontWeight: 900, color: W.hotCoral, minWidth: 60 }}>
-                #{i + 1}
-              </div>
-              <div
+              {/* Rank badge with animation */}
+              <motion.div
                 style={{
-                  width: 80,
-                  height: 80,
+                  position: 'relative',
+                  minWidth: 70,
+                }}
+                animate={{
+                  scale: [1, 1.1, 1],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                }}
+              >
+                <GlitchText>
+                  <div style={{ fontSize: 64, fontWeight: 900, color: W.hotCoral, textShadow: '4px 4px 0px rgba(0,0,0,0.2)' }}>
+                    #{i + 1}
+                  </div>
+                </GlitchText>
+              </motion.div>
+
+              {/* Artist image with enhanced styling */}
+              <motion.div
+                style={{
+                  width: 90,
+                  height: 90,
                   backgroundImage: `url(${artist.image || fallbackImage})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
-                  border: `4px solid ${W.trueBlack}`,
+                  border: `5px solid ${W.trueBlack}`,
                   clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+                  position: 'relative',
                 }}
-              />
+                animate={{
+                  rotate: [0, 5, -5, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  delay: i * 0.3,
+                }}
+              >
+                {/* Decorative corner element */}
+                <motion.div
+                  style={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    width: 18,
+                    height: 18,
+                    backgroundColor: i === 0 ? W.electricYellow : i === 1 ? W.vividGreen : W.deepPurple,
+                    border: `2px solid ${W.trueBlack}`,
+                    borderRadius: '50%',
+                  }}
+                  animate={{
+                    scale: [1, 1.5, 1],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                  }}
+                />
+              </motion.div>
+
+              {/* Artist info */}
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 28, fontWeight: 900, color: W.trueBlack }}>
-                  {artist.name}
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: W.hotCoral }}>
+                <StretchText>
+                  <div style={{ fontSize: 32, fontWeight: 900, color: W.trueBlack, marginBottom: 4 }}>
+                    {artist.name}
+                  </div>
+                </StretchText>
+                <div style={{ 
+                  fontSize: 18, 
+                  fontWeight: 800, 
+                  color: W.hotCoral, 
+                  backgroundColor: W.electricYellow,
+                  padding: '4px 12px',
+                  display: 'inline-block',
+                  border: `2px solid ${W.trueBlack}`,
+                  boxShadow: '3px 3px 0px rgba(0,0,0,0.2)'
+                }}>
                   {artist.totalListens.toLocaleString()} plays
                 </div>
               </div>
+
+              {/* Decorative shape on card */}
+              <motion.div
+                style={{
+                  position: 'absolute',
+                  bottom: -10,
+                  right: -10,
+                  width: 30,
+                  height: 30,
+                  backgroundColor: i === 0 ? W.deepPurple : i === 1 ? W.hotPink : W.electricBlue,
+                  border: `3px solid ${W.trueBlack}`,
+                  transform: 'rotate(45deg)',
+                }}
+                animate={{
+                  rotate: [45, 135, 225, 315, 45],
+                }}
+                transition={{
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+              />
             </motion.div>
           ))}
         </div>
+
+        {/* Additional decorative element */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2 }}
+          style={{
+            marginTop: 40,
+            backgroundColor: W.electricYellow,
+            border: `5px solid ${W.trueBlack}`,
+            padding: '12px 24px',
+            boxShadow: '6px 6px 0px rgba(0,0,0,0.3)',
+            alignSelf: 'center',
+            transform: 'rotate(-1deg)',
+          }}
+        >
+          <PixelText>
+            <div style={{ fontSize: 16, fontWeight: 800, color: W.trueBlack, letterSpacing: '2px' }}>
+              ⭐ YOUR MUSIC HEROES
+            </div>
+          </PixelText>
+        </motion.div>
       </div>
     </div>
   );
