@@ -370,6 +370,7 @@ const SlideTopArtist: React.FC<{ artists: Artist[];  songs?: Song[] }> = ({ arti
 
   // Get top song by main artist
   const topSong = songs?.find(s => s.artist === main.name);
+  const top3Plays = top3.reduce((sum, a) => sum + a.totalListens, 0);
 
   return (
     <motion.div
@@ -550,7 +551,7 @@ const SlideTopArtist: React.FC<{ artists: Artist[];  songs?: Song[] }> = ({ arti
         transition={{ delay: 0.9, duration: 0.5 }}
       >
         <div className="flex flex-col items-center">
-          <span className="text-white font-bold" style={{ fontSize: 20 }}>{artists.slice(0, 3).reduce((sum, a) => sum + a.totalListens, 0).toLocaleString()}</span>
+          <span className="text-white font-bold" style={{ fontSize: 20 }}>{top3Plays.toLocaleString()}</span>
           <span style={{ fontSize: 11, color: GRAY_TEXT }}>top 3 plays</span>
         </div>
         <div style={{ width: 1, height: 24, backgroundColor: 'rgba(255,255,255,0.08)' }} />
