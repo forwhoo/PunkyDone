@@ -16,6 +16,7 @@ const W = {
 const TOTAL_SLIDES = 14;
 const AUTO_ADVANCE_MS = 6000;
 const CURRENT_YEAR = new Date().getFullYear();
+const LEFT_TAP_ZONE = 0.3; // Fraction of screen width for "go back" tap zone
 
 // ─── Props ──────────────────────────────────────────────────────
 interface WrappedSlidesProps {
@@ -817,6 +818,7 @@ const SlideLeapChart: React.FC<{ artists: Artist[]; songs: Song[] }> = ({ artist
 // Abstract gradient bg, massive stacked time type, hour bars
 // ═══════════════════════════════════════════════════════════════
 const SlidePeakHour: React.FC<{ songs: Song[] }> = ({ songs }) => {
+  // Deterministic mock: peak hour derived from song count since played_at timestamps aren't available
   const seed = songs.length;
   const peakHour = ((seed % 12) + 12) % 24;
   const activityData = useMemo(() =>
@@ -929,6 +931,8 @@ const SlidePeakHour: React.FC<{ songs: Song[] }> = ({ songs }) => {
 // Horizontal color bands, oversized gradient duration numbers
 // ═══════════════════════════════════════════════════════════════
 const SlideLongestSession: React.FC<{ songs: Song[] }> = ({ songs }) => {
+  // Mock: assume longest session is ~18% of total listening time.
+  // Production should analyze played_at timestamps to find continuous sessions (<30min breaks).
   const totalMins = songs.reduce((sum, s) => sum + (parseInt(s.timeStr || '0') || 0), 0);
   const sessionMinutes = Math.max(30, Math.floor(totalMins * 0.18));
   const sessionHours = Math.floor(sessionMinutes / 60);
@@ -1122,6 +1126,7 @@ const SlideDiscoveryRate: React.FC<{ artists: Artist[]; albums: Album[] }> = ({ 
 // Full gradient bg, oversized streak number, bold day blocks
 // ═══════════════════════════════════════════════════════════════
 const SlideListeningStreak: React.FC<{ songs: Song[] }> = ({ songs }) => {
+  // Mock: estimate active days from song count. Production should use played_at timestamps.
   const streakDays = Math.min(7, Math.max(1, Math.ceil(songs.length / 15)));
   const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -1354,7 +1359,7 @@ const SlideOutro: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Son
   const handleShare = async () => {
     const shareText = `I listened to ${totalMinutes.toLocaleString()} minutes of music this week on Punky!`;
     if (navigator.share) {
-      try { await navigator.share({ title: 'My Punky Wrapped', text: shareText }); } catch { /* user cancelled */ }
+      try { await navigator.share({ title: 'My Punky Wrapped', text: shareText }); } catch (err) { console.log('Share cancelled or failed:', err); }
     } else {
       try {
         await navigator.clipboard.writeText(shareText);
@@ -1529,7 +1534,7 @@ const WrappedSlides: React.FC<WrappedSlidesProps> = ({
     if (target.closest('button') || target.closest('a')) return;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const clickX = e.clientX - rect.left;
-    if (clickX < rect.width * 0.3) {
+    if (clickX < rect.width * LEFT_TAP_ZONE) {
       goTo(currentSlide - 1);
     } else {
       goTo(currentSlide + 1);
