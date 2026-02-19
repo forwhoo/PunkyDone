@@ -614,7 +614,7 @@ const Slide5: React.FC<{ active: boolean }> = ({ active }) => {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.electricBlue, position: 'relative', overflow: 'hidden' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px 20px', gap: 16 }}>
-        <svg viewBox="0 0 300 300" style={{ width: 260, height: 260, overflow: 'visible' }}>
+        <svg viewBox="0 0 300 300" style={{ width: 260, height: 260, overflow: 'visible' }} role="img" aria-label="24-hour listening clock visualization">
           <circle cx={cx} cy={cy} r={R} fill="none" stroke={NB.black} strokeWidth={4} />
           {intensities.map((intensity, i) => {
             if (intensity === 0) return null;
@@ -749,7 +749,7 @@ const Slide7: React.FC<{ active: boolean }> = ({ active }) => {
     intervalRef.current = setInterval(() => {
       col++;
       setWaveCol(col);
-      if (col >= weeks) clearInterval(intervalRef.current!);
+      if (col >= weeks && intervalRef.current) clearInterval(intervalRef.current);
     }, 35);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [active]);
@@ -1046,18 +1046,18 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
 
   const renderSlide = () => {
     switch (currentSlide) {
-      case 0: return <Slide0 active={true} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} />;
-      case 1: return <Slide1 active={true} artists={artists} />;
-      case 2: return <Slide2 active={true} songs={songs} />;
-      case 3: return <Slide3 active={true} albums={albums} />;
-      case 4: return <Slide4 active={true} totalMinutes={totalMinutes} />;
-      case 5: return <Slide5 active={true} />;
-      case 6: return <Slide6 active={true} artists={artists} />;
-      case 7: return <Slide7 active={true} />;
-      case 8: return <Slide8 active={true} songs={songs} />;
-      case 9: return <Slide9 active={true} artists={artists} />;
+      case 0: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} />;
+      case 1: return <Slide1 active={currentSlide === 1} artists={artists} />;
+      case 2: return <Slide2 active={currentSlide === 2} songs={songs} />;
+      case 3: return <Slide3 active={currentSlide === 3} albums={albums} />;
+      case 4: return <Slide4 active={currentSlide === 4} totalMinutes={totalMinutes} />;
+      case 5: return <Slide5 active={currentSlide === 5} />;
+      case 6: return <Slide6 active={currentSlide === 6} artists={artists} />;
+      case 7: return <Slide7 active={currentSlide === 7} />;
+      case 8: return <Slide8 active={currentSlide === 8} songs={songs} />;
+      case 9: return <Slide9 active={currentSlide === 9} artists={artists} />;
       case 10: return <Slide10 totalMinutes={totalMinutes} artists={artists} songs={songs} onClose={onClose} />;
-      default: return <Slide0 active={true} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} />;
+      default: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} />;
     }
   };
 
