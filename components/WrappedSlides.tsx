@@ -29,6 +29,42 @@ interface WrappedSlidesProps {
 const fallbackImage =
   'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzFDMUMxRSIvPjxwYXRoIGQ9Ik0xMzAgNjB2NzBjMCAxMS05IDIwLTIwIDIwcy0yMC05LTIwLTIwIDktMjAgMjAtMjBjNCAwIDcgMSAxMCAzVjcwbC00MCAxMHY2MGMwIDExLTkgMjAtMjAgMjBzLTIwLTktMjAtMjAgOS0yMCAyMC0yMGM0IDAgNyAxIDEwIDNWNjBsNjAtMTV6IiBmaWxsPSIjOEU4RTkzIi8+PC9zdmc+';
 
+type ConnectionPair = {
+  a: { id: string; name: string; image: string };
+  b: { id: string; name: string; image: string };
+  closeness: number;
+  sharedSessions: number;
+};
+
+const weekdayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+function buildConnectionPairs(connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> }): ConnectionPair[] {
+  if (!connectionGraph) return [];
+  const pairRows: ConnectionPair[] = [];
+  const seen = new Set<string>();
+  const pairMap = connectionGraph.pairs || {};
+  const artists = connectionGraph.artistInfo || {};
+  Object.entries(pairMap).forEach(([artistA, edges]) => {
+    Object.entries(edges || {}).forEach(([artistB, score]) => {
+      const key = [artistA, artistB].sort().join('::');
+      if (seen.has(key)) return;
+      seen.add(key);
+      const infoA = artists[artistA];
+      const infoB = artists[artistB];
+      if (!infoA || !infoB) return;
+      const normalization = Math.max(1, Math.min(infoA.count || 1, infoB.count || 1));
+      const closeness = Math.min(100, Math.round((score / normalization) * 100));
+      pairRows.push({
+        a: { id: infoA.id || artistA, name: infoA.name || artistA, image: infoA.image || fallbackImage },
+        b: { id: infoB.id || artistB, name: infoB.name || artistB, image: infoB.image || fallbackImage },
+        closeness,
+        sharedSessions: score,
+      });
+    });
+  });
+  return pairRows.sort((x, y) => y.closeness - x.closeness || y.sharedSessions - x.sharedSessions).slice(0, 8);
+}
+
 function useOdometer(target: number, durationMs = 1200): number {
   const [value, setValue] = useState(0);
   const rafRef = useRef(0);
@@ -358,13 +394,13 @@ const Slide1: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
                   transition: 'transform 300ms ease',
                 }}
               >
-                  <div style={{ height: 64, background: palette[i % palette.length], width: '100%', overflow: 'hidden' }}>
+                <div style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 56, height: 56, background: palette[i % palette.length], border: `3px solid ${NB.black}`, overflow: 'hidden', flexShrink: 0 }}>
                     {artist.image && (
                       <img src={artist.image} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.currentTarget.style.display = 'none'); }} />
                     )}
                   </div>
-                <div style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 22, textTransform: 'uppercase', color: NB.black }}>{artist.name}</span>
+                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 22, textTransform: 'uppercase', color: NB.black, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{artist.name}</span>
                   {isWrong && <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: '#FF0000' }}>\u2715</span>}
                   {isSelected && isCorrect && guessed && <span style={{ background: NB.black, color: NB.acidYellow, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 12, padding: '4px 8px', letterSpacing: '0.1em' }}>\u2736 LEGEND STATUS</span>}
                 </div>
@@ -399,6 +435,10 @@ const Slide2: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.white, position: 'relative', overflow: 'hidden' }}>
+      <svg viewBox="0 0 400 260" style={{ position: 'absolute', left: 0, right: 0, top: 100, width: '100%', height: 220, opacity: 0.12 }}>
+        <polyline points="0,180 40,130 90,150 130,95 190,120 240,70 290,112 340,55 400,90" fill="none" stroke={NB.electricBlue} strokeWidth="6" strokeLinejoin="round" strokeLinecap="square" />
+        <polyline points="0,220 50,200 90,210 150,185 200,196 250,170 310,188 360,165 400,175" fill="none" stroke={NB.magenta} strokeWidth="5" strokeLinejoin="round" strokeLinecap="square" />
+      </svg>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 12 }}>
         <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(48px, 12vw, 80px)', color: NB.black, textTransform: 'uppercase', margin: '0 0 4px 0', lineHeight: 1 }}>
           YOUR FREQUENCY
@@ -483,15 +523,15 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
             {revealed ? verdict : `${timer}s`}
           </span>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 10 }}>
           {topThree.map((album, i) => {
             const isCorrect = i === 0;
             const isSelected = selected === i;
             const borderColor = revealed ? (isCorrect ? NB.acidYellow : isSelected ? '#FF0000' : NB.black) : NB.black;
             const borderWidth = revealed && isCorrect ? 6 : 4;
             return (
-              <div key={album.id} onClick={(e) => { e.stopPropagation(); handlePick(i); }} style={{ flex: 1, cursor: 'pointer', border: `${borderWidth}px solid ${borderColor}`, position: 'relative', overflow: 'hidden', boxShadow: '3px 3px 0 #000', borderRadius: 0 }}>
-                <div style={{ height: 100, background: palette[i], position: 'relative' }}>
+              <div key={album.id} onClick={(e) => { e.stopPropagation(); handlePick(i); }} style={{ flex: 1, cursor: 'pointer', border: `${borderWidth}px solid ${borderColor}`, position: 'relative', overflow: 'hidden', boxShadow: '3px 3px 0 #000', borderRadius: 0, minWidth: 0 }}>
+                <div style={{ aspectRatio: '1 / 1', background: palette[i], position: 'relative' }}>
                   {album.cover && <img src={album.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
                   {revealed && (
                     <div style={{ position: 'absolute', top: 4, right: 4, background: isCorrect ? NB.acidYellow : '#FF0000', padding: '2px 6px', border: `2px solid ${NB.black}`, borderRadius: 0 }}>
@@ -499,8 +539,8 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
                     </div>
                   )}
                 </div>
-                <div style={{ padding: '6px 8px', background: NB.white }}>
-                  <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13, color: NB.black, margin: '0 0 2px 0', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{album.title}</p>
+                <div style={{ padding: '8px 8px', background: NB.white }}>
+                  <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: NB.black, margin: '0 0 2px 0', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{album.title}</p>
                   <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#555', margin: 0 }}>{album.totalListens} plays</p>
                 </div>
               </div>
@@ -913,135 +953,150 @@ const Slide8: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
 };
 
 // SLIDE 9: THE ORBIT LOCK-IN
-const Slide9: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, artists }) => {
+const Slide9: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = ({ active, artists, songs }) => {
   const topArtist = artists[0];
-  const orbiters = artists.slice(1, 7);
+  const MAX_ORBIT_SCORE = 250;
+  const topArtistListens = topArtist?.totalListens || 0;
+  const topSongListens = songs[0]?.listens || 0;
+  const frequencyBonus = Math.min(70, Math.round((topSongListens / Math.max(1, topArtistListens)) * 80));
+  const dominanceBonus = Math.min(120, Math.round((topArtistListens / Math.max(1, songs.reduce((s, song) => s + song.listens, 0))) * 220));
+  const consistencyBase = Math.min(60, Math.round((songs.slice(0, 5).reduce((sum, song) => sum + song.listens, 0) / Math.max(1, topArtistListens * 2)) * 80));
+  const obsessionScore = Math.min(MAX_ORBIT_SCORE, 70 + frequencyBonus + dominanceBonus + consistencyBase);
+  const dayCurve = weekdayLabels.map((day, i) => {
+    const weight = [0.86, 0.92, 0.98, 1.04, 1.08, 1.15, 1.03][i];
+    return { day, score: Math.min(MAX_ORBIT_SCORE, Math.round(obsessionScore * weight)) };
+  });
+
+  const minDay = dayCurve.reduce((acc, d) => (d.score < acc.score ? d : acc), dayCurve[0]);
+  const maxDay = dayCurve.reduce((acc, d) => (d.score > acc.score ? d : acc), dayCurve[0]);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
-      <style>{`
-        @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes orbitFloat { 0%,100%{ transform: translateY(0px);} 50%{ transform: translateY(-5px);} }
-      `}</style>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px 20px', gap: 18 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(36px, 9vw, 62px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1, textAlign: 'center' }}>YOUR OBSESSION ORBIT</h1>
-        <div style={{ position: 'relative', width: 280, height: 280, borderRadius: '50%', border: `3px solid ${NB.white}` }}>
-          <div style={{ position: 'absolute', inset: 20, borderRadius: '50%', border: `2px dashed rgba(255,255,255,0.5)` }} />
-          <div style={{ position: 'absolute', inset: 50, borderRadius: '50%', border: `2px dashed rgba(255,255,255,0.35)` }} />
-          <div style={{ position: 'absolute', inset: 70, borderRadius: '50%', border: `2px dashed rgba(255,255,255,0.2)` }} />
-          <div style={{ position: 'absolute', inset: 18, animation: active ? 'orbitSpin 18s linear infinite' : undefined }}>
-            {orbiters.map((artist, i) => {
-              const angle = (i / Math.max(orbiters.length, 1)) * Math.PI * 2;
-              const radius = i % 2 === 0 ? 112 : 82;
-              const x = 122 + Math.cos(angle) * radius;
-              const y = 122 + Math.sin(angle) * radius;
-              return (
-                <div key={artist.id} style={{ position: 'absolute', left: x, top: y, width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${NB.white}`, animation: 'orbitFloat 2.5s ease-in-out infinite' }}>
-                  <img src={artist.image || fallbackImage} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-                </div>
-              );
-            })}
-          </div>
-          <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: 108, height: 108, borderRadius: '50%', overflow: 'hidden', border: `4px solid ${NB.acidYellow}`, boxShadow: '0 0 0 4px #000' }}>
-            <img src={topArtist?.image || fallbackImage} alt={topArtist?.name || 'Top artist'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 14 }}>
+        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(30px, 8vw, 50px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>
+          WE KNOW YOU WANT TO KNOW WHY YOUR SCORE IS THIS HIGH.
+        </h1>
+        <div style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 14px' }}>
+          <p style={{ margin: '0 0 8px 0', fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: NB.black }}>
+            MONDAY - SUNDAY ORBIT BUILD
+          </p>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 120 }}>
+            {dayCurve.map((day, i) => (
+              <motion.div
+                key={day.day}
+                initial={{ height: 0 }}
+                animate={{ height: active ? `${Math.max(18, Math.round((day.score / MAX_ORBIT_SCORE) * 100))}%` : 0 }}
+                transition={{ duration: 0.45, delay: active ? i * 0.12 : 0 }}
+                style={{ flex: 1, background: day.day === maxDay.day ? NB.acidYellow : NB.electricBlue, border: `2px solid ${NB.black}`, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: 4 }}
+              >
+                <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 10, color: NB.black }}>{day.day}</span>
+              </motion.div>
+            ))}
           </div>
         </div>
-        <p style={{ margin: 0, color: NB.acidYellow, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 26, fontWeight: 900, textTransform: 'uppercase' }}>{topArtist?.name || 'Unknown Artist'}</p>
+
+        <div style={{ background: NB.acidYellow, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 14px' }}>
+          <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 34, color: NB.black, textTransform: 'uppercase' }}>
+            {topArtist?.name || 'TOP ARTIST'} SCORED {obsessionScore}/250
+          </p>
+          <p style={{ margin: '6px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: NB.black }}>
+            Peak lift: {maxDay.day} ({maxDay.score}) • Drop: {minDay.day} ({minDay.score}). Frequency bonus {frequencyBonus}, dominance bonus {dominanceBonus}, consistency bonus {consistencyBase}.
+          </p>
+        </div>
       </div>
-      <Ticker text="OBSESSION ORBIT  YOUR CORE ARTIST GRAVITY" bg={NB.acidYellow} color={NB.black} />
+      <Ticker text="OBSESSION ORBIT  SCORE ANALYZER  WHY IT MOVED" bg={NB.acidYellow} color={NB.black} />
     </div>
   );
 };
 
-// SLIDE 10: THE GENRE WARP
-const Slide10: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, artists }) => {
-  const [expandedGenre, setExpandedGenre] = useState<string | null>(null);
-  const [animated, setAnimated] = useState(false);
-
-  useEffect(() => {
-    if (!active) { setAnimated(false); setExpandedGenre(null); return; }
-    const t = setTimeout(() => setAnimated(true), 100);
-    return () => clearTimeout(t);
-  }, [active]);
-
-  const genres = useMemo(() => {
-    const genreMap: Record<string, number> = {};
-    artists.forEach(a => {
-      const g = a.genres?.[0] || 'Other';
-      genreMap[g] = (genreMap[g] || 0) + a.totalListens;
-    });
-    const entries = Object.entries(genreMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    if (entries.length === 0) {
-      return [['Indie/Alternative',40],['Hip-Hop/Rap',25],['Electronic',20],['Pop',10],['Other',5]].map(([name, pct]) => ({ name: name as string, pct: pct as number }));
-    }
-    const total = entries.reduce((s, [,v]) => s + v, 0);
-    return entries.map(([name, val]) => ({ name, pct: Math.round((val / total) * 100) }));
+// SLIDE 10: THE CONNECTION
+const Slide10: React.FC<{ active: boolean; artists: Artist[]; connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> } }> = ({ active, artists, connectionGraph }) => {
+  const pairs = useMemo(() => buildConnectionPairs(connectionGraph), [connectionGraph]);
+  const [slotIndex, setSlotIndex] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const fallbackPair = useMemo(() => {
+    const first = artists[0];
+    const second = artists[1];
+    if (!first || !second) return null;
+    return {
+      a: { id: first.id, name: first.name, image: first.image || fallbackImage },
+      b: { id: second.id, name: second.name, image: second.image || fallbackImage },
+      closeness: 68,
+      sharedSessions: 12,
+    } satisfies ConnectionPair;
   }, [artists]);
 
-  const getBandColor = (name: string) => {
-    const n = name.toLowerCase();
-    if (n.includes('indie') || n.includes('alternative')) return NB.electricBlue;
-    if (n.includes('hip') || n.includes('rap')) return NB.nearBlack;
-    if (n.includes('electronic')) return NB.acidYellow;
-    if (n.includes('pop')) return NB.coral;
-    return '#555555';
-  };
+  const displayPairs = pairs.length ? pairs : fallbackPair ? [fallbackPair] : [];
+  const winner = displayPairs[0];
 
-  const getBandHeight = (pct: number, isExpanded: boolean, anyExpanded: boolean) => {
-    if (isExpanded) return 100;
-    if (anyExpanded) return 28;
-    return Math.max(32, Math.round(pct / 100 * 80));
-  };
+  useEffect(() => {
+    if (!active || displayPairs.length <= 1) {
+      setRevealed(true);
+      return;
+    }
+    setRevealed(false);
+    let tick = 0;
+    const id = window.setInterval(() => {
+      tick += 1;
+      setSlotIndex((prev) => (prev + 1) % displayPairs.length);
+      if (tick > 10) {
+        window.clearInterval(id);
+        setSlotIndex(0);
+        setRevealed(true);
+      }
+    }, 170);
+    return () => window.clearInterval(id);
+  }, [active, displayPairs]);
 
-  const anyExpanded = expandedGenre !== null;
+  const roller = displayPairs.length ? displayPairs[slotIndex] : undefined;
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.magenta, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 0 0', overflow: 'hidden' }}>
-        <div style={{ padding: '0 20px 12px' }}>
-          <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(40px, 10vw, 64px)', color: NB.white, textTransform: 'uppercase', margin: '0 0 4px 0', lineHeight: 1 }}>YOUR GENRE WARP</h1>
-          <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', margin: 0 }}>THE DIMENSIONS YOU LIVE IN</p>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {genres.map((genre, i) => {
-            const color = getBandColor(genre.name);
-            const isExp = expandedGenre === genre.name;
-            const textColor = color === NB.acidYellow ? NB.black : NB.white;
-            const targetH = getBandHeight(genre.pct, isExp, anyExpanded);
-            return (
-              <motion.div
-                key={genre.name}
-                initial={{ x: 120, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: i * 0.12, duration: 0.4, ease: [0.34,1.56,0.64,1] }}
-                onClick={(e) => { e.stopPropagation(); setExpandedGenre(isExp ? null : genre.name); }}
-                style={{
-                  width: '100%',
-                  height: animated ? targetH : 0,
-                  background: color,
-                  borderTop: `2px solid ${NB.black}`,
-                  borderBottom: `2px solid ${NB.black}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0 20px',
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  transition: 'height 400ms cubic-bezier(0.34,1.56,0.64,1)',
-                  flexShrink: 0,
-                }}
-              >
-                <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: isExp ? 28 : 20, color: textColor, textTransform: 'uppercase' }}>{genre.name}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  {isExp && <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: textColor, letterSpacing: '0.1em' }}>TOP TRACKS \u2192</span>}
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: textColor }}>{genre.pct}%</span>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.magenta, overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 14 }}>
+        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 8vw, 56px)', color: NB.white, margin: 0, textTransform: 'uppercase', lineHeight: 1 }}>
+          THIS WEEK'S CLOSE CONNECTION
+        </h1>
+        <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)' }}>
+          BASED ON ARTISTS PLAYED CLOSE TOGETHER IN YOUR LISTENING PATTERN
+        </p>
+
+        <div style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '14px 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14 }}>
+            {[roller?.a, roller?.b].map((artist, idx) => (
+              <div key={artist?.id || idx} style={{ width: 94, textAlign: 'center' }}>
+                <div style={{ width: 84, height: 84, borderRadius: '50%', border: `4px solid ${NB.black}`, overflow: 'hidden', margin: '0 auto 6px auto', background: '#ddd' }}>
+                  <img src={artist?.image || fallbackImage} alt={artist?.name || 'artist'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
                 </div>
-              </motion.div>
-            );
-          })}
+                <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: NB.black, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{artist?.name || '---'}</p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 10, height: 34, background: NB.black, border: `3px solid ${NB.black}`, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+            <motion.div
+              key={`${slotIndex}-${revealed}`}
+              initial={{ y: -18, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.18 }}
+              style={{ color: NB.acidYellow, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', width: '100%', textAlign: 'center', fontSize: 14 }}
+            >
+              {revealed && winner ? `${winner.a.name} × ${winner.b.name}` : 'SCANNING CONNECTIONS...'}
+            </motion.div>
+          </div>
         </div>
+
+        {winner && (
+          <div style={{ background: NB.acidYellow, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 14px' }}>
+            <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 32, color: NB.black, textTransform: 'uppercase' }}>
+              {winner.closeness}% CLOSE
+            </p>
+            <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: NB.black }}>
+              {winner.sharedSessions} shared listening sessions between these artists this week.
+            </p>
+          </div>
+        )}
       </div>
-      <Ticker text="YOUR GENRE WARP  MUSIC DIMENSIONS" bg={NB.nearBlack} color={NB.white} />
+      <Ticker text="CONNECTION MODE  SPIN  MATCH  LOCK-IN" bg={NB.nearBlack} color={NB.white} />
     </div>
   );
 };
@@ -1075,18 +1130,21 @@ const Slide11: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs }
 const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; onClose: () => void }> = ({ totalMinutes, artists, songs, onClose }) => {
   const topArtist = artists[0]?.name ?? '\u2014';
   const topSong = songs[0]?.title ?? '\u2014';
+  const secondArtist = artists[1]?.name ?? '\u2014';
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flex: 1, background: NB.acidYellow, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: `4px solid ${NB.black}` }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(56px, 15vw, 96px)', color: NB.black, textTransform: 'uppercase', margin: 0, letterSpacing: '-0.02em' }}>
-          PUNKY
+      <div style={{ flex: 1, background: NB.acidYellow, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: `4px solid ${NB.black}`, position: 'relative' }}>
+        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(56px, 15vw, 96px)', color: NB.black, textTransform: 'uppercase', margin: 0, letterSpacing: '-0.02em', zIndex: 2 }}>
+          PUNKY WRAPPED
         </h1>
+        <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg, transparent 0 14px, rgba(0,0,0,0.08) 14px 22px)' }} />
       </div>
       <div style={{ flex: 1, background: NB.nearBlack, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '24px', gap: 12 }}>
         {[
           { label: 'MINUTES', value: totalMinutes.toLocaleString() },
           { label: '#1 ARTIST', value: topArtist },
           { label: '#1 SONG', value: topSong },
+          { label: 'NEXT UP', value: secondArtist },
         ].map((s) => (
           <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: 0 }}>{s.label}</p>
@@ -1094,7 +1152,7 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
           </div>
         ))}
         <div style={{ marginTop: 12 }}>
-          <button style={{ width: '100%', height: 56, background: NB.black, color: NB.white, border: 'none', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', display: 'block', borderRadius: 0 }}>
+          <button style={{ width: '100%', height: 56, background: NB.coral, color: NB.white, border: `3px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', display: 'block', borderRadius: 0 }}>
             SHARE YOUR WRAPPED \u2192
           </button>
           <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{ width: '100%', background: 'transparent', color: 'rgba(255,255,255,0.4)', border: 'none', fontFamily: "'Barlow', sans-serif", fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', marginTop: 12, padding: '4px 0', borderRadius: 0 }}>
@@ -1108,7 +1166,7 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
 };
 
 // MAIN COMPONENT
-export default function WrappedSlides({ onClose, totalMinutes, artists, albums, songs, albumCovers }: WrappedSlidesProps) {
+export default function WrappedSlides({ onClose, totalMinutes, artists, albums, songs, albumCovers, connectionGraph }: WrappedSlidesProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1151,8 +1209,8 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
       case 6: return <Slide6 active={currentSlide === 6} artists={artists} />;
       case 7: return <Slide7 active={currentSlide === 7} />;
       case 8: return <Slide8 active={currentSlide === 8} songs={songs} />;
-      case 9: return <Slide9 active={currentSlide === 9} artists={artists} />;
-      case 10: return <Slide10 active={currentSlide === 10} artists={artists} />;
+      case 9: return <Slide9 active={currentSlide === 9} artists={artists} songs={songs} />;
+      case 10: return <Slide10 active={currentSlide === 10} artists={artists} connectionGraph={connectionGraph} />;
       case 11: return <Slide11 active={currentSlide === 11} songs={songs} />;
       case 12: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} onClose={onClose} />;
       default: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} />;
