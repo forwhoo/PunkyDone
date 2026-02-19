@@ -753,17 +753,18 @@ const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; a
                 </p>
                 <p style={{ margin: '0 0 10px 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>Your listening matches: {winningFruit.vibe}.</p>
                 {[
-                  { label: 'NIGHT OWL', value: metrics.nightOwl, color: NB.electricBlue },
-                  { label: 'FRESH FINDS', value: metrics.freshFinds, color: NB.coral },
-                  { label: 'SESSION DEPTH', value: metrics.deepSessions, color: NB.magenta },
-                  { label: 'REPLAY LOVE', value: metrics.replayLove, color: NB.acidYellow },
-                  { label: 'ROUTINE', value: metrics.routine, color: NB.nearBlack, textColor: NB.white },
+                  { label: 'NIGHT OWL', hint: 'Late-night play ratio', value: metrics.nightOwl, color: NB.electricBlue },
+                  { label: 'FRESH FINDS', hint: 'How often you discover new tracks', value: metrics.freshFinds, color: NB.coral },
+                  { label: 'SESSION DEPTH', hint: 'Average session intensity', value: metrics.deepSessions, color: NB.magenta },
+                  { label: 'REPLAY LOVE', hint: 'Repeat loyalty to favorites', value: metrics.replayLove, color: NB.acidYellow },
+                  { label: 'ROUTINE', hint: 'Consistency across days', value: metrics.routine, color: NB.nearBlack, textColor: NB.white },
                 ].map((metric, i) => (
                   <div key={metric.label} style={{ marginBottom: i === 4 ? 0 : 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
                       <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11 }}>{metric.label}</span>
                       <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900 }}>{metric.value}%</span>
                     </div>
+                    <p style={{ margin: '0 0 4px 0', fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#666' }}>{metric.hint}</p>
                     <motion.div initial={{ width: 0 }} animate={{ width: `${metric.value}%` }} transition={{ duration: 0.6, delay: i * 0.12 }} style={{ height: 10, background: metric.color, border: `2px solid ${NB.black}`, color: metric.textColor || NB.black }} />
                   </div>
                 ))}
@@ -795,10 +796,10 @@ const Slide5: React.FC<{ active: boolean }> = ({ active }) => {
 
   const timeInsights = useMemo(() => {
     const buckets = [
-      { label: 'MORNING', start: 5, end: 11, color: NB.acidYellow },
-      { label: 'AFTERNOON', start: 12, end: 16, color: NB.coral },
-      { label: 'EVENING', start: 17, end: 20, color: NB.magenta },
-      { label: 'LATE NIGHT', start: 21, end: 4, color: NB.white },
+      { label: 'MORNING', start: 5, end: 11, color: NB.acidYellow, story: 'Coffee + commute soundtrack', icon: '🌅' },
+      { label: 'AFTERNOON', start: 12, end: 16, color: NB.coral, story: 'Momentum while the day peaks', icon: '☀️' },
+      { label: 'EVENING', start: 17, end: 20, color: NB.magenta, story: 'Decompress and reset zone', icon: '🌆' },
+      { label: 'LATE NIGHT', start: 21, end: 4, color: NB.white, story: 'After-hours deep listening', icon: '🌙' },
     ];
 
     const totals = buckets.map((b) => ({ ...b, ms: 0, plays: 0 }));
@@ -814,7 +815,10 @@ const Slide5: React.FC<{ active: boolean }> = ({ active }) => {
     }
     const winner = [...totals].sort((a, b) => b.ms - a.ms)[0] || totals[0];
     const totalMs = totals.reduce((sum, b) => sum + b.ms, 0) || 1;
-    return { totals, winner, totalMs };
+    const ranked = [...totals].sort((a, b) => b.ms - a.ms);
+    const runnerUp = ranked[1] || ranked[0];
+    const winnerGap = Math.max(0, Math.round(((winner.ms - (runnerUp?.ms || 0)) / totalMs) * 100));
+    return { totals, winner, totalMs, runnerUp, winnerGap };
   }, [history]);
 
   return (
@@ -823,14 +827,25 @@ const Slide5: React.FC<{ active: boolean }> = ({ active }) => {
         <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(32px, 8vw, 52px)', color: NB.white, textTransform: 'uppercase', margin: 0 }}>YOUR LISTENING WINDOWS</h2>
         <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: 0 }}>REAL PLAYTIME SPLIT FROM YOUR HISTORY</p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <BCard style={{ marginTop: 2, background: 'rgba(255,255,255,0.96)' }}>
+          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#333' }}>Narrative Snapshot</p>
+          <p style={{ margin: '4px 0 2px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 28, lineHeight: 1, color: NB.black }}>{timeInsights.winner.icon} {timeInsights.winner.label} owns your week</p>
+          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#444' }}>{timeInsights.winnerGap}% more playtime than {timeInsights.runnerUp.label.toLowerCase()} — {timeInsights.winner.story.toLowerCase()}.</p>
+        </BCard>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {timeInsights.totals.map((bucket, i) => {
             const pct = Math.round((bucket.ms / timeInsights.totalMs) * 100);
             return (
-              <motion.div key={bucket.label} initial={{ opacity: 0, y: 24 }} animate={{ opacity: active ? 1 : 0.4, y: active ? 0 : 24 }} transition={{ delay: i * 0.08 }} style={{ background: bucket.color, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 10px' }}>
-                <p style={{ margin: '0 0 6px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, color: NB.black }}>{bucket.label}</p>
-                <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 34, color: NB.black, lineHeight: 1 }}>{pct}%</p>
-                <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 11, color: 'rgba(0,0,0,0.8)' }}>{bucket.plays} plays</p>
+              <motion.div key={bucket.label} initial={{ opacity: 0, x: -18 }} animate={{ opacity: active ? 1 : 0.5, x: active ? 0 : -18 }} transition={{ delay: i * 0.1 }} style={{ background: 'rgba(255,255,255,0.96)', border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '10px 10px 12px 10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                  <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, color: NB.black }}>{bucket.icon} {bucket.label}</p>
+                  <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 30, color: NB.black, lineHeight: 1 }}>{pct}%</p>
+                </div>
+                <div style={{ height: 16, background: '#d9d9d9', border: `2px solid ${NB.black}`, overflow: 'hidden' }}>
+                  <motion.div initial={{ width: 0 }} animate={{ width: active ? `${pct}%` : 0 }} transition={{ duration: 0.65, delay: 0.1 + i * 0.1, ease: [0.34, 1.56, 0.64, 1] }} style={{ height: '100%', background: bucket.color }} />
+                </div>
+                <p style={{ margin: '6px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 11, color: 'rgba(0,0,0,0.8)' }}>{bucket.plays} plays • {bucket.story}</p>
               </motion.div>
             );
           })}
@@ -852,6 +867,29 @@ const Slide6: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
   const total = topSix.reduce((s, a) => s + a.totalListens, 0) || 1;
   const topShare = (topSix[0]?.totalListens || 0) / total;
   const verdict = topShare > 0.35 ? 'RIDE OR DIE ENERGY' : 'WIDE TASTE ENERGY';
+  const [battleIndex, setBattleIndex] = useState(0);
+
+  const getLoyaltyColor = useCallback((pct: number) => {
+    if (pct >= 28) return '#B91C1C';
+    if (pct >= 20) return '#EA580C';
+    if (pct >= 14) return '#FACC15';
+    if (pct >= 8) return '#4ADE80';
+    return '#60A5FA';
+  }, []);
+
+  useEffect(() => {
+    if (!active || topSix.length === 0) return;
+    setBattleIndex(0);
+    const id = window.setInterval(() => {
+      setBattleIndex((prev) => {
+        if (prev >= topSix.length - 1) return prev;
+        return prev + 1;
+      });
+    }, 450);
+    return () => window.clearInterval(id);
+  }, [active, topSix.length]);
+
+  const winner = topSix[0];
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.acidYellow, position: 'relative', overflow: 'hidden' }}>
@@ -862,10 +900,14 @@ const Slide6: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {topSix.map((artist, i) => {
             const pct = Math.round((artist.totalListens / total) * 100);
+            const loyaltyColor = getLoyaltyColor(pct);
             return (
-              <motion.div key={artist.id} initial={{ opacity: 0, y: 24 }} animate={{ opacity: active ? 1 : 0.4, y: active ? 0 : 24 }} transition={{ delay: i * 0.08 }} style={{ border: `4px solid ${NB.black}`, background: NB.white, boxShadow: '4px 4px 0 #000', overflow: 'hidden' }}>
+              <motion.div key={artist.id} initial={{ opacity: 0, y: 24 }} animate={{ opacity: active ? 1 : 0.4, y: active ? 0 : 24 }} transition={{ delay: i * 0.08 }} style={{ border: `4px solid ${NB.black}`, background: NB.white, boxShadow: '4px 4px 0 #000', overflow: 'hidden', position: 'relative' }}>
                 <div style={{ height: 96, background: '#222' }}>
                   <img src={artist.image || fallbackImage} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+                </div>
+                <div style={{ position: 'absolute', top: 8, right: 8, background: loyaltyColor, border: `2px solid ${NB.black}`, boxShadow: '2px 2px 0 #000', padding: '2px 8px' }}>
+                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 12, color: NB.black }}>HEAT {pct}%</span>
                 </div>
                 <div style={{ padding: '8px 10px', background: i === 0 ? NB.black : NB.white }}>
                   <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: i === 0 ? NB.acidYellow : NB.black, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{artist.name}</p>
@@ -875,6 +917,31 @@ const Slide6: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
             );
           })}
         </div>
+
+        {winner && (
+          <BCard style={{ marginTop: 2 }}>
+            <p style={{ margin: '0 0 6px 0', fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#333' }}>Loyalty Battle Live</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {topSix.map((artist, i) => {
+                const pct = Math.round((artist.totalListens / total) * 100);
+                const isRevealed = i <= battleIndex;
+                const isWinner = i === 0;
+                return (
+                  <div key={artist.id}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                      <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11 }}>{artist.name}</span>
+                      <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13 }}>{isRevealed ? `${pct}%` : '…'}</span>
+                    </div>
+                    <div style={{ height: 10, border: `2px solid ${NB.black}`, background: '#dfdfdf', overflow: 'hidden' }}>
+                      <motion.div initial={{ width: 0 }} animate={{ width: isRevealed ? `${pct}%` : 0 }} transition={{ duration: 0.45, ease: 'easeOut' }} style={{ height: '100%', background: isWinner ? NB.magenta : getLoyaltyColor(pct) }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p style={{ margin: '8px 0 0 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: NB.black }}>🏆 WINNER: {winner.name.toUpperCase()}</p>
+          </BCard>
+        )}
 
         <BCard>
           <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 26, color: NB.black, textTransform: 'uppercase' }}>{verdict}</p>
