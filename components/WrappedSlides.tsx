@@ -12,7 +12,7 @@ const NB = {
   white: '#FFFFFF',
   black: '#000000',
 };
-const TOTAL_SLIDES = 11;
+const TOTAL_SLIDES = 13;
 const AUTO_ADVANCE_MS = 6000;
 const LEFT_TAP_ZONE = 0.3;
 
@@ -139,6 +139,52 @@ const BCard: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }
   </div>
 );
 
+const FrequencyBarRow: React.FC<{
+  song: Song;
+  i: number;
+  active: boolean;
+  animated: boolean;
+  expanded: number | null;
+  maxListens: number;
+  barColor: string;
+  onToggle: (i: number) => void;
+}> = ({ song, i, active, animated, expanded, maxListens, barColor, onToggle }) => {
+  const isExp = expanded === i;
+  const targetWidth = (song.listens / maxListens) * 90;
+  const animatedCount = useOdometer(active && animated ? song.listens : 0, 500 + i * 220);
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {isExp && (
+        <div style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, background: NB.white, border: `4px solid ${NB.black}`, padding: '8px 12px', zIndex: 10, boxShadow: '4px 4px 0 #000', marginBottom: 4, borderRadius: 0 }}>
+          <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.black, margin: '0 0 2px 0', textTransform: 'uppercase' }}>{song.title}</p>
+          <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: NB.black, margin: 0 }}>{song.listens.toLocaleString()} plays</p>
+        </div>
+      )}
+      <div
+        onClick={(e) => { e.stopPropagation(); onToggle(i); }}
+        style={{
+          height: 48,
+          background: barColor,
+          border: `2px solid ${NB.black}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 10px',
+          cursor: 'pointer',
+          overflow: 'hidden',
+          width: animated ? (isExp ? '95%' : `${targetWidth}%`) : '0%',
+          minWidth: 60,
+          transition: `width 600ms cubic-bezier(0.34,1.56,0.64,1) ${i * 100}ms`,
+        }}
+      >
+        <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 13, color: NB.white, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60%' }}>{song.title}</span>
+        <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 700, fontSize: 12, color: NB.white, whiteSpace: 'nowrap', flexShrink: 0 }}>{animatedCount.toLocaleString()}</span>
+      </div>
+    </div>
+  );
+};
+
 // SLIDE 0: THE DEVOUR
 const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: string[]; albums: Album[] }> = ({ active, totalMinutes, albumCovers, albums }) => {
   const [phase, setPhase] = useState(0);
@@ -153,7 +199,7 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
     return arr.slice(0, 60);
   }, [albumCovers, albums]);
 
-  const tileDelays = useMemo(() => covers.map(() => Math.random() * 1.5), [covers]);
+  const tileDelays = useMemo(() => covers.map(() => Math.random() * 1.2), [covers]);
 
   useEffect(() => {
     timers.current.forEach(clearTimeout);
@@ -167,6 +213,10 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
+      <style>{`
+        @keyframes holePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+        @keyframes holeRing { from{transform:scale(0.4);opacity:0.9} to{transform:scale(3.2);opacity:0} }
+      `}</style>
       <div style={{ position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 48px)', gap: 0, overflow: 'hidden' }}>
         {covers.map((src, i) => (
           <div key={i} style={{
@@ -174,8 +224,11 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
             border: '2px solid white',
             background: src ? 'transparent' : palette[i % palette.length],
             overflow: 'hidden',
-            transform: phase >= 1 ? `scale(0) rotate(${i % 2 === 0 ? -15 : 15}deg)` : 'scale(1) rotate(0deg)',
-            transition: `transform 600ms cubic-bezier(0.55,0,1,0.45) ${tileDelays[i]}s`,
+            transformOrigin: '50vw 50vh',
+            transform: phase >= 1 ? `scale(0.02) rotate(${i % 2 === 0 ? -40 : 40}deg)` : 'scale(1) rotate(0deg)',
+            filter: phase >= 1 ? 'blur(1px)' : 'blur(0px)',
+            opacity: phase >= 1 ? 0.45 : 1,
+            transition: `transform 780ms cubic-bezier(0.55,0,1,0.45) ${tileDelays[i]}s, opacity 550ms ease ${tileDelays[i]}s, filter 550ms ease ${tileDelays[i]}s`,
           }}>
             {src && <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
           </div>
@@ -183,11 +236,14 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
       </div>
       {phase >= 1 && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', border: `2px solid ${NB.white}`, position: 'absolute', animation: 'holeRing 1s ease-out infinite' }} />
+          <div style={{ width: 48, height: 48, borderRadius: '50%', border: `2px solid ${NB.white}`, position: 'absolute', animation: 'holeRing 1.2s ease-out infinite 0.25s' }} />
           <div style={{
             width: 40, height: 40, borderRadius: '50%', background: NB.black,
             border: '4px solid white',
             transform: phase >= 1 ? 'scale(30)' : 'scale(0)',
             transition: 'transform 1.8s cubic-bezier(0.16,1,0.3,1)',
+            animation: 'holePulse 1.4s ease-in-out infinite',
           }} />
         </div>
       )}
@@ -302,7 +358,11 @@ const Slide1: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
                   transition: 'transform 300ms ease',
                 }}
               >
-                <div style={{ height: 64, background: palette[i % palette.length], width: '100%' }} />
+                  <div style={{ height: 64, background: palette[i % palette.length], width: '100%', overflow: 'hidden' }}>
+                    {artist.image && (
+                      <img src={artist.image} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.currentTarget.style.display = 'none'); }} />
+                    )}
+                  </div>
                 <div style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 22, textTransform: 'uppercase', color: NB.black }}>{artist.name}</span>
                   {isWrong && <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: '#FF0000' }}>\u2715</span>}
@@ -337,14 +397,8 @@ const Slide2: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
     return () => clearTimeout(t);
   }, [active]);
 
-  const pulseCSS = useMemo(() => topSongs.map((_, i) => {
-    const base = (topSongs[i].listens / maxListens) * 90;
-    return `@keyframes barPulse${i} { 0%,100%{width:${base}%} 50%{width:${Math.min(base+2,92)}%} }`;
-  }).join('\n'), [topSongs, maxListens]);
-
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.white, position: 'relative', overflow: 'hidden' }}>
-      <style>{pulseCSS}</style>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 12 }}>
         <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(48px, 12vw, 80px)', color: NB.black, textTransform: 'uppercase', margin: '0 0 4px 0', lineHeight: 1 }}>
           YOUR FREQUENCY
@@ -354,41 +408,19 @@ const Slide2: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
         </p>
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {topSongs.map((song, i) => {
-              const targetWidth = (song.listens / maxListens) * 90;
-              const isExp = expanded === i;
-              return (
-                <div key={song.id} style={{ position: 'relative' }}>
-                  {isExp && (
-                    <div style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, background: NB.white, border: `4px solid ${NB.black}`, padding: '8px 12px', zIndex: 10, boxShadow: '4px 4px 0 #000', marginBottom: 4, borderRadius: 0 }}>
-                      <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.black, margin: '0 0 2px 0', textTransform: 'uppercase' }}>{song.title}</p>
-                      <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: NB.black, margin: 0 }}>{song.listens.toLocaleString()} plays</p>
-                    </div>
-                  )}
-                  <div
-                    onClick={(e) => { e.stopPropagation(); setExpanded(isExp ? null : i); }}
-                    style={{
-                      height: 48,
-                      background: barColors[i],
-                      border: `2px solid ${NB.black}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0 10px',
-                      cursor: 'pointer',
-                      overflow: 'hidden',
-                      width: animated ? (isExp ? '95%' : `${targetWidth}%`) : '0%',
-                      minWidth: 60,
-                      transition: `width 600ms cubic-bezier(0.34,1.56,0.64,1) ${i * 100}ms`,
-                      animation: animated && !isExp ? `barPulse${i} ${[2.1,2.4,1.9,2.7,2.2][i]}s ease-in-out infinite` : undefined,
-                    }}
-                  >
-                    <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 13, color: NB.white, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '60%' }}>{song.title}</span>
-                    <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 700, fontSize: 12, color: NB.white, whiteSpace: 'nowrap', flexShrink: 0 }}>{song.listens.toLocaleString()}</span>
-                  </div>
-                </div>
-              );
-            })}
+            {topSongs.map((song, i) => (
+              <FrequencyBarRow
+                key={song.id}
+                song={song}
+                i={i}
+                active={active}
+                animated={animated}
+                expanded={expanded}
+                maxListens={maxListens}
+                barColor={barColors[i]}
+                onToggle={(index) => setExpanded(expanded === index ? null : index)}
+              />
+            ))}
           </div>
           <div style={{ width: 24, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
             {[0,-6,-12,-18,-24,-30].map(db => (
@@ -461,29 +493,22 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
               <div key={album.id} onClick={(e) => { e.stopPropagation(); handlePick(i); }} style={{ flex: 1, cursor: 'pointer', border: `${borderWidth}px solid ${borderColor}`, position: 'relative', overflow: 'hidden', boxShadow: '3px 3px 0 #000', borderRadius: 0 }}>
                 <div style={{ height: 100, background: palette[i], position: 'relative' }}>
                   {album.cover && <img src={album.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
-                  {!revealed && (
-                    <div style={{ position: 'absolute', inset: 0, background: NB.white, border: `4px solid ${NB.black}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, transform: 'rotate(-45deg)', color: NB.black, letterSpacing: '0.1em' }}>SEALED</span>
-                    </div>
-                  )}
                   {revealed && (
                     <div style={{ position: 'absolute', top: 4, right: 4, background: isCorrect ? NB.acidYellow : '#FF0000', padding: '2px 6px', border: `2px solid ${NB.black}`, borderRadius: 0 }}>
                       <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 12, color: NB.black }}>{isCorrect ? '\u2713 CORRECT' : '\u2715 WRONG'}</span>
                     </div>
                   )}
                 </div>
-                {revealed && (
-                  <div style={{ padding: '6px 8px', background: NB.white }}>
-                    <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13, color: NB.black, margin: '0 0 2px 0', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{album.title}</p>
-                    <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#555', margin: 0 }}>{album.totalListens} plays</p>
-                  </div>
-                )}
+                <div style={{ padding: '6px 8px', background: NB.white }}>
+                  <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13, color: NB.black, margin: '0 0 2px 0', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{album.title}</p>
+                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#555', margin: 0 }}>{album.totalListens} plays</p>
+                </div>
               </div>
             );
           })}
         </div>
       </div>
-      <Ticker text="THE VAULT GUESS  SEALED RECORDS" bg={NB.nearBlack} color={NB.white} />
+      <Ticker text="THE VAULT GUESS  PICK YOUR TOP ALBUM" bg={NB.nearBlack} color={NB.white} />
     </div>
   );
 };
@@ -866,6 +891,11 @@ const Slide8: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
                 <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13, color: NB.black }}>PLAY \u25b6</span>
               </motion.div>
             )}
+            {firstSong.cover && (
+              <div style={{ height: 180, background: '#222', borderBottom: `4px solid ${NB.black}` }}>
+                <img src={firstSong.cover} alt={firstSong.album} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+              </div>
+            )}
             <div style={{ padding: '20px 20px 16px' }}>
               <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.coral, margin: '0 0 8px 0' }}>JAN 1, 2024</p>
               <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(28px, 7vw, 44px)', color: NB.white, textTransform: 'uppercase', margin: '0 0 6px 0', lineHeight: 1, paddingRight: 80 }}>{firstSong.title}</h2>
@@ -882,8 +912,49 @@ const Slide8: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
   );
 };
 
-// SLIDE 9: THE GENRE WARP
+// SLIDE 9: THE ORBIT LOCK-IN
 const Slide9: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, artists }) => {
+  const topArtist = artists[0];
+  const orbiters = artists.slice(1, 7);
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
+      <style>{`
+        @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes orbitFloat { 0%,100%{ transform: translateY(0px);} 50%{ transform: translateY(-5px);} }
+      `}</style>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px 20px', gap: 18 }}>
+        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(36px, 9vw, 62px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1, textAlign: 'center' }}>YOUR OBSESSION ORBIT</h1>
+        <div style={{ position: 'relative', width: 280, height: 280, borderRadius: '50%', border: `3px solid ${NB.white}` }}>
+          <div style={{ position: 'absolute', inset: 20, borderRadius: '50%', border: `2px dashed rgba(255,255,255,0.5)` }} />
+          <div style={{ position: 'absolute', inset: 50, borderRadius: '50%', border: `2px dashed rgba(255,255,255,0.35)` }} />
+          <div style={{ position: 'absolute', inset: 70, borderRadius: '50%', border: `2px dashed rgba(255,255,255,0.2)` }} />
+          <div style={{ position: 'absolute', inset: 18, animation: active ? 'orbitSpin 18s linear infinite' : undefined }}>
+            {orbiters.map((artist, i) => {
+              const angle = (i / Math.max(orbiters.length, 1)) * Math.PI * 2;
+              const radius = i % 2 === 0 ? 112 : 82;
+              const x = 122 + Math.cos(angle) * radius;
+              const y = 122 + Math.sin(angle) * radius;
+              return (
+                <div key={artist.id} style={{ position: 'absolute', left: x, top: y, width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${NB.white}`, animation: 'orbitFloat 2.5s ease-in-out infinite' }}>
+                  <img src={artist.image || fallbackImage} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: 108, height: 108, borderRadius: '50%', overflow: 'hidden', border: `4px solid ${NB.acidYellow}`, boxShadow: '0 0 0 4px #000' }}>
+            <img src={topArtist?.image || fallbackImage} alt={topArtist?.name || 'Top artist'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+          </div>
+        </div>
+        <p style={{ margin: 0, color: NB.acidYellow, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 26, fontWeight: 900, textTransform: 'uppercase' }}>{topArtist?.name || 'Unknown Artist'}</p>
+      </div>
+      <Ticker text="OBSESSION ORBIT  YOUR CORE ARTIST GRAVITY" bg={NB.acidYellow} color={NB.black} />
+    </div>
+  );
+};
+
+// SLIDE 10: THE GENRE WARP
+const Slide10: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, artists }) => {
   const [expandedGenre, setExpandedGenre] = useState<string | null>(null);
   const [animated, setAnimated] = useState(false);
 
@@ -975,8 +1046,33 @@ const Slide9: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
   );
 };
 
-// SLIDE 10: FINAL SHARE
-const Slide10: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; onClose: () => void }> = ({ totalMinutes, artists, songs, onClose }) => {
+// SLIDE 11: THE REPLAY VALUE
+const Slide11: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs }) => {
+  const loops = songs.slice(0, 3);
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.coral, overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 12 }}>
+        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 8vw, 58px)', color: NB.white, margin: 0, textTransform: 'uppercase', lineHeight: 1 }}>YOUR REPLAY VALUE</h1>
+        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: '0 0 8px 0' }}>MOST REPEATED TRACKS</p>
+        {loops.map((song, i) => (
+          <motion.div key={song.id} initial={{ x: 120, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: active ? i * 0.12 : 0, duration: 0.35 }} style={{ display: 'flex', gap: 10, alignItems: 'center', background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: 10 }}>
+            <img src={song.cover || fallbackImage} alt={song.title} style={{ width: 64, height: 64, objectFit: 'cover', border: `3px solid ${NB.black}` }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 22, fontWeight: 900, textTransform: 'uppercase', color: NB.black, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{song.title}</p>
+              <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}>{song.artist}</p>
+            </div>
+            <div style={{ background: NB.black, color: NB.acidYellow, padding: '8px 10px', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 16, fontWeight: 900 }}>{song.listens}x</div>
+          </motion.div>
+        ))}
+      </div>
+      <Ticker text="REPLAY VALUE  SONGS ON LOOP" bg={NB.nearBlack} color={NB.white} />
+    </div>
+  );
+};
+
+// SLIDE 12: FINAL SHARE
+const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; onClose: () => void }> = ({ totalMinutes, artists, songs, onClose }) => {
   const topArtist = artists[0]?.name ?? '\u2014';
   const topSong = songs[0]?.title ?? '\u2014';
   return (
@@ -1056,7 +1152,9 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
       case 7: return <Slide7 active={currentSlide === 7} />;
       case 8: return <Slide8 active={currentSlide === 8} songs={songs} />;
       case 9: return <Slide9 active={currentSlide === 9} artists={artists} />;
-      case 10: return <Slide10 totalMinutes={totalMinutes} artists={artists} songs={songs} onClose={onClose} />;
+      case 10: return <Slide10 active={currentSlide === 10} artists={artists} />;
+      case 11: return <Slide11 active={currentSlide === 11} songs={songs} />;
+      case 12: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} onClose={onClose} />;
       default: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} />;
     }
   };
