@@ -19,9 +19,6 @@ const MIN_PIXEL_BRIGHTNESS = 40;
 const MAX_PIXEL_BRIGHTNESS = 700;
 const MIN_SATURATION_RANGE = 30;
 const FALLBACK_AURA_COLOR = '#FA2D48';
-const AURORA_AMPLITUDE = 0.8;
-const AURORA_BLEND = 0.5;
-const AURORA_SPEED = 0.7;
 
 function extractDominantColor(imageUrl: string): Promise<string> {
     return new Promise((resolve) => {
@@ -197,7 +194,6 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 
 import { SeeAllModal } from './components/SeeAllModal';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
-import Aurora from './components/reactbits/Aurora';
 
 function App() {
   const hasAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
@@ -1260,100 +1256,103 @@ function App() {
         type={seeAllModal.type}
     />
 
-    {/* Artist Detail Modal - Clean Centered Design with Aurora */}
+    {/* Artist Detail Modal - Full Screen */}
     <AnimatePresence>
         {selectedTopArtist && (
             <motion.div 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-6"
+                className="fixed inset-0 z-[100] bg-black"
                 onClick={() => setSelectedTopArtist(null)}
             >
-                {/* Aurora Background */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute inset-0 opacity-30">
-                        <Aurora colorStops={[auraColor, '#000000', auraColor]} amplitude={AURORA_AMPLITUDE} blend={AURORA_BLEND} speed={AURORA_SPEED} />
-                    </div>
-                    <div className="absolute inset-0 bg-black/70 backdrop-blur-xl" />
+                {/* Full-screen blurred background */}
+                <div className="absolute inset-0 overflow-hidden">
+                    <img 
+                        src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedTopArtist.name)}&background=1C1C1E&color=fff`}
+                        className="w-full h-full object-cover scale-110 blur-3xl opacity-20"
+                        alt=""
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
                 </div>
+
                 <motion.div 
-                    initial={{ scale: 0.92, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.92, opacity: 0, y: 20 }}
-                    transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                    className="relative w-full max-w-md max-h-[85vh] overflow-y-auto no-scrollbar bg-gradient-to-b from-[#1C1C1E] to-[#0A0A0A] rounded-3xl border border-white/[0.08] shadow-2xl" 
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 50, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="relative h-full overflow-y-auto no-scrollbar px-4 py-16"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Close Button */}
                     <button 
                         onClick={() => setSelectedTopArtist(null)}
-                        className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white/60 hover:text-white backdrop-blur-md transition-all z-50 border border-white/[0.05]"
+                        className="fixed top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/10 hover:scale-105 active:scale-95"
                     >
-                        <X size={16} />
+                        <X size={18} />
                     </button>
 
                     {/* Artist Image + Info */}
-                    <div className="flex flex-col items-center pt-10 pb-6 px-6">
+                    <div className="flex flex-col items-center max-w-2xl mx-auto">
                         <motion.div 
-                            initial={{ scale: 0.85, opacity: 0 }}
+                            initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 220, damping: 22 }}
-                            className="relative mb-5 group"
+                            transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
+                            className="relative mb-6 group"
                         >
-                            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full p-1 border border-white/[0.1] bg-black shadow-2xl relative overflow-visible">
-                                <div className="absolute -inset-6 rounded-full blur-3xl opacity-[0.12] group-hover:opacity-[0.2] transition-opacity duration-700" style={{ backgroundColor: auraColor }}></div>
+                            <div className="absolute -inset-4 rounded-full blur-3xl opacity-[0.2] group-hover:opacity-[0.3] transition-opacity duration-700" style={{ backgroundColor: auraColor }}></div>
+                            <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-full overflow-hidden ring-4 ring-white/10 shadow-2xl relative">
                                 <img 
                                     src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedTopArtist.name)}&background=1C1C1E&color=fff`} 
-                                    className="w-full h-full object-cover rounded-full bg-[#1C1C1E]" 
+                                    className="w-full h-full object-cover bg-[#1C1C1E]" 
                                     alt={selectedTopArtist.name}
                                 />
-                                {/* Rank Badge */}
-                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white text-black px-3 py-0.5 rounded-full font-black text-[10px] shadow-xl border border-black/10 whitespace-nowrap">
-                                    #{safeArtists.findIndex((a: Artist) => a.id === selectedTopArtist.id) + 1 || '?'}
-                                </div>
+                            </div>
+                            {/* Rank Badge */}
+                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 rounded-full font-bold text-xs shadow-xl">
+                                #{safeArtists.findIndex((a: Artist) => a.id === selectedTopArtist.id) + 1 || '?'}
                             </div>
                         </motion.div>
 
                         {/* Name + Listening Time */}
-                        <motion.h2 
-                            initial={{ opacity: 0, y: 10 }}
+                        <motion.h1 
+                            initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="text-xl md:text-2xl font-black text-white text-center tracking-tight"
+                            transition={{ delay: 0.15 }}
+                            className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight mb-1"
                         >
                             {selectedTopArtist.name}
-                        </motion.h2>
+                        </motion.h1>
                         <motion.p
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ delay: 0.12 }}
-                            className="text-[#8E8E93] text-xs mt-1 mb-6"
+                            transition={{ delay: 0.2 }}
+                            className="text-lg text-white/70 mb-8"
                         >
                             {selectedTopArtist.timeStr || '0m'} listened
                         </motion.p>
 
                         {/* Stats Row */}
                         <motion.div 
-                            initial={{ opacity: 0, y: 15 }}
+                            initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.15 }}
-                            className="grid grid-cols-3 gap-2.5 w-full mb-6"
+                            transition={{ delay: 0.25 }}
+                            className="grid grid-cols-3 gap-3 w-full max-w-lg mb-8"
                         >
-                            <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-3 flex flex-col items-center text-center">
-                                <TrendingUp size={12} className="mb-1.5 opacity-60" style={{ color: auraColor }} />
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                                <TrendingUp size={16} className="mb-1.5" style={{ color: auraColor }} />
                                 <span className="text-xl font-black text-white">{selectedTopArtist.totalListens || 0}</span>
-                                <span className="text-[8px] uppercase tracking-[0.15em] text-white/35 font-bold mt-0.5">Plays</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Plays</span>
                             </div>
-                            <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-3 flex flex-col items-center text-center">
-                                <Clock size={12} className="mb-1.5 opacity-60" style={{ color: auraColor }} />
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                                <Clock size={16} className="mb-1.5" style={{ color: auraColor }} />
                                 <span className="text-xl font-black text-white">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
-                                <span className="text-[8px] uppercase tracking-[0.15em] text-white/35 font-bold mt-0.5">Minutes</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Minutes</span>
                             </div>
-                            <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-3 flex flex-col items-center text-center">
-                                <Sparkles size={12} className="mb-1.5 opacity-60" style={{ color: auraColor }} />
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                                <Sparkles size={16} className="mb-1.5" style={{ color: auraColor }} />
                                 <span className="text-xl font-black text-white">{selectedArtistStats?.popularityScore || 0}%</span>
-                                <span className="text-[8px] uppercase tracking-[0.15em] text-white/35 font-bold mt-0.5">Of Time</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#8E8E93]">Of Time</span>
                             </div>
                         </motion.div>
 
@@ -1361,7 +1360,7 @@ function App() {
                         <motion.div 
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
+                            transition={{ delay: 0.3 }}
                             className="w-full bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4"
                         >
                              <h3 className="text-xs font-bold text-white/70 mb-3 flex items-center gap-2 uppercase tracking-wider">
