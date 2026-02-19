@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
+import { fetchHeatmapData } from '../services/dbService';
 
 const NB = {
   electricBlue: '#1A6BFF',
@@ -53,8 +54,10 @@ function buildConnectionPairs(connectionGraph?: { artistInfo: Record<string, any
       if (!infoA || !infoB) return;
       const totalA = Math.max(1, infoA.count || 1);
       const totalB = Math.max(1, infoB.count || 1);
-      const unionApprox = Math.max(1, totalA + totalB - score);
-      const closeness = Math.min(99, Math.max(1, Math.round((score / unionApprox) * 100)));
+      // Use overlap-based similarity: shared / max(totalA, totalB), then scale non-linearly
+      // to prevent inflated 99% scores when artists co-occur frequently
+      const overlapRatio = score / Math.max(totalA, totalB);
+      const closeness = Math.min(97, Math.max(5, Math.round(overlapRatio * 85 + (score > 5 ? 5 : score))));
       pairRows.push({
         a: { id: infoA.id || artistA, name: infoA.name || artistA, image: infoA.image || fallbackImage },
         b: { id: infoB.id || artistB, name: infoB.name || artistB, image: infoB.image || fallbackImage },
@@ -130,9 +133,9 @@ const StoryProgressBar: React.FC<{ current: number; total: number }> = ({ curren
 );
 
 const SlideNavButtons: React.FC<{ current: number; total: number; onPrev: () => void; onNext: () => void }> = ({ current, total, onPrev, onNext }) => (
-  <div style={{ position: 'absolute', bottom: 52, left: 12, right: 12, zIndex: 120, display: 'flex', justifyContent: 'space-between', pointerEvents: 'none' }}>
-    <button onClick={(e) => { e.stopPropagation(); onPrev(); }} disabled={current === 0} style={{ pointerEvents: 'auto', minWidth: 96, height: 38, background: NB.white, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === 0 ? 0.5 : 1, cursor: current === 0 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14 }}>PREV</button>
-    <button onClick={(e) => { e.stopPropagation(); onNext(); }} disabled={current === total - 1} style={{ pointerEvents: 'auto', minWidth: 96, height: 38, background: NB.acidYellow, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === total - 1 ? 0.5 : 1, cursor: current === total - 1 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14 }}>NEXT</button>
+  <div style={{ position: 'absolute', bottom: 'max(52px, env(safe-area-inset-bottom, 0px) + 52px)', left: 12, right: 12, zIndex: 120, display: 'flex', justifyContent: 'space-between', pointerEvents: 'none' }}>
+    <button onClick={(e) => { e.stopPropagation(); onPrev(); }} disabled={current === 0} style={{ pointerEvents: 'auto', minWidth: 88, height: 44, background: NB.white, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === 0 ? 0.45 : 1, cursor: current === 0 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 15, borderRadius: 0 }}>PREV</button>
+    <button onClick={(e) => { e.stopPropagation(); onNext(); }} disabled={current === total - 1} style={{ pointerEvents: 'auto', minWidth: 88, height: 44, background: NB.acidYellow, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === total - 1 ? 0.45 : 1, cursor: current === total - 1 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 15, borderRadius: 0 }}>NEXT ›</button>
   </div>
 );
 
@@ -516,11 +519,11 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
       const remainingMs = deadline - Date.now();
       const nextValue = Math.max(0, Math.ceil(remainingMs / 1000));
       setTimer(nextValue);
-      if (remainingMs <= 0) {
+      if (remainingMs <= 50) {
         if (timerRef.current) clearInterval(timerRef.current);
         setRevealed(true);
       }
-    }, 120);
+    }, 50);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [active]);
 
@@ -540,7 +543,7 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
           WHICH WAS YOUR #1 ALBUM?
         </h1>
         <div style={{ width: '100%', height: 32, background: NB.white, border: `4px solid ${NB.black}`, position: 'relative', overflow: 'hidden', marginBottom: 8, borderRadius: 0 }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: NB.black, width: `${(timer / ROUND_SECONDS) * 100}%`, transition: 'width 1s linear' }} />
+          <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: NB.black, width: `${(timer / ROUND_SECONDS) * 100}%`, transition: 'width 0.13s linear' }} />
           <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: revealed ? NB.black : NB.white, mixBlendMode: 'difference' as const, zIndex: 1 }}>
             {revealed ? verdict : `${timer}s`}
           </span>
@@ -610,51 +613,140 @@ const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; a
       .sort((a, b) => a.score - b.score)[0];
   }, [metrics]);
 
+  // phases: 0=idle, 1=circle rotates+question, 2=faster spin+let's see, 3=winner to center, 4=circle fades+stats
   useEffect(() => {
     timers.current.forEach(clearTimeout);
     if (!active) { setPhase(0); return; }
     setPhase(1);
-    timers.current.push(setTimeout(() => setPhase(2), 1200));
-    timers.current.push(setTimeout(() => setPhase(3), 2500));
+    timers.current.push(setTimeout(() => setPhase(2), 2000));
+    timers.current.push(setTimeout(() => setPhase(3), 3500));
+    timers.current.push(setTimeout(() => setPhase(4), 5000));
     return () => timers.current.forEach(clearTimeout);
   }, [active]);
 
+  const bgEmojis = ['🎵','✨','🎶','💿','🎧','🎤','🎼','🎹','🎸','🎺','🥁','🎻'];
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)', backgroundSize: '34px 34px', opacity: 0.3 }} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 20px 20px', gap: 10, position: 'relative', zIndex: 2 }}>
-        <h1 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(30px, 8vw, 46px)', color: NB.white, textTransform: 'uppercase', lineHeight: 1 }}>WHAT FRUIT ARE YOU?</h1>
-        <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' }}>BASED ON YOUR LISTENING DNA</p>
+      {/* Animated grid background */}
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+      {/* Floating emoji background - animated endless */}
+      <style>{`
+        @keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg); opacity:0; } 10% { opacity:0.18; } 90% { opacity:0.12; } 100% { transform: translateY(-20vh) rotate(360deg); opacity:0; } }
+      `}</style>
+      {bgEmojis.map((e, i) => (
+        <div key={e + i} style={{
+          position: 'absolute',
+          left: `${(i * 8.5) % 100}%`,
+          bottom: '-10%',
+          fontSize: 22 + (i % 4) * 6,
+          animation: `floatUp ${7 + (i % 5) * 1.8}s linear ${(i * 0.9) % 6}s infinite`,
+          pointerEvents: 'none',
+          zIndex: 1,
+        }}>{e}</div>
+      ))}
 
-        <div style={{ height: 220, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {fruitProfiles.map((fruit, i) => {
-            const angle = (360 / fruitProfiles.length) * i;
-            return (
-              <motion.div key={fruit.name} animate={{ rotate: active ? 360 : 0 }} transition={{ duration: 16, repeat: Infinity, ease: 'linear' }} style={{ position: 'absolute', transform: `rotate(${angle}deg) translate(96px) rotate(${-angle}deg)`, fontSize: 28, opacity: phase >= 3 && fruit.name !== winningFruit.name ? 0.2 : 0.95 }}>
-                {fruit.emoji}
-              </motion.div>
-            );
-          })}
-          {phase < 2 && <p style={{ color: NB.white, margin: 0, textAlign: 'center', fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Based on listening data<br/>let's see…</p>}
-          {phase >= 2 && (
-            <motion.div initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1, y: phase >= 3 ? -12 : 0 }} transition={{ duration: 0.5 }} style={{ width: 120, height: 120, borderRadius: '50%', border: `4px solid ${NB.white}`, background: NB.acidYellow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 58 }}>
-              {winningFruit.emoji}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 20px 20px', gap: 8, position: 'relative', zIndex: 2 }}>
+        {/* Phase 1-2: question text */}
+        <AnimatePresence>
+          {(phase === 1 || phase === 2) && (
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.4 }}>
+              <h1 style={{ margin: '0 0 4px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(30px, 8vw, 46px)', color: NB.white, textTransform: 'uppercase', lineHeight: 1 }}>WHAT FRUIT ARE YOU?</h1>
+              <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' }}>
+                {phase === 1 ? 'BASED ON YOUR LISTENING DNA' : 'BASED ON LISTENING DATA... LET\'S SEE! 🔍'}
+              </p>
             </motion.div>
           )}
+        </AnimatePresence>
+
+        {/* Orbit + center */}
+        <div style={{ height: 240, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Orbiting fruits container - spins as a whole */}
+          <motion.div
+            animate={{ rotate: phase >= 1 ? (phase >= 2 ? 3600 : 360) : 0 }}
+            transition={{ duration: phase >= 2 ? 2 : 12, repeat: phase <= 2 ? Infinity : 0, ease: phase >= 2 ? [0.4, 0, 0.2, 1] : 'linear' }}
+            style={{ position: 'absolute', width: '100%', height: '100%' }}
+          >
+            {fruitProfiles.map((fruit, i) => {
+              const angle = (360 / fruitProfiles.length) * i;
+              const rad = (angle * Math.PI) / 180;
+              const r = 96;
+              const isWinner = fruit.name === winningFruit?.name;
+              return (
+                <motion.div
+                  key={fruit.name}
+                  animate={{
+                    opacity: phase >= 3 ? (isWinner ? 0 : 0) : 0.9,
+                    scale: phase >= 3 ? 0 : 1,
+                  }}
+                  transition={{ duration: 0.6, delay: isWinner ? 0.2 : 0 }}
+                  style={{
+                    position: 'absolute',
+                    left: `calc(50% + ${Math.cos(rad) * r}px - 16px)`,
+                    top: `calc(50% + ${Math.sin(rad) * r}px - 16px)`,
+                    fontSize: 28,
+                    userSelect: 'none',
+                  }}
+                >
+                  {fruit.emoji}
+                </motion.div>
+              );
+            })}
+          </motion.div>
+
+          {/* Center content */}
+          <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 5 }}>
+            {phase < 3 && (
+              <motion.p
+                animate={{ opacity: phase >= 2 ? [1, 0.4, 1] : 1 }}
+                transition={{ duration: 0.5, repeat: phase >= 2 ? Infinity : 0 }}
+                style={{ color: NB.white, margin: 0, textAlign: 'center', fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', maxWidth: 140 }}
+              >
+                {phase >= 2 ? 'FINDING\nYOUR FRUIT...' : 'WHAT FRUIT\nARE YOU?'}
+              </motion.p>
+            )}
+            {/* Winner fruit reveal */}
+            <AnimatePresence>
+              {phase >= 3 && winningFruit && (
+                <motion.div
+                  initial={{ scale: 0, y: 30 }}
+                  animate={{ scale: 1, y: phase >= 4 ? -20 : 0 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
+                >
+                  <div style={{ width: 100, height: 100, borderRadius: '50%', border: `4px solid ${NB.acidYellow}`, background: 'rgba(204,255,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 58 }}>
+                    {winningFruit.emoji}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
-        {phase >= 3 && (
-          <BCard style={{ background: NB.white }}>
-            <p style={{ margin: '0 0 4px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 34, color: NB.black }}>{winningFruit.name}</p>
-            <p style={{ margin: '0 0 10px 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: NB.black }}>You got this because your profile is {winningFruit.vibe}.</p>
-            {[{ label: 'ADVENTUROUS', value: metrics.adventurous, color: NB.electricBlue }, { label: 'GROOVE', value: metrics.groove, color: NB.coral }, { label: 'SWEETNESS', value: metrics.sweetness, color: NB.magenta }].map((metric, i) => (
-              <div key={metric.label} style={{ marginBottom: i === 2 ? 0 : 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11 }}>{metric.label}</span><span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900 }}>{metric.value}%</span></div>
-                <motion.div initial={{ width: 0 }} animate={{ width: `${metric.value}%` }} transition={{ duration: 0.5, delay: i * 0.15 }} style={{ height: 10, background: metric.color, border: `2px solid ${NB.black}` }} />
-              </div>
-            ))}
-          </BCard>
-        )}
+        {/* Stats card - appears in phase 4 */}
+        <AnimatePresence>
+          {phase >= 4 && winningFruit && (
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <BCard style={{ background: NB.white }}>
+                <p style={{ margin: '0 0 2px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 30, color: NB.black }}>
+                  YOU ARE {winningFruit.emoji} {winningFruit.name}
+                </p>
+                <p style={{ margin: '0 0 10px 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>
+                  Your listening matches: {winningFruit.vibe}.
+                </p>
+                {[{ label: 'ADVENTUROUS', value: metrics.adventurous, color: NB.electricBlue }, { label: 'GROOVE', value: metrics.groove, color: NB.coral }, { label: 'SWEETNESS', value: metrics.sweetness, color: NB.magenta }].map((metric, i) => (
+                  <div key={metric.label} style={{ marginBottom: i === 2 ? 0 : 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11 }}>{metric.label}</span>
+                      <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900 }}>{metric.value}%</span>
+                    </div>
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${metric.value}%` }} transition={{ duration: 0.6, delay: i * 0.18 }} style={{ height: 10, background: metric.color, border: `2px solid ${NB.black}` }} />
+                  </div>
+                ))}
+              </BCard>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
       <Ticker text="FRUIT DNA  MUSIC PERSONALITY  LIVE METRICS" bg={NB.acidYellow} color={NB.black} />
     </div>
@@ -808,24 +900,65 @@ const Slide6: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
 };
 
 // SLIDE 7: THE STREAK
-const Slide7: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = ({ active, artists, songs }) => {
+const Slide7: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = ({ active }) => {
   const [waveCol, setWaveCol] = useState(-1);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [heatmapData, setHeatmapData] = useState<Array<{ played_at: string; duration_ms: number }>>([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const gridData = useMemo(() => {
-    const energy = Math.max(1, songs.reduce((sum, song) => sum + song.listens, 0));
-    const artistBias = artists.slice(0, 5).reduce((sum, artist) => sum + artist.totalListens, 0) / Math.max(1, energy);
-    return Array.from({ length: 365 }, (_, d) => {
-      const weeklyWave = (Math.sin(d / 6.3) + 1) / 2;
-      const monthlyWave = (Math.cos(d / 17.7) + 1) / 2;
-      return Math.min(1, weeklyWave * 0.55 + monthlyWave * 0.3 + artistBias * 0.45);
+  // Fetch real heatmap data
+  useEffect(() => {
+    let cancelled = false;
+    fetchHeatmapData().then((data) => {
+      if (!cancelled) {
+        setHeatmapData(data || []);
+        setDataLoaded(true);
+      }
     });
-  }, [songs, artists]);
+    return () => { cancelled = true; };
+  }, []);
+
+  // Build real 365-day grid from heatmap data
+  const { gridData, STREAK_LEN, STREAK_START } = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const jan1 = new Date(year, 0, 1);
+    const dailyCounts: Record<string, number> = {};
+
+    for (const item of heatmapData) {
+      if (!item.played_at) continue;
+      const d = new Date(item.played_at);
+      if (d.getFullYear() !== year) continue;
+      const key = d.toLocaleDateString('en-CA');
+      dailyCounts[key] = (dailyCounts[key] || 0) + 1;
+    }
+
+    const maxCount = Math.max(1, ...Object.values(dailyCounts));
+    const gd = Array.from({ length: 365 }, (_, i) => {
+      const date = new Date(jan1);
+      date.setDate(jan1.getDate() + i);
+      const key = date.toLocaleDateString('en-CA');
+      return Math.min(1, (dailyCounts[key] || 0) / maxCount);
+    });
+
+    // Find longest streak of days with listens
+    let bestStart = 0, bestLen = 0, cur = 0, curStart = 0;
+    for (let i = 0; i < gd.length; i++) {
+      if (gd[i] > 0) {
+        if (cur === 0) curStart = i;
+        cur++;
+        if (cur > bestLen) { bestLen = cur; bestStart = curStart; }
+      } else {
+        cur = 0;
+      }
+    }
+    const finalLen = Math.max(1, bestLen);
+    const finalStart = bestLen > 0 ? bestStart : Math.max(0, 340 - finalLen);
+    return { gridData: gd, STREAK_LEN: finalLen, STREAK_START: finalStart };
+  }, [heatmapData]);
 
   const weeks = 52;
   const days = 7;
-  const STREAK_LEN = Math.max(3, Math.min(45, Math.max(...artists.map((artist) => artist.streak || 0), ...songs.map((song) => song.streak || 0), 0)));
-  const STREAK_START = Math.max(0, Math.min(300, 340 - STREAK_LEN));
 
   useEffect(() => {
     if (!active) { setWaveCol(-1); if (intervalRef.current) clearInterval(intervalRef.current); return; }
@@ -837,16 +970,16 @@ const Slide7: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = 
       if (col >= weeks && intervalRef.current) clearInterval(intervalRef.current);
     }, 35);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [active]);
+  }, [active, dataLoaded]);
 
   const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   const monthStartWeeks = [0,4,8,13,17,21,26,30,34,39,43,47];
 
   const getCellColor = (val: number, revealed: boolean) => {
     if (!revealed) return '#1a1a1a';
-    if (val < 0.2) return '#1a1a1a';
-    if (val < 0.5) return NB.acidYellow + '33';
-    if (val < 0.8) return NB.acidYellow + '99';
+    if (val < 0.15) return '#1a1a1a';
+    if (val < 0.4) return NB.acidYellow + '33';
+    if (val < 0.7) return NB.acidYellow + '99';
     return NB.acidYellow;
   };
 
@@ -987,42 +1120,119 @@ const Slide9: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = 
     return { day, score: Math.min(MAX_ORBIT_SCORE, Math.round(obsessionScore * weight)) };
   });
 
-  const minDay = dayCurve.reduce((acc, d) => (d.score < acc.score ? d : acc), dayCurve[0]);
   const maxDay = dayCurve.reduce((acc, d) => (d.score > acc.score ? d : acc), dayCurve[0]);
+
+  // Animation phases: 0=idle, 1=show day-by-day, 2=show total, 3=reveal score, 4=why text
+  const [phase, setPhase] = useState(0);
+  const [dayIndex, setDayIndex] = useState(0);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    timers.current.forEach(clearTimeout);
+    if (!active) { setPhase(0); setDayIndex(0); return; }
+    setPhase(1);
+    setDayIndex(0);
+    weekdayLabels.forEach((_, i) => {
+      timers.current.push(setTimeout(() => setDayIndex(i), i * 600));
+    });
+    timers.current.push(setTimeout(() => setPhase(2), weekdayLabels.length * 600 + 400));
+    timers.current.push(setTimeout(() => setPhase(3), weekdayLabels.length * 600 + 1400));
+    timers.current.push(setTimeout(() => setPhase(4), weekdayLabels.length * 600 + 2600));
+    return () => timers.current.forEach(clearTimeout);
+  }, [active]);
+
+  const topSongs = songs.slice(0, 3);
+  const topAlbums = [...new Map(songs.map(s => [s.album, s])).values()].slice(0, 2);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 14 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(30px, 8vw, 50px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>
-          WE KNOW YOU WANT TO KNOW WHY YOUR SCORE IS THIS HIGH.
-        </h1>
-        <div style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 14px' }}>
-          <p style={{ margin: '0 0 8px 0', fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: NB.black }}>
-            MONDAY - SUNDAY ORBIT BUILD
-          </p>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 120 }}>
-            {dayCurve.map((day, i) => (
-              <motion.div
-                key={day.day}
-                initial={{ height: 0 }}
-                animate={{ height: active ? `${Math.max(18, Math.round((day.score / MAX_ORBIT_SCORE) * 100))}%` : 0 }}
-                transition={{ duration: 0.45, delay: active ? i * 0.12 : 0 }}
-                style={{ flex: 1, background: day.day === maxDay.day ? NB.acidYellow : NB.electricBlue, border: `2px solid ${NB.black}`, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: 4 }}
-              >
-                <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 10, color: NB.black }}>{day.day}</span>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 12, overflowY: 'auto' }}>
 
-        <div style={{ background: NB.acidYellow, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 14px' }}>
-          <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 34, color: NB.black, textTransform: 'uppercase' }}>
-            {topArtist?.name || 'TOP ARTIST'} SCORED {obsessionScore}/250
-          </p>
-          <p style={{ margin: '6px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: NB.black }}>
-            Peak lift: {maxDay.day} ({maxDay.score}) • Drop: {minDay.day} ({minDay.score}). Frequency bonus {frequencyBonus}, dominance bonus {dominanceBonus}, consistency bonus {consistencyBase}.
-          </p>
-        </div>
+        {/* Day-by-day orbit (phase 1) */}
+        {phase === 1 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: 0 }}>ORBIT BUILD — DAY BY DAY</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {weekdayLabels.slice(0, dayIndex + 1).map((day, i) => (
+                <motion.div key={day} initial={{ x: -40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.3 }} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 12, color: 'rgba(255,255,255,0.6)', width: 36, flexShrink: 0 }}>{day}</span>
+                  <div style={{ flex: 1, height: 28, background: '#1a1a1a', border: '1px solid #333', overflow: 'hidden', position: 'relative' }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.round((dayCurve[i].score / MAX_ORBIT_SCORE) * 100)}%` }}
+                      transition={{ duration: 0.4 }}
+                      style={{ height: '100%', background: day === maxDay.day ? NB.acidYellow : NB.electricBlue }}
+                    />
+                  </div>
+                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13, color: NB.acidYellow, width: 36, textAlign: 'right', flexShrink: 0 }}>{dayCurve[i].score}</span>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Total orbit (phase 2+) */}
+        {phase >= 2 && (
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: 0 }}>WEEKLY OBSESSION ORBIT</p>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 80 }}>
+              {dayCurve.map((day, i) => (
+                <motion.div
+                  key={day.day}
+                  initial={{ height: 0 }}
+                  animate={{ height: `${Math.max(14, Math.round((day.score / MAX_ORBIT_SCORE) * 100))}%` }}
+                  transition={{ duration: 0.4, delay: i * 0.05 }}
+                  style={{ flex: 1, background: day.day === maxDay.day ? NB.acidYellow : NB.electricBlue, border: `2px solid ${NB.black}`, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: 2 }}
+                >
+                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 9, color: NB.black }}>{day.day}</span>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Score reveal (phase 3+) */}
+        {phase >= 3 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ background: NB.acidYellow, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 14px' }}>
+            <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black }}>YOUR OBSESSION ORBIT SCORE</p>
+            <motion.p
+              initial={{ scale: 0.5 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 14 }}
+              style={{ margin: '4px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(40px, 12vw, 60px)', color: NB.black, lineHeight: 1 }}
+            >
+              {topArtist?.name || 'TOP ARTIST'}: {obsessionScore}<span style={{ fontSize: '0.45em', opacity: 0.6 }}>/250</span>
+            </motion.p>
+          </motion.div>
+        )}
+
+        {/* Why explanation (phase 4) */}
+        {phase >= 4 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 14px' }}>
+              <p style={{ margin: '0 0 6px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.black, textTransform: 'uppercase' }}>WHY THIS SCORE?</p>
+              {topSongs.map((song, i) => (
+                <motion.div key={song.id} initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: i * 0.15 }} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: i < topSongs.length - 1 ? 6 : 0 }}>
+                  <img src={song.cover || fallbackImage} alt="" style={{ width: 36, height: 36, objectFit: 'cover', border: `2px solid ${NB.black}`, flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13, color: NB.black, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.title}</p>
+                    <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#555' }}>{song.listens} plays — boosted your score by +{i === 0 ? frequencyBonus : i === 1 ? Math.round(frequencyBonus * 0.6) : Math.round(frequencyBonus * 0.3)}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            {topAlbums.length > 0 && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                {topAlbums.map((song, i) => (
+                  <motion.div key={song.id + i} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + i * 0.1 }} style={{ flex: 1, background: i === 0 ? NB.electricBlue : NB.coral, border: `3px solid ${NB.black}`, padding: '8px 10px' }}>
+                    <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 11, color: NB.white, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.album || song.artist}</p>
+                    <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 9, color: 'rgba(255,255,255,0.8)' }}>dominance +{i === 0 ? dominanceBonus : Math.round(dominanceBonus * 0.5)}</p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
       <Ticker text="OBSESSION ORBIT  SCORE ANALYZER  WHY IT MOVED" bg={NB.acidYellow} color={NB.black} />
     </div>
@@ -1122,23 +1332,74 @@ const Slide10: React.FC<{ active: boolean; artists: Artist[]; connectionGraph?: 
 };
 
 // SLIDE 11: THE REPLAY VALUE
+const ReplayTrackRow: React.FC<{ song: Song; index: number; active: boolean; pulsing: number | null; targetCount: number }> = ({ song, index, active, pulsing, targetCount }) => {
+  const displayCount = useOdometer(targetCount, 600);
+  return (
+    <motion.div
+      initial={{ x: 120, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ delay: active ? index * 0.15 : 0, duration: 0.35 }}
+      style={{
+        display: 'flex', gap: 10, alignItems: 'center',
+        background: NB.white, border: `4px solid ${NB.black}`,
+        boxShadow: '4px 4px 0 #000', padding: 10,
+        animation: pulsing === index ? 'replayPulse 0.8s ease' : undefined,
+      }}
+    >
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <img
+          src={song.cover || fallbackImage}
+          alt={song.title}
+          style={{ width: 64, height: 64, objectFit: 'cover', border: `3px solid ${NB.black}`, borderRadius: '50%', display: 'block', animation: active ? 'vinylSpin 4s linear infinite' : 'none' }}
+          onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }}
+        />
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.2)', pointerEvents: 'none' }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 20, fontWeight: 900, textTransform: 'uppercase', color: NB.black, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{song.title}</p>
+        <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#555' }}>{song.artist}</p>
+      </div>
+      <motion.div
+        animate={{ scale: pulsing === index ? [1, 1.2, 1] : 1 }}
+        transition={{ duration: 0.4 }}
+        style={{ background: NB.black, color: NB.acidYellow, padding: '8px 10px', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 18, fontWeight: 900, flexShrink: 0, minWidth: 52, textAlign: 'center' }}
+      >
+        {displayCount}×
+      </motion.div>
+    </motion.div>
+  );
+};
+
 const Slide11: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs }) => {
   const loops = songs.slice(0, 3);
+  const [pulsing, setPulsing] = useState<number | null>(null);
+  const [counts, setCounts] = useState<number[]>([]);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    timers.current.forEach(clearTimeout);
+    if (!active) { setPulsing(null); setCounts([]); return; }
+    loops.forEach((song, i) => {
+      timers.current.push(setTimeout(() => {
+        setCounts(prev => { const next = [...prev]; next[i] = song.listens; return next; });
+        setPulsing(i);
+        timers.current.push(setTimeout(() => setPulsing(null), 800));
+      }, 200 + i * 400));
+    });
+    return () => timers.current.forEach(clearTimeout);
+  }, [active]);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.coral, overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 12 }}>
+      <style>{`
+        @keyframes replayPulse { 0%,100%{box-shadow:4px 4px 0 #000} 50%{box-shadow:0 0 0 6px rgba(204,255,0,0.5),4px 4px 0 #000} }
+        @keyframes vinylSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+      `}</style>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 12 }}>
         <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 8vw, 58px)', color: NB.white, margin: 0, textTransform: 'uppercase', lineHeight: 1 }}>YOUR REPLAY VALUE</h1>
-        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: '0 0 8px 0' }}>MOST REPEATED TRACKS</p>
+        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: '0 0 4px 0' }}>MOST REPEATED TRACKS</p>
         {loops.map((song, i) => (
-          <motion.div key={song.id} initial={{ x: 120, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: active ? i * 0.12 : 0, duration: 0.35 }} style={{ display: 'flex', gap: 10, alignItems: 'center', background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: 10 }}>
-            <img src={song.cover || fallbackImage} alt={song.title} style={{ width: 64, height: 64, objectFit: 'cover', border: `3px solid ${NB.black}` }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 22, fontWeight: 900, textTransform: 'uppercase', color: NB.black, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{song.title}</p>
-              <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}>{song.artist}</p>
-            </div>
-            <motion.div animate={{ scale: active ? [1, 1.07, 1] : 1 }} transition={{ repeat: Infinity, duration: 1.8, delay: i * 0.15 }} style={{ background: NB.black, color: NB.acidYellow, padding: '8px 10px', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 16, fontWeight: 900 }}>{song.listens}x</motion.div>
-          </motion.div>
+          <ReplayTrackRow key={song.id} song={song} index={i} active={active} pulsing={pulsing} targetCount={counts[i] ?? 0} />
         ))}
       </div>
       <Ticker text="REPLAY VALUE  SONGS ON LOOP" bg={NB.nearBlack} color={NB.white} />
@@ -1152,48 +1413,149 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
   const topSong = songs[0]?.title ?? '\u2014';
   const secondArtist = artists[1]?.name ?? '\u2014';
   const [hovered, setHovered] = useState<number | null>(null);
-  const carouselAlbums = [...albums].sort((a, b) => a.totalListens - b.totalListens);
-  const loopAlbums = [...carouselAlbums, ...carouselAlbums];
+  const [isAnimIn, setIsAnimIn] = useState(false);
+
+  // Sort albums by descending totalListens (most listened first)
+  const carouselAlbums = useMemo(() => [...albums].sort((a, b) => b.totalListens - a.totalListens), [albums]);
+  const loopAlbums = useMemo(() => [...carouselAlbums, ...carouselAlbums, ...carouselAlbums], [carouselAlbums]);
+
+  // Compute fruit for summary
+  const fruitSummary = useMemo(() => {
+    const fruitProfiles = [
+      { name: 'MANGO', emoji: '🥭', v: [74, 82, 86] },
+      { name: 'PINEAPPLE', emoji: '🍍', v: [82, 69, 72] },
+      { name: 'CHERRY', emoji: '🍒', v: [62, 74, 90] },
+      { name: 'BANANA', emoji: '🍌', v: [60, 88, 70] },
+      { name: 'BLUEBERRY', emoji: '🫐', v: [90, 58, 64] },
+      { name: 'WATERMELON', emoji: '🍉', v: [78, 76, 78] },
+      { name: 'KIWI', emoji: '🥝', v: [88, 70, 68] },
+      { name: 'PEACH', emoji: '🍑', v: [68, 73, 84] },
+      { name: 'APPLE', emoji: '🍎', v: [65, 84, 65] },
+      { name: 'STRAWBERRY', emoji: '🍓', v: [75, 66, 88] },
+    ];
+    const totalSongListens = Math.max(1, songs.reduce((s, song) => s + song.listens, 0));
+    const topSongShare = (songs[0]?.listens || 0) / totalSongListens;
+    const topArtistShare = (artists[0]?.totalListens || 0) / Math.max(1, artists.slice(0, 5).reduce((s, a) => s + a.totalListens, 0));
+    const adventurous = Math.min(100, Math.round((Math.min(1, songs.length / 30) * 0.55 + (1 - topSongShare) * 0.45) * 100));
+    const groove = Math.min(100, Math.round((Math.min(1, totalMinutes / 9000) * 0.6 + topArtistShare * 0.4) * 100));
+    const sweetness = Math.min(100, Math.round((Math.min(1, (songs[0]?.listens || 0) / 180) * 0.5 + Math.min(1, (artists[0]?.totalListens || 0) / 900) * 0.5) * 100));
+    const vec = [adventurous, groove, sweetness];
+    return fruitProfiles
+      .map(f => ({ ...f, score: Math.sqrt(f.v.reduce((s, val, i) => s + Math.pow(val - vec[i], 2), 0)) }))
+      .sort((a, b) => a.score - b.score)[0];
+  }, [songs, artists, totalMinutes]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setIsAnimIn(true), 200);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flex: 1, background: NB.acidYellow, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: `4px solid ${NB.black}`, position: 'relative' }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(56px, 15vw, 96px)', color: NB.black, textTransform: 'uppercase', margin: 0, letterSpacing: '-0.02em', zIndex: 2 }}>
-          PUNKY WRAPPED
-        </h1>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      {/* Header */}
+      <div style={{ background: NB.acidYellow, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: `4px solid ${NB.black}`, position: 'relative', padding: '20px 16px', flexShrink: 0 }}>
+        <motion.h1
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(36px, 10vw, 72px)', color: NB.black, textTransform: 'uppercase', margin: 0, letterSpacing: '-0.02em', zIndex: 2, textAlign: 'center' }}
+        >
+          PUNKY WRAPPED 🎧
+        </motion.h1>
         <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg, transparent 0 14px, rgba(0,0,0,0.08) 14px 22px)' }} />
       </div>
-      <div style={{ flex: 1, background: NB.nearBlack, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '24px', gap: 12 }}>
-        <div style={{ border: `3px solid ${NB.white}`, overflow: 'hidden', background: '#111', padding: '8px 0' }}>
-          <motion.div animate={{ x: hovered !== null ? undefined : ['0%', '-50%'] }} transition={{ duration: 24, repeat: Infinity, ease: 'linear' }} style={{ display: 'flex', width: 'fit-content' }}>
+
+      {/* Album carousel */}
+      <div style={{ background: NB.nearBlack, padding: '12px 0', borderBottom: `3px solid ${NB.black}`, flexShrink: 0, overflow: 'hidden' }}>
+        <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', textAlign: 'center', margin: '0 0 8px 0' }}>YOUR TOP ALBUMS</p>
+        <div style={{ position: 'relative', overflow: 'hidden' }}>
+          <motion.div
+            animate={{ x: hovered !== null ? 0 : [0, `-${100 / 3}%`] }}
+            transition={{ duration: 20 * (carouselAlbums.length / 6 || 1), repeat: Infinity, ease: 'linear' }}
+            style={{ display: 'flex', width: 'fit-content', gap: 8, paddingLeft: 8 }}
+          >
             {loopAlbums.map((album, idx) => (
-              <div key={`${album.id}-${idx}`} onMouseEnter={() => setHovered(idx)} onMouseLeave={() => setHovered(null)} style={{ margin: '0 6px', position: 'relative' }}>
-                <img src={album.cover || fallbackImage} alt={album.title} style={{ width: 72, height: 72, border: `3px solid ${NB.white}`, objectFit: 'cover' }} />
-                {hovered === idx && <div style={{ position: 'absolute', bottom: '100%', left: 0, background: NB.white, color: NB.black, fontFamily: "'Barlow', sans-serif", fontSize: 10, padding: '4px 6px', border: `2px solid ${NB.black}`, marginBottom: 4, whiteSpace: 'nowrap' }}>{album.title} • {album.totalListens} plays</div>}
+              <div
+                key={`${album.id}-${idx}`}
+                onMouseEnter={() => setHovered(idx)}
+                onMouseLeave={() => setHovered(null)}
+                onTouchStart={() => setHovered(idx)}
+                onTouchEnd={() => setTimeout(() => setHovered(null), 1500)}
+                style={{ position: 'relative', flexShrink: 0 }}
+              >
+                <img
+                  src={album.cover || fallbackImage}
+                  alt={album.title}
+                  style={{ width: 80, height: 80, border: `3px solid ${hovered === idx ? NB.acidYellow : NB.white}`, objectFit: 'cover', display: 'block', transition: 'border-color 0.2s' }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }}
+                />
+                {hovered === idx && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ position: 'absolute', bottom: '100%', left: 0, background: NB.acidYellow, color: NB.black, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, padding: '4px 8px', border: `2px solid ${NB.black}`, marginBottom: 4, whiteSpace: 'nowrap', zIndex: 10, maxWidth: 160 }}
+                  >
+                    {album.title}<br/>{Math.round((album.totalListens || 0) * 3.5 / 60)} mins
+                  </motion.div>
+                )}
               </div>
             ))}
           </motion.div>
         </div>
-        {[
-          { label: 'MINUTES', value: totalMinutes.toLocaleString() },
-          { label: '#1 ARTIST', value: topArtist },
-          { label: '#1 SONG', value: topSong },
-          { label: 'NEXT UP', value: secondArtist },
-        ].map((s) => (
-          <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: 0 }}>{s.label}</p>
-            <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 14, color: NB.white, margin: 0, textAlign: 'right', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.value}</p>
-          </div>
-        ))}
-        <div style={{ marginTop: 12 }}>
-          <button style={{ width: '100%', height: 56, background: NB.coral, color: NB.white, border: `3px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', display: 'block', borderRadius: 0 }}>
-            SHARE YOUR WRAPPED \u2192
-          </button>
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{ width: '100%', background: 'transparent', color: 'rgba(255,255,255,0.4)', border: 'none', fontFamily: "'Barlow', sans-serif", fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', marginTop: 12, padding: '4px 0', borderRadius: 0 }}>
-            VIEW FULL STATS
-          </button>
-        </div>
       </div>
-      <Ticker text="PUNKY WRAPPED 2024  YOUR YEAR IN MUSIC" bg={NB.acidYellow} color={NB.black} />
+
+      {/* Summary stats */}
+      <div style={{ background: NB.nearBlack, flex: 1, padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: isAnimIn ? 1 : 0, y: isAnimIn ? 0 : 20 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}
+        >
+          {[
+            { label: 'TOTAL MINUTES', value: totalMinutes.toLocaleString(), color: NB.electricBlue },
+            { label: '#1 ARTIST', value: topArtist, color: NB.coral },
+            { label: '#1 SONG', value: topSong, color: NB.magenta },
+            { label: 'ALSO LOVED', value: secondArtist, color: '#555' },
+          ].map((s) => (
+            <div key={s.label} style={{ background: s.color, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', padding: '10px 12px' }}>
+              <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: '0 0 4px 0' }}>{s.label}</p>
+              <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.white, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.value}</p>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* Fruit summary */}
+        {fruitSummary && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: isAnimIn ? 1 : 0, scale: isAnimIn ? 1 : 0.9 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}
+          >
+            <span style={{ fontSize: 42 }}>{fruitSummary.emoji}</span>
+            <div>
+              <p style={{ margin: '0 0 2px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, color: NB.black }}>YOU ARE A {fruitSummary.name}</p>
+              <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#555' }}>Based on your listening DNA</p>
+            </div>
+          </motion.div>
+        )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: isAnimIn ? 1 : 0, y: isAnimIn ? 0 : 10 }}
+          transition={{ duration: 0.4, delay: 0.5 }}
+          style={{ marginTop: 4 }}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); onClose(); }}
+            style={{ width: '100%', height: 50, background: NB.coral, color: NB.white, border: `3px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', display: 'block', borderRadius: 0 }}
+          >
+            VIEW FULL STATS →
+          </button>
+        </motion.div>
+      </div>
+      <Ticker text="PUNKY WRAPPED  YOUR YEAR IN MUSIC  KEEP LISTENING" bg={NB.acidYellow} color={NB.black} />
     </div>
   );
 };
@@ -1246,7 +1608,7 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: NB.nearBlack }}>
-      <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={handleTap}>
+      <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <StoryProgressBar current={currentSlide} total={TOTAL_SLIDES} />
         <SlideNavButtons current={currentSlide} total={TOTAL_SLIDES} onPrev={prev} onNext={next} />
         <CloseButton onClose={onClose} />
