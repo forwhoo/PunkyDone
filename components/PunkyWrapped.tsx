@@ -247,7 +247,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                   return (
                     <motion.div
                       key={item.id}
-                      className="absolute rounded-lg overflow-hidden"
+                      className="absolute rounded-full overflow-hidden"
                       style={{
                         width: size,
                         height: size,
@@ -255,18 +255,19 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                         top: '50%',
                         transform: vortex ? vortexTransform : normalTransform,
                         opacity: vortex ? 0 : (isLayerVisible ? currentOpacity : 0),
-                        boxShadow: `0 2px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)`,
+                        boxShadow: `0 2px 12px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.12)`,
                         willChange: 'transform, opacity',
+                        transition: vortex
+                          ? `transform 2.0s cubic-bezier(0.6,0.05,0.01,0.99) ${(item.indexInLayer * 0.04 + layer * 0.1).toFixed(2)}s, opacity 1.5s ease ${(item.indexInLayer * 0.04 + layer * 0.08).toFixed(2)}s`
+                          : undefined,
                       }}
                       animate={{
-                        filter: vortex ? ['blur(0px)', 'blur(4px)', 'blur(8px)'] : 'blur(0px)',
+                        filter: vortex ? ['blur(0px)', 'blur(4px)', 'blur(10px)'] : 'blur(0px)',
                       }}
                       transition={
                         vortex
                           ? {
-                              transform: { duration: 2.0, ease: [0.6, 0.05, 0.01, 0.99] },
-                              opacity: { duration: 2.0, ease: [0.4, 0, 1, 1] },
-                              filter: { duration: 2.0, ease: "easeIn" }
+                              filter: { duration: 2.0, ease: "easeIn", delay: (item.indexInLayer * 0.04 + layer * 0.08) }
                             }
                           : undefined
                       }
