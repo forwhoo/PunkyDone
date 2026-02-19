@@ -54,10 +54,10 @@ function buildConnectionPairs(connectionGraph?: { artistInfo: Record<string, any
       if (!infoA || !infoB) return;
       const totalA = Math.max(1, infoA.count || 1);
       const totalB = Math.max(1, infoB.count || 1);
-      // Use overlap-based similarity: shared / max(totalA, totalB), then scale non-linearly
-      // to prevent inflated 99% scores when artists co-occur frequently
+      // Overlap similarity: what fraction of the more popular artist's plays are shared
+      // Max 97% so it never claims 100%, min 5% for any artists that co-occur at all
       const overlapRatio = score / Math.max(totalA, totalB);
-      const closeness = Math.min(97, Math.max(5, Math.round(overlapRatio * 85 + (score > 5 ? 5 : score))));
+      const closeness = Math.min(97, Math.max(5, Math.round(overlapRatio * 85 + Math.min(score, 5))));
       pairRows.push({
         a: { id: infoA.id || artistA, name: infoA.name || artistA, image: infoA.image || fallbackImage },
         b: { id: infoB.id || artistB, name: infoB.name || artistB, image: infoB.image || fallbackImage },
@@ -134,8 +134,8 @@ const StoryProgressBar: React.FC<{ current: number; total: number }> = ({ curren
 
 const SlideNavButtons: React.FC<{ current: number; total: number; onPrev: () => void; onNext: () => void }> = ({ current, total, onPrev, onNext }) => (
   <div style={{ position: 'absolute', bottom: 'max(52px, env(safe-area-inset-bottom, 0px) + 52px)', left: 12, right: 12, zIndex: 120, display: 'flex', justifyContent: 'space-between', pointerEvents: 'none' }}>
-    <button onClick={(e) => { e.stopPropagation(); onPrev(); }} disabled={current === 0} style={{ pointerEvents: 'auto', minWidth: 88, height: 44, background: NB.white, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === 0 ? 0.45 : 1, cursor: current === 0 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 15, borderRadius: 0 }}>PREV</button>
-    <button onClick={(e) => { e.stopPropagation(); onNext(); }} disabled={current === total - 1} style={{ pointerEvents: 'auto', minWidth: 88, height: 44, background: NB.acidYellow, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === total - 1 ? 0.45 : 1, cursor: current === total - 1 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 15, borderRadius: 0 }}>NEXT ›</button>
+    <button onClick={(e) => { e.stopPropagation(); onPrev(); }} disabled={current === 0} aria-label="Go to previous slide" style={{ pointerEvents: 'auto', minWidth: 88, height: 44, background: NB.white, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === 0 ? 0.45 : 1, cursor: current === 0 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 15, borderRadius: 0 }}>PREV</button>
+    <button onClick={(e) => { e.stopPropagation(); onNext(); }} disabled={current === total - 1} aria-label="Go to next slide" style={{ pointerEvents: 'auto', minWidth: 88, height: 44, background: NB.acidYellow, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === total - 1 ? 0.45 : 1, cursor: current === total - 1 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 15, borderRadius: 0 }}>NEXT ›</button>
   </div>
 );
 
@@ -578,6 +578,21 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
   );
 };
 
+// Fruit profile data (static - defined outside component for performance)
+const FRUIT_PROFILES = [
+  { name: 'MANGO', emoji: '🥭', v: [74, 82, 86], vibe: 'sunny and addictive hooks' },
+  { name: 'PINEAPPLE', emoji: '🍍', v: [82, 69, 72], vibe: 'bright and experimental energy' },
+  { name: 'CHERRY', emoji: '🍒', v: [62, 74, 90], vibe: 'high replay + emotional punch' },
+  { name: 'BANANA', emoji: '🍌', v: [60, 88, 70], vibe: 'comfort songs all day long' },
+  { name: 'BLUEBERRY', emoji: '🫐', v: [90, 58, 64], vibe: 'indie deep cuts and surprise picks' },
+  { name: 'WATERMELON', emoji: '🍉', v: [78, 76, 78], vibe: 'wide range with steady favorites' },
+  { name: 'KIWI', emoji: '🥝', v: [88, 70, 68], vibe: 'curious palate and genre jumping' },
+  { name: 'PEACH', emoji: '🍑', v: [68, 73, 84], vibe: 'smooth late-night mood control' },
+  { name: 'APPLE', emoji: '🍎', v: [65, 84, 65], vibe: 'classic structure and daily consistency' },
+  { name: 'STRAWBERRY', emoji: '🍓', v: [75, 66, 88], vibe: 'sweet choruses with sharp edges' },
+];
+const SLIDE4_BG_EMOJIS = ['🎵','✨','🎶','💿','🎧','🎤','🎼','🎹','🎸','🎺','🥁','🎻'];
+
 // SLIDE 4: THE IDENTITY SCAN
 const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; artists: Artist[] }> = ({ active, totalMinutes, songs, artists }) => {
   const [phase, setPhase] = useState(0);
@@ -593,22 +608,9 @@ const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; a
     return { adventurous, groove, sweetness };
   }, [songs, artists, totalMinutes]);
 
-  const fruitProfiles = [
-    { name: 'MANGO', emoji: '🥭', v: [74, 82, 86], vibe: 'sunny and addictive hooks' },
-    { name: 'PINEAPPLE', emoji: '🍍', v: [82, 69, 72], vibe: 'bright and experimental energy' },
-    { name: 'CHERRY', emoji: '🍒', v: [62, 74, 90], vibe: 'high replay + emotional punch' },
-    { name: 'BANANA', emoji: '🍌', v: [60, 88, 70], vibe: 'comfort songs all day long' },
-    { name: 'BLUEBERRY', emoji: '🫐', v: [90, 58, 64], vibe: 'indie deep cuts and surprise picks' },
-    { name: 'WATERMELON', emoji: '🍉', v: [78, 76, 78], vibe: 'wide range with steady favorites' },
-    { name: 'KIWI', emoji: '🥝', v: [88, 70, 68], vibe: 'curious palate and genre jumping' },
-    { name: 'PEACH', emoji: '🍑', v: [68, 73, 84], vibe: 'smooth late-night mood control' },
-    { name: 'APPLE', emoji: '🍎', v: [65, 84, 65], vibe: 'classic structure and daily consistency' },
-    { name: 'STRAWBERRY', emoji: '🍓', v: [75, 66, 88], vibe: 'sweet choruses with sharp edges' },
-  ];
-
   const winningFruit = useMemo(() => {
     const vec = [metrics.adventurous, metrics.groove, metrics.sweetness];
-    return fruitProfiles
+    return FRUIT_PROFILES
       .map((f) => ({ ...f, score: Math.sqrt(f.v.reduce((sum, value, i) => sum + Math.pow(value - vec[i], 2), 0)) }))
       .sort((a, b) => a.score - b.score)[0];
   }, [metrics]);
@@ -624,8 +626,6 @@ const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; a
     return () => timers.current.forEach(clearTimeout);
   }, [active]);
 
-  const bgEmojis = ['🎵','✨','🎶','💿','🎧','🎤','🎼','🎹','🎸','🎺','🥁','🎻'];
-
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
       {/* Animated grid background */}
@@ -634,7 +634,7 @@ const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; a
       <style>{`
         @keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg); opacity:0; } 10% { opacity:0.18; } 90% { opacity:0.12; } 100% { transform: translateY(-20vh) rotate(360deg); opacity:0; } }
       `}</style>
-      {bgEmojis.map((e, i) => (
+      {SLIDE4_BG_EMOJIS.map((e, i) => (
         <div key={e + i} style={{
           position: 'absolute',
           left: `${(i * 8.5) % 100}%`,
@@ -667,8 +667,8 @@ const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; a
             transition={{ duration: phase >= 2 ? 2 : 12, repeat: phase <= 2 ? Infinity : 0, ease: phase >= 2 ? [0.4, 0, 0.2, 1] : 'linear' }}
             style={{ position: 'absolute', width: '100%', height: '100%' }}
           >
-            {fruitProfiles.map((fruit, i) => {
-              const angle = (360 / fruitProfiles.length) * i;
+            {FRUIT_PROFILES.map((fruit, i) => {
+              const angle = (360 / FRUIT_PROFILES.length) * i;
               const rad = (angle * Math.PI) / 180;
               const r = 96;
               const isWinner = fruit.name === winningFruit?.name;
@@ -914,6 +914,8 @@ const Slide7: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = 
         setHeatmapData(data || []);
         setDataLoaded(true);
       }
+    }).catch(() => {
+      if (!cancelled) setDataLoaded(true); // proceed with empty data on error
     });
     return () => { cancelled = true; };
   }, []);
@@ -1419,20 +1421,8 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
   const carouselAlbums = useMemo(() => [...albums].sort((a, b) => b.totalListens - a.totalListens), [albums]);
   const loopAlbums = useMemo(() => [...carouselAlbums, ...carouselAlbums, ...carouselAlbums], [carouselAlbums]);
 
-  // Compute fruit for summary
+  // Compute fruit for summary (reuse FRUIT_PROFILES constant)
   const fruitSummary = useMemo(() => {
-    const fruitProfiles = [
-      { name: 'MANGO', emoji: '🥭', v: [74, 82, 86] },
-      { name: 'PINEAPPLE', emoji: '🍍', v: [82, 69, 72] },
-      { name: 'CHERRY', emoji: '🍒', v: [62, 74, 90] },
-      { name: 'BANANA', emoji: '🍌', v: [60, 88, 70] },
-      { name: 'BLUEBERRY', emoji: '🫐', v: [90, 58, 64] },
-      { name: 'WATERMELON', emoji: '🍉', v: [78, 76, 78] },
-      { name: 'KIWI', emoji: '🥝', v: [88, 70, 68] },
-      { name: 'PEACH', emoji: '🍑', v: [68, 73, 84] },
-      { name: 'APPLE', emoji: '🍎', v: [65, 84, 65] },
-      { name: 'STRAWBERRY', emoji: '🍓', v: [75, 66, 88] },
-    ];
     const totalSongListens = Math.max(1, songs.reduce((s, song) => s + song.listens, 0));
     const topSongShare = (songs[0]?.listens || 0) / totalSongListens;
     const topArtistShare = (artists[0]?.totalListens || 0) / Math.max(1, artists.slice(0, 5).reduce((s, a) => s + a.totalListens, 0));
@@ -1440,7 +1430,7 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
     const groove = Math.min(100, Math.round((Math.min(1, totalMinutes / 9000) * 0.6 + topArtistShare * 0.4) * 100));
     const sweetness = Math.min(100, Math.round((Math.min(1, (songs[0]?.listens || 0) / 180) * 0.5 + Math.min(1, (artists[0]?.totalListens || 0) / 900) * 0.5) * 100));
     const vec = [adventurous, groove, sweetness];
-    return fruitProfiles
+    return FRUIT_PROFILES
       .map(f => ({ ...f, score: Math.sqrt(f.v.reduce((s, val, i) => s + Math.pow(val - vec[i], 2), 0)) }))
       .sort((a, b) => a.score - b.score)[0];
   }, [songs, artists, totalMinutes]);
