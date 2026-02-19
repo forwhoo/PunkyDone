@@ -13,7 +13,6 @@ const NB = {
   black: '#000000',
 };
 const TOTAL_SLIDES = 13;
-const AUTO_ADVANCE_MS = 6000;
 const LEFT_TAP_ZONE = 0.3;
 
 interface WrappedSlidesProps {
@@ -52,8 +51,10 @@ function buildConnectionPairs(connectionGraph?: { artistInfo: Record<string, any
       const infoA = artists[artistA];
       const infoB = artists[artistB];
       if (!infoA || !infoB) return;
-      const normalization = Math.max(1, Math.min(infoA.count || 1, infoB.count || 1));
-      const closeness = Math.min(100, Math.round((score / normalization) * 100));
+      const totalA = Math.max(1, infoA.count || 1);
+      const totalB = Math.max(1, infoB.count || 1);
+      const unionApprox = Math.max(1, totalA + totalB - score);
+      const closeness = Math.min(99, Math.max(1, Math.round((score / unionApprox) * 100)));
       pairRows.push({
         a: { id: infoA.id || artistA, name: infoA.name || artistA, image: infoA.image || fallbackImage },
         b: { id: infoB.id || artistB, name: infoB.name || artistB, image: infoB.image || fallbackImage },
@@ -122,16 +123,16 @@ const StoryProgressBar: React.FC<{ current: number; total: number }> = ({ curren
           overflow: 'hidden',
         }}
       >
-        {i === current && (
-          <motion.div
-            initial={{ width: '0%' }}
-            animate={{ width: '100%' }}
-            transition={{ duration: AUTO_ADVANCE_MS / 1000, ease: 'linear' }}
-            style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: NB.white }}
-          />
-        )}
+        {i === current && <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: '25%', background: NB.white }} />}
       </div>
     ))}
+  </div>
+);
+
+const SlideNavButtons: React.FC<{ current: number; total: number; onPrev: () => void; onNext: () => void }> = ({ current, total, onPrev, onNext }) => (
+  <div style={{ position: 'absolute', bottom: 52, left: 12, right: 12, zIndex: 120, display: 'flex', justifyContent: 'space-between', pointerEvents: 'none' }}>
+    <button onClick={(e) => { e.stopPropagation(); onPrev(); }} disabled={current === 0} style={{ pointerEvents: 'auto', minWidth: 96, height: 38, background: NB.white, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === 0 ? 0.5 : 1, cursor: current === 0 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14 }}>PREV</button>
+    <button onClick={(e) => { e.stopPropagation(); onNext(); }} disabled={current === total - 1} style={{ pointerEvents: 'auto', minWidth: 96, height: 38, background: NB.acidYellow, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === total - 1 ? 0.5 : 1, cursor: current === total - 1 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14 }}>NEXT</button>
   </div>
 );
 
@@ -235,7 +236,11 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
     return arr.slice(0, 60);
   }, [albumCovers, albums]);
 
-  const tileDelays = useMemo(() => covers.map(() => Math.random() * 1.2), [covers]);
+  const orbitItems = useMemo(() => covers.slice(0, 42).map((src, i, arr) => {
+    const angle = (360 / arr.length) * i;
+    const radius = 38 + ((i % 5) * 5);
+    return { src, angle, radius, delay: (i % 10) * 0.08 };
+  }), [covers]);
 
   useEffect(() => {
     timers.current.forEach(clearTimeout);
@@ -253,22 +258,30 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
         @keyframes holePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
         @keyframes holeRing { from{transform:scale(0.4);opacity:0.9} to{transform:scale(3.2);opacity:0} }
       `}</style>
-      <div style={{ position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 48px)', gap: 0, overflow: 'hidden' }}>
-        {covers.map((src, i) => (
-          <div key={i} style={{
-            width: 48, height: 48,
-            border: '2px solid white',
-            background: src ? 'transparent' : palette[i % palette.length],
-            overflow: 'hidden',
-            transformOrigin: '50vw 50vh',
-            transform: phase >= 1 ? `scale(0.02) rotate(${i % 2 === 0 ? -40 : 40}deg)` : 'scale(1) rotate(0deg)',
-            filter: phase >= 1 ? 'blur(1px)' : 'blur(0px)',
-            opacity: phase >= 1 ? 0.45 : 1,
-            transition: `transform 780ms cubic-bezier(0.55,0,1,0.45) ${tileDelays[i]}s, opacity 550ms ease ${tileDelays[i]}s, filter 550ms ease ${tileDelays[i]}s`,
-          }}>
-            {src && <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
-          </div>
-        ))}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        {orbitItems.map((item, i) => {
+          const base = `translate(-50%, -50%) rotate(${item.angle}deg) translate(calc(min(${item.radius}vw, ${item.radius}vh))) rotate(${-item.angle}deg)`;
+          const suck = `translate(-50%, -50%) scale(0.05) rotate(${item.angle * 5}deg)`;
+          return (
+            <div key={i} style={{
+              width: 46,
+              height: 46,
+              border: '2px solid white',
+              borderRadius: '50%',
+              background: item.src ? 'transparent' : palette[i % palette.length],
+              overflow: 'hidden',
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              transform: phase >= 1 ? suck : base,
+              filter: phase >= 1 ? 'blur(1px)' : 'blur(0px)',
+              opacity: phase >= 1 ? 0.5 : 1,
+              transition: `transform 900ms cubic-bezier(0.55,0,1,0.45) ${item.delay}s, opacity 700ms ease ${item.delay}s, filter 700ms ease ${item.delay}s`,
+            }}>
+              {item.src && <img src={item.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
+            </div>
+          );
+        })}
       </div>
       {phase >= 1 && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
@@ -435,6 +448,10 @@ const Slide2: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.white, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(13,13,13,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(13,13,13,0.08) 1px, transparent 1px)', backgroundSize: '28px 28px', opacity: 0.9 }} />
+      {['🎧', '🎵', '✨', '🎶', '💿'].map((emoji, i) => (
+        <motion.div key={emoji + i} animate={{ y: active ? [0, -14, 0] : 0, x: active ? [0, i % 2 === 0 ? 6 : -6, 0] : 0 }} transition={{ duration: 2.8 + i * 0.3, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: `${14 + i * 16}%`, left: `${6 + (i * 19) % 88}%`, fontSize: 20, opacity: 0.18 }}>{emoji}</motion.div>
+      ))}
       <svg viewBox="0 0 400 260" style={{ position: 'absolute', left: 0, right: 0, top: 100, width: '100%', height: 220, opacity: 0.12 }}>
         <polyline points="0,180 40,130 90,150 130,95 190,120 240,70 290,112 340,55 400,90" fill="none" stroke={NB.electricBlue} strokeWidth="6" strokeLinejoin="round" strokeLinecap="square" />
         <polyline points="0,220 50,200 90,210 150,185 200,196 250,170 310,188 360,165 400,175" fill="none" stroke={NB.magenta} strokeWidth="5" strokeLinejoin="round" strokeLinecap="square" />
@@ -481,24 +498,29 @@ const Slide2: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
 const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums }) => {
   const topThree = albums.slice(0, 3);
   const palette = [NB.electricBlue, NB.coral, NB.magenta];
-  const [timer, setTimer] = useState(5);
+  const ROUND_SECONDS = 7;
+  const [timer, setTimer] = useState(ROUND_SECONDS);
   const [revealed, setRevealed] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!active) {
-      setTimer(5); setRevealed(false); setSelected(null);
+      setTimer(ROUND_SECONDS); setRevealed(false); setSelected(null);
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
-    setTimer(5); setRevealed(false); setSelected(null);
+    const deadline = Date.now() + ROUND_SECONDS * 1000;
+    setTimer(ROUND_SECONDS); setRevealed(false); setSelected(null);
     timerRef.current = setInterval(() => {
-      setTimer(prev => {
-        if (prev <= 1) { if (timerRef.current) clearInterval(timerRef.current); setRevealed(true); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
+      const remainingMs = deadline - Date.now();
+      const nextValue = Math.max(0, Math.ceil(remainingMs / 1000));
+      setTimer(nextValue);
+      if (remainingMs <= 0) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        setRevealed(true);
+      }
+    }, 120);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [active]);
 
@@ -518,7 +540,7 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
           WHICH WAS YOUR #1 ALBUM?
         </h1>
         <div style={{ width: '100%', height: 32, background: NB.white, border: `4px solid ${NB.black}`, position: 'relative', overflow: 'hidden', marginBottom: 8, borderRadius: 0 }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: NB.black, width: `${(timer / 5) * 100}%`, transition: 'width 1s linear' }} />
+          <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: NB.black, width: `${(timer / ROUND_SECONDS) * 100}%`, transition: 'width 1s linear' }} />
           <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: revealed ? NB.black : NB.white, mixBlendMode: 'difference' as const, zIndex: 1 }}>
             {revealed ? verdict : `${timer}s`}
           </span>
@@ -541,7 +563,7 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
                 </div>
                 <div style={{ padding: '8px 8px', background: NB.white }}>
                   <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: NB.black, margin: '0 0 2px 0', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{album.title}</p>
-                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#555', margin: 0 }}>{album.totalListens} plays</p>
+                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#555', margin: 0 }}>{revealed ? `${album.totalListens} plays` : 'Tap to lock your guess'}</p>
                 </div>
               </div>
             );
@@ -554,88 +576,87 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
 };
 
 // SLIDE 4: THE IDENTITY SCAN
-const Slide4: React.FC<{ active: boolean; totalMinutes: number }> = ({ active, totalMinutes }) => {
-  const personalityType = totalMinutes > 20000 ? 'THE OBSESSIVE' : totalMinutes > 10000 ? 'THE DEDICATED LISTENER' : 'THE CASUAL FAN';
+const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; artists: Artist[] }> = ({ active, totalMinutes, songs, artists }) => {
   const [phase, setPhase] = useState(0);
-  const [scanY, setScanY] = useState(0);
-  const rafRef = useRef(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const metrics = useMemo(() => {
+    const totalSongListens = Math.max(1, songs.reduce((sum, song) => sum + song.listens, 0));
+    const topSongShare = (songs[0]?.listens || 0) / totalSongListens;
+    const topArtistShare = (artists[0]?.totalListens || 0) / Math.max(1, artists.slice(0, 5).reduce((sum, artist) => sum + artist.totalListens, 0));
+    const adventurous = Math.min(100, Math.round((Math.min(1, songs.length / 30) * 0.55 + (1 - topSongShare) * 0.45) * 100));
+    const groove = Math.min(100, Math.round((Math.min(1, totalMinutes / 9000) * 0.6 + topArtistShare * 0.4) * 100));
+    const sweetness = Math.min(100, Math.round((Math.min(1, (songs[0]?.listens || 0) / 180) * 0.5 + Math.min(1, (artists[0]?.totalListens || 0) / 900) * 0.5) * 100));
+    return { adventurous, groove, sweetness };
+  }, [songs, artists, totalMinutes]);
+
+  const fruitProfiles = [
+    { name: 'MANGO', emoji: '🥭', v: [74, 82, 86], vibe: 'sunny and addictive hooks' },
+    { name: 'PINEAPPLE', emoji: '🍍', v: [82, 69, 72], vibe: 'bright and experimental energy' },
+    { name: 'CHERRY', emoji: '🍒', v: [62, 74, 90], vibe: 'high replay + emotional punch' },
+    { name: 'BANANA', emoji: '🍌', v: [60, 88, 70], vibe: 'comfort songs all day long' },
+    { name: 'BLUEBERRY', emoji: '🫐', v: [90, 58, 64], vibe: 'indie deep cuts and surprise picks' },
+    { name: 'WATERMELON', emoji: '🍉', v: [78, 76, 78], vibe: 'wide range with steady favorites' },
+    { name: 'KIWI', emoji: '🥝', v: [88, 70, 68], vibe: 'curious palate and genre jumping' },
+    { name: 'PEACH', emoji: '🍑', v: [68, 73, 84], vibe: 'smooth late-night mood control' },
+    { name: 'APPLE', emoji: '🍎', v: [65, 84, 65], vibe: 'classic structure and daily consistency' },
+    { name: 'STRAWBERRY', emoji: '🍓', v: [75, 66, 88], vibe: 'sweet choruses with sharp edges' },
+  ];
+
+  const winningFruit = useMemo(() => {
+    const vec = [metrics.adventurous, metrics.groove, metrics.sweetness];
+    return fruitProfiles
+      .map((f) => ({ ...f, score: Math.sqrt(f.v.reduce((sum, value, i) => sum + Math.pow(value - vec[i], 2), 0)) }))
+      .sort((a, b) => a.score - b.score)[0];
+  }, [metrics]);
 
   useEffect(() => {
     timers.current.forEach(clearTimeout);
-    cancelAnimationFrame(rafRef.current);
-    if (!active) { setPhase(0); setScanY(0); return; }
-    setPhase(1); setScanY(0);
-    const start = performance.now();
-    const scanDuration = 1500;
-    const tick = (now: number) => {
-      const p = Math.min((now - start) / scanDuration, 1);
-      setScanY(p * 100);
-      if (p < 1) rafRef.current = requestAnimationFrame(tick);
-      else setPhase(2);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    timers.current.push(setTimeout(() => setPhase(3), 2000));
-    return () => { cancelAnimationFrame(rafRef.current); timers.current.forEach(clearTimeout); };
+    if (!active) { setPhase(0); return; }
+    setPhase(1);
+    timers.current.push(setTimeout(() => setPhase(2), 1200));
+    timers.current.push(setTimeout(() => setPhase(3), 2500));
+    return () => timers.current.forEach(clearTimeout);
   }, [active]);
-
-  const traits = [
-    { label: 'INDIE FACTOR', pct: 94, color: NB.acidYellow },
-    { label: 'NIGHT OWL', pct: 87, color: NB.coral },
-    { label: 'DEEP CUT RATIO', pct: 76, color: NB.electricBlue },
-  ];
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
-      {phase === 1 && (
-        <div style={{ position: 'absolute', top: `${scanY}%`, left: 0, right: 0, height: 2, background: NB.white, zIndex: 20, pointerEvents: 'none', transition: 'none' }} />
-      )}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 24px 24px', gap: 16 }}>
-        <div style={{ overflow: 'hidden' }}>
-          <div style={{ transform: phase >= 1 ? 'translateY(0)' : 'translateY(100%)', transition: 'transform 300ms ease' }}>
-            <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: 0 }}>SCANNING MUSIC DNA\u2026</p>
-          </div>
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)', backgroundSize: '34px 34px', opacity: 0.3 }} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 20px 20px', gap: 10, position: 'relative', zIndex: 2 }}>
+        <h1 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(30px, 8vw, 46px)', color: NB.white, textTransform: 'uppercase', lineHeight: 1 }}>WHAT FRUIT ARE YOU?</h1>
+        <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' }}>BASED ON YOUR LISTENING DNA</p>
+
+        <div style={{ height: 220, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {fruitProfiles.map((fruit, i) => {
+            const angle = (360 / fruitProfiles.length) * i;
+            return (
+              <motion.div key={fruit.name} animate={{ rotate: active ? 360 : 0 }} transition={{ duration: 16, repeat: Infinity, ease: 'linear' }} style={{ position: 'absolute', transform: `rotate(${angle}deg) translate(96px) rotate(${-angle}deg)`, fontSize: 28, opacity: phase >= 3 && fruit.name !== winningFruit.name ? 0.2 : 0.95 }}>
+                {fruit.emoji}
+              </motion.div>
+            );
+          })}
+          {phase < 2 && <p style={{ color: NB.white, margin: 0, textAlign: 'center', fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Based on listening data<br/>let's see…</p>}
+          {phase >= 2 && (
+            <motion.div initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1, y: phase >= 3 ? -12 : 0 }} transition={{ duration: 0.5 }} style={{ width: 120, height: 120, borderRadius: '50%', border: `4px solid ${NB.white}`, background: NB.acidYellow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 58 }}>
+              {winningFruit.emoji}
+            </motion.div>
+          )}
         </div>
-        <div style={{ overflow: 'hidden' }}>
-          <div style={{ transform: phase >= 2 ? 'translateY(0)' : 'translateY(100%)', transition: 'transform 300ms ease 200ms' }}>
-            <div style={{ width: '100%', height: 12, background: 'transparent', border: `4px solid ${NB.black}`, position: 'relative', overflow: 'hidden', borderRadius: 0 }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: NB.acidYellow, width: phase >= 2 ? '100%' : '0%', transition: 'width 600ms linear' }} />
-            </div>
-            <div style={{ display: 'inline-block', background: NB.white, border: `4px solid ${NB.black}`, padding: '4px 10px', marginTop: 8, borderRadius: 0 }}>
-              <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, letterSpacing: '0.1em', textTransform: 'uppercase', color: NB.black }}>ANALYSIS COMPLETE</span>
-            </div>
-          </div>
-        </div>
+
         {phase >= 3 && (
-          <div style={{ position: 'relative', marginTop: 8 }}>
-            <div style={{ position: 'absolute', inset: '-8px -12px', border: '2px solid white', transform: 'rotate(1.5deg)', pointerEvents: 'none', zIndex: 0 }} />
-            <motion.h1
-              initial={{ scale: 2, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, ease: [0.16,1,0.3,1] }}
-              style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(48px, 12vw, 96px)', color: NB.acidYellow, textTransform: 'uppercase', lineHeight: 1, margin: 0, position: 'relative', zIndex: 1 }}
-            >
-              {personalityType}
-            </motion.h1>
-          </div>
-        )}
-        {phase >= 3 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-            {traits.map((t, i) => (
-              <div key={t.label}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: NB.white }}>{t.label}</span>
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 700, fontSize: 13, color: NB.white }}>{t.pct}%</span>
-                </div>
-                <div style={{ width: '100%', height: 16, background: 'transparent', border: `2px solid ${NB.black}`, position: 'relative', overflow: 'hidden', borderRadius: 0 }}>
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${t.pct}%` }} transition={{ delay: i * 0.15 + 0.3, duration: 0.5, ease: 'easeOut' }} style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: t.color }} />
-                </div>
+          <BCard style={{ background: NB.white }}>
+            <p style={{ margin: '0 0 4px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 34, color: NB.black }}>{winningFruit.name}</p>
+            <p style={{ margin: '0 0 10px 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: NB.black }}>You got this because your profile is {winningFruit.vibe}.</p>
+            {[{ label: 'ADVENTUROUS', value: metrics.adventurous, color: NB.electricBlue }, { label: 'GROOVE', value: metrics.groove, color: NB.coral }, { label: 'SWEETNESS', value: metrics.sweetness, color: NB.magenta }].map((metric, i) => (
+              <div key={metric.label} style={{ marginBottom: i === 2 ? 0 : 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11 }}>{metric.label}</span><span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900 }}>{metric.value}%</span></div>
+                <motion.div initial={{ width: 0 }} animate={{ width: `${metric.value}%` }} transition={{ duration: 0.5, delay: i * 0.15 }} style={{ height: 10, background: metric.color, border: `2px solid ${NB.black}` }} />
               </div>
             ))}
-          </div>
+          </BCard>
         )}
       </div>
-      <Ticker text="THE IDENTITY SCAN  MUSIC DNA ANALYSIS" bg={NB.acidYellow} color={NB.black} />
+      <Ticker text="FRUIT DNA  MUSIC PERSONALITY  LIVE METRICS" bg={NB.acidYellow} color={NB.black} />
     </div>
   );
 };
@@ -787,25 +808,24 @@ const Slide6: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
 };
 
 // SLIDE 7: THE STREAK
-const Slide7: React.FC<{ active: boolean }> = ({ active }) => {
+const Slide7: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = ({ active, artists, songs }) => {
   const [waveCol, setWaveCol] = useState(-1);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const gridData = useMemo(() => {
-    const data: number[] = [];
-    for (let d = 0; d < 365; d++) {
-      const sin = Math.sin(d / 7) * 0.5 + 0.5;
-      const noise = Math.random() * 0.3;
-      data.push(Math.min(1, sin + noise));
-    }
-    for (let d = 60; d < 83; d++) data[d] = 0.8 + Math.random() * 0.2;
-    return data;
-  }, []);
+    const energy = Math.max(1, songs.reduce((sum, song) => sum + song.listens, 0));
+    const artistBias = artists.slice(0, 5).reduce((sum, artist) => sum + artist.totalListens, 0) / Math.max(1, energy);
+    return Array.from({ length: 365 }, (_, d) => {
+      const weeklyWave = (Math.sin(d / 6.3) + 1) / 2;
+      const monthlyWave = (Math.cos(d / 17.7) + 1) / 2;
+      return Math.min(1, weeklyWave * 0.55 + monthlyWave * 0.3 + artistBias * 0.45);
+    });
+  }, [songs, artists]);
 
   const weeks = 52;
   const days = 7;
-  const STREAK_START = 60;
-  const STREAK_LEN = 23;
+  const STREAK_LEN = Math.max(3, Math.min(45, Math.max(...artists.map((artist) => artist.streak || 0), ...songs.map((song) => song.streak || 0), 0)));
+  const STREAK_START = Math.max(0, Math.min(300, 340 - STREAK_LEN));
 
   useEffect(() => {
     if (!active) { setWaveCol(-1); if (intervalRef.current) clearInterval(intervalRef.current); return; }
@@ -873,7 +893,7 @@ const Slide7: React.FC<{ active: boolean }> = ({ active }) => {
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', marginTop: 8 }}>
             <div>
               <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '0 0 4px 0' }}>YOUR LONGEST STREAK</p>
-              <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(48px, 12vw, 72px)', color: NB.acidYellow, margin: 0, lineHeight: 1 }}>23</p>
+              <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(48px, 12vw, 72px)', color: NB.acidYellow, margin: 0, lineHeight: 1 }}>{STREAK_LEN}</p>
               <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: 0, letterSpacing: '0.1em', textTransform: 'uppercase' }}>DAYS</p>
             </div>
             <div style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '5px 5px 0 #000', padding: '10px 14px', flex: 1, borderRadius: 0 }}>
@@ -1117,7 +1137,7 @@ const Slide11: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs }
               <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 22, fontWeight: 900, textTransform: 'uppercase', color: NB.black, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{song.title}</p>
               <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12 }}>{song.artist}</p>
             </div>
-            <div style={{ background: NB.black, color: NB.acidYellow, padding: '8px 10px', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 16, fontWeight: 900 }}>{song.listens}x</div>
+            <motion.div animate={{ scale: active ? [1, 1.07, 1] : 1 }} transition={{ repeat: Infinity, duration: 1.8, delay: i * 0.15 }} style={{ background: NB.black, color: NB.acidYellow, padding: '8px 10px', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 16, fontWeight: 900 }}>{song.listens}x</motion.div>
           </motion.div>
         ))}
       </div>
@@ -1127,10 +1147,13 @@ const Slide11: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs }
 };
 
 // SLIDE 12: FINAL SHARE
-const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; onClose: () => void }> = ({ totalMinutes, artists, songs, onClose }) => {
+const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; albums: Album[]; onClose: () => void }> = ({ totalMinutes, artists, songs, albums, onClose }) => {
   const topArtist = artists[0]?.name ?? '\u2014';
   const topSong = songs[0]?.title ?? '\u2014';
   const secondArtist = artists[1]?.name ?? '\u2014';
+  const [hovered, setHovered] = useState<number | null>(null);
+  const carouselAlbums = [...albums].sort((a, b) => a.totalListens - b.totalListens);
+  const loopAlbums = [...carouselAlbums, ...carouselAlbums];
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, background: NB.acidYellow, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: `4px solid ${NB.black}`, position: 'relative' }}>
@@ -1140,6 +1163,16 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
         <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg, transparent 0 14px, rgba(0,0,0,0.08) 14px 22px)' }} />
       </div>
       <div style={{ flex: 1, background: NB.nearBlack, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '24px', gap: 12 }}>
+        <div style={{ border: `3px solid ${NB.white}`, overflow: 'hidden', background: '#111', padding: '8px 0' }}>
+          <motion.div animate={{ x: hovered !== null ? undefined : ['0%', '-50%'] }} transition={{ duration: 24, repeat: Infinity, ease: 'linear' }} style={{ display: 'flex', width: 'fit-content' }}>
+            {loopAlbums.map((album, idx) => (
+              <div key={`${album.id}-${idx}`} onMouseEnter={() => setHovered(idx)} onMouseLeave={() => setHovered(null)} style={{ margin: '0 6px', position: 'relative' }}>
+                <img src={album.cover || fallbackImage} alt={album.title} style={{ width: 72, height: 72, border: `3px solid ${NB.white}`, objectFit: 'cover' }} />
+                {hovered === idx && <div style={{ position: 'absolute', bottom: '100%', left: 0, background: NB.white, color: NB.black, fontFamily: "'Barlow', sans-serif", fontSize: 10, padding: '4px 6px', border: `2px solid ${NB.black}`, marginBottom: 4, whiteSpace: 'nowrap' }}>{album.title} • {album.totalListens} plays</div>}
+              </div>
+            ))}
+          </motion.div>
+        </div>
         {[
           { label: 'MINUTES', value: totalMinutes.toLocaleString() },
           { label: '#1 ARTIST', value: topArtist },
@@ -1170,16 +1203,10 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const goTo = useCallback((index: number, dir: number) => { setDirection(dir); setCurrentSlide(index); }, []);
   const next = useCallback(() => { if (currentSlide < TOTAL_SLIDES - 1) goTo(currentSlide + 1, 1); }, [currentSlide, goTo]);
   const prev = useCallback(() => { if (currentSlide > 0) goTo(currentSlide - 1, -1); }, [currentSlide, goTo]);
-
-  useEffect(() => {
-    timerRef.current = setTimeout(next, AUTO_ADVANCE_MS);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [currentSlide, next]);
 
   const handleTap = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -1204,15 +1231,15 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
       case 1: return <Slide1 active={currentSlide === 1} artists={artists} />;
       case 2: return <Slide2 active={currentSlide === 2} songs={songs} />;
       case 3: return <Slide3 active={currentSlide === 3} albums={albums} />;
-      case 4: return <Slide4 active={currentSlide === 4} totalMinutes={totalMinutes} />;
+      case 4: return <Slide4 active={currentSlide === 4} totalMinutes={totalMinutes} songs={songs} artists={artists} />;
       case 5: return <Slide5 active={currentSlide === 5} />;
       case 6: return <Slide6 active={currentSlide === 6} artists={artists} />;
-      case 7: return <Slide7 active={currentSlide === 7} />;
+      case 7: return <Slide7 active={currentSlide === 7} artists={artists} songs={songs} />;
       case 8: return <Slide8 active={currentSlide === 8} songs={songs} />;
       case 9: return <Slide9 active={currentSlide === 9} artists={artists} songs={songs} />;
       case 10: return <Slide10 active={currentSlide === 10} artists={artists} connectionGraph={connectionGraph} />;
       case 11: return <Slide11 active={currentSlide === 11} songs={songs} />;
-      case 12: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} onClose={onClose} />;
+      case 12: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} albums={albums} onClose={onClose} />;
       default: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} />;
     }
   };
@@ -1221,6 +1248,7 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: NB.nearBlack }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={handleTap}>
         <StoryProgressBar current={currentSlide} total={TOTAL_SLIDES} />
+        <SlideNavButtons current={currentSlide} total={TOTAL_SLIDES} onPrev={prev} onNext={next} />
         <CloseButton onClose={onClose} />
         <AnimatePresence initial={false} custom={direction} mode="sync">
           <motion.div key={currentSlide} custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.2, ease: 'easeOut' }} drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.1} onDragEnd={handleDragEnd} style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
