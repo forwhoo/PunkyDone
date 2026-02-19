@@ -1812,18 +1812,13 @@ export default function WrappedSlides({
         inset: 0,
         zIndex: 9999,
         background: NB.nearBlack,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
       }}
     >
       <div
         ref={containerRef}
         style={{
           width: '100%',
-          maxWidth: 430,
           height: '100%',
-          maxHeight: 932,
           position: 'relative',
           overflow: 'hidden',
           display: 'flex',
