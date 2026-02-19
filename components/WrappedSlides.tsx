@@ -153,6 +153,8 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
     return arr.slice(0, 60);
   }, [albumCovers, albums]);
 
+  const tileDelays = useMemo(() => covers.map(() => Math.random() * 1.5), [covers]);
+
   useEffect(() => {
     timers.current.forEach(clearTimeout);
     timers.current = [];
@@ -173,7 +175,7 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
             background: src ? 'transparent' : palette[i % palette.length],
             overflow: 'hidden',
             transform: phase >= 1 ? `scale(0) rotate(${i % 2 === 0 ? -15 : 15}deg)` : 'scale(1) rotate(0deg)',
-            transition: `transform 600ms cubic-bezier(0.55,0,1,0.45) ${Math.random() * 1.5}s`,
+            transition: `transform 600ms cubic-bezier(0.55,0,1,0.45) ${tileDelays[i]}s`,
           }}>
             {src && <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
           </div>
@@ -335,10 +337,10 @@ const Slide2: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
     return () => clearTimeout(t);
   }, [active]);
 
-  const pulseCSS = topSongs.map((_, i) => {
+  const pulseCSS = useMemo(() => topSongs.map((_, i) => {
     const base = (topSongs[i].listens / maxListens) * 90;
     return `@keyframes barPulse${i} { 0%,100%{width:${base}%} 50%{width:${Math.min(base+2,92)}%} }`;
-  }).join('\n');
+  }).join('\n'), [topSongs, maxListens]);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.white, position: 'relative', overflow: 'hidden' }}>
@@ -421,7 +423,7 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
     setTimer(5); setRevealed(false); setSelected(null);
     timerRef.current = setInterval(() => {
       setTimer(prev => {
-        if (prev <= 1) { clearInterval(timerRef.current!); setRevealed(true); return 0; }
+        if (prev <= 1) { if (timerRef.current) clearInterval(timerRef.current); setRevealed(true); return 0; }
         return prev - 1;
       });
     }, 1000);
