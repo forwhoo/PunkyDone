@@ -578,44 +578,112 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
   );
 };
 
-// Fruit profile data (static - defined outside component for performance)
+// Fruit profile data (5 DNA dimensions)
 const FRUIT_PROFILES = [
-  { name: 'MANGO', emoji: '🥭', v: [74, 82, 86], vibe: 'sunny and addictive hooks' },
-  { name: 'PINEAPPLE', emoji: '🍍', v: [82, 69, 72], vibe: 'bright and experimental energy' },
-  { name: 'CHERRY', emoji: '🍒', v: [62, 74, 90], vibe: 'high replay + emotional punch' },
-  { name: 'BANANA', emoji: '🍌', v: [60, 88, 70], vibe: 'comfort songs all day long' },
-  { name: 'BLUEBERRY', emoji: '🫐', v: [90, 58, 64], vibe: 'indie deep cuts and surprise picks' },
-  { name: 'WATERMELON', emoji: '🍉', v: [78, 76, 78], vibe: 'wide range with steady favorites' },
-  { name: 'KIWI', emoji: '🥝', v: [88, 70, 68], vibe: 'curious palate and genre jumping' },
-  { name: 'PEACH', emoji: '🍑', v: [68, 73, 84], vibe: 'smooth late-night mood control' },
-  { name: 'APPLE', emoji: '🍎', v: [65, 84, 65], vibe: 'classic structure and daily consistency' },
-  { name: 'STRAWBERRY', emoji: '🍓', v: [75, 66, 88], vibe: 'sweet choruses with sharp edges' },
+  { name: 'MANGO', emoji: '🥭', v: [58, 78, 68, 62, 70], vibe: 'balanced explorer energy with steady habits' },
+  { name: 'PINEAPPLE', emoji: '🍍', v: [68, 92, 55, 50, 62], vibe: 'always digging for new sounds' },
+  { name: 'CHERRY', emoji: '🍒', v: [72, 52, 64, 88, 66], vibe: 'emotion-first repeats that hit every time' },
+  { name: 'BANANA', emoji: '🍌', v: [45, 40, 84, 82, 86], vibe: 'comfort-loop sessions and loyal favorites' },
+  { name: 'BLUEBERRY', emoji: '🫐', v: [88, 70, 52, 54, 48], vibe: 'night explorer with fresh rotations' },
+  { name: 'WATERMELON', emoji: '🍉', v: [60, 64, 80, 70, 82], vibe: 'long sessions with a consistent daily pulse' },
+  { name: 'KIWI', emoji: '🥝', v: [76, 86, 58, 46, 56], vibe: 'high-curiosity listener with sharp pivots' },
+  { name: 'PEACH', emoji: '🍑', v: [90, 48, 60, 65, 58], vibe: 'late-night focus and smooth transitions' },
+  { name: 'APPLE', emoji: '🍎', v: [52, 50, 78, 60, 92], vibe: 'structured routine with dependable taste' },
+  { name: 'STRAWBERRY', emoji: '🍓', v: [66, 60, 62, 84, 72], vibe: 'hook-heavy favorites with strong replay love' },
 ];
 const SLIDE4_BG_EMOJIS = ['🎵','✨','🎶','💿','🎧','🎤','🎼','🎹','🎸','🎺','🥁','🎻'];
 
 // SLIDE 4: THE IDENTITY SCAN
 const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; artists: Artist[] }> = ({ active, totalMinutes, songs, artists }) => {
   const [phase, setPhase] = useState(0);
+  const [history, setHistory] = useState<Array<{ played_at: string; duration_ms: number; track_name?: string }>>([]);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetchHeatmapData().then((rows) => {
+      if (cancelled) return;
+      setHistory((rows || []).map((row: any) => ({ played_at: row.played_at, duration_ms: row.duration_ms || 0, track_name: row.track_name })));
+    }).catch(() => {
+      if (!cancelled) setHistory([]);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const metrics = useMemo(() => {
+    const safeHistory = history.filter((item) => !!item.played_at);
     const totalSongListens = Math.max(1, songs.reduce((sum, song) => sum + song.listens, 0));
+    const sortedAsc = [...safeHistory].sort((a, b) => new Date(a.played_at).getTime() - new Date(b.played_at).getTime());
+
+    const lateNightPlays = safeHistory.filter((row) => {
+      const hr = new Date(row.played_at).getHours();
+      return hr >= 21 || hr <= 3;
+    }).length;
+
+    const trackSeen = new Set<string>();
+    let firstListenCount = 0;
+    for (const row of sortedAsc) {
+      const key = (row.track_name || '').toLowerCase();
+      if (!key) continue;
+      if (!trackSeen.has(key)) {
+        firstListenCount++;
+        trackSeen.add(key);
+      }
+    }
+
+    let sessions = 0;
+    let sessionMs = 0;
+    let currentSession = 0;
+    let lastEnd = 0;
+    for (const row of sortedAsc) {
+      const start = new Date(row.played_at).getTime();
+      const dur = row.duration_ms || 0;
+      if (!lastEnd || start - lastEnd > 30 * 60 * 1000) {
+        if (currentSession > 0) {
+          sessions++;
+          sessionMs += currentSession;
+        }
+        currentSession = dur;
+      } else {
+        currentSession += dur;
+      }
+      lastEnd = start + dur;
+    }
+    if (currentSession > 0) {
+      sessions++;
+      sessionMs += currentSession;
+    }
+
+    const dailySet = new Set(safeHistory.map((row) => new Date(row.played_at).toDateString()));
     const topSongShare = (songs[0]?.listens || 0) / totalSongListens;
-    const topArtistShare = (artists[0]?.totalListens || 0) / Math.max(1, artists.slice(0, 5).reduce((sum, artist) => sum + artist.totalListens, 0));
-    const adventurous = Math.min(100, Math.round((Math.min(1, songs.length / 30) * 0.55 + (1 - topSongShare) * 0.45) * 100));
-    const groove = Math.min(100, Math.round((Math.min(1, totalMinutes / 9000) * 0.6 + topArtistShare * 0.4) * 100));
-    const sweetness = Math.min(100, Math.round((Math.min(1, (songs[0]?.listens || 0) / 180) * 0.5 + Math.min(1, (artists[0]?.totalListens || 0) / 900) * 0.5) * 100));
-    return { adventurous, groove, sweetness };
-  }, [songs, artists, totalMinutes]);
+
+    const nightOwl = Math.min(100, Math.round((lateNightPlays / Math.max(1, safeHistory.length)) * 170));
+    const freshFinds = Math.min(100, Math.round((firstListenCount / Math.max(1, safeHistory.length)) * 220));
+    const deepSessions = Math.min(100, Math.round(((sessionMs / Math.max(1, sessions)) / (75 * 60 * 1000)) * 100));
+    const replayLove = Math.min(100, Math.round(topSongShare * 260));
+    const routine = Math.min(100, Math.round((dailySet.size / 30) * 100));
+
+    return {
+      nightOwl,
+      freshFinds,
+      deepSessions,
+      replayLove,
+      routine,
+      notes: [
+        `${lateNightPlays} late-night plays`,
+        `${firstListenCount} first-time track moments`,
+        `${Math.round((sessionMs / Math.max(1, sessions)) / 60000)}m avg session`,
+      ],
+    };
+  }, [history, songs]);
 
   const winningFruit = useMemo(() => {
-    const vec = [metrics.adventurous, metrics.groove, metrics.sweetness];
+    const vec = [metrics.nightOwl, metrics.freshFinds, metrics.deepSessions, metrics.replayLove, metrics.routine];
     return FRUIT_PROFILES
       .map((f) => ({ ...f, score: Math.sqrt(f.v.reduce((sum, value, i) => sum + Math.pow(value - vec[i], 2), 0)) }))
       .sort((a, b) => a.score - b.score)[0];
   }, [metrics]);
 
-  // phases: 0=idle, 1=circle rotates+question, 2=faster spin+let's see, 3=winner to center, 4=circle fades+stats
   useEffect(() => {
     timers.current.forEach(clearTimeout);
     if (!active) { setPhase(0); return; }
@@ -628,65 +696,36 @@ const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; a
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
-      {/* Animated grid background */}
       <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-      {/* Floating emoji background - animated endless */}
-      <style>{`
-        @keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg); opacity:0; } 10% { opacity:0.18; } 90% { opacity:0.12; } 100% { transform: translateY(-20vh) rotate(360deg); opacity:0; } }
-      `}</style>
+      <style>{`@keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg); opacity:0; } 10% { opacity:0.18; } 90% { opacity:0.12; } 100% { transform: translateY(-20vh) rotate(360deg); opacity:0; } }`}</style>
       {SLIDE4_BG_EMOJIS.map((e, i) => (
-        <div key={e + i} style={{
-          position: 'absolute',
-          left: `${(i * 8.5) % 100}%`,
-          bottom: '-10%',
-          fontSize: 22 + (i % 4) * 6,
-          animation: `floatUp ${7 + (i % 5) * 1.8}s linear ${(i * 0.9) % 6}s infinite`,
-          pointerEvents: 'none',
-          zIndex: 1,
-        }}>{e}</div>
+        <div key={e + i} style={{ position: 'absolute', left: `${(i * 8.5) % 100}%`, bottom: '-10%', fontSize: 22 + (i % 4) * 6, animation: `floatUp ${7 + (i % 5) * 1.8}s linear ${(i * 0.9) % 6}s infinite`, pointerEvents: 'none', zIndex: 1 }}>{e}</div>
       ))}
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 20px 20px', gap: 8, position: 'relative', zIndex: 2 }}>
-        {/* Phase 1-2: question text */}
         <AnimatePresence>
           {(phase === 1 || phase === 2) && (
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.4 }}>
               <h1 style={{ margin: '0 0 4px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(30px, 8vw, 46px)', color: NB.white, textTransform: 'uppercase', lineHeight: 1 }}>WHAT FRUIT ARE YOU?</h1>
               <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' }}>
-                {phase === 1 ? 'BASED ON YOUR LISTENING DNA' : 'BASED ON LISTENING DATA... LET\'S SEE! 🔍'}
+                {phase === 1 ? 'POWERED BY REAL LISTENING HISTORY' : 'SCANNING YOUR 5-POINT MUSIC DNA'}
               </p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Orbit + center */}
-        <div style={{ height: 240, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {/* Orbiting fruits container - spins as a whole */}
-          <motion.div
-            animate={{ rotate: phase >= 1 ? (phase >= 2 ? 3600 : 360) : 0 }}
-            transition={{ duration: phase >= 2 ? 2 : 12, repeat: phase <= 2 ? Infinity : 0, ease: phase >= 2 ? [0.4, 0, 0.2, 1] : 'linear' }}
-            style={{ position: 'absolute', width: '100%', height: '100%' }}
-          >
+        <div style={{ height: 220, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <motion.div animate={{ rotate: phase >= 1 ? (phase >= 2 ? 3600 : 360) : 0 }} transition={{ duration: phase >= 2 ? 2 : 12, repeat: phase <= 2 ? Infinity : 0, ease: phase >= 2 ? [0.4, 0, 0.2, 1] : 'linear' }} style={{ position: 'absolute', width: '100%', height: '100%' }}>
             {FRUIT_PROFILES.map((fruit, i) => {
               const angle = (360 / FRUIT_PROFILES.length) * i;
               const rad = (angle * Math.PI) / 180;
-              const r = 96;
               const isWinner = fruit.name === winningFruit?.name;
               return (
                 <motion.div
                   key={fruit.name}
-                  animate={{
-                    opacity: phase >= 3 ? (isWinner ? 0 : 0) : 0.9,
-                    scale: phase >= 3 ? 0 : 1,
-                  }}
+                  animate={{ opacity: phase >= 3 ? 0 : 0.9, scale: phase >= 3 ? 0 : 1 }}
                   transition={{ duration: 0.6, delay: isWinner ? 0.2 : 0 }}
-                  style={{
-                    position: 'absolute',
-                    left: `calc(50% + ${Math.cos(rad) * r}px - 16px)`,
-                    top: `calc(50% + ${Math.sin(rad) * r}px - 16px)`,
-                    fontSize: 28,
-                    userSelect: 'none',
-                  }}
+                  style={{ position: 'absolute', left: `calc(50% + ${Math.cos(rad) * 92}px - 16px)`, top: `calc(50% + ${Math.sin(rad) * 92}px - 16px)`, fontSize: 28, userSelect: 'none' }}
                 >
                   {fruit.emoji}
                 </motion.div>
@@ -694,36 +733,17 @@ const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; a
             })}
           </motion.div>
 
-          {/* Center content */}
-          <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 5 }}>
-            {phase < 3 && (
-              <motion.p
-                animate={{ opacity: phase >= 2 ? [1, 0.4, 1] : 1 }}
-                transition={{ duration: 0.5, repeat: phase >= 2 ? Infinity : 0 }}
-                style={{ color: NB.white, margin: 0, textAlign: 'center', fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', maxWidth: 140 }}
-              >
-                {phase >= 2 ? 'FINDING\nYOUR FRUIT...' : 'WHAT FRUIT\nARE YOU?'}
-              </motion.p>
+          <AnimatePresence>
+            {phase >= 3 && winningFruit && (
+              <motion.div initial={{ scale: 0, y: 30 }} animate={{ scale: 1, y: phase >= 4 ? -10 : 0 }} transition={{ type: 'spring', stiffness: 300, damping: 18 }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, zIndex: 5 }}>
+                <div style={{ width: 100, height: 100, borderRadius: '50%', border: `4px solid ${NB.acidYellow}`, background: 'rgba(204,255,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 58 }}>
+                  {winningFruit.emoji}
+                </div>
+              </motion.div>
             )}
-            {/* Winner fruit reveal */}
-            <AnimatePresence>
-              {phase >= 3 && winningFruit && (
-                <motion.div
-                  initial={{ scale: 0, y: 30 }}
-                  animate={{ scale: 1, y: phase >= 4 ? -20 : 0 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
-                >
-                  <div style={{ width: 100, height: 100, borderRadius: '50%', border: `4px solid ${NB.acidYellow}`, background: 'rgba(204,255,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 58 }}>
-                    {winningFruit.emoji}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          </AnimatePresence>
         </div>
 
-        {/* Stats card - appears in phase 4 */}
         <AnimatePresence>
           {phase >= 4 && winningFruit && (
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -731,170 +751,136 @@ const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; a
                 <p style={{ margin: '0 0 2px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 30, color: NB.black }}>
                   YOU ARE {winningFruit.emoji} {winningFruit.name}
                 </p>
-                <p style={{ margin: '0 0 10px 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>
-                  Your listening matches: {winningFruit.vibe}.
-                </p>
-                {[{ label: 'ADVENTUROUS', value: metrics.adventurous, color: NB.electricBlue }, { label: 'GROOVE', value: metrics.groove, color: NB.coral }, { label: 'SWEETNESS', value: metrics.sweetness, color: NB.magenta }].map((metric, i) => (
-                  <div key={metric.label} style={{ marginBottom: i === 2 ? 0 : 8 }}>
+                <p style={{ margin: '0 0 10px 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>Your listening matches: {winningFruit.vibe}.</p>
+                {[
+                  { label: 'NIGHT OWL', value: metrics.nightOwl, color: NB.electricBlue },
+                  { label: 'FRESH FINDS', value: metrics.freshFinds, color: NB.coral },
+                  { label: 'SESSION DEPTH', value: metrics.deepSessions, color: NB.magenta },
+                  { label: 'REPLAY LOVE', value: metrics.replayLove, color: NB.acidYellow },
+                  { label: 'ROUTINE', value: metrics.routine, color: NB.nearBlack, textColor: NB.white },
+                ].map((metric, i) => (
+                  <div key={metric.label} style={{ marginBottom: i === 4 ? 0 : 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
                       <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11 }}>{metric.label}</span>
                       <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900 }}>{metric.value}%</span>
                     </div>
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${metric.value}%` }} transition={{ duration: 0.6, delay: i * 0.18 }} style={{ height: 10, background: metric.color, border: `2px solid ${NB.black}` }} />
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${metric.value}%` }} transition={{ duration: 0.6, delay: i * 0.12 }} style={{ height: 10, background: metric.color, border: `2px solid ${NB.black}`, color: metric.textColor || NB.black }} />
                   </div>
                 ))}
+                <p style={{ margin: '10px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#444' }}>{metrics.notes.join(' • ')}</p>
               </BCard>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-      <Ticker text="FRUIT DNA  MUSIC PERSONALITY  LIVE METRICS" bg={NB.acidYellow} color={NB.black} />
+      <Ticker text="FRUIT DNA  REAL DATA  5 METRIC PROFILE" bg={NB.acidYellow} color={NB.black} />
     </div>
   );
 };
 
 // SLIDE 5: THE TIME MACHINE
 const Slide5: React.FC<{ active: boolean }> = ({ active }) => {
-  const [time, setTime] = useState(new Date());
-  const [drawn, setDrawn] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const intensities = [2,1,1,0,0,1,3,5,6,7,6,5,6,7,8,7,6,5,6,7,8,9,10,8];
-  const peakHour = 22;
+  const [history, setHistory] = useState<Array<{ played_at: string; duration_ms: number }>>([]);
 
   useEffect(() => {
-    if (!active) { setDrawn(false); if (intervalRef.current) clearInterval(intervalRef.current); return; }
-    setTime(new Date());
-    const t = setTimeout(() => setDrawn(true), 300);
-    intervalRef.current = setInterval(() => setTime(new Date()), 1000);
-    return () => { clearTimeout(t); if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [active]);
+    let cancelled = false;
+    fetchHeatmapData().then((rows) => {
+      if (cancelled) return;
+      setHistory((rows || []).map((row: any) => ({ played_at: row.played_at, duration_ms: row.duration_ms || 0 })));
+    }).catch(() => {
+      if (!cancelled) setHistory([]);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
-  const cx = 150, cy = 150, R = 110;
-  const hours = time.getHours() % 12;
-  const minutes = time.getMinutes();
-  const hourAngle = (hours / 12) * 360 + (minutes / 60) * 30 - 90;
-  const minAngle = (minutes / 60) * 360 - 90;
+  const timeInsights = useMemo(() => {
+    const buckets = [
+      { label: 'MORNING', start: 5, end: 11, color: NB.acidYellow },
+      { label: 'AFTERNOON', start: 12, end: 16, color: NB.coral },
+      { label: 'EVENING', start: 17, end: 20, color: NB.magenta },
+      { label: 'LATE NIGHT', start: 21, end: 4, color: NB.white },
+    ];
 
-  const arcPath = (startAngle: number, endAngle: number, radius: number) => {
-    const s = startAngle * Math.PI / 180;
-    const e = endAngle * Math.PI / 180;
-    const x1 = cx + radius * Math.cos(s);
-    const y1 = cy + radius * Math.sin(s);
-    const x2 = cx + radius * Math.cos(e);
-    const y2 = cy + radius * Math.sin(e);
-    const largeArc = endAngle - startAngle > 180 ? 1 : 0;
-    return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`;
-  };
-
-  const maxIntensity = Math.max(...intensities);
+    const totals = buckets.map((b) => ({ ...b, ms: 0, plays: 0 }));
+    for (const row of history) {
+      const hour = new Date(row.played_at).getHours();
+      totals.forEach((bucket) => {
+        const inRange = bucket.start <= bucket.end ? hour >= bucket.start && hour <= bucket.end : hour >= bucket.start || hour <= bucket.end;
+        if (inRange) {
+          bucket.ms += row.duration_ms || 0;
+          bucket.plays += 1;
+        }
+      });
+    }
+    const winner = [...totals].sort((a, b) => b.ms - a.ms)[0] || totals[0];
+    const totalMs = totals.reduce((sum, b) => sum + b.ms, 0) || 1;
+    return { totals, winner, totalMs };
+  }, [history]);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.electricBlue, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px 20px', gap: 16 }}>
-        <svg viewBox="0 0 300 300" style={{ width: 260, height: 260, overflow: 'visible' }} role="img" aria-label="24-hour listening clock visualization">
-          <circle cx={cx} cy={cy} r={R} fill="none" stroke={NB.black} strokeWidth={4} />
-          {intensities.map((intensity, i) => {
-            if (intensity === 0) return null;
-            const segStart = (i / 24) * 360 - 90;
-            const segEnd = ((i + 1) / 24) * 360 - 90 - 1;
-            const arcR = R + 8 + (intensity / maxIntensity) * 20;
-            const color = i === peakHour ? NB.acidYellow : NB.white;
-            const totalLen = (arcR * Math.PI * 2 * ((segEnd - segStart) / 360));
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 12 }}>
+        <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(32px, 8vw, 52px)', color: NB.white, textTransform: 'uppercase', margin: 0 }}>YOUR LISTENING WINDOWS</h2>
+        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: 0 }}>REAL PLAYTIME SPLIT FROM YOUR HISTORY</p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {timeInsights.totals.map((bucket, i) => {
+            const pct = Math.round((bucket.ms / timeInsights.totalMs) * 100);
             return (
-              <path
-                key={i}
-                d={arcPath(segStart, segEnd, arcR)}
-                fill="none"
-                stroke={color}
-                strokeWidth={i === peakHour ? 4 : 2}
-                strokeDasharray={totalLen}
-                strokeDashoffset={drawn ? 0 : totalLen}
-                style={{ transition: `stroke-dashoffset 1.8s ease ${i * 0.05}s` }}
-              />
+              <motion.div key={bucket.label} initial={{ opacity: 0, y: 24 }} animate={{ opacity: active ? 1 : 0.4, y: active ? 0 : 24 }} transition={{ delay: i * 0.08 }} style={{ background: bucket.color, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 10px' }}>
+                <p style={{ margin: '0 0 6px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, color: NB.black }}>{bucket.label}</p>
+                <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 34, color: NB.black, lineHeight: 1 }}>{pct}%</p>
+                <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 11, color: 'rgba(0,0,0,0.8)' }}>{bucket.plays} plays</p>
+              </motion.div>
             );
           })}
-          {Array.from({ length: 24 }).map((_, i) => {
-            const angle = (i / 24) * 360 - 90;
-            const rad = angle * Math.PI / 180;
-            const x1 = cx + (R - 8) * Math.cos(rad);
-            const y1 = cy + (R - 8) * Math.sin(rad);
-            const x2 = cx + R * Math.cos(rad);
-            const y2 = cy + R * Math.sin(rad);
-            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={NB.black} strokeWidth={i % 6 === 0 ? 3 : 1.5} />;
-          })}
-          <line x1={cx} y1={cy} x2={cx + R * 0.35 * Math.cos(hourAngle * Math.PI / 180)} y2={cy + R * 0.35 * Math.sin(hourAngle * Math.PI / 180)} stroke={NB.black} strokeWidth={4} strokeLinecap="square" />
-          <line x1={cx} y1={cy} x2={cx + R * 0.5 * Math.cos(minAngle * Math.PI / 180)} y2={cy + R * 0.5 * Math.sin(minAngle * Math.PI / 180)} stroke={NB.black} strokeWidth={2} strokeLinecap="square" />
-          <circle cx={cx} cy={cy} r={4} fill={NB.black} />
-        </svg>
-        <div style={{ background: NB.black, border: `4px solid ${NB.acidYellow}`, padding: '6px 14px', display: 'inline-flex', alignSelf: 'center', borderRadius: 0 }}>
-          <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: NB.acidYellow, letterSpacing: '0.1em', textTransform: 'uppercase' }}>YOU PEAK AT 11PM</span>
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(32px, 8vw, 48px)', color: NB.white, textTransform: 'uppercase', margin: '0 0 4px 0' }}>YOUR LISTENING CLOCK</h2>
-          <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', margin: 0 }}>WHEN YOUR MUSIC HITS HARDEST</p>
-        </div>
+
+        <BCard style={{ marginTop: 4 }}>
+          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#333' }}>PEAK WINDOW</p>
+          <p style={{ margin: '2px 0 0 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 30, color: NB.black }}>{timeInsights.winner.label}</p>
+        </BCard>
       </div>
-      <Ticker text="THE TIME MACHINE  YOUR LISTENING CLOCK" bg={NB.nearBlack} color={NB.acidYellow} />
+      <Ticker text="TIME MACHINE  LISTENING WINDOWS  DAYPART ENERGY" bg={NB.nearBlack} color={NB.acidYellow} />
     </div>
   );
 };
 
 // SLIDE 6: THE LOYALTY TEST
 const Slide6: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, artists }) => {
-  const [animated, setAnimated] = useState(false);
-  const topFive = artists.slice(0, 5);
-  const total = topFive.reduce((s, a) => s + a.totalListens, 0) || 1;
-  const barColors = [NB.nearBlack, NB.electricBlue, NB.coral, NB.magenta, '#555555'];
-  const topShare = (topFive[0]?.totalListens || 0) / total;
-  const verdict = topShare > 0.3 ? 'RIDE OR DIE.' : 'ECLECTIC SOUL.';
-
-  useEffect(() => {
-    if (!active) { setAnimated(false); return; }
-    const t = setTimeout(() => setAnimated(true), 100);
-    return () => clearTimeout(t);
-  }, [active]);
+  const topSix = artists.slice(0, 6);
+  const total = topSix.reduce((s, a) => s + a.totalListens, 0) || 1;
+  const topShare = (topSix[0]?.totalListens || 0) / total;
+  const verdict = topShare > 0.35 ? 'RIDE OR DIE ENERGY' : 'WIDE TASTE ENERGY';
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.acidYellow, position: 'relative', overflow: 'hidden' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 12 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(40px, 10vw, 64px)', color: NB.black, textTransform: 'uppercase', margin: '0 0 4px 0', lineHeight: 1 }}>
-          YOUR LOYALTY MAP
-        </h1>
-        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, margin: '0 0 8px 0' }}>
-          HOW DEEP DOES IT GO
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {topFive.map((artist, i) => {
+        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(38px, 10vw, 64px)', color: NB.black, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>YOUR LOYALTY MAP</h1>
+        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, margin: 0 }}>TOP ARTISTS AS A CREW GRID</p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {topSix.map((artist, i) => {
             const pct = Math.round((artist.totalListens / total) * 100);
-            const targetW = Math.max((artist.totalListens / (topFive[0]?.totalListens || 1)) * 88, 15);
             return (
-              <div key={artist.id} style={{ position: 'relative' }}>
-                {i === 0 && animated && (
-                  <div style={{ position: 'absolute', top: -22, right: 0, background: NB.black, color: NB.acidYellow, border: `4px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', padding: '2px 8px', display: 'inline-flex', zIndex: 2, borderRadius: 0 }}>
-                    <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 11, letterSpacing: '0.1em' }}>\u2736 #1</span>
-                  </div>
-                )}
-                <div style={{
-                  height: 52, background: barColors[i], border: `2px solid ${NB.black}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '0 10px', overflow: 'hidden',
-                  width: animated ? `${targetW}%` : '0%',
-                  minWidth: 60,
-                  transition: `width 600ms cubic-bezier(0.34,1.56,0.64,1) ${i * 100}ms`,
-                }}>
-                  <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 14, color: NB.white, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{artist.name}</span>
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 15, color: NB.black, whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 8 }}>{pct}%</span>
+              <motion.div key={artist.id} initial={{ opacity: 0, y: 24 }} animate={{ opacity: active ? 1 : 0.4, y: active ? 0 : 24 }} transition={{ delay: i * 0.08 }} style={{ border: `4px solid ${NB.black}`, background: NB.white, boxShadow: '4px 4px 0 #000', overflow: 'hidden' }}>
+                <div style={{ height: 96, background: '#222' }}>
+                  <img src={artist.image || fallbackImage} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
                 </div>
-              </div>
+                <div style={{ padding: '8px 10px', background: i === 0 ? NB.black : NB.white }}>
+                  <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: i === 0 ? NB.acidYellow : NB.black, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{artist.name}</p>
+                  <p style={{ margin: '2px 0 0 0', fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, color: i === 0 ? 'rgba(204,255,0,0.85)' : '#444' }}>{artist.totalListens} plays • {pct}%</p>
+                </div>
+              </motion.div>
             );
           })}
         </div>
-        <div style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '5px 5px 0px #000', padding: '14px 18px', marginTop: 8, borderRadius: 0, opacity: animated ? 1 : 0, transform: animated ? 'translateY(0)' : 'translateY(20px)', transition: 'all 400ms ease 600ms' }}>
-          <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 28, color: NB.black, textTransform: 'uppercase', margin: 0 }}>{verdict}</p>
-        </div>
+
+        <BCard>
+          <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 26, color: NB.black, textTransform: 'uppercase' }}>{verdict}</p>
+        </BCard>
       </div>
-      <Ticker text="THE LOYALTY TEST  YOUR RIDE OR DIE" bg={NB.nearBlack} color={NB.acidYellow} />
+      <Ticker text="LOYALTY MAP  ARTIST CREW  TOP ROTATION" bg={NB.nearBlack} color={NB.acidYellow} />
     </div>
   );
 };
@@ -1110,133 +1096,48 @@ const Slide8: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
 // SLIDE 9: THE ORBIT LOCK-IN
 const Slide9: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = ({ active, artists, songs }) => {
   const topArtist = artists[0];
-  const MAX_ORBIT_SCORE = 250;
-  const topArtistListens = topArtist?.totalListens || 0;
-  const topSongListens = songs[0]?.listens || 0;
-  const frequencyBonus = Math.min(70, Math.round((topSongListens / Math.max(1, topArtistListens)) * 80));
-  const dominanceBonus = Math.min(120, Math.round((topArtistListens / Math.max(1, songs.reduce((s, song) => s + song.listens, 0))) * 220));
-  const consistencyBase = Math.min(60, Math.round((songs.slice(0, 5).reduce((sum, song) => sum + song.listens, 0) / Math.max(1, topArtistListens * 2)) * 80));
-  const obsessionScore = Math.min(MAX_ORBIT_SCORE, 70 + frequencyBonus + dominanceBonus + consistencyBase);
-  const dayCurve = weekdayLabels.map((day, i) => {
-    const weight = [0.86, 0.92, 0.98, 1.04, 1.08, 1.15, 1.03][i];
-    return { day, score: Math.min(MAX_ORBIT_SCORE, Math.round(obsessionScore * weight)) };
-  });
-
-  const maxDay = dayCurve.reduce((acc, d) => (d.score > acc.score ? d : acc), dayCurve[0]);
-
-  // Animation phases: 0=idle, 1=show day-by-day, 2=show total, 3=reveal score, 4=why text
-  const [phase, setPhase] = useState(0);
-  const [dayIndex, setDayIndex] = useState(0);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  useEffect(() => {
-    timers.current.forEach(clearTimeout);
-    if (!active) { setPhase(0); setDayIndex(0); return; }
-    setPhase(1);
-    setDayIndex(0);
-    weekdayLabels.forEach((_, i) => {
-      timers.current.push(setTimeout(() => setDayIndex(i), i * 600));
-    });
-    timers.current.push(setTimeout(() => setPhase(2), weekdayLabels.length * 600 + 400));
-    timers.current.push(setTimeout(() => setPhase(3), weekdayLabels.length * 600 + 1400));
-    timers.current.push(setTimeout(() => setPhase(4), weekdayLabels.length * 600 + 2600));
-    return () => timers.current.forEach(clearTimeout);
-  }, [active]);
-
-  const topSongs = songs.slice(0, 3);
-  const topAlbums = [...new Map(songs.map(s => [s.album, s])).values()].slice(0, 2);
+  const topTracks = songs.slice(0, 5);
+  const orbitScore = Math.min(250, 80 + Math.round((topArtist?.totalListens || 0) / 3) + Math.round((songs[0]?.listens || 0) / 2));
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 12, overflowY: 'auto' }}>
+      <style>{`@keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 12 }}>
+        <h2 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 8vw, 56px)', color: NB.white, textTransform: 'uppercase', lineHeight: 1 }}>OBSESSION ORBIT</h2>
+        <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase' }}>NO BARS. JUST YOUR LOCK-IN GRAVITY.</p>
 
-        {/* Day-by-day orbit (phase 1) */}
-        {phase === 1 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: 0 }}>ORBIT BUILD — DAY BY DAY</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {weekdayLabels.slice(0, dayIndex + 1).map((day, i) => (
-                <motion.div key={day} initial={{ x: -40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.3 }} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 12, color: 'rgba(255,255,255,0.6)', width: 36, flexShrink: 0 }}>{day}</span>
-                  <div style={{ flex: 1, height: 28, background: '#1a1a1a', border: '1px solid #333', overflow: 'hidden', position: 'relative' }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.round((dayCurve[i].score / MAX_ORBIT_SCORE) * 100)}%` }}
-                      transition={{ duration: 0.4 }}
-                      style={{ height: '100%', background: day === maxDay.day ? NB.acidYellow : NB.electricBlue }}
-                    />
-                  </div>
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13, color: NB.acidYellow, width: 36, textAlign: 'right', flexShrink: 0 }}>{dayCurve[i].score}</span>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+        <div style={{ flex: 1, minHeight: 260, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 250, height: 250, borderRadius: '50%', border: `2px dashed ${NB.electricBlue}`, position: 'absolute' }} />
+          <div style={{ width: 190, height: 190, borderRadius: '50%', border: `2px dashed ${NB.coral}`, position: 'absolute' }} />
+          <div style={{ width: 130, height: 130, borderRadius: '50%', border: `2px dashed ${NB.magenta}`, position: 'absolute' }} />
 
-        {/* Total orbit (phase 2+) */}
-        {phase >= 2 && (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: 0 }}>WEEKLY OBSESSION ORBIT</p>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 80 }}>
-              {dayCurve.map((day, i) => (
-                <motion.div
-                  key={day.day}
-                  initial={{ height: 0 }}
-                  animate={{ height: `${Math.max(14, Math.round((day.score / MAX_ORBIT_SCORE) * 100))}%` }}
-                  transition={{ duration: 0.4, delay: i * 0.05 }}
-                  style={{ flex: 1, background: day.day === maxDay.day ? NB.acidYellow : NB.electricBlue, border: `2px solid ${NB.black}`, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: 2 }}
-                >
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 9, color: NB.black }}>{day.day}</span>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+          <div style={{ width: 110, height: 110, borderRadius: '50%', background: NB.acidYellow, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 8 }}>
+            <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 15, color: NB.black, textTransform: 'uppercase', lineHeight: 1 }}>{topArtist?.name || 'TOP ARTIST'}</p>
+            <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, color: '#222' }}>Orbit {orbitScore}/250</p>
+          </div>
 
-        {/* Score reveal (phase 3+) */}
-        {phase >= 3 && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ background: NB.acidYellow, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 14px' }}>
-            <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black }}>YOUR OBSESSION ORBIT SCORE</p>
-            <motion.p
-              initial={{ scale: 0.5 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 14 }}
-              style={{ margin: '4px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(40px, 12vw, 60px)', color: NB.black, lineHeight: 1 }}
-            >
-              {topArtist?.name || 'TOP ARTIST'}: {obsessionScore}<span style={{ fontSize: '0.45em', opacity: 0.6 }}>/250</span>
-            </motion.p>
-          </motion.div>
-        )}
-
-        {/* Why explanation (phase 4) */}
-        {phase >= 4 && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 14px' }}>
-              <p style={{ margin: '0 0 6px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.black, textTransform: 'uppercase' }}>WHY THIS SCORE?</p>
-              {topSongs.map((song, i) => (
-                <motion.div key={song.id} initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: i * 0.15 }} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: i < topSongs.length - 1 ? 6 : 0 }}>
-                  <img src={song.cover || fallbackImage} alt="" style={{ width: 36, height: 36, objectFit: 'cover', border: `2px solid ${NB.black}`, flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13, color: NB.black, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.title}</p>
-                    <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#555' }}>{song.listens} plays — boosted your score by +{i === 0 ? frequencyBonus : i === 1 ? Math.round(frequencyBonus * 0.6) : Math.round(frequencyBonus * 0.3)}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-            {topAlbums.length > 0 && (
-              <div style={{ display: 'flex', gap: 8 }}>
-                {topAlbums.map((song, i) => (
-                  <motion.div key={song.id + i} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + i * 0.1 }} style={{ flex: 1, background: i === 0 ? NB.electricBlue : NB.coral, border: `3px solid ${NB.black}`, padding: '8px 10px' }}>
-                    <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 11, color: NB.white, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.album || song.artist}</p>
-                    <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 9, color: 'rgba(255,255,255,0.8)' }}>dominance +{i === 0 ? dominanceBonus : Math.round(dominanceBonus * 0.5)}</p>
+          {[120, 90, 65].map((radius, ring) => (
+            <div key={radius} style={{ position: 'absolute', width: radius * 2, height: radius * 2, animation: `orbitSpin ${16 - ring * 3}s linear infinite` }}>
+              {topTracks.slice(ring, ring + 2).map((song, idx) => {
+                const angle = ((idx * 180) + ring * 55) * (Math.PI / 180);
+                return (
+                  <motion.div key={`${song.id}-${ring}`} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: active ? 1 : 0.6, scale: 1 }} style={{ position: 'absolute', left: `calc(50% + ${Math.cos(angle) * radius}px - 24px)`, top: `calc(50% + ${Math.sin(angle) * radius}px - 24px)`, width: 48, height: 48, borderRadius: '50%', border: `3px solid ${NB.black}`, overflow: 'hidden', background: '#111' }}>
+                    <img src={song.cover || fallbackImage} alt={song.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
                   </motion.div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        )}
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        <BCard style={{ background: NB.white }}>
+          <p style={{ margin: '0 0 4px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: NB.black, textTransform: 'uppercase' }}>Compliment:</p>
+          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 13, color: '#222' }}>
+            You built a strong orbit around <b>{topArtist?.name || 'your top artist'}</b> and kept it spinning with repeat plays.
+          </p>
+        </BCard>
       </div>
-      <Ticker text="OBSESSION ORBIT  SCORE ANALYZER  WHY IT MOVED" bg={NB.acidYellow} color={NB.black} />
+      <Ticker text="OBSESSION ORBIT  DOM MODE  LOCKED IN" bg={NB.acidYellow} color={NB.black} />
     </div>
   );
 };
@@ -1374,37 +1275,38 @@ const ReplayTrackRow: React.FC<{ song: Song; index: number; active: boolean; pul
 
 const Slide11: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs }) => {
   const loops = songs.slice(0, 3);
-  const [pulsing, setPulsing] = useState<number | null>(null);
-  const [counts, setCounts] = useState<number[]>([]);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  useEffect(() => {
-    timers.current.forEach(clearTimeout);
-    if (!active) { setPulsing(null); setCounts([]); return; }
-    loops.forEach((song, i) => {
-      timers.current.push(setTimeout(() => {
-        setCounts(prev => { const next = [...prev]; next[i] = song.listens; return next; });
-        setPulsing(i);
-        timers.current.push(setTimeout(() => setPulsing(null), 800));
-      }, 200 + i * 400));
-    });
-    return () => timers.current.forEach(clearTimeout);
-  }, [active]);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.coral, overflow: 'hidden' }}>
       <style>{`
-        @keyframes replayPulse { 0%,100%{box-shadow:4px 4px 0 #000} 50%{box-shadow:0 0 0 6px rgba(204,255,0,0.5),4px 4px 0 #000} }
         @keyframes vinylSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes pulseRing { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(1.25);opacity:0} }
       `}</style>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 12 }}>
         <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 8vw, 58px)', color: NB.white, margin: 0, textTransform: 'uppercase', lineHeight: 1 }}>YOUR REPLAY VALUE</h1>
-        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: '0 0 4px 0' }}>MOST REPEATED TRACKS</p>
-        {loops.map((song, i) => (
-          <ReplayTrackRow key={song.id} song={song} index={i} active={active} pulsing={pulsing} targetCount={counts[i] ?? 0} />
-        ))}
+        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: '0 0 4px 0' }}>SPIN ZONE</p>
+
+        <div style={{ flex: 1, minHeight: 260, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 210, height: 210, borderRadius: '50%', border: `4px solid ${NB.black}`, background: '#111', position: 'relative', animation: 'vinylSpin 9s linear infinite' }}>
+            <img src={loops[0]?.cover || fallbackImage} alt={loops[0]?.title || 'Top loop'} style={{ width: 136, height: 136, objectFit: 'cover', borderRadius: '50%', border: `4px solid ${NB.white}`, position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+            <div style={{ width: 16, height: 16, background: NB.acidYellow, border: `3px solid ${NB.black}`, borderRadius: '50%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
+          </div>
+
+          <div style={{ position: 'absolute', width: 240, height: 240, borderRadius: '50%', border: `2px dashed ${NB.acidYellow}`, animation: 'pulseRing 1.8s ease-out infinite' }} />
+
+          {loops.slice(1).map((song, i) => {
+            const angle = (i * 180 + 30) * Math.PI / 180;
+            const r = 145;
+            return (
+              <div key={song.id} style={{ position: 'absolute', left: `calc(50% + ${Math.cos(angle) * r}px - 34px)`, top: `calc(50% + ${Math.sin(angle) * r}px - 34px)`, width: 68, background: NB.white, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', padding: 4 }}>
+                <img src={song.cover || fallbackImage} alt={song.title} style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', display: 'block', border: `2px solid ${NB.black}` }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+                <p style={{ margin: '3px 0 0 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 10, color: NB.black, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{song.listens}×</p>
+              </div>
+            );
+          })}
+        </div>
       </div>
-      <Ticker text="REPLAY VALUE  SONGS ON LOOP" bg={NB.nearBlack} color={NB.white} />
+      <Ticker text="REPLAY VALUE  VINYL LOOP  RUN IT BACK" bg={NB.nearBlack} color={NB.white} />
     </div>
   );
 };
@@ -1425,11 +1327,13 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
   const fruitSummary = useMemo(() => {
     const totalSongListens = Math.max(1, songs.reduce((s, song) => s + song.listens, 0));
     const topSongShare = (songs[0]?.listens || 0) / totalSongListens;
-    const topArtistShare = (artists[0]?.totalListens || 0) / Math.max(1, artists.slice(0, 5).reduce((s, a) => s + a.totalListens, 0));
-    const adventurous = Math.min(100, Math.round((Math.min(1, songs.length / 30) * 0.55 + (1 - topSongShare) * 0.45) * 100));
-    const groove = Math.min(100, Math.round((Math.min(1, totalMinutes / 9000) * 0.6 + topArtistShare * 0.4) * 100));
-    const sweetness = Math.min(100, Math.round((Math.min(1, (songs[0]?.listens || 0) / 180) * 0.5 + Math.min(1, (artists[0]?.totalListens || 0) / 900) * 0.5) * 100));
-    const vec = [adventurous, groove, sweetness];
+    const topFiveArtistShare = (artists[0]?.totalListens || 0) / Math.max(1, artists.slice(0, 5).reduce((s, a) => s + a.totalListens, 0));
+    const listenDepth = Math.min(100, Math.round((Math.min(1, totalMinutes / 6000) * 65) + (topFiveArtistShare * 35)));
+    const freshFinds = Math.min(100, Math.round((Math.min(1, songs.length / 80) * 80) + ((1 - topSongShare) * 20)));
+    const replayLove = Math.min(100, Math.round(topSongShare * 280));
+    const routine = Math.min(100, Math.round((Math.min(1, artists.length / 20) * 40) + 45));
+    const nightOwl = Math.min(100, Math.round((100 - listenDepth) * 0.35 + 45));
+    const vec = [nightOwl, freshFinds, listenDepth, replayLove, routine];
     return FRUIT_PROFILES
       .map(f => ({ ...f, score: Math.sqrt(f.v.reduce((s, val, i) => s + Math.pow(val - vec[i], 2), 0)) }))
       .sort((a, b) => a.score - b.score)[0];
@@ -1450,7 +1354,7 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
           transition={{ duration: 0.5 }}
           style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(36px, 10vw, 72px)', color: NB.black, textTransform: 'uppercase', margin: 0, letterSpacing: '-0.02em', zIndex: 2, textAlign: 'center' }}
         >
-          PUNKY WRAPPED 🎧
+          PUNKY WRAPPED
         </motion.h1>
         <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg, transparent 0 14px, rgba(0,0,0,0.08) 14px 22px)' }} />
       </div>
