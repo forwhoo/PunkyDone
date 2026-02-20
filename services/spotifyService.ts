@@ -492,3 +492,72 @@ export const searchSpotifyTracks = async (token: string, query: string, limit = 
         return [];
     }
 };
+
+const SPOTIFY_TRACK_ID_REGEX = /^[A-Za-z0-9]{22}$/;
+
+export const isValidSpotifyTrackId = (id?: string | null): id is string => {
+  return !!id && SPOTIFY_TRACK_ID_REGEX.test(id);
+};
+
+
+export const fetchTrackPreviewUrls = async (token: string, trackIds: string[]): Promise<Record<string, string>> => {
+  const ids = Array.from(new Set(trackIds.filter(isValidSpotifyTrackId)));
+  if (!token || ids.length === 0) return {};
+
+  const headers = { Authorization: `Bearer ${token}` };
+  const batches: string[][] = [];
+  for (let i = 0; i < ids.length; i += 50) {
+    batches.push(ids.slice(i, i + 50));
+  }
+
+  const output: Record<string, string> = {};
+  await Promise.all(
+    batches.map(async (batch) => {
+      const url = `https://api.spotify.com/v1/tracks?ids=${batch.join(',')}`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) return;
+      const data = await res.json();
+      (data.tracks || []).forEach((track: any) => {
+        if (track?.id && track?.preview_url) {
+          output[track.id] = track.preview_url;
+        }
+      });
+    })
+  );
+
+  return output;
+};
+
+export const fetchTrackPreviewUrlsBySearch = async (
+  token: string,
+  songs: Array<{ id: string; title?: string; artist?: string }>,
+  maxLookups = 20
+): Promise<Record<string, string>> => {
+  if (!token || songs.length === 0) return {};
+
+  const headers = { Authorization: `Bearer ${token}` };
+  const uniqueSongs = songs
+    .filter((song) => !!song.id)
+    .filter((song, index, arr) => arr.findIndex((x) => x.id === song.id) === index)
+    .slice(0, maxLookups);
+
+  const out: Record<string, string> = {};
+  await Promise.all(uniqueSongs.map(async (song) => {
+    const query = [song.title, song.artist].filter(Boolean).join(' ');
+    if (!query) return;
+    const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=5`;
+    try {
+      const res = await fetch(url, { headers });
+      if (!res.ok) return;
+      const data = await res.json();
+      const candidate = (data.tracks?.items || []).find((item: any) => !!item?.preview_url);
+      if (candidate?.preview_url) {
+        out[song.id] = candidate.preview_url;
+      }
+    } catch {
+      // Ignore fallback lookup errors for individual tracks.
+    }
+  }));
+
+  return out;
+};

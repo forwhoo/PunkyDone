@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Volume2, VolumeX } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
 import { fetchHeatmapData } from '../services/dbService';
 import { generateTopAlbumFunFact } from '../services/geminiService';
+import { fetchTrackPreviewUrls, fetchTrackPreviewUrlsBySearch, isValidSpotifyTrackId } from '../services/spotifyService';
 
 const NB = {
   electricBlue: '#1A6BFF',
@@ -532,7 +533,7 @@ const Slide2: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
 
 // SLIDE 3: THE VAULT GUESS
 const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums }) => {
-  const topThree = albums.slice(0, 3);
+  const topThree = useMemo(() => albums.slice(0, 3), [albums]);
   const palette = [NB.electricBlue, NB.coral, NB.magenta];
   const ROUND_SECONDS = 7;
   const [timer, setTimer] = useState(ROUND_SECONDS);
@@ -540,15 +541,16 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
   const [selected, setSelected] = useState<number | null>(null);
   const [funFact, setFunFact] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const funFactRequestedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!active) {
-      setTimer(ROUND_SECONDS); setRevealed(false); setSelected(null); setFunFact('');
+      setTimer(ROUND_SECONDS); setRevealed(false); setSelected(null); setFunFact(''); funFactRequestedRef.current = null;
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
     const deadline = Date.now() + ROUND_SECONDS * 1000;
-    setTimer(ROUND_SECONDS); setRevealed(false); setSelected(null); setFunFact('');
+    setTimer(ROUND_SECONDS); setRevealed(false); setSelected(null); setFunFact(''); funFactRequestedRef.current = null;
     timerRef.current = setInterval(() => {
       const remainingMs = deadline - Date.now();
       const nextValue = Math.max(0, Math.ceil(remainingMs / 1000));
@@ -565,6 +567,9 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
     let canceled = false;
     const album = topThree[0];
     if (!revealed || !album) return;
+    const albumKey = `${album.id}-${album.totalListens}`;
+    if (funFactRequestedRef.current === albumKey) return;
+    funFactRequestedRef.current = albumKey;
     generateTopAlbumFunFact({ title: album.title, artist: album.artist, plays: album.totalListens }).then((fact) => {
       if (!canceled) setFunFact(fact);
     });
@@ -626,18 +631,18 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
   );
 };
 
-// Fruit profile data (5 DNA dimensions)
+// Fruit profile data (8 DNA dimensions)
 const FRUIT_PROFILES = [
-  { name: 'MANGO', emoji: '🥭', v: [58, 78, 68, 62, 70], vibe: 'balanced explorer energy with steady habits' },
-  { name: 'PINEAPPLE', emoji: '🍍', v: [68, 92, 55, 50, 62], vibe: 'always digging for new sounds' },
-  { name: 'CHERRY', emoji: '🍒', v: [72, 52, 64, 88, 66], vibe: 'emotion-first repeats that hit every time' },
-  { name: 'BANANA', emoji: '🍌', v: [45, 40, 84, 82, 86], vibe: 'comfort-loop sessions and loyal favorites' },
-  { name: 'BLUEBERRY', emoji: '🫐', v: [88, 70, 52, 54, 48], vibe: 'night explorer with fresh rotations' },
-  { name: 'WATERMELON', emoji: '🍉', v: [60, 64, 80, 70, 82], vibe: 'long sessions with a consistent daily pulse' },
-  { name: 'KIWI', emoji: '🥝', v: [76, 86, 58, 46, 56], vibe: 'high-curiosity listener with sharp pivots' },
-  { name: 'PEACH', emoji: '🍑', v: [90, 48, 60, 65, 58], vibe: 'late-night focus and smooth transitions' },
-  { name: 'APPLE', emoji: '🍎', v: [52, 50, 78, 60, 92], vibe: 'structured routine with dependable taste' },
-  { name: 'STRAWBERRY', emoji: '🍓', v: [66, 60, 62, 84, 72], vibe: 'hook-heavy favorites with strong replay love' },
+  { name: 'MANGO', emoji: '🥭', v: [58, 74, 66, 61, 72, 64, 68, 63], vibe: 'balanced explorer energy with steady habits' },
+  { name: 'PINEAPPLE', emoji: '🍍', v: [64, 94, 54, 46, 58, 88, 42, 72], vibe: 'always digging for new sounds' },
+  { name: 'CHERRY', emoji: '🍒', v: [71, 48, 63, 91, 66, 52, 86, 57], vibe: 'emotion-first repeats that hit every time' },
+  { name: 'BANANA', emoji: '🍌', v: [44, 38, 86, 89, 88, 40, 64, 92], vibe: 'comfort-loop sessions and loyal favorites' },
+  { name: 'BLUEBERRY', emoji: '🫐', v: [92, 69, 50, 52, 46, 76, 60, 38], vibe: 'night explorer with fresh rotations' },
+  { name: 'WATERMELON', emoji: '🍉', v: [57, 62, 82, 66, 83, 70, 74, 78], vibe: 'long sessions with a consistent daily pulse' },
+  { name: 'KIWI', emoji: '🥝', v: [74, 88, 57, 44, 54, 96, 48, 64], vibe: 'high-curiosity listener with sharp pivots' },
+  { name: 'PEACH', emoji: '🍑', v: [90, 44, 58, 68, 57, 60, 92, 50], vibe: 'late-night focus and smooth transitions' },
+  { name: 'APPLE', emoji: '🍎', v: [50, 46, 79, 59, 95, 42, 58, 96], vibe: 'structured routine with dependable taste' },
+  { name: 'STRAWBERRY', emoji: '🍓', v: [65, 56, 64, 86, 74, 58, 82, 70], vibe: 'hook-heavy favorites with strong replay love' },
 ];
 const SLIDE4_BG_EMOJIS = ['🎵','✨','🎶','💿','🎧','🎤','🎼','🎹','🎸','🎺','🥁','🎻'];
 
@@ -648,8 +653,27 @@ type DnaMetrics = {
   deepSessions: number;
   replayLove: number;
   routine: number;
+  artistVariety: number;
+  moodSwing: number;
+  skipResistance: number;
   notes: string[];
+  reasonSummary: string;
 };
+
+const DNA_METRIC_CONFIG: Array<{ key: keyof Omit<DnaMetrics, 'notes' | 'reasonSummary'>; label: string; hint: string; color: string; textColor?: string }> = [
+  { key: 'nightOwl', label: 'NIGHT OWL', hint: 'Late-night play ratio', color: NB.electricBlue },
+  { key: 'freshFinds', label: 'FRESH FINDS', hint: 'How often you discover new tracks', color: NB.coral },
+  { key: 'deepSessions', label: 'SESSION DEPTH', hint: 'Average session intensity', color: NB.magenta },
+  { key: 'replayLove', label: 'REPLAY LOVE', hint: 'Repeat loyalty to favorites', color: NB.acidYellow },
+  { key: 'routine', label: 'ROUTINE', hint: 'Consistency across days', color: NB.nearBlack, textColor: NB.white },
+  { key: 'artistVariety', label: 'VARIETY', hint: 'How many artists are in your active rotation', color: '#14B8A6' },
+  { key: 'moodSwing', label: 'MOOD SWING', hint: 'How sharply your sessions change vibe', color: '#7C3AED' },
+  { key: 'skipResistance', label: 'SKIP RESISTANCE', hint: 'How often tracks finish before switching', color: '#0EA5E9' },
+];
+
+function normalizeToPercent(value: number) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
 
 function computeDnaMetrics(historyRows: HistoryRow[], songs: Song[]): DnaMetrics {
   const safeHistory = historyRows.filter((item) => !!item.played_at);
@@ -662,6 +686,8 @@ function computeDnaMetrics(historyRows: HistoryRow[], songs: Song[]): DnaMetrics
   }).length;
 
   const trackSeen = new Set<string>();
+  const artistSeen = new Set<string>();
+  const trackTimeline: string[] = [];
   let firstListenCount = 0;
   for (const row of sortedAsc) {
     const key = (row.track_name || '').toLowerCase();
@@ -670,12 +696,16 @@ function computeDnaMetrics(historyRows: HistoryRow[], songs: Song[]): DnaMetrics
       firstListenCount++;
       trackSeen.add(key);
     }
+    trackTimeline.push(key);
+    const guessedArtist = key.split(' - ')[0];
+    if (guessedArtist) artistSeen.add(guessedArtist);
   }
 
   let sessions = 0;
   let sessionMs = 0;
   let currentSession = 0;
   let lastEnd = 0;
+  const sessionTracks: number[] = [];
   for (const row of sortedAsc) {
     const start = new Date(row.played_at).getTime();
     const dur = row.duration_ms || 0;
@@ -684,10 +714,12 @@ function computeDnaMetrics(historyRows: HistoryRow[], songs: Song[]): DnaMetrics
         sessions++;
         sessionMs += currentSession;
       }
+      if (sessionTracks.length < sessions + 1) sessionTracks.push(0);
       currentSession = dur;
     } else {
       currentSession += dur;
     }
+    sessionTracks[sessionTracks.length - 1] = (sessionTracks[sessionTracks.length - 1] || 0) + 1;
     lastEnd = start + dur;
   }
   if (currentSession > 0) {
@@ -700,11 +732,30 @@ function computeDnaMetrics(historyRows: HistoryRow[], songs: Song[]): DnaMetrics
   const topSongShare = (songs[0]?.listens || 0) / totalSongListens;
   const avgSessionMins = (sessionMs / Math.max(1, sessions)) / 60000;
 
-  const nightOwl = Math.min(100, Math.round((lateNightPlays / totalPlays) * 180));
-  const freshFinds = Math.min(100, Math.round((firstListenCount / totalPlays) * 240));
-  const deepSessions = Math.min(100, Math.round((avgSessionMins / 85) * 100));
-  const replayLove = Math.min(100, Math.round(Math.pow(topSongShare, 0.82) * 230));
-  const routine = Math.min(100, Math.round((dailySet.size / Math.max(7, Math.min(31, dailySet.size || 1))) * 100));
+  const hourBins = Array.from({ length: 24 }, () => 0);
+  for (const row of safeHistory) {
+    hourBins[new Date(row.played_at).getHours()] += 1;
+  }
+  const totalHours = hourBins.reduce((sum, n) => sum + n, 0) || 1;
+  const meanHour = hourBins.reduce((sum, count, hour) => sum + hour * count, 0) / totalHours;
+  const hourVariance = hourBins.reduce((sum, count, hour) => sum + count * Math.pow(hour - meanHour, 2), 0) / totalHours;
+
+  let consecutiveRepeats = 0;
+  for (let i = 1; i < trackTimeline.length; i++) {
+    if (trackTimeline[i] === trackTimeline[i - 1]) consecutiveRepeats++;
+  }
+
+  const varietyRatio = artistSeen.size / Math.max(1, Math.sqrt(totalPlays));
+  const medianSessionTracks = [...sessionTracks].sort((a, b) => a - b)[Math.floor(sessionTracks.length / 2)] || 1;
+
+  const nightOwl = normalizeToPercent((lateNightPlays / totalPlays) * 180);
+  const freshFinds = normalizeToPercent((firstListenCount / totalPlays) * 240);
+  const deepSessions = normalizeToPercent((avgSessionMins / 85) * 100);
+  const replayLove = normalizeToPercent(Math.pow(topSongShare, 0.82) * 230);
+  const routine = normalizeToPercent((dailySet.size / Math.max(7, Math.min(31, dailySet.size || 1))) * 100);
+  const artistVariety = normalizeToPercent(Math.log1p(varietyRatio * 16) / Math.log(17) * 100);
+  const moodSwing = normalizeToPercent(Math.min(1, hourVariance / 45) * 100);
+  const skipResistance = normalizeToPercent(Math.max(0, 100 - (consecutiveRepeats / Math.max(1, totalPlays)) * 120 + medianSessionTracks * 4));
 
   return {
     nightOwl,
@@ -712,33 +763,72 @@ function computeDnaMetrics(historyRows: HistoryRow[], songs: Song[]): DnaMetrics
     deepSessions,
     replayLove,
     routine,
+    artistVariety,
+    moodSwing,
+    skipResistance,
     notes: [
       `${lateNightPlays} late-night plays`,
       `${firstListenCount} first-time track moments`,
       `${Math.round(avgSessionMins)}m avg session`,
     ],
+    reasonSummary: `High ${nightOwl >= 70 ? 'night-owl' : 'daytime'} energy, ${artistVariety >= 65 ? 'broad variety' : 'focused favorites'}, and ${replayLove >= 70 ? 'strong replay love' : 'balanced replay behavior'}.`,
   };
 }
 
+function metricsVector(metrics: DnaMetrics): number[] {
+  return [
+    metrics.nightOwl,
+    metrics.freshFinds,
+    metrics.deepSessions,
+    metrics.replayLove,
+    metrics.routine,
+    metrics.artistVariety,
+    metrics.moodSwing,
+    metrics.skipResistance,
+  ];
+}
+
 function pickFruitFromMetrics(metrics: DnaMetrics) {
-  const vec = [metrics.nightOwl, metrics.freshFinds, metrics.deepSessions, metrics.replayLove, metrics.routine];
+  const vec = metricsVector(metrics);
+  const mean = vec.reduce((sum, value) => sum + value, 0) / vec.length;
+  const variance = vec.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / vec.length;
+  const sigma = Math.sqrt(Math.max(variance, 1));
+
   return FRUIT_PROFILES
-    .map((f) => ({ ...f, score: Math.sqrt(f.v.reduce((sum, value, i) => sum + Math.pow(value - vec[i], 2), 0)) }))
+    .map((f) => {
+      const profileVec = f.v;
+      const euclidean = Math.sqrt(profileVec.reduce((sum, value, i) => sum + Math.pow(value - vec[i], 2), 0));
+      const covarianceAdjusted = Math.sqrt(profileVec.reduce((sum, value, i) => sum + Math.pow((value - vec[i]) / sigma, 2), 0));
+      const dot = profileVec.reduce((sum, value, i) => sum + value * vec[i], 0);
+      const profileNorm = Math.sqrt(profileVec.reduce((sum, value) => sum + value * value, 0));
+      const vecNorm = Math.sqrt(vec.reduce((sum, value) => sum + value * value, 0));
+      const cosineDistance = 1 - dot / Math.max(1, profileNorm * vecNorm);
+      const blendedScore = euclidean * 0.45 + covarianceAdjusted * 0.35 + cosineDistance * 100 * 0.2;
+      return { ...f, score: blendedScore };
+    })
     .sort((a, b) => a.score - b.score)[0];
 }
 
-
 function buildFruitDnaSequence(metrics: DnaMetrics, songs: Song[], historyRows: HistoryRow[], fruitName: string): string {
-  const seedBase = `${fruitName}|${songs.slice(0, 6).map((s) => `${s.title}:${s.listens}`).join('|')}|${historyRows.length}|${metrics.nightOwl}|${metrics.replayLove}`;
-  let seed = 0;
-  for (let i = 0; i < seedBase.length; i++) seed = (seed * 31 + seedBase.charCodeAt(i)) % 2147483647;
-  const chars = ['A', 'T', 'C', 'G'];
-  let seq = '';
-  for (let i = 0; i < 32; i++) {
-    seed = (seed * 48271) % 2147483647;
-    seq += chars[seed % 4];
+  const vectorPart = metricsVector(metrics).map((v) => Math.round(v / 2)).join('-');
+  const stableSongPart = songs.slice(0, 6).map((s) => `${s.id || s.title}:${s.listens}`).join('|');
+  const stableHistoryPart = historyRows.slice(0, 50).map((row) => `${row.track_name || 'x'}@${row.played_at.slice(0, 10)}`).join('|');
+  const seedBase = `${fruitName}|${vectorPart}|${stableSongPart}|${historyRows.length}|${stableHistoryPart}`;
+  let seed = 2166136261;
+  for (let i = 0; i < seedBase.length; i++) {
+    seed ^= seedBase.charCodeAt(i);
+    seed = Math.imul(seed, 16777619);
   }
-  return seq;
+
+  const nucleotides = ['A', 'T', 'C', 'G'] as const;
+  const complements: Record<string, string> = { A: 'T', T: 'A', C: 'G', G: 'C' };
+  let strand = '';
+  for (let i = 0; i < 24; i++) {
+    seed = Math.imul(seed ^ (seed >>> 13), 1103515245) + 12345;
+    strand += nucleotides[Math.abs(seed) % 4];
+  }
+  const paired = strand.split('').map((base) => `${base}${complements[base]}`).join('');
+  return paired;
 }
 
 // SLIDE 4: THE IDENTITY SCAN
@@ -775,7 +865,7 @@ const Slide4: React.FC<{ active: boolean; songs: Song[]; historyRows: HistoryRow
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.4 }}>
               <h1 style={{ margin: '0 0 4px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(30px, 8vw, 46px)', color: NB.white, textTransform: 'uppercase', lineHeight: 1 }}>WHAT FRUIT ARE YOU?</h1>
               <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' }}>
-                {phase === 1 ? 'POWERED BY REAL LISTENING HISTORY' : 'SCANNING YOUR 5-POINT MUSIC DNA'}
+                {phase === 1 ? 'POWERED BY REAL LISTENING HISTORY' : 'SCANNING YOUR 8-POINT MUSIC DNA'}
               </p>
             </motion.div>
           )}
@@ -820,49 +910,53 @@ const Slide4: React.FC<{ active: boolean; songs: Song[]; historyRows: HistoryRow
                 </p>
                 <p style={{ margin: '0 0 8px 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>Your listening matches: {winningFruit.vibe}.</p>
                 <p style={{ margin: '0 0 8px 0', fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#444' }}>Unique DNA sequence: <b>{dnaSequence}</b></p>
-                {/* DNA double helix visualization */}
-                <svg width="100%" height="36" viewBox="0 0 260 36" style={{ marginBottom: 10, display: 'block' }}>
-                  {Array.from({ length: 20 }, (_, i) => {
-                    const x = i * 13;
-                    const y1 = 18 + Math.sin((i / 20) * Math.PI * 4) * 14;
-                    const y2 = 18 - Math.sin((i / 20) * Math.PI * 4) * 14;
-                    const nx = (i + 1) * 13;
-                    const ny1 = 18 + Math.sin(((i + 1) / 20) * Math.PI * 4) * 14;
-                    const ny2 = 18 - Math.sin(((i + 1) / 20) * Math.PI * 4) * 14;
+                {/* DNA double helix visualization (derived from the generated sequence) */}
+                <svg width="100%" height="52" viewBox="0 0 310 52" style={{ marginBottom: 10, display: 'block' }}>
+                  {Array.from({ length: Math.min(24, Math.floor(dnaSequence.length / 2)) }, (_, i) => {
+                    const pair = dnaSequence.slice(i * 2, i * 2 + 2);
+                    const baseA = pair[0] || 'A';
+                    const baseB = pair[1] || 'T';
+                    const colorMap: Record<string, string> = { A: NB.electricBlue, T: NB.coral, C: NB.magenta, G: NB.acidYellow };
+                    const x = 8 + i * 12;
+                    const wave = Math.sin((i / 8) * Math.PI);
+                    const y1 = 26 + wave * 16;
+                    const y2 = 26 - wave * 16;
+                    const nextX = 8 + (i + 1) * 12;
+                    const nextWave = Math.sin(((i + 1) / 8) * Math.PI);
+                    const nextY1 = 26 + nextWave * 16;
+                    const nextY2 = 26 - nextWave * 16;
                     return (
-                      <g key={i}>
-                        {i < 19 && <line x1={x} y1={y1} x2={nx} y2={ny1} stroke={NB.electricBlue} strokeWidth={1.5} opacity={0.5} />}
-                        {i < 19 && <line x1={x} y1={y2} x2={nx} y2={ny2} stroke={NB.coral} strokeWidth={1.5} opacity={0.5} />}
-                        {i % 3 === 0 && <line x1={x} y1={y1} x2={x} y2={y2} stroke="#aaa" strokeWidth={1} opacity={0.6} />}
-                        <circle cx={x} cy={y1} r={3} fill={NB.electricBlue} />
-                        <circle cx={x} cy={y2} r={3} fill={NB.coral} />
+                      <g key={`${pair}-${i}`}>
+                        {i < 23 && <line x1={x} y1={y1} x2={nextX} y2={nextY1} stroke={colorMap[baseA]} strokeWidth={1.5} opacity={0.55} />}
+                        {i < 23 && <line x1={x} y1={y2} x2={nextX} y2={nextY2} stroke={colorMap[baseB]} strokeWidth={1.5} opacity={0.55} />}
+                        <line x1={x} y1={y1} x2={x} y2={y2} stroke="#989898" strokeWidth={0.9} opacity={0.75} />
+                        <circle cx={x} cy={y1} r={2.6} fill={colorMap[baseA]} />
+                        <circle cx={x} cy={y2} r={2.6} fill={colorMap[baseB]} />
                       </g>
                     );
                   })}
                 </svg>
-                {[
-                  { label: 'NIGHT OWL', hint: 'Late-night play ratio', value: metrics.nightOwl, color: NB.electricBlue },
-                  { label: 'FRESH FINDS', hint: 'How often you discover new tracks', value: metrics.freshFinds, color: NB.coral },
-                  { label: 'SESSION DEPTH', hint: 'Average session intensity', value: metrics.deepSessions, color: NB.magenta },
-                  { label: 'REPLAY LOVE', hint: 'Repeat loyalty to favorites', value: metrics.replayLove, color: NB.acidYellow },
-                  { label: 'ROUTINE', hint: 'Consistency across days', value: metrics.routine, color: NB.nearBlack, textColor: NB.white },
-                ].map((metric, i) => (
-                  <div key={metric.label} style={{ marginBottom: i === 4 ? 0 : 8 }}>
+                {DNA_METRIC_CONFIG.map((metric, i) => {
+                  const metricValue = metrics[metric.key] as number;
+                  return (
+                  <div key={metric.label} style={{ marginBottom: i === DNA_METRIC_CONFIG.length - 1 ? 0 : 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
                       <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11 }}>{metric.label}</span>
-                      <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900 }}>{metric.value}%</span>
+                      <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900 }}>{metricValue}%</span>
                     </div>
                     <p style={{ margin: '0 0 4px 0', fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#666' }}>{metric.hint}</p>
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${metric.value}%` }} transition={{ duration: 0.6, delay: i * 0.12 }} style={{ height: 10, background: metric.color, border: `2px solid ${NB.black}`, color: metric.textColor || NB.black }} />
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${metricValue}%` }} transition={{ duration: 0.6, delay: i * 0.12 }} style={{ height: 10, background: metric.color, border: `2px solid ${NB.black}`, color: metric.textColor || NB.black }} />
                   </div>
-                ))}
-                <p style={{ margin: '10px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#444' }}>{metrics.notes.join(' • ')}</p>
+                  );
+                })}
+                <p style={{ margin: '10px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#444' }}>{metrics.reasonSummary}</p>
+                <p style={{ margin: '6px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#444' }}>{metrics.notes.join(' • ')}</p>
               </BCard>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-      <Ticker text="FRUIT DNA  REAL DATA  5 METRIC PROFILE" bg={NB.acidYellow} color={NB.black} />
+      <Ticker text="FRUIT DNA  REAL DATA  8 METRIC PROFILE" bg={NB.acidYellow} color={NB.black} />
     </div>
   );
 };
@@ -1029,6 +1123,9 @@ const Slide6: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
         <BCard>
           <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 26, color: NB.black, textTransform: 'uppercase' }}>{verdict}</p>
           {winner && <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>🏆 {winner.name} dominates your chart</p>}
+          <p style={{ margin: '6px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#222' }}>
+            Loyalty means your top artist owns <b>{Math.round(topShare * 100)}%</b> of your top-6 listens. High % = focused super-fan mode, lower % = a wider artist mix.
+          </p>
         </BCard>
       </div>
       <Ticker text="LOYALTY MAP  ARTIST CREW  TOP ROTATION" bg={NB.nearBlack} color={NB.acidYellow} />
@@ -1325,7 +1422,7 @@ const Slide9: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = 
 };
 
 // SLIDE 10: THE CONNECTION
-const Slide10: React.FC<{ active: boolean; artists: Artist[]; connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> } }> = ({ active, artists, connectionGraph }) => {
+const Slide10: React.FC<{ active: boolean; artists: Artist[]; rangeLabel?: string; connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> } }> = ({ active, artists, rangeLabel, connectionGraph }) => {
   const pairs = useMemo(() => buildConnectionPairs(connectionGraph), [connectionGraph]);
   const [slotIndex, setSlotIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -1341,14 +1438,16 @@ const Slide10: React.FC<{ active: boolean; artists: Artist[]; connectionGraph?: 
     } satisfies ConnectionPair;
   }, [artists]);
 
-  const extraPairs = artists.slice(0, 4).flatMap((a, i) => artists.slice(i + 1, 5).map((b, j) => ({
-    a: { id: a.id, name: a.name, image: a.image || fallbackImage },
-    b: { id: b.id, name: b.name, image: b.image || fallbackImage },
-    closeness: Math.min(96, 52 + (i * 8) + (j * 6)),
-    sharedSessions: Math.max(3, Math.round((a.totalListens + b.totalListens) / 22)),
-  } as ConnectionPair)));
-  const mergedPairs = [...pairs, ...extraPairs].filter((pair, idx, arr) => idx === arr.findIndex((x) => [x.a.id, x.b.id].sort().join(':') === [pair.a.id, pair.b.id].sort().join(':')));
-  const displayPairs = mergedPairs.length ? mergedPairs : fallbackPair ? [fallbackPair] : [];
+  const displayPairs = useMemo(() => {
+    const extraPairs = artists.slice(0, 4).flatMap((a, i) => artists.slice(i + 1, 5).map((b, j) => ({
+      a: { id: a.id, name: a.name, image: a.image || fallbackImage },
+      b: { id: b.id, name: b.name, image: b.image || fallbackImage },
+      closeness: Math.min(96, 52 + (i * 8) + (j * 6)),
+      sharedSessions: Math.max(3, Math.round((a.totalListens + b.totalListens) / 22)),
+    } as ConnectionPair)));
+    const mergedPairs = [...pairs, ...extraPairs].filter((pair, idx, arr) => idx === arr.findIndex((x) => [x.a.id, x.b.id].sort().join(':') === [pair.a.id, pair.b.id].sort().join(':')));
+    return mergedPairs.length ? mergedPairs : fallbackPair ? [fallbackPair] : [];
+  }, [artists, pairs, fallbackPair]);
   const winner = displayPairs[0];
 
   useEffect(() => {
@@ -1376,10 +1475,10 @@ const Slide10: React.FC<{ active: boolean; artists: Artist[]; connectionGraph?: 
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.magenta, overflow: 'hidden' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 14 }}>
         <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 8vw, 56px)', color: NB.white, margin: 0, textTransform: 'uppercase', lineHeight: 1 }}>
-          THIS WEEK'S CLOSE CONNECTION
+          CLOSE CONNECTION HIGHLIGHT
         </h1>
         <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)' }}>
-          BASED ON ARTISTS PLAYED CLOSE TOGETHER IN YOUR LISTENING PATTERN
+          BASED ON ARTISTS PLAYED CLOSE TOGETHER IN THIS WRAPPED RANGE
         </p>
 
         <div style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '14px 12px' }}>
@@ -1413,7 +1512,7 @@ const Slide10: React.FC<{ active: boolean; artists: Artist[]; connectionGraph?: 
               {winner.closeness}% CLOSE
             </p>
             <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: NB.black }}>
-              {winner.sharedSessions} shared listening sessions between these artists this week.
+              {winner.sharedSessions} shared listening sessions between these artists in {rangeLabel || 'this wrapped range'}.
             </p>
           </div>
         )}
@@ -1805,6 +1904,11 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
   const [direction, setDirection] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const [historyRows, setHistoryRows] = useState<HistoryRow[]>([]);
+  const [previewMap, setPreviewMap] = useState<Record<string, string>>({});
+  const [snippetEnabled, setSnippetEnabled] = useState(true);
+  const [snippetMuted, setSnippetMuted] = useState(false);
+  const [nowPlayingSnippet, setNowPlayingSnippet] = useState<Song | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -1826,6 +1930,53 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
     });
   }, [historyRows, rangeStart, rangeEnd]);
 
+
+  useEffect(() => {
+    let cancelled = false;
+    const spotifyToken = localStorage.getItem('spotify_token');
+    if (!spotifyToken || songs.length === 0) return;
+    const trackIds = songs.map((song) => song.id).filter(isValidSpotifyTrackId);
+    fetchTrackPreviewUrls(spotifyToken, trackIds).then(async (map) => {
+      const missingSongs = songs.filter((song) => !map[song.id]);
+      const fallbackMap = missingSongs.length
+        ? await fetchTrackPreviewUrlsBySearch(spotifyToken, missingSongs)
+        : {};
+      if (!cancelled) setPreviewMap({ ...map, ...fallbackMap });
+    }).catch(() => {
+      if (!cancelled) setPreviewMap({});
+    });
+    return () => { cancelled = true; };
+  }, [songs]);
+
+  useEffect(() => {
+    if (!snippetEnabled || songs.length === 0) return;
+    const trackForSlide = songs[currentSlide % songs.length];
+    if (!trackForSlide) return;
+    const previewUrl = previewMap[trackForSlide.id];
+    if (!previewUrl) {
+      setNowPlayingSnippet(trackForSlide);
+      return;
+    }
+
+    if (!audioRef.current) audioRef.current = new Audio();
+    const audio = audioRef.current;
+    audio.pause();
+    audio.src = previewUrl;
+    audio.currentTime = 0;
+    audio.volume = snippetMuted ? 0 : 0.65;
+    audio.play().catch(() => {
+      // Browser autoplay restrictions can block this until a user interaction.
+    });
+    setNowPlayingSnippet(trackForSlide);
+
+    return () => {
+      audio.pause();
+    };
+  }, [currentSlide, songs, previewMap, snippetEnabled, snippetMuted]);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = snippetMuted ? 0 : 0.65;
+  }, [snippetMuted]);
   const dnaMetrics = useMemo(() => computeDnaMetrics(filteredHistory, songs), [filteredHistory, songs]);
   const winningFruit = useMemo(() => pickFruitFromMetrics(dnaMetrics), [dnaMetrics]);
 
@@ -1862,7 +2013,7 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
       case 7: return <Slide7 active={currentSlide === 7} artists={artists} songs={songs} />;
       case 8: return <Slide8 active={currentSlide === 8} songs={songs} />;
       case 9: return <Slide9 active={currentSlide === 9} artists={artists} songs={songs} />;
-      case 10: return <Slide10 active={currentSlide === 10} artists={artists} connectionGraph={connectionGraph} />;
+      case 10: return <Slide10 active={currentSlide === 10} artists={artists} rangeLabel={rangeLabel} connectionGraph={connectionGraph} />;
       case 11: return <Slide11 active={currentSlide === 11} songs={songs} />;
       case 12: return <SlideDomination active={currentSlide === 12} artists={artists} />;
       case 13: return <SlidePunkySignal active={currentSlide === 13} historyRows={filteredHistory} />;
@@ -1877,6 +2028,16 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
         <StoryProgressBar current={currentSlide} total={TOTAL_SLIDES} />
         <SlideNavButtons current={currentSlide} total={TOTAL_SLIDES} onPrev={prev} onNext={next} />
         <CloseButton onClose={onClose} />
+
+        <div style={{ position: 'absolute', top: 28, right: 56, zIndex: 130, display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.24)', padding: '6px 10px', color: NB.white }}>
+          <button onClick={() => setSnippetEnabled((prev) => !prev)} style={{ border: 'none', background: 'transparent', color: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+            {snippetEnabled ? 'SNIPPET ON' : 'SNIPPET OFF'}
+          </button>
+          <button onClick={() => setSnippetMuted((prev) => !prev)} style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }} aria-label="Toggle snippet mute">
+            {snippetMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+          </button>
+          {nowPlayingSnippet && <span style={{ fontSize: 10, maxWidth: 160, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>♪ {nowPlayingSnippet.title}</span>}
+        </div>
         <AnimatePresence initial={false} custom={direction} mode="sync">
           <motion.div key={currentSlide} custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.2, ease: 'easeOut' }} drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.1} onDragEnd={handleDragEnd} style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
             {renderSlide()}
