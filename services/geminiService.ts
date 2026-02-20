@@ -68,7 +68,27 @@ export const AI_MODELS: AIModel[] = [
     { id: "qwen/qwen3-32b", label: "Qwen3 32B", isReasoning: true },
 ];
 
-export const DEFAULT_MODEL_ID = "moonshotai/kimi-k2-instruct-0905";
+export const DEFAULT_MODEL_ID = "llama-3.1-8b-instant";
+
+const trimToolPayload = (payload: any): any => {
+    if (!payload || typeof payload !== 'object') return payload;
+
+    const clone: any = { ...payload };
+    const trimArray = (arr: any[], max = 6) => arr.slice(0, max);
+
+    ['songs', 'artists', 'albums', 'plays', 'tracks', 'results', 'items', 'connections', 'edges', 'nodes'].forEach((key) => {
+        if (Array.isArray(clone[key])) clone[key] = trimArray(clone[key]);
+    });
+
+    Object.keys(clone).forEach((key) => {
+        const val = clone[key];
+        if (typeof val === 'string' && val.length > 280) {
+            clone[key] = `${val.slice(0, 277)}...`;
+        }
+    });
+
+    return clone;
+};
 
 // ─── TOOL CALL TYPES ──────────────────────────────────────────────
 export interface ToolCallInfo {
@@ -1540,7 +1560,8 @@ export const answerMusicQuestionWithTools = async (
                 max_tokens: 800
             };
             if (modelInfo?.isReasoning) {
-                requestParams.reasoning_effort = "medium";
+                // Groq currently accepts only: "none" | "default"
+                requestParams.reasoning_effort = "default";
             }
 
             const response = await client.chat.completions.create(requestParams);
@@ -1558,7 +1579,8 @@ export const answerMusicQuestionWithTools = async (
                         const funcArgs = JSON.parse(toolCall.function.arguments || "{}");
                         const iconInfo = TOOL_ICON_MAP[funcName] || { icon: 'Zap', label: funcName };
 
-                        const result = await executeAgentTool(funcName, funcArgs, token);
+                        const rawResult = await executeAgentTool(funcName, funcArgs, token);
+                        const result = trimToolPayload(rawResult);
 
                         collectedToolCalls.push({
                             id: toolCall.id,
@@ -2649,3 +2671,32 @@ function buildDefaultWrappedSlides(stats: any, vibe: any, period: string): Wrapp
 
     return slides;
 }
+
+
+export const generateTopAlbumFunFact = async (album: { title: string; artist: string; plays?: number; trackCount?: number }): Promise<string> => {
+    try {
+        const client = getAiClient();
+        if (!client) return "This album basically became your co-pilot this week.";
+
+        const response = await client.chat.completions.create({
+            model: "llama-3.1-8b-instant",
+            temperature: 0.9,
+            max_tokens: 80,
+            messages: [
+                {
+                    role: "system",
+                    content: "You write one playful fun fact about a listener's top album. Keep it under 24 words, confident, and never mention being an AI."
+                },
+                {
+                    role: "user",
+                    content: `Top album: ${album.title} by ${album.artist}. Plays: ${album.plays || 0}. Track count in listening set: ${album.trackCount || 0}.`
+                }
+            ]
+        });
+
+        const content = response.choices?.[0]?.message?.content?.trim();
+        return content || "This album had main-character energy in your week.";
+    } catch {
+        return "This album had main-character energy in your week.";
+    }
+};

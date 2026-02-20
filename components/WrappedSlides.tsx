@@ -3,6 +3,7 @@ import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
 import { fetchHeatmapData } from '../services/dbService';
+import { generateTopAlbumFunFact } from '../services/geminiService';
 
 const NB = {
   electricBlue: '#1A6BFF',
@@ -531,22 +532,26 @@ const Slide2: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
 
 // SLIDE 3: THE VAULT GUESS
 const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums }) => {
-  const topThree = albums.slice(0, 3);
+  const topThree = useMemo(() => albums.slice(0, 3), [albums]);
+  const topAlbum = topThree[0];
   const palette = [NB.electricBlue, NB.coral, NB.magenta];
   const ROUND_SECONDS = 7;
   const [timer, setTimer] = useState(ROUND_SECONDS);
   const [revealed, setRevealed] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
+  const [funFact, setFunFact] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const requestedAlbumIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!active) {
-      setTimer(ROUND_SECONDS); setRevealed(false); setSelected(null);
+      setTimer(ROUND_SECONDS); setRevealed(false); setSelected(null); setFunFact('');
+      requestedAlbumIdRef.current = null;
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
     const deadline = Date.now() + ROUND_SECONDS * 1000;
-    setTimer(ROUND_SECONDS); setRevealed(false); setSelected(null);
+    setTimer(ROUND_SECONDS); setRevealed(false); setSelected(null); setFunFact('');
     timerRef.current = setInterval(() => {
       const remainingMs = deadline - Date.now();
       const nextValue = Math.max(0, Math.ceil(remainingMs / 1000));
@@ -558,6 +563,18 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
     }, 50);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [active]);
+
+  useEffect(() => {
+    let canceled = false;
+    if (!revealed || !topAlbum) return;
+    if (requestedAlbumIdRef.current === topAlbum.id) return;
+
+    requestedAlbumIdRef.current = topAlbum.id;
+    generateTopAlbumFunFact({ title: topAlbum.title, artist: topAlbum.artist, plays: topAlbum.totalListens }).then((fact) => {
+      if (!canceled) setFunFact(fact);
+    });
+    return () => { canceled = true; };
+  }, [revealed, topAlbum]);
 
   const handlePick = (i: number) => {
     if (revealed) return;
@@ -586,19 +603,23 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
             const isSelected = selected === i;
             const borderColor = revealed ? (isCorrect ? NB.acidYellow : isSelected ? '#FF0000' : NB.black) : NB.black;
             const borderWidth = revealed && isCorrect ? 6 : 4;
+            const flip = revealed && isCorrect;
             return (
-              <div key={album.id} onClick={(e) => { e.stopPropagation(); handlePick(i); }} style={{ flex: 1, cursor: 'pointer', border: `${borderWidth}px solid ${borderColor}`, position: 'relative', overflow: 'hidden', boxShadow: '3px 3px 0 #000', borderRadius: 0, minWidth: 0 }}>
-                <div style={{ aspectRatio: '1 / 1', background: palette[i], position: 'relative' }}>
-                  {album.cover && <img src={album.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
-                  {revealed && (
-                    <div style={{ position: 'absolute', top: 4, right: 4, background: isCorrect ? NB.acidYellow : '#FF0000', padding: '2px 6px', border: `2px solid ${NB.black}`, borderRadius: 0 }}>
-                      <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 12, color: NB.black }}>{isCorrect ? '\u2713 CORRECT' : '\u2715 WRONG'}</span>
+              <div key={album.id} onClick={(e) => { e.stopPropagation(); handlePick(i); }} style={{ flex: 1, cursor: 'pointer', perspective: 900, minWidth: 0 }}>
+                <div style={{ position: 'relative', transformStyle: 'preserve-3d', transition: 'transform 650ms ease', transform: flip ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
+                  <div style={{ border: `${borderWidth}px solid ${borderColor}`, position: 'relative', overflow: 'hidden', boxShadow: '3px 3px 0 #000', borderRadius: 0, backfaceVisibility: 'hidden' }}>
+                    <div style={{ aspectRatio: '1 / 1', background: palette[i], position: 'relative' }}>
+                      {album.cover && <img src={album.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
                     </div>
-                  )}
-                </div>
-                <div style={{ padding: '8px 8px', background: NB.white }}>
-                  <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: NB.black, margin: '0 0 2px 0', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{album.title}</p>
-                  <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#555', margin: 0 }}>{revealed ? `${album.totalListens} plays` : 'Tap to lock your guess'}</p>
+                    <div style={{ padding: '8px 8px', background: NB.white }}>
+                      <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: NB.black, margin: '0 0 2px 0', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{album.title}</p>
+                    </div>
+                  </div>
+                  <div style={{ position: 'absolute', inset: 0, border: `4px solid ${NB.black}`, background: NB.acidYellow, padding: 10, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', boxShadow: '3px 3px 0 #000', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 11, color: NB.black, fontWeight: 700 }}>AI FUN FACT</p>
+                    <p style={{ margin: '6px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 16, lineHeight: 1.1, color: NB.black }}>{funFact || 'Generating your fun fact...'}</p>
+                    <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#333' }}>{album.totalListens} plays</p>
+                  </div>
                 </div>
               </div>
             );
@@ -712,6 +733,19 @@ function pickFruitFromMetrics(metrics: DnaMetrics) {
 }
 
 
+function buildFruitDnaSequence(metrics: DnaMetrics, songs: Song[], historyRows: HistoryRow[], fruitName: string): string {
+  const seedBase = `${fruitName}|${songs.slice(0, 6).map((s) => `${s.title}:${s.listens}`).join('|')}|${historyRows.length}|${metrics.nightOwl}|${metrics.replayLove}`;
+  let seed = 0;
+  for (let i = 0; i < seedBase.length; i++) seed = (seed * 31 + seedBase.charCodeAt(i)) % 2147483647;
+  const chars = ['A', 'T', 'C', 'G'];
+  let seq = '';
+  for (let i = 0; i < 32; i++) {
+    seed = (seed * 48271) % 2147483647;
+    seq += chars[seed % 4];
+  }
+  return seq;
+}
+
 // SLIDE 4: THE IDENTITY SCAN
 const Slide4: React.FC<{ active: boolean; songs: Song[]; historyRows: HistoryRow[] }> = ({ active, songs, historyRows }) => {
   const [phase, setPhase] = useState(0);
@@ -720,6 +754,7 @@ const Slide4: React.FC<{ active: boolean; songs: Song[]; historyRows: HistoryRow
   const metrics = useMemo(() => computeDnaMetrics(historyRows, songs), [historyRows, songs]);
 
   const winningFruit = useMemo(() => pickFruitFromMetrics(metrics), [metrics]);
+  const dnaSequence = useMemo(() => buildFruitDnaSequence(metrics, songs, historyRows, winningFruit?.name || 'MANGO'), [metrics, songs, historyRows, winningFruit]);
 
   useEffect(() => {
     timers.current.forEach(clearTimeout);
@@ -751,7 +786,7 @@ const Slide4: React.FC<{ active: boolean; songs: Song[]; historyRows: HistoryRow
           )}
         </AnimatePresence>
 
-        <div style={{ height: 220, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ height: 180, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <motion.div animate={{ rotate: phase >= 1 ? (phase >= 2 ? 3600 : 360) : 0 }} transition={{ duration: phase >= 2 ? 2 : 12, repeat: phase <= 2 ? Infinity : 0, ease: phase >= 2 ? [0.4, 0, 0.2, 1] : 'linear' }} style={{ position: 'absolute', width: '100%', height: '100%' }}>
             {FRUIT_PROFILES.map((fruit, i) => {
               const angle = (360 / FRUIT_PROFILES.length) * i;
@@ -784,11 +819,12 @@ const Slide4: React.FC<{ active: boolean; songs: Song[]; historyRows: HistoryRow
         <AnimatePresence>
           {phase >= 4 && winningFruit && (
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <BCard style={{ background: NB.white }}>
+              <BCard style={{ background: NB.white, maxHeight: '54vh', overflowY: 'auto' }}>
                 <p style={{ margin: '0 0 2px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 30, color: NB.black }}>
                   YOU ARE {winningFruit.emoji} {winningFruit.name}
                 </p>
                 <p style={{ margin: '0 0 8px 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>Your listening matches: {winningFruit.vibe}.</p>
+                <p style={{ margin: '0 0 8px 0', fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#444' }}>Unique DNA sequence: <b>{dnaSequence}</b></p>
                 {/* DNA double helix visualization */}
                 <svg width="100%" height="36" viewBox="0 0 260 36" style={{ marginBottom: 10, display: 'block' }}>
                   {Array.from({ length: 20 }, (_, i) => {
@@ -881,7 +917,7 @@ const Slide5: React.FC<{ active: boolean }> = ({ active }) => {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.electricBlue, position: 'relative', overflow: 'hidden' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 12, overflowY: 'auto' }}>
-        <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(32px, 8vw, 52px)', color: NB.white, textTransform: 'uppercase', margin: 0 }}>YOUR LISTENING WINDOWS</h2>
+        <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(32px, 8vw, 52px)', color: NB.white, textTransform: 'uppercase', margin: 0 }}>YOUR LISTENING STORY</h2>
         <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: 0 }}>REAL PLAYTIME SPLIT FROM YOUR HISTORY</p>
 
         <BCard style={{ marginTop: 2, background: 'rgba(255,255,255,0.96)' }}>
@@ -1284,7 +1320,7 @@ const Slide9: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = 
         <BCard style={{ background: NB.white }}>
           <p style={{ margin: '0 0 4px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: NB.black, textTransform: 'uppercase' }}>Compliment:</p>
           <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 13, color: '#222' }}>
-            You built a strong orbit around <b>{topArtist?.name || 'your top artist'}</b> and kept it spinning with repeat plays.
+            Chapter 1: you discovered <b>{topArtist?.name || 'your top artist'}</b>. Chapter 2: you replayed favorites until they became comfort tracks. Chapter 3: orbit locked.
           </p>
         </BCard>
       </div>
@@ -1310,7 +1346,14 @@ const Slide10: React.FC<{ active: boolean; artists: Artist[]; connectionGraph?: 
     } satisfies ConnectionPair;
   }, [artists]);
 
-  const displayPairs = pairs.length ? pairs : fallbackPair ? [fallbackPair] : [];
+  const extraPairs = artists.slice(0, 4).flatMap((a, i) => artists.slice(i + 1, 5).map((b, j) => ({
+    a: { id: a.id, name: a.name, image: a.image || fallbackImage },
+    b: { id: b.id, name: b.name, image: b.image || fallbackImage },
+    closeness: Math.min(96, 52 + (i * 8) + (j * 6)),
+    sharedSessions: Math.max(3, Math.round((a.totalListens + b.totalListens) / 22)),
+  } as ConnectionPair)));
+  const mergedPairs = [...pairs, ...extraPairs].filter((pair, idx, arr) => idx === arr.findIndex((x) => [x.a.id, x.b.id].sort().join(':') === [pair.a.id, pair.b.id].sort().join(':')));
+  const displayPairs = mergedPairs.length ? mergedPairs : fallbackPair ? [fallbackPair] : [];
   const winner = displayPairs[0];
 
   useEffect(() => {
