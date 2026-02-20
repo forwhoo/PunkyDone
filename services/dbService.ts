@@ -351,7 +351,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         }));
 
         const songs = (data.songs || []).map((s: any, i: number) => ({
-            id: `song-${i}`,
+            id: s.spotify_id || `song-${i}`,
             title: s.title,
             artist: s.artist,
             album: '',
@@ -384,7 +384,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
     // 1. Fetch all data in a single optimized query
     const query = supabase
         .from('listening_history')
-        .select('track_name, artist_name, album_name, album_cover, duration_ms, played_at')
+        .select('spotify_id, track_name, artist_name, album_name, album_cover, duration_ms, played_at')
         .gte('played_at', startDate.toISOString())
         .order('played_at', { ascending: false });
     
@@ -438,7 +438,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
 
     // Use Maps for O(1) lookups - much faster than objects for large datasets
     const artistCounts = new Map<string, { count: number, time: number, image: string }>();
-    const songCounts = new Map<string, { count: number, artist: string, cover: string, duration: number, totalTime: number }>();
+    const songCounts = new Map<string, { count: number, artist: string, cover: string, duration: number, totalTime: number, spotifyId: string }>();
     const albumStats = new Map<string, { count: number, duration: number, artist: string, cover: string }>();
 
     // Single pass through data to compute all stats
@@ -461,12 +461,20 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         if (item.track_name && item.artist_name) {
             const songKey = `${item.track_name}||${item.artist_name}`;
             if (!songCounts.has(songKey)) {
-                songCounts.set(songKey, { count: 0, artist: item.artist_name, cover: item.album_cover || '', duration: durationMs, totalTime: 0 });
+                songCounts.set(songKey, {
+                    count: 0,
+                    artist: item.artist_name,
+                    cover: item.album_cover || '',
+                    duration: durationMs,
+                    totalTime: 0,
+                    spotifyId: item.spotify_id || ''
+                });
             }
             const song = songCounts.get(songKey)!;
             if (isValidPlay) song.count++;
             song.totalTime += durationMs;
             if (!song.cover && item.album_cover) song.cover = item.album_cover;
+            if (!song.spotifyId && item.spotify_id) song.spotifyId = item.spotify_id;
         }
 
         // Album stats
@@ -499,7 +507,7 @@ export const fetchDashboardStats = async (timeRange: 'Daily' | 'Weekly' | 'Month
         .sort(([, a], [, b]) => b.totalTime - a.totalTime)
         .slice(0, 100)
         .map(([key, info], index) => ({
-            id: `song-${index}`,
+            id: info.spotifyId || `song-${index}`,
             title: key.split('||')[0],
             artist: info.artist,
             album: '',
