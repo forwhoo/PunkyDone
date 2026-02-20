@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import PrismaticBurst from './reactbits/PrismaticBurst';
 import WrappedSlides from './WrappedSlides';
 import { Artist, Album, Song } from '../types';
 
@@ -168,49 +167,48 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
   return (
     <motion.div
       className="fixed inset-0 z-[100] overflow-hidden"
-      style={{ backgroundColor: '#050505' }}
+      style={{ backgroundColor: '#0D0D0D' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <style>{cssKeyframes}</style>
+      <style>{cssKeyframes + `
+        @keyframes tickerIntro { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @keyframes introGlitch { 0%,97%,100%{transform:translate(0)} 98%{transform:translate(-4px,2px)} 99%{transform:translate(4px,-2px)} }
+      `}</style>
 
       {/* Content wrapper with transition effects */}
       <motion.div
         className="absolute inset-0"
         animate={{
           opacity: transitioning ? 0 : 1,
-          scale: transitioning ? 0 : 1,
-          filter: transitioning ? 'blur(20px)' : 'blur(0px)'
+          scale: transitioning ? 0.05 : 1,
+          filter: transitioning ? 'blur(24px)' : 'blur(0px)'
         }}
         transition={{
-          duration: transitioning ? 2.0 : 0.4,
+          duration: transitioning ? 1.8 : 0.4,
           ease: transitioning ? [0.6, 0.05, 0.01, 0.99] : "easeOut"
         }}
       >
-
-        {/* PrismaticBurst Background */}
-        <motion.div
-          className="absolute inset-0 z-[0]"
-          style={{ opacity: 0.3 }}
-          animate={{
-            opacity: vortex ? [0.3, 0.6, 0.3] : 0.3,
-            scale: vortex ? [1, 1.2, 0.8] : 1,
-          }}
-          transition={{
-            duration: vortex ? 2.0 : 0,
-            ease: [0.4, 0, 0.2, 1]
-          }}
-        >
-          <PrismaticBurst
-            intensity={vortex ? 2.0 : 1.0}
-            speed={vortex ? 1.5 : 0.2}
-            animationType="rotate3d"
-            distort={vortex ? 6 : 2}
-            mixBlendMode="lighten"
-          />
-        </motion.div>
+        {/* Album cover mosaic rows in background */}
+        <div className="absolute inset-0 z-[0] overflow-hidden" style={{ opacity: 0.18 }}>
+          {[0, 1, 2].map((row) => {
+            const rowCovers = shuffledRef.current
+              ? shuffledRef.current.slice(row * 12, row * 12 + 24)
+              : albumCovers.slice(row * 12, row * 12 + 24);
+            const repeated = [...rowCovers, ...rowCovers, ...rowCovers];
+            const duration = 18 + row * 5;
+            const direction = row % 2 === 0 ? 1 : -1;
+            return (
+              <div key={row} style={{ display: 'flex', gap: 4, marginBottom: 4, animation: `tickerIntro ${duration}s linear infinite`, animationDirection: direction > 0 ? 'normal' : 'reverse' }}>
+                {repeated.map((src, i) => (
+                  <img key={i} src={src} alt="" role="presentation" style={{ width: 80, height: 80, objectFit: 'cover', flexShrink: 0, border: '2px solid rgba(255,255,255,0.06)' }} loading="lazy" draggable={false} />
+                ))}
+              </div>
+            );
+          })}
+        </div>
 
         {/* Multi-layer spiral animation */}
         <div className="absolute inset-0 z-[1] flex items-center justify-center">
@@ -253,8 +251,8 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                   return (
                     <motion.div
                       key={item.id}
-                      className="absolute rounded-full overflow-hidden"
                       style={{
+                        position: 'absolute',
                         width: size,
                         height: size,
                         left: '50%',
@@ -264,17 +262,17 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                         boxShadow: `0 2px 12px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.12)`,
                         willChange: 'transform, opacity',
                         transition: vortex
-                          ? `transform 2.0s cubic-bezier(0.6,0.05,0.01,0.99) ${(item.indexInLayer * 0.04 + layer * 0.1).toFixed(2)}s, opacity 1.5s ease ${(item.indexInLayer * 0.04 + layer * 0.08).toFixed(2)}s`
+                          ? `transform 1.8s cubic-bezier(0.6,0.05,0.01,0.99) ${(item.indexInLayer * 0.04 + layer * 0.1).toFixed(2)}s, opacity 1.4s ease ${(item.indexInLayer * 0.04 + layer * 0.08).toFixed(2)}s`
                           : undefined,
+                        overflow: 'hidden',
+                        borderRadius: 2,
                       }}
                       animate={{
                         filter: vortex ? ['blur(0px)', 'blur(4px)', 'blur(10px)'] : 'blur(0px)',
                       }}
                       transition={
                         vortex
-                          ? {
-                              filter: { duration: 2.0, ease: "easeIn", delay: (item.indexInLayer * 0.04 + layer * 0.08) }
-                            }
+                          ? { filter: { duration: 1.8, ease: "easeIn", delay: (item.indexInLayer * 0.04 + layer * 0.08) } }
                           : undefined
                       }
                     >
@@ -293,99 +291,92 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
           })}
         </div>
 
-        {/* Dark vignette — edges + center void where items vanish */}
+        {/* Dark vignette */}
         <div
           className="absolute inset-0 z-[2] pointer-events-none"
           style={{
             background: `
-              radial-gradient(ellipse at center, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 15%, transparent 40%),
-              radial-gradient(ellipse at center, transparent 50%, rgba(5,5,5,0.6) 75%, #050505 100%)
+              radial-gradient(ellipse at center, rgba(13,13,13,0.85) 0%, rgba(13,13,13,0.5) 20%, transparent 50%),
+              radial-gradient(ellipse at center, transparent 45%, rgba(13,13,13,0.7) 78%, #0D0D0D 100%)
             `,
           }}
         />
+
+        {/* Bottom ticker belt */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10, height: 36, background: '#CCFF00', overflow: 'hidden', display: 'flex', alignItems: 'center', borderTop: '3px solid #000' }}>
+          <div style={{ display: 'flex', whiteSpace: 'nowrap', animation: 'tickerIntro 16s linear infinite', fontFamily: "'Barlow Condensed', Impact, sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#000' }}>
+            {Array(16).fill('PUNKY WRAPPED  ✶  YOUR MUSIC YEAR  ✶  ').join('')}
+          </div>
+        </div>
 
         {/* Close Button */}
         <div className="fixed top-4 right-4 z-[10]">
           <button
             onClick={onClose}
-            className="rounded-full border border-white/15 p-2 backdrop-blur-md text-white/60 hover:text-white hover:border-white/30 transition-all duration-200"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+            style={{ width: 36, height: 36, background: '#fff', border: '3px solid #000', boxShadow: '3px 3px 0 #000', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
             aria-label="Close"
           >
-            <X size={20} />
+            <X size={18} color="#000" />
           </button>
         </div>
 
         {/* Hero Text + Let's Go Button */}
-        <div className="absolute inset-0 z-[10] flex flex-col items-center justify-center select-none">
-          <motion.h1
-            className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter text-white text-center leading-none pointer-events-none"
-            style={{ textShadow: '0 4px 30px rgba(0,0,0,0.9), 0 0 60px rgba(0,0,0,0.5)' }}
+        <div className="absolute inset-0 z-[10] flex flex-col items-center justify-center select-none" style={{ paddingBottom: 44 }}>
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: vortex ? 0 : 1, y: vortex ? -40 : 0, scale: vortex ? 0.8 : 1 }}
             transition={{ duration: vortex ? 0.8 : 0.6, delay: vortex ? 0 : 0.2 }}
+            style={{ textAlign: 'center' }}
           >
-            PUNKY WRAPPED<sup className="text-lg align-super opacity-50" aria-hidden="true">©</sup>
-            <span className="sr-only"> copyright</span>
-          </motion.h1>
-
-          <motion.div
-            className="mt-4 flex items-center gap-2 text-base sm:text-lg pointer-events-none"
-            style={{ color: 'rgba(255,255,255,0.5)', textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: vortex ? 0 : 1 }}
-            transition={{ duration: 0.5, delay: vortex ? 0 : 0.4 }}
-          >
-            <span>your music journey awaits</span>
+            <div style={{ display: 'inline-block', background: '#CCFF00', border: '4px solid #000', boxShadow: '6px 6px 0 #000', padding: '4px 20px 2px', marginBottom: 12 }}>
+              <span style={{ fontFamily: "'Barlow Condensed', Impact, sans-serif", fontWeight: 900, fontSize: 'clamp(10px, 2.2vw, 14px)', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#000' }}>{getWeekRange()}</span>
+            </div>
+            <h1
+              style={{
+                fontFamily: "'Barlow Condensed', Impact, sans-serif",
+                fontWeight: 900,
+                fontSize: 'clamp(64px, 18vw, 130px)',
+                color: '#fff',
+                textTransform: 'uppercase',
+                lineHeight: 0.88,
+                margin: 0,
+                letterSpacing: '-0.02em',
+                textShadow: '6px 6px 0 #000, -2px -2px 0 #000',
+                animation: 'introGlitch 6s ease infinite',
+              }}
+            >
+              PUNKY<br />
+              <span style={{ color: '#CCFF00', textShadow: '6px 6px 0 #000, -2px -2px 0 #000' }}>WRAPPED</span>
+            </h1>
           </motion.div>
 
-          <motion.p
-            className="mt-2 text-sm sm:text-base pointer-events-none"
-            style={{ color: 'rgba(255,255,255,0.42)', textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: vortex ? 0 : 1 }}
-            transition={{ duration: 0.5, delay: vortex ? 0 : 0.5 }}
-          >
-            {getWeekRange()}
-          </motion.p>
-
-          {/* Let's Go Button */}
           <AnimatePresence>
             {!vortex && (
               <motion.button
                 onClick={handleLetsGo}
-                className="mt-10 font-semibold text-white cursor-pointer"
                 style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: 50,
+                  marginTop: 32,
+                  background: '#CCFF00',
+                  border: '4px solid #000',
+                  boxShadow: '5px 5px 0 #000',
                   padding: '14px 52px',
-                  fontSize: '16px',
-                  letterSpacing: '0.05em',
+                  fontFamily: "'Barlow Condensed', Impact, sans-serif",
+                  fontWeight: 900,
+                  fontSize: 18,
+                  letterSpacing: '0.1em',
                   textTransform: 'uppercase' as const,
+                  color: '#000',
+                  cursor: 'pointer',
+                  borderRadius: 0,
                 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{
-                  opacity: 0,
-                  scale: 1.2,
-                  filter: 'blur(4px)'
-                }}
-                transition={{
-                  duration: 0.5,
-                  delay: 0.6,
-                  exit: { duration: 0.5, ease: [0.6, 0.05, 0.01, 0.99] }
-                }}
-                whileHover={{
-                  scale: 1.05,
-                  background: 'rgba(255,255,255,0.18)',
-                  borderColor: 'rgba(255,255,255,0.35)',
-                }}
-                whileTap={{ scale: 0.95 }}
+                exit={{ opacity: 0, scale: 1.2, filter: 'blur(4px)' }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                whileHover={{ scale: 1.04, boxShadow: '7px 7px 0 #000' }}
+                whileTap={{ scale: 0.95, boxShadow: '2px 2px 0 #000' }}
               >
-                Let's Go
+                LET'S GO →
               </motion.button>
             )}
           </AnimatePresence>

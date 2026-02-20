@@ -138,9 +138,9 @@ const StoryProgressBar: React.FC<{ current: number; total: number }> = ({ curren
 );
 
 const SlideNavButtons: React.FC<{ current: number; total: number; onPrev: () => void; onNext: () => void }> = ({ current, total, onPrev, onNext }) => (
-  <div style={{ position: 'absolute', bottom: 'max(52px, env(safe-area-inset-bottom, 0px) + 52px)', left: 12, right: 12, zIndex: 120, display: 'flex', justifyContent: 'space-between', pointerEvents: 'none' }}>
-    <button onClick={(e) => { e.stopPropagation(); onPrev(); }} disabled={current === 0} aria-label="Go to previous slide" style={{ pointerEvents: 'auto', minWidth: 88, height: 44, background: NB.white, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === 0 ? 0.45 : 1, cursor: current === 0 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 15, borderRadius: 0 }}>PREV</button>
-    <button onClick={(e) => { e.stopPropagation(); onNext(); }} disabled={current === total - 1} aria-label="Go to next slide" style={{ pointerEvents: 'auto', minWidth: 88, height: 44, background: NB.acidYellow, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === total - 1 ? 0.45 : 1, cursor: current === total - 1 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 15, borderRadius: 0 }}>NEXT ›</button>
+  <div style={{ position: 'absolute', bottom: 'max(44px, env(safe-area-inset-bottom, 0px) + 44px)', left: 10, right: 10, zIndex: 120, display: 'flex', justifyContent: 'space-between', pointerEvents: 'none' }}>
+    <button onClick={(e) => { e.stopPropagation(); onPrev(); }} disabled={current === 0} aria-label="Go to previous slide" style={{ pointerEvents: 'auto', minWidth: 76, height: 40, background: NB.white, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === 0 ? 0.4 : 1, cursor: current === 0 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, borderRadius: 0, touchAction: 'manipulation' }}>PREV</button>
+    <button onClick={(e) => { e.stopPropagation(); onNext(); }} disabled={current === total - 1} aria-label="Go to next slide" style={{ pointerEvents: 'auto', minWidth: 76, height: 40, background: NB.acidYellow, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', opacity: current === total - 1 ? 0.4 : 1, cursor: current === total - 1 ? 'default' : 'pointer', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, borderRadius: 0, touchAction: 'manipulation' }}>NEXT ›</button>
   </div>
 );
 
@@ -749,11 +749,14 @@ function computeDnaMetrics(historyRows: HistoryRow[], songs: Song[]): DnaMetrics
   const medianSessionTracks = [...sessionTracks].sort((a, b) => a - b)[Math.floor(sessionTracks.length / 2)] || 1;
 
   const nightOwl = normalizeToPercent((lateNightPlays / totalPlays) * 180);
-  const freshFinds = normalizeToPercent((firstListenCount / totalPlays) * 240);
+  // freshFinds: reduce multiplier so typical data (most tracks appear once) doesn't always hit 100
+  const freshFinds = normalizeToPercent((firstListenCount / totalPlays) * 140);
   const deepSessions = normalizeToPercent((avgSessionMins / 85) * 100);
   const replayLove = normalizeToPercent(Math.pow(topSongShare, 0.82) * 230);
-  const routine = normalizeToPercent((dailySet.size / Math.max(7, Math.min(31, dailySet.size || 1))) * 100);
-  const artistVariety = normalizeToPercent(Math.log1p(varietyRatio * 16) / Math.log(17) * 100);
+  // routine: use fixed+dynamic denominator that gives a meaningful spread across the full range
+  const routine = normalizeToPercent((dailySet.size / Math.max(dailySet.size + 15, 30)) * 100);
+  // artistVariety: direct ratio avoids log-scale saturation at 100 for most users
+  const artistVariety = normalizeToPercent((artistSeen.size / Math.max(1, totalPlays)) * 300);
   const moodSwing = normalizeToPercent(Math.min(1, hourVariance / 45) * 100);
   const skipResistance = normalizeToPercent(Math.max(0, 100 - (consecutiveRepeats / Math.max(1, totalPlays)) * 120 + medianSessionTracks * 4));
 
@@ -790,21 +793,21 @@ function metricsVector(metrics: DnaMetrics): number[] {
 
 function pickFruitFromMetrics(metrics: DnaMetrics) {
   const vec = metricsVector(metrics);
-  const mean = vec.reduce((sum, value) => sum + value, 0) / vec.length;
-  const variance = vec.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / vec.length;
-  const sigma = Math.sqrt(Math.max(variance, 1));
 
   return FRUIT_PROFILES
     .map((f) => {
       const profileVec = f.v;
       const euclidean = Math.sqrt(profileVec.reduce((sum, value, i) => sum + Math.pow(value - vec[i], 2), 0));
-      const covarianceAdjusted = Math.sqrt(profileVec.reduce((sum, value, i) => sum + Math.pow((value - vec[i]) / sigma, 2), 0));
       const dot = profileVec.reduce((sum, value, i) => sum + value * vec[i], 0);
       const profileNorm = Math.sqrt(profileVec.reduce((sum, value) => sum + value * value, 0));
       const vecNorm = Math.sqrt(vec.reduce((sum, value) => sum + value * value, 0));
       const cosineDistance = 1 - dot / Math.max(1, profileNorm * vecNorm);
-      const blendedScore = euclidean * 0.45 + covarianceAdjusted * 0.35 + cosineDistance * 100 * 0.2;
-      return { ...f, score: blendedScore };
+      // Penalise profiles where any single dimension differs by > 30pts —
+      // prevents one dominant metric from completely deciding the fruit
+      const maxDimDiff = Math.max(...profileVec.map((value, i) => Math.abs(value - vec[i])));
+      const outlierPenalty = Math.max(0, (maxDimDiff - 30) * 0.5);
+      const score = euclidean * 0.55 + cosineDistance * 100 * 0.3 + outlierPenalty * 0.15;
+      return { ...f, score };
     })
     .sort((a, b) => a.score - b.score)[0];
 }
@@ -871,7 +874,7 @@ const Slide4: React.FC<{ active: boolean; songs: Song[]; historyRows: HistoryRow
           )}
         </AnimatePresence>
 
-        <div style={{ height: 180, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ height: 'clamp(140px, 22vw, 180px)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <motion.div animate={{ rotate: phase >= 1 ? (phase >= 2 ? 3600 : 360) : 0 }} transition={{ duration: phase >= 2 ? 2 : 12, repeat: phase <= 2 ? Infinity : 0, ease: phase >= 2 ? [0.4, 0, 0.2, 1] : 'linear' }} style={{ position: 'absolute', width: '100%', height: '100%' }}>
             {FRUIT_PROFILES.map((fruit, i) => {
               const angle = (360 / FRUIT_PROFILES.length) * i;
@@ -904,7 +907,7 @@ const Slide4: React.FC<{ active: boolean; songs: Song[]; historyRows: HistoryRow
         <AnimatePresence>
           {phase >= 4 && winningFruit && (
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <BCard style={{ background: NB.white, maxHeight: '54vh', overflowY: 'auto' }}>
+              <BCard style={{ background: NB.white, maxHeight: '42vh', overflowY: 'auto' }}>
                 <p style={{ margin: '0 0 2px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 30, color: NB.black }}>
                   YOU ARE {winningFruit.emoji} {winningFruit.name}
                 </p>
@@ -1905,7 +1908,6 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
   const containerRef = useRef<HTMLDivElement>(null);
   const [historyRows, setHistoryRows] = useState<HistoryRow[]>([]);
   const [previewMap, setPreviewMap] = useState<Record<string, string>>({});
-  const [snippetEnabled, setSnippetEnabled] = useState(true);
   const [snippetMuted, setSnippetMuted] = useState(false);
   const [nowPlayingSnippet, setNowPlayingSnippet] = useState<Song | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -1934,41 +1936,59 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
   useEffect(() => {
     let cancelled = false;
     const spotifyToken = localStorage.getItem('spotify_token');
-    if (!spotifyToken || songs.length === 0) return;
+    if (!spotifyToken) {
+      console.warn('[WrappedSlides] ⚠️ No Spotify token found — snippets unavailable');
+      return;
+    }
+    if (songs.length === 0) {
+      console.warn('[WrappedSlides] ⚠️ No songs available to fetch previews for');
+      return;
+    }
     const trackIds = songs.map((song) => song.id).filter(Boolean);
+    console.log(`[WrappedSlides] 🎵 Fetching preview URLs for ${trackIds.length} songs. Sample IDs:`, trackIds.slice(0, 3));
     fetchTrackPreviewUrls(spotifyToken, trackIds).then((map) => {
-      if (!cancelled) setPreviewMap(map);
-    }).catch(() => {
+      if (!cancelled) {
+        const count = Object.keys(map).length;
+        console.log(`[WrappedSlides] ✅ Preview URL map ready — ${count} URLs found out of ${trackIds.length} requested`);
+        if (count === 0) {
+          console.warn('[WrappedSlides] ⚠️ No preview URLs returned. Spotify may have removed previews for these tracks.');
+        }
+        setPreviewMap(map);
+      }
+    }).catch((err) => {
+      console.error('[WrappedSlides] ❌ Failed to fetch preview URLs:', err);
       if (!cancelled) setPreviewMap({});
     });
     return () => { cancelled = true; };
   }, [songs]);
 
   useEffect(() => {
-    if (!snippetEnabled || songs.length === 0) return;
+    if (songs.length === 0) return;
     const trackForSlide = songs[currentSlide % songs.length];
     if (!trackForSlide) return;
     const previewUrl = previewMap[trackForSlide.id];
     if (!previewUrl) {
-      setNowPlayingSnippet(trackForSlide);
+      console.log(`[WrappedSlides] ℹ️ No preview URL for "${trackForSlide.title}" (id: ${trackForSlide.id}) — skipping audio`);
+      setNowPlayingSnippet(null);
       return;
     }
 
+    console.log(`[WrappedSlides] ▶️ Playing snippet for "${trackForSlide.title}"`);
     if (!audioRef.current) audioRef.current = new Audio();
     const audio = audioRef.current;
     audio.pause();
     audio.src = previewUrl;
     audio.currentTime = 0;
     audio.volume = snippetMuted ? 0 : 0.65;
-    audio.play().catch(() => {
-      // Browser autoplay restrictions can block this until a user interaction.
+    audio.play().catch((err) => {
+      console.warn('[WrappedSlides] ⚠️ Audio play blocked (autoplay policy or browser restriction):', err.message);
     });
     setNowPlayingSnippet(trackForSlide);
 
     return () => {
       audio.pause();
     };
-  }, [currentSlide, songs, previewMap, snippetEnabled, snippetMuted]);
+  }, [currentSlide, songs, previewMap, snippetMuted]);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = snippetMuted ? 0 : 0.65;
@@ -2019,20 +2039,24 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: NB.nearBlack }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: NB.nearBlack, touchAction: 'none' }}>
+      <style>{`
+        @media (max-width: 480px) {
+          .wrapped-slide-content { padding-top: 54px !important; padding-left: 12px !important; padding-right: 12px !important; }
+          .wrapped-ticker span { font-size: 11px !important; }
+        }
+      `}</style>
       <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <StoryProgressBar current={currentSlide} total={TOTAL_SLIDES} />
         <SlideNavButtons current={currentSlide} total={TOTAL_SLIDES} onPrev={prev} onNext={next} />
         <CloseButton onClose={onClose} />
 
-        <div style={{ position: 'absolute', top: 28, right: 56, zIndex: 130, display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.24)', padding: '6px 10px', color: NB.white }}>
-          <button onClick={() => setSnippetEnabled((prev) => !prev)} style={{ border: 'none', background: 'transparent', color: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-            {snippetEnabled ? 'SNIPPET ON' : 'SNIPPET OFF'}
+        {/* Snippet bar: only mute toggle + song name, no "SNIPPET ON/OFF" text */}
+        <div style={{ position: 'absolute', top: 36, right: 52, zIndex: 130, display: 'flex', gap: 6, alignItems: 'center', background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.20)', padding: '5px 8px', color: NB.white, backdropFilter: 'blur(8px)', maxWidth: 'calc(100vw - 110px)' }}>
+          <button onClick={() => setSnippetMuted((prev) => !prev)} style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: 0, flexShrink: 0 }} aria-label="Toggle snippet mute">
+            {snippetMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
           </button>
-          <button onClick={() => setSnippetMuted((prev) => !prev)} style={{ border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }} aria-label="Toggle snippet mute">
-            {snippetMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-          </button>
-          {nowPlayingSnippet && <span style={{ fontSize: 10, maxWidth: 160, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>♪ {nowPlayingSnippet.title}</span>}
+          {nowPlayingSnippet && <span style={{ fontSize: 11, fontFamily: "'Barlow', sans-serif", fontWeight: 700, maxWidth: 150, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.03em' }}>♪ {nowPlayingSnippet.title}</span>}
         </div>
         <AnimatePresence initial={false} custom={direction} mode="sync">
           <motion.div key={currentSlide} custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.2, ease: 'easeOut' }} drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.1} onDragEnd={handleDragEnd} style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
