@@ -13,7 +13,7 @@ const NB = {
   white: '#FFFFFF',
   black: '#000000',
 };
-const TOTAL_SLIDES = 13;
+const TOTAL_SLIDES = 14;
 const LEFT_TAP_ZONE = 0.3;
 
 interface WrappedSlidesProps {
@@ -260,6 +260,7 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
       <style>{`
         @keyframes holePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
         @keyframes holeRing { from{transform:scale(0.4);opacity:0.9} to{transform:scale(3.2);opacity:0} }
+        @keyframes floatOrbit { 0%,100%{transform:translate(0,0)} 25%{transform:translate(5px,-8px)} 50%{transform:translate(-4px,3px)} 75%{transform:translate(3px,7px)} }
       `}</style>
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
         {orbitItems.map((item, i) => {
@@ -269,10 +270,6 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
             <div key={i} style={{
               width: 46,
               height: 46,
-              border: '2px solid white',
-              borderRadius: '50%',
-              background: item.src ? 'transparent' : palette[i % palette.length],
-              overflow: 'hidden',
               position: 'absolute',
               left: '50%',
               top: '50%',
@@ -281,7 +278,17 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
               opacity: phase >= 1 ? 0.5 : 1,
               transition: `transform 900ms cubic-bezier(0.55,0,1,0.45) ${item.delay}s, opacity 700ms ease ${item.delay}s, filter 700ms ease ${item.delay}s`,
             }}>
-              {item.src && <img src={item.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
+              <div style={{
+                width: '100%',
+                height: '100%',
+                borderRadius: '50%',
+                border: '2px solid white',
+                background: item.src ? 'transparent' : palette[i % palette.length],
+                overflow: 'hidden',
+                animation: phase === 0 ? `floatOrbit ${2.5 + (i % 4) * 0.6}s ease-in-out ${(i * 0.18) % 1.8}s infinite` : 'none',
+              }}>
+                {item.src && <img src={item.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
+              </div>
             </div>
           );
         })}
@@ -442,6 +449,7 @@ const Slide2: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
   const barColors = [NB.nearBlack, NB.electricBlue, NB.coral, NB.magenta, '#555555'];
   const [expanded, setExpanded] = useState<number | null>(null);
   const [animated, setAnimated] = useState(false);
+  const eqHeights = useMemo(() => Array.from({ length: 20 }, (_, i) => 20 + ((i * 31 + 17) % 55) + ((i * 13 + 5) % 25)), []);
 
   useEffect(() => {
     if (!active) { setAnimated(false); setExpanded(null); return; }
@@ -451,6 +459,10 @@ const Slide2: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.white, position: 'relative', overflow: 'hidden' }}>
+      <style>{`
+        @keyframes eqBounce { 0%,100%{transform:scaleY(0.3)} 50%{transform:scaleY(1)} }
+        @keyframes nowBlink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+      `}</style>
       <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(13,13,13,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(13,13,13,0.08) 1px, transparent 1px)', backgroundSize: '28px 28px', opacity: 0.9 }} />
       {['🎧', '🎵', '✨', '🎶', '💿'].map((emoji, i) => (
         <motion.div key={emoji + i} animate={{ y: active ? [0, -14, 0] : 0, x: active ? [0, i % 2 === 0 ? 6 : -6, 0] : 0 }} transition={{ duration: 2.8 + i * 0.3, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: `${14 + i * 16}%`, left: `${6 + (i * 19) % 88}%`, fontSize: 20, opacity: 0.18 }}>{emoji}</motion.div>
@@ -460,7 +472,24 @@ const Slide2: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
         <polyline points="0,220 50,200 90,210 150,185 200,196 250,170 310,188 360,165 400,175" fill="none" stroke={NB.magenta} strokeWidth="5" strokeLinejoin="round" strokeLinecap="square" />
       </svg>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 12 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(48px, 12vw, 80px)', color: NB.black, textTransform: 'uppercase', margin: '0 0 4px 0', lineHeight: 1 }}>
+        {/* Equalizer waveform */}
+        <div style={{ display: 'flex', gap: 2, height: 48, alignItems: 'flex-end' }}>
+          {eqHeights.map((h, i) => (
+            <div key={i} style={{
+              flex: 1,
+              height: `${h}px`,
+              background: i % 2 === 0 ? NB.electricBlue : NB.coral,
+              transformOrigin: 'bottom',
+              animation: animated ? `eqBounce ${0.35 + (i % 5) * 0.08}s ease-in-out ${i * 0.02}s infinite` : 'none',
+            }} />
+          ))}
+        </div>
+        {/* NOW PLAYING indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: -4 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: NB.electricBlue, animation: animated ? 'nowBlink 1s step-end infinite' : 'none' }} />
+          <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, animation: animated ? 'nowBlink 1s step-end infinite' : 'none' }}>NOW PLAYING</span>
+        </div>
+        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(40px, 10vw, 70px)', color: NB.black, textTransform: 'uppercase', margin: '0 0 4px 0', lineHeight: 1 }}>
           YOUR FREQUENCY
         </h1>
         <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, margin: '0 0 12px 0' }}>
@@ -751,7 +780,27 @@ const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; a
                 <p style={{ margin: '0 0 2px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 30, color: NB.black }}>
                   YOU ARE {winningFruit.emoji} {winningFruit.name}
                 </p>
-                <p style={{ margin: '0 0 10px 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>Your listening matches: {winningFruit.vibe}.</p>
+                <p style={{ margin: '0 0 8px 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>Your listening matches: {winningFruit.vibe}.</p>
+                {/* DNA double helix visualization */}
+                <svg width="100%" height="36" viewBox="0 0 260 36" style={{ marginBottom: 10, display: 'block' }}>
+                  {Array.from({ length: 20 }, (_, i) => {
+                    const x = i * 13;
+                    const y1 = 18 + Math.sin((i / 20) * Math.PI * 4) * 14;
+                    const y2 = 18 - Math.sin((i / 20) * Math.PI * 4) * 14;
+                    const nx = (i + 1) * 13;
+                    const ny1 = 18 + Math.sin(((i + 1) / 20) * Math.PI * 4) * 14;
+                    const ny2 = 18 - Math.sin(((i + 1) / 20) * Math.PI * 4) * 14;
+                    return (
+                      <g key={i}>
+                        {i < 19 && <line x1={x} y1={y1} x2={nx} y2={ny1} stroke={NB.electricBlue} strokeWidth={1.5} opacity={0.5} />}
+                        {i < 19 && <line x1={x} y1={y2} x2={nx} y2={ny2} stroke={NB.coral} strokeWidth={1.5} opacity={0.5} />}
+                        {i % 3 === 0 && <line x1={x} y1={y1} x2={x} y2={y2} stroke="#aaa" strokeWidth={1} opacity={0.6} />}
+                        <circle cx={x} cy={y1} r={3} fill={NB.electricBlue} />
+                        <circle cx={x} cy={y2} r={3} fill={NB.coral} />
+                      </g>
+                    );
+                  })}
+                </svg>
                 {[
                   { label: 'NIGHT OWL', hint: 'Late-night play ratio', value: metrics.nightOwl, color: NB.electricBlue },
                   { label: 'FRESH FINDS', hint: 'How often you discover new tracks', value: metrics.freshFinds, color: NB.coral },
@@ -823,7 +872,7 @@ const Slide5: React.FC<{ active: boolean }> = ({ active }) => {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.electricBlue, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 12 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 12, overflowY: 'auto' }}>
         <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(32px, 8vw, 52px)', color: NB.white, textTransform: 'uppercase', margin: 0 }}>YOUR LISTENING WINDOWS</h2>
         <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: 0 }}>REAL PLAYTIME SPLIT FROM YOUR HISTORY</p>
 
@@ -867,84 +916,78 @@ const Slide6: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
   const total = topSix.reduce((s, a) => s + a.totalListens, 0) || 1;
   const topShare = (topSix[0]?.totalListens || 0) / total;
   const verdict = topShare > 0.35 ? 'RIDE OR DIE ENERGY' : 'WIDE TASTE ENERGY';
-  const [battleIndex, setBattleIndex] = useState(0);
+  const winner = topSix[0];
 
-  const getLoyaltyColor = useCallback((pct: number) => {
-    if (pct >= 28) return '#B91C1C';
-    if (pct >= 20) return '#EA580C';
-    if (pct >= 14) return '#FACC15';
-    if (pct >= 8) return '#4ADE80';
-    return '#60A5FA';
-  }, []);
+  const DOT_COUNT = 60;
+  const artistPalette = [NB.electricBlue, NB.coral, NB.magenta, '#555555', NB.acidYellow, '#888888'];
+  const [filledDots, setFilledDots] = useState(0);
+  const dotIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const dotColors = useMemo(() => {
+    const colors: string[] = [];
+    let offset = 0;
+    topSix.forEach((artist, i) => {
+      const count = Math.round((artist.totalListens / total) * DOT_COUNT);
+      for (let j = 0; j < count && offset < DOT_COUNT; j++, offset++) {
+        colors.push(artistPalette[i]);
+      }
+    });
+    while (colors.length < DOT_COUNT) colors.push('rgba(0,0,0,0.15)');
+    return colors;
+  }, [topSix, total]);
 
   useEffect(() => {
-    if (!active || topSix.length === 0) return;
-    setBattleIndex(0);
-    const id = window.setInterval(() => {
-      setBattleIndex((prev) => {
-        if (prev >= topSix.length - 1) return prev;
-        return prev + 1;
-      });
-    }, 450);
-    return () => window.clearInterval(id);
+    if (!active || topSix.length === 0) { setFilledDots(0); if (dotIntervalRef.current) clearInterval(dotIntervalRef.current); return; }
+    setFilledDots(0);
+    let count = 0;
+    dotIntervalRef.current = setInterval(() => {
+      count++;
+      setFilledDots(count);
+      if (count >= DOT_COUNT && dotIntervalRef.current) clearInterval(dotIntervalRef.current);
+    }, 20);
+    return () => { if (dotIntervalRef.current) clearInterval(dotIntervalRef.current); };
   }, [active, topSix.length]);
 
-  const winner = topSix[0];
+  const showLegend = filledDots >= DOT_COUNT;
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.acidYellow, position: 'relative', overflow: 'hidden' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 12 }}>
         <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(38px, 10vw, 64px)', color: NB.black, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>YOUR LOYALTY MAP</h1>
-        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, margin: 0 }}>TOP ARTISTS AS A CREW GRID</p>
+        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, margin: 0 }}>TOP ARTISTS • 60 DOTS • WHO OWNS YOUR PLAYS</p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {topSix.map((artist, i) => {
-            const pct = Math.round((artist.totalListens / total) * 100);
-            const loyaltyColor = getLoyaltyColor(pct);
-            return (
-              <motion.div key={artist.id} initial={{ opacity: 0, y: 24 }} animate={{ opacity: active ? 1 : 0.4, y: active ? 0 : 24 }} transition={{ delay: i * 0.08 }} style={{ border: `4px solid ${NB.black}`, background: NB.white, boxShadow: '4px 4px 0 #000', overflow: 'hidden', position: 'relative' }}>
-                <div style={{ height: 96, background: '#222' }}>
-                  <img src={artist.image || fallbackImage} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-                </div>
-                <div style={{ position: 'absolute', top: 8, right: 8, background: loyaltyColor, border: `2px solid ${NB.black}`, boxShadow: '2px 2px 0 #000', padding: '2px 8px' }}>
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 12, color: NB.black }}>HEAT {pct}%</span>
-                </div>
-                <div style={{ padding: '8px 10px', background: i === 0 ? NB.black : NB.white }}>
-                  <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: i === 0 ? NB.acidYellow : NB.black, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{artist.name}</p>
-                  <p style={{ margin: '2px 0 0 0', fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, color: i === 0 ? 'rgba(204,255,0,0.85)' : '#444' }}>{artist.totalListens} plays • {pct}%</p>
-                </div>
-              </motion.div>
-            );
-          })}
+        {/* Dot grid: 6 cols × 10 rows */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6, marginTop: 4 }}>
+          {Array.from({ length: DOT_COUNT }, (_, i) => (
+            <div key={i} style={{
+              aspectRatio: '1',
+              borderRadius: '50%',
+              background: i < filledDots ? dotColors[i] : 'transparent',
+              border: `2px solid ${i < filledDots ? dotColors[i] : 'rgba(0,0,0,0.25)'}`,
+              transition: 'background 80ms ease, border-color 80ms ease',
+            }} />
+          ))}
         </div>
 
-        {winner && (
-          <BCard style={{ marginTop: 2 }}>
-            <p style={{ margin: '0 0 6px 0', fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#333' }}>Loyalty Battle Live</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {topSix.map((artist, i) => {
-                const pct = Math.round((artist.totalListens / total) * 100);
-                const isRevealed = i <= battleIndex;
-                const isWinner = i === 0;
-                return (
-                  <div key={artist.id}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                      <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11 }}>{artist.name}</span>
-                      <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13 }}>{isRevealed ? `${pct}%` : '…'}</span>
-                    </div>
-                    <div style={{ height: 10, border: `2px solid ${NB.black}`, background: '#dfdfdf', overflow: 'hidden' }}>
-                      <motion.div initial={{ width: 0 }} animate={{ width: isRevealed ? `${pct}%` : 0 }} transition={{ duration: 0.45, ease: 'easeOut' }} style={{ height: '100%', background: isWinner ? NB.magenta : getLoyaltyColor(pct) }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <p style={{ margin: '8px 0 0 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: NB.black }}>🏆 WINNER: {winner.name.toUpperCase()}</p>
-          </BCard>
+        {/* Legend after dots fill */}
+        {showLegend && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {topSix.map((artist, i) => {
+              const dotCount = dotColors.filter(c => c === artistPalette[i]).length;
+              return (
+                <div key={artist.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: artistPalette[i], flexShrink: 0, border: `2px solid ${NB.black}` }} />
+                  <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 12, color: NB.black, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{artist.name}</span>
+                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13, color: NB.black }}>{dotCount} dots</span>
+                </div>
+              );
+            })}
+          </motion.div>
         )}
 
         <BCard>
           <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 26, color: NB.black, textTransform: 'uppercase' }}>{verdict}</p>
+          {winner && <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>🏆 {winner.name} dominates your chart</p>}
         </BCard>
       </div>
       <Ticker text="LOYALTY MAP  ARTIST CREW  TOP ROTATION" bg={NB.nearBlack} color={NB.acidYellow} />
@@ -1101,59 +1144,90 @@ const Slide8: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs })
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const firstSong = songs[0];
 
+  const triggerAnimation = useCallback(() => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setPhase(0);
+    timers.current.push(setTimeout(() => setPhase(1), 400));
+    timers.current.push(setTimeout(() => setPhase(2), 1200));
+    timers.current.push(setTimeout(() => setPhase(3), 2200));
+    timers.current.push(setTimeout(() => setPhase(4), 3200));
+  }, []);
+
   useEffect(() => {
     timers.current.forEach(clearTimeout);
     if (!active) { setPhase(0); return; }
-    setPhase(0);
-    timers.current.push(setTimeout(() => setPhase(1), 100));
-    timers.current.push(setTimeout(() => setPhase(2), 350));
-    timers.current.push(setTimeout(() => setPhase(3), 600));
+    triggerAnimation();
     return () => timers.current.forEach(clearTimeout);
-  }, [active]);
+  }, [active, triggerAnimation]);
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.white, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 20px 20px', gap: 16 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(36px, 9vw, 64px)', color: NB.black, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>
-          YOUR FIRST PLAY OF 2024
-        </h1>
-        <div style={{
-          width: '100%', height: 48, background: NB.black,
-          transform: phase >= 1 ? 'translateX(0)' : 'translateX(-100%)',
-          transition: 'transform 250ms cubic-bezier(0.16,1,0.3,1)',
-        }} />
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
+      <style>{`
+        @keyframes needleDrop { 0%{transform:rotate(-35deg) translateY(-10px);opacity:0.5} 100%{transform:rotate(0deg) translateY(0);opacity:1} }
+        @keyframes vinylSpin8 { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+      `}</style>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 20px 20px', gap: 14 }}>
+        <div>
+          <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px 0' }}>YOUR YEAR STARTED WITH...</p>
+          <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(36px, 9vw, 60px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>YOUR FIRST PLAY</h1>
+        </div>
+
+        {/* Phase 1: Vinyl / record player */}
+        {phase >= 1 && (
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} style={{ display: 'flex', justifyContent: 'center', position: 'relative', height: 160 }}>
+            <div style={{ width: 160, height: 160, borderRadius: '50%', background: '#111', border: `4px solid ${NB.black}`, position: 'relative', animation: phase >= 2 ? 'vinylSpin8 5s linear infinite' : 'none' }}>
+              <img src={firstSong?.cover || fallbackImage} alt="" style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', border: `3px solid ${NB.white}` }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+              <div style={{ width: 12, height: 12, background: NB.acidYellow, border: `2px solid ${NB.black}`, borderRadius: '50%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 2 }} />
+            </div>
+            {/* Needle */}
+            <div style={{ position: 'absolute', right: 'calc(50% - 100px)', top: 0, width: 4, height: 72, background: NB.white, transformOrigin: 'top right', animationName: 'needleDrop', animationDuration: '0.6s', animationTimingFunction: 'ease-out', animationFillMode: 'forwards', borderRadius: 2 }} />
+          </motion.div>
+        )}
+
+        {/* Phase 2: Song card flies in from bottom */}
         {firstSong && (
           <div style={{
             background: NB.black, border: `4px solid ${NB.black}`, position: 'relative', borderRadius: 0,
-            transform: phase >= 2 ? 'translateY(0)' : 'translateY(100%)',
-            transition: 'transform 350ms cubic-bezier(0.16,1,0.3,1)',
+            transform: phase >= 2 ? 'translateY(0)' : 'translateY(120%)',
+            opacity: phase >= 2 ? 1 : 0,
+            transition: 'transform 400ms cubic-bezier(0.16,1,0.3,1), opacity 300ms ease',
             overflow: 'hidden',
           }}>
-            {phase >= 3 && (
-              <motion.div
-                initial={{ scale: 0, rotate: -10 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                style={{ position: 'absolute', top: 12, right: 12, background: NB.acidYellow, border: `4px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', padding: '4px 10px', zIndex: 10, borderRadius: 0 }}
-              >
-                <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13, color: NB.black }}>PLAY \u25b6</span>
-              </motion.div>
-            )}
             {firstSong.cover && (
-              <div style={{ height: 180, background: '#222', borderBottom: `4px solid ${NB.black}` }}>
+              <div style={{ height: 130, background: '#222', borderBottom: `4px solid ${NB.black}` }}>
                 <img src={firstSong.cover} alt={firstSong.album} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
               </div>
             )}
-            <div style={{ padding: '20px 20px 16px' }}>
-              <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.coral, margin: '0 0 8px 0' }}>JAN 1, 2024</p>
-              <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(28px, 7vw, 44px)', color: NB.white, textTransform: 'uppercase', margin: '0 0 6px 0', lineHeight: 1, paddingRight: 80 }}>{firstSong.title}</h2>
-              <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: 'rgba(255,255,255,0.7)', margin: 0 }}>{firstSong.artist}</p>
+            <div style={{ padding: '14px 20px 12px' }}>
+              <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.coral, margin: '0 0 6px 0' }}>JAN 1, 2024</p>
+              <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(24px, 6vw, 38px)', color: NB.white, textTransform: 'uppercase', margin: '0 0 4px 0', lineHeight: 1 }}>{firstSong.title}</h2>
+              <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: 0 }}>{firstSong.artist}</p>
             </div>
           </div>
         )}
-        <div style={{ borderTop: `2px solid ${NB.black}`, paddingTop: 12 }}>
-          <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, margin: 0 }}>THIS IS WHERE YOUR YEAR BEGAN.</p>
-        </div>
+
+        {/* Phase 3: REWIND button */}
+        {phase >= 3 && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); triggerAnimation(); }}
+              style={{ background: NB.acidYellow, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', padding: '10px 24px', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, cursor: 'pointer', textTransform: 'uppercase', borderRadius: 0 }}
+            >
+              ↺ REWIND
+            </button>
+          </motion.div>
+        )}
+
+        {/* Phase 4: "THIS IS WHERE IT ALL BEGAN" */}
+        {phase >= 4 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+            <div style={{ borderTop: `2px solid rgba(255,255,255,0.2)`, paddingTop: 12 }}>
+              <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: NB.acidYellow, textTransform: 'uppercase', margin: '0 0 4px 0' }}>THIS IS WHERE IT ALL BEGAN</p>
+              {firstSong && <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.7)', margin: 0 }}>{firstSong.listens.toLocaleString()} plays this year</p>}
+            </div>
+          </motion.div>
+        )}
       </div>
       <Ticker text="THE FIRST PLAY  WHERE IT ALL STARTED" bg={NB.black} color={NB.white} />
     </div>
@@ -1342,35 +1416,75 @@ const ReplayTrackRow: React.FC<{ song: Song; index: number; active: boolean; pul
 
 const Slide11: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs }) => {
   const loops = songs.slice(0, 3);
+  const [loopIndex, setLoopIndex] = useState(0);
+  const [pulsing, setPulsing] = useState<number | null>(null);
+  const slotRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const totalLoops = loops.reduce((s, song) => s + song.listens, 0);
+  const displayTotal = useOdometer(active ? totalLoops : 0, 1500);
+
+  useEffect(() => {
+    if (!active || loops.length === 0) { setLoopIndex(0); setPulsing(null); if (slotRef.current) clearInterval(slotRef.current); return; }
+    let idx = 0;
+    slotRef.current = setInterval(() => {
+      idx = (idx + 1) % Math.max(1, loops.length);
+      setLoopIndex(idx);
+      setPulsing(idx);
+      setTimeout(() => setPulsing(null), 400);
+    }, 1800);
+    return () => { if (slotRef.current) clearInterval(slotRef.current); };
+  }, [active, loops.length]);
+
+  const currentSong = loops[loopIndex];
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.coral, overflow: 'hidden' }}>
       <style>{`
         @keyframes vinylSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes replayPulse { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
         @keyframes pulseRing { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(1.25);opacity:0} }
+        @keyframes loopDot { 0%,100%{opacity:1} 50%{opacity:0.3} }
       `}</style>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 12 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 8vw, 58px)', color: NB.white, margin: 0, textTransform: 'uppercase', lineHeight: 1 }}>YOUR REPLAY VALUE</h1>
-        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: '0 0 4px 0' }}>SPIN ZONE</p>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 10 }}>
+        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(30px, 7vw, 50px)', color: NB.white, margin: 0, textTransform: 'uppercase', lineHeight: 1 }}>YOUR REPLAY VALUE</h1>
 
-        <div style={{ flex: 1, minHeight: 260, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 210, height: 210, borderRadius: '50%', border: `4px solid ${NB.black}`, background: '#111', position: 'relative', animation: 'vinylSpin 9s linear infinite' }}>
-            <img src={loops[0]?.cover || fallbackImage} alt={loops[0]?.title || 'Top loop'} style={{ width: 136, height: 136, objectFit: 'cover', borderRadius: '50%', border: `4px solid ${NB.white}`, position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-            <div style={{ width: 16, height: 16, background: NB.acidYellow, border: `3px solid ${NB.black}`, borderRadius: '50%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
+        {/* CURRENTLY LOOPING indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: NB.acidYellow, animation: 'loopDot 0.8s ease-in-out infinite' }} />
+          <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.85)' }}>CURRENTLY LOOPING</span>
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={loopIndex}
+              initial={{ y: -10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 10, opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 12, color: NB.acidYellow, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}
+            >
+              {currentSong?.title || '—'}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+
+        {/* Vinyl showing current song */}
+        <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', height: 170, flexShrink: 0 }}>
+          <div style={{ width: 170, height: 170, borderRadius: '50%', border: `4px solid ${NB.black}`, background: '#111', position: 'relative', animation: 'vinylSpin 6s linear infinite' }}>
+            <img src={currentSong?.cover || fallbackImage} alt={currentSong?.title || ''} style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: '50%', border: `4px solid ${NB.white}`, position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+            <div style={{ width: 14, height: 14, background: NB.acidYellow, border: `3px solid ${NB.black}`, borderRadius: '50%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 2 }} />
           </div>
+          <div style={{ position: 'absolute', width: 200, height: 200, top: -15, borderRadius: '50%', border: `2px dashed ${NB.acidYellow}`, animation: 'pulseRing 1.8s ease-out infinite' }} />
+        </div>
 
-          <div style={{ position: 'absolute', width: 240, height: 240, borderRadius: '50%', border: `2px dashed ${NB.acidYellow}`, animation: 'pulseRing 1.8s ease-out infinite' }} />
+        {/* TOTAL LOOPS counter */}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(36px, 9vw, 58px)', color: NB.acidYellow, lineHeight: 1 }}>{displayTotal.toLocaleString()}</span>
+          <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 12, color: NB.white, textTransform: 'uppercase', letterSpacing: '0.1em' }}>TOTAL LOOPS</span>
+        </div>
 
-          {loops.slice(1).map((song, i) => {
-            const angle = (i * 180 + 30) * Math.PI / 180;
-            const r = 145;
-            return (
-              <div key={song.id} style={{ position: 'absolute', left: `calc(50% + ${Math.cos(angle) * r}px - 34px)`, top: `calc(50% + ${Math.sin(angle) * r}px - 34px)`, width: 68, background: NB.white, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', padding: 4 }}>
-                <img src={song.cover || fallbackImage} alt={song.title} style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', display: 'block', border: `2px solid ${NB.black}` }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-                <p style={{ margin: '3px 0 0 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 10, color: NB.black, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{song.listens}×</p>
-              </div>
-            );
-          })}
+        {/* Track rows with animated spin counts */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {loops.map((song, i) => (
+            <ReplayTrackRow key={song.id} song={song} index={i} active={active} pulsing={pulsing} targetCount={song.listens} />
+          ))}
         </div>
       </div>
       <Ticker text="REPLAY VALUE  VINYL LOOP  RUN IT BACK" bg={NB.nearBlack} color={NB.white} />
@@ -1432,7 +1546,7 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
         <div style={{ position: 'relative', overflow: 'hidden' }}>
           <motion.div
             animate={{ x: hovered !== null ? 0 : [0, `-${100 / 3}%`] }}
-            transition={{ duration: 20 * (carouselAlbums.length / 6 || 1), repeat: Infinity, ease: 'linear' }}
+            transition={{ duration: Math.min(8 * (carouselAlbums.length / 6 || 1), 30), repeat: Infinity, ease: 'linear' }}
             style={{ display: 'flex', width: 'fit-content', gap: 8, paddingLeft: 8 }}
           >
             {loopAlbums.map((album, idx) => (
@@ -1521,6 +1635,83 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
   );
 };
 
+// SLIDE DOMINATION: WHO RUNS YOUR CHART
+const SlideDomination: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, artists }) => {
+  const TOTAL_DOTS = 100;
+  const top5 = artists.slice(0, 5);
+  const total = top5.reduce((s, a) => s + a.totalListens, 0) || 1;
+  const [filledCount, setFilledCount] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const domArtistColors = [NB.electricBlue, NB.coral, NB.magenta, NB.acidYellow, '#888888'];
+
+  const dotColors = useMemo(() => {
+    const colors: string[] = [];
+    let offset = 0;
+    top5.forEach((artist, i) => {
+      const count = Math.round((artist.totalListens / total) * TOTAL_DOTS);
+      for (let j = 0; j < count && offset < TOTAL_DOTS; j++, offset++) {
+        colors.push(domArtistColors[i]);
+      }
+    });
+    while (colors.length < TOTAL_DOTS) colors.push('rgba(255,255,255,0.1)');
+    return colors;
+  }, [top5, total]);
+
+  useEffect(() => {
+    if (!active) { setFilledCount(0); if (intervalRef.current) clearInterval(intervalRef.current); return; }
+    setFilledCount(0);
+    let count = 0;
+    intervalRef.current = setInterval(() => {
+      count++;
+      setFilledCount(count);
+      if (count >= TOTAL_DOTS && intervalRef.current) clearInterval(intervalRef.current);
+    }, 15);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [active]);
+
+  const showLegend = filledCount >= TOTAL_DOTS;
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 12 }}>
+        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 9vw, 60px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>WHO RUNS YOUR CHART?</h1>
+        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: 0 }}>DOMINATION MODE</p>
+
+        {/* 10×10 dot grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 5, marginTop: 4 }}>
+          {Array.from({ length: TOTAL_DOTS }, (_, i) => (
+            <div key={i} style={{
+              aspectRatio: '1',
+              borderRadius: '50%',
+              background: i < filledCount ? dotColors[i] : 'transparent',
+              border: `2px solid ${i < filledCount ? dotColors[i] : 'rgba(255,255,255,0.15)'}`,
+              transition: 'background 80ms ease, border-color 80ms ease',
+            }} />
+          ))}
+        </div>
+
+        {/* Legend after all dots filled */}
+        {showLegend && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {top5.map((artist, i) => {
+              const dotCount = dotColors.filter(c => c === domArtistColors[i]).length;
+              const pct = Math.round((artist.totalListens / total) * 100);
+              return (
+                <div key={artist.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: domArtistColors[i], flexShrink: 0 }} />
+                  <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 12, color: NB.white, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{artist.name}</span>
+                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: domArtistColors[i] }}>{dotCount} dots • {pct}%</span>
+                </div>
+              );
+            })}
+          </motion.div>
+        )}
+      </div>
+      <Ticker text="DOMINATION MODE  •  WHO RULES YOUR PLAY COUNT" bg={NB.electricBlue} color={NB.white} />
+    </div>
+  );
+};
+
 // MAIN COMPONENT
 export default function WrappedSlides({ onClose, totalMinutes, artists, albums, songs, albumCovers, connectionGraph }: WrappedSlidesProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -1562,7 +1753,8 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
       case 9: return <Slide9 active={currentSlide === 9} artists={artists} songs={songs} />;
       case 10: return <Slide10 active={currentSlide === 10} artists={artists} connectionGraph={connectionGraph} />;
       case 11: return <Slide11 active={currentSlide === 11} songs={songs} />;
-      case 12: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} albums={albums} onClose={onClose} />;
+      case 12: return <SlideDomination active={currentSlide === 12} artists={artists} />;
+      case 13: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} albums={albums} onClose={onClose} />;
       default: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} />;
     }
   };
