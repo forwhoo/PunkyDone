@@ -492,3 +492,32 @@ export const searchSpotifyTracks = async (token: string, query: string, limit = 
         return [];
     }
 };
+
+
+export const fetchTrackPreviewUrls = async (token: string, trackIds: string[]): Promise<Record<string, string>> => {
+  const ids = Array.from(new Set(trackIds.filter(Boolean)));
+  if (!token || ids.length === 0) return {};
+
+  const headers = { Authorization: `Bearer ${token}` };
+  const batches: string[][] = [];
+  for (let i = 0; i < ids.length; i += 50) {
+    batches.push(ids.slice(i, i + 50));
+  }
+
+  const output: Record<string, string> = {};
+  await Promise.all(
+    batches.map(async (batch) => {
+      const url = `https://api.spotify.com/v1/tracks?ids=${batch.join(',')}`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) return;
+      const data = await res.json();
+      (data.tracks || []).forEach((track: any) => {
+        if (track?.id && track?.preview_url) {
+          output[track.id] = track.preview_url;
+        }
+      });
+    })
+  );
+
+  return output;
+};
