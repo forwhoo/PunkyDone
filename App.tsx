@@ -295,6 +295,35 @@ function App() {
   const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly' | 'All Time' | 'Custom'>('Weekly');
   const [customDateRange, setCustomDateRange] = useState<{ start: string; end: string } | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const wrappedRange = useMemo(() => {
+    const now = new Date();
+    const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    let start = new Date(now);
+    let end = new Date(now);
+
+    if (timeRange === 'Daily') {
+      start.setHours(0, 0, 0, 0);
+    } else if (timeRange === 'Weekly') {
+      const dow = now.getDay();
+      const daysToMonday = dow === 0 ? 6 : dow - 1;
+      start = new Date(now.getTime() - daysToMonday * 24 * 60 * 60 * 1000);
+      start.setHours(0, 0, 0, 0);
+    } else if (timeRange === 'Monthly') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    } else if (timeRange === 'Custom' && customDateRange?.start && customDateRange?.end) {
+      start = new Date(`${customDateRange.start}T00:00:00`);
+      end = new Date(`${customDateRange.end}T23:59:59`);
+    } else {
+      start = new Date(0);
+    }
+
+    return {
+      label: `${fmt(start)} - ${fmt(end)}`,
+      start: start.toISOString(),
+      end: end.toISOString(),
+    };
+  }, [timeRange, customDateRange]);
   
   const [insight, setInsight] = useState<string | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
@@ -1908,6 +1937,9 @@ function App() {
                 albums={safeAlbums}
                 songs={safeSongs}
                 weeklyMinutes={dbUnifiedData?.totalMinutes ?? 0}
+                rangeLabel={wrappedRange.label}
+                rangeStart={wrappedRange.start}
+                rangeEnd={wrappedRange.end}
                 connectionGraph={wrappedConnectionGraph || undefined}
             />
         )}
