@@ -4,7 +4,7 @@ import { X, Volume2, VolumeX } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
 import { fetchHeatmapData } from '../services/dbService';
 import { generateTopAlbumFunFact } from '../services/geminiService';
-import { fetchTrackPreviewUrls, fetchTrackPreviewUrlsBySearch, isValidSpotifyTrackId } from '../services/spotifyService';
+import { fetchTrackPreviewUrls } from '../services/spotifyService';
 
 const NB = {
   electricBlue: '#1A6BFF',
@@ -1935,13 +1935,9 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
     let cancelled = false;
     const spotifyToken = localStorage.getItem('spotify_token');
     if (!spotifyToken || songs.length === 0) return;
-    const trackIds = songs.map((song) => song.id).filter(isValidSpotifyTrackId);
-    fetchTrackPreviewUrls(spotifyToken, trackIds).then(async (map) => {
-      const missingSongs = songs.filter((song) => !map[song.id]);
-      const fallbackMap = missingSongs.length
-        ? await fetchTrackPreviewUrlsBySearch(spotifyToken, missingSongs)
-        : {};
-      if (!cancelled) setPreviewMap({ ...map, ...fallbackMap });
+    const trackIds = songs.map((song) => song.id).filter(Boolean);
+    fetchTrackPreviewUrls(spotifyToken, trackIds).then((map) => {
+      if (!cancelled) setPreviewMap(map);
     }).catch(() => {
       if (!cancelled) setPreviewMap({});
     });
