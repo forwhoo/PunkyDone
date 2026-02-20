@@ -949,21 +949,23 @@ const Slide6: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
   }, [active, topSix.length]);
 
   const showLegend = filledDots >= DOT_COUNT;
+  const loyaltyDotSize = 'clamp(10px, 2.8vw, 18px)';
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.acidYellow, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 12 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(38px, 10vw, 64px)', color: NB.black, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>YOUR LOYALTY MAP</h1>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '56px 16px 14px', gap: 10 }}>
+        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(30px, 7.4vw, 52px)', color: NB.black, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>YOUR LOYALTY MAP</h1>
         <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, margin: 0 }}>TOP ARTISTS • 60 DOTS • WHO OWNS YOUR PLAYS</p>
 
         {/* Dot grid: 6 cols × 10 rows */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6, marginTop: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(6, ${loyaltyDotSize})`, gap: 'clamp(4px, 1vw, 6px)', marginTop: 4, justifyContent: 'center' }}>
           {Array.from({ length: DOT_COUNT }, (_, i) => (
             <div key={i} style={{
-              aspectRatio: '1',
+              width: loyaltyDotSize,
+              height: loyaltyDotSize,
               borderRadius: '50%',
               background: i < filledDots ? dotColors[i] : 'transparent',
-              border: `2px solid ${i < filledDots ? dotColors[i] : 'rgba(0,0,0,0.25)'}`,
+              border: `1.5px solid ${i < filledDots ? dotColors[i] : 'rgba(0,0,0,0.25)'}`,
               transition: 'background 80ms ease, border-color 80ms ease',
             }} />
           ))}
@@ -1670,21 +1672,23 @@ const SlideDomination: React.FC<{ active: boolean; artists: Artist[] }> = ({ act
   }, [active]);
 
   const showLegend = filledCount >= TOTAL_DOTS;
+  const dominationDotSize = 'clamp(8px, 2.2vw, 14px)';
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 12 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 9vw, 60px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>WHO RUNS YOUR CHART?</h1>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '56px 16px 12px', gap: 10 }}>
+        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(28px, 6.8vw, 48px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>WHO RUNS YOUR CHART?</h1>
         <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: 0 }}>DOMINATION MODE</p>
 
         {/* 10×10 dot grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 5, marginTop: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(10, ${dominationDotSize})`, gap: 'clamp(3px, 0.8vw, 5px)', marginTop: 4, justifyContent: 'center' }}>
           {Array.from({ length: TOTAL_DOTS }, (_, i) => (
             <div key={i} style={{
-              aspectRatio: '1',
+              width: dominationDotSize,
+              height: dominationDotSize,
               borderRadius: '50%',
               background: i < filledCount ? dotColors[i] : 'transparent',
-              border: `2px solid ${i < filledCount ? dotColors[i] : 'rgba(255,255,255,0.15)'}`,
+              border: `1.5px solid ${i < filledCount ? dotColors[i] : 'rgba(255,255,255,0.15)'}`,
               transition: 'background 80ms ease, border-color 80ms ease',
             }} />
           ))}
