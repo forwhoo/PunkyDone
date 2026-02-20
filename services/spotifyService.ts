@@ -521,13 +521,20 @@ export const fetchTrackPreviewUrls = async (token: string, trackIds: string[]): 
     batches.push(ids.slice(i, i + 50));
   }
 
+  console.log(`[fetchTrackPreviewUrls] 🎵 Fetching preview URLs for ${ids.length} unique track IDs in ${batches.length} batch(es)`);
+
   const output: Record<string, string> = {};
   await Promise.all(
     batches.map(async (batch) => {
       const url = `https://api.spotify.com/v1/tracks?ids=${batch.join(',')}`;
       const res = await fetch(url, { headers });
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.warn(`[fetchTrackPreviewUrls] ⚠️ API error ${res.status} for batch of ${batch.length} IDs`);
+        return;
+      }
       const data = await res.json();
+      let found = 0;
+      let missing = 0;
       (data.tracks || []).forEach((track: any) => {
         if (track?.id && track?.preview_url) {
           output[track.id] = track.preview_url;
@@ -535,10 +542,15 @@ export const fetchTrackPreviewUrls = async (token: string, trackIds: string[]): 
           rawIds?.forEach((rawId) => {
             output[rawId] = track.preview_url;
           });
+          found++;
+        } else if (track?.id) {
+          missing++;
         }
       });
+      console.log(`[fetchTrackPreviewUrls] Batch done — ${found} with preview_url, ${missing} without (Spotify may have removed them)`);
     })
   );
 
+  console.log(`[fetchTrackPreviewUrls] ✅ Total preview URLs found: ${Object.keys(output).length} / ${ids.length}`);
   return output;
 };
