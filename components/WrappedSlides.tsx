@@ -13,7 +13,7 @@ const NB = {
   white: '#FFFFFF',
   black: '#000000',
 };
-const TOTAL_SLIDES = 14;
+const TOTAL_SLIDES = 15;
 const LEFT_TAP_ZONE = 0.3;
 
 interface WrappedSlidesProps {
@@ -23,6 +23,9 @@ interface WrappedSlidesProps {
   albums: Album[];
   songs: Song[];
   albumCovers: string[];
+  rangeLabel?: string;
+  rangeStart?: string;
+  rangeEnd?: string;
   connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> };
 }
 
@@ -226,7 +229,7 @@ const FrequencyBarRow: React.FC<{
 };
 
 // SLIDE 0: THE DEVOUR
-const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: string[]; albums: Album[] }> = ({ active, totalMinutes, albumCovers, albums }) => {
+const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: string[]; albums: Album[]; rangeLabel?: string }> = ({ active, totalMinutes, albumCovers, albums, rangeLabel }) => {
   const [phase, setPhase] = useState(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const counted = useOdometer(phase >= 2 ? totalMinutes : 0);
@@ -309,7 +312,7 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '60px 24px 24px', position: 'relative', zIndex: 20 }}>
         <div style={{ overflow: 'hidden', marginBottom: 0 }}>
           <div style={{ transform: phase >= 2 ? 'translateY(0)' : 'translateY(110%)', transition: 'transform 400ms cubic-bezier(0.16,1,0.3,1)' }}>
-            <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '0 0 8px 0', textAlign: 'center' }}>THE DEVOUR</p>
+            <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '0 0 8px 0', textAlign: 'center' }}>{rangeLabel || 'THE DEVOUR'}</p>
             <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(80px, 22vw, 120px)', color: NB.acidYellow, lineHeight: 0.9, textTransform: 'uppercase', margin: 0, textAlign: 'center' }}>
               {counted.toLocaleString()}
             </h1>
@@ -622,96 +625,101 @@ const FRUIT_PROFILES = [
 ];
 const SLIDE4_BG_EMOJIS = ['🎵','✨','🎶','💿','🎧','🎤','🎼','🎹','🎸','🎺','🥁','🎻'];
 
+type HistoryRow = { played_at: string; duration_ms: number; track_name?: string };
+type DnaMetrics = {
+  nightOwl: number;
+  freshFinds: number;
+  deepSessions: number;
+  replayLove: number;
+  routine: number;
+  notes: string[];
+};
+
+function computeDnaMetrics(historyRows: HistoryRow[], songs: Song[]): DnaMetrics {
+  const safeHistory = historyRows.filter((item) => !!item.played_at);
+  const totalSongListens = Math.max(1, songs.reduce((sum, song) => sum + song.listens, 0));
+  const sortedAsc = [...safeHistory].sort((a, b) => new Date(a.played_at).getTime() - new Date(b.played_at).getTime());
+
+  const lateNightPlays = safeHistory.filter((row) => {
+    const hr = new Date(row.played_at).getHours();
+    return hr >= 21 || hr <= 3;
+  }).length;
+
+  const trackSeen = new Set<string>();
+  let firstListenCount = 0;
+  for (const row of sortedAsc) {
+    const key = (row.track_name || '').toLowerCase();
+    if (!key) continue;
+    if (!trackSeen.has(key)) {
+      firstListenCount++;
+      trackSeen.add(key);
+    }
+  }
+
+  let sessions = 0;
+  let sessionMs = 0;
+  let currentSession = 0;
+  let lastEnd = 0;
+  for (const row of sortedAsc) {
+    const start = new Date(row.played_at).getTime();
+    const dur = row.duration_ms || 0;
+    if (!lastEnd || start - lastEnd > 25 * 60 * 1000) {
+      if (currentSession > 0) {
+        sessions++;
+        sessionMs += currentSession;
+      }
+      currentSession = dur;
+    } else {
+      currentSession += dur;
+    }
+    lastEnd = start + dur;
+  }
+  if (currentSession > 0) {
+    sessions++;
+    sessionMs += currentSession;
+  }
+
+  const totalPlays = Math.max(1, safeHistory.length);
+  const dailySet = new Set(safeHistory.map((row) => new Date(row.played_at).toDateString()));
+  const topSongShare = (songs[0]?.listens || 0) / totalSongListens;
+  const avgSessionMins = (sessionMs / Math.max(1, sessions)) / 60000;
+
+  const nightOwl = Math.min(100, Math.round((lateNightPlays / totalPlays) * 180));
+  const freshFinds = Math.min(100, Math.round((firstListenCount / totalPlays) * 240));
+  const deepSessions = Math.min(100, Math.round((avgSessionMins / 85) * 100));
+  const replayLove = Math.min(100, Math.round(Math.pow(topSongShare, 0.82) * 230));
+  const routine = Math.min(100, Math.round((dailySet.size / Math.max(7, Math.min(31, dailySet.size || 1))) * 100));
+
+  return {
+    nightOwl,
+    freshFinds,
+    deepSessions,
+    replayLove,
+    routine,
+    notes: [
+      `${lateNightPlays} late-night plays`,
+      `${firstListenCount} first-time track moments`,
+      `${Math.round(avgSessionMins)}m avg session`,
+    ],
+  };
+}
+
+function pickFruitFromMetrics(metrics: DnaMetrics) {
+  const vec = [metrics.nightOwl, metrics.freshFinds, metrics.deepSessions, metrics.replayLove, metrics.routine];
+  return FRUIT_PROFILES
+    .map((f) => ({ ...f, score: Math.sqrt(f.v.reduce((sum, value, i) => sum + Math.pow(value - vec[i], 2), 0)) }))
+    .sort((a, b) => a.score - b.score)[0];
+}
+
+
 // SLIDE 4: THE IDENTITY SCAN
-const Slide4: React.FC<{ active: boolean; totalMinutes: number; songs: Song[]; artists: Artist[] }> = ({ active, totalMinutes, songs, artists }) => {
+const Slide4: React.FC<{ active: boolean; songs: Song[]; historyRows: HistoryRow[] }> = ({ active, songs, historyRows }) => {
   const [phase, setPhase] = useState(0);
-  const [history, setHistory] = useState<Array<{ played_at: string; duration_ms: number; track_name?: string }>>([]);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetchHeatmapData().then((rows) => {
-      if (cancelled) return;
-      setHistory((rows || []).map((row: any) => ({ played_at: row.played_at, duration_ms: row.duration_ms || 0, track_name: row.track_name })));
-    }).catch(() => {
-      if (!cancelled) setHistory([]);
-    });
-    return () => { cancelled = true; };
-  }, []);
+  const metrics = useMemo(() => computeDnaMetrics(historyRows, songs), [historyRows, songs]);
 
-  const metrics = useMemo(() => {
-    const safeHistory = history.filter((item) => !!item.played_at);
-    const totalSongListens = Math.max(1, songs.reduce((sum, song) => sum + song.listens, 0));
-    const sortedAsc = [...safeHistory].sort((a, b) => new Date(a.played_at).getTime() - new Date(b.played_at).getTime());
-
-    const lateNightPlays = safeHistory.filter((row) => {
-      const hr = new Date(row.played_at).getHours();
-      return hr >= 21 || hr <= 3;
-    }).length;
-
-    const trackSeen = new Set<string>();
-    let firstListenCount = 0;
-    for (const row of sortedAsc) {
-      const key = (row.track_name || '').toLowerCase();
-      if (!key) continue;
-      if (!trackSeen.has(key)) {
-        firstListenCount++;
-        trackSeen.add(key);
-      }
-    }
-
-    let sessions = 0;
-    let sessionMs = 0;
-    let currentSession = 0;
-    let lastEnd = 0;
-    for (const row of sortedAsc) {
-      const start = new Date(row.played_at).getTime();
-      const dur = row.duration_ms || 0;
-      if (!lastEnd || start - lastEnd > 30 * 60 * 1000) {
-        if (currentSession > 0) {
-          sessions++;
-          sessionMs += currentSession;
-        }
-        currentSession = dur;
-      } else {
-        currentSession += dur;
-      }
-      lastEnd = start + dur;
-    }
-    if (currentSession > 0) {
-      sessions++;
-      sessionMs += currentSession;
-    }
-
-    const dailySet = new Set(safeHistory.map((row) => new Date(row.played_at).toDateString()));
-    const topSongShare = (songs[0]?.listens || 0) / totalSongListens;
-
-    const nightOwl = Math.min(100, Math.round((lateNightPlays / Math.max(1, safeHistory.length)) * 170));
-    const freshFinds = Math.min(100, Math.round((firstListenCount / Math.max(1, safeHistory.length)) * 220));
-    const deepSessions = Math.min(100, Math.round(((sessionMs / Math.max(1, sessions)) / (75 * 60 * 1000)) * 100));
-    const replayLove = Math.min(100, Math.round(topSongShare * 260));
-    const routine = Math.min(100, Math.round((dailySet.size / 30) * 100));
-
-    return {
-      nightOwl,
-      freshFinds,
-      deepSessions,
-      replayLove,
-      routine,
-      notes: [
-        `${lateNightPlays} late-night plays`,
-        `${firstListenCount} first-time track moments`,
-        `${Math.round((sessionMs / Math.max(1, sessions)) / 60000)}m avg session`,
-      ],
-    };
-  }, [history, songs]);
-
-  const winningFruit = useMemo(() => {
-    const vec = [metrics.nightOwl, metrics.freshFinds, metrics.deepSessions, metrics.replayLove, metrics.routine];
-    return FRUIT_PROFILES
-      .map((f) => ({ ...f, score: Math.sqrt(f.v.reduce((sum, value, i) => sum + Math.pow(value - vec[i], 2), 0)) }))
-      .sort((a, b) => a.score - b.score)[0];
-  }, [metrics]);
+  const winningFruit = useMemo(() => pickFruitFromMetrics(metrics), [metrics]);
 
   useEffect(() => {
     timers.current.forEach(clearTimeout);
@@ -1495,7 +1503,7 @@ const Slide11: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs }
 };
 
 // SLIDE 12: FINAL SHARE
-const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; albums: Album[]; onClose: () => void }> = ({ totalMinutes, artists, songs, albums, onClose }) => {
+const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]; albums: Album[]; onClose: () => void; winningFruit?: { name: string; emoji: string } | null }> = ({ totalMinutes, artists, songs, albums, onClose, winningFruit }) => {
   const topArtist = artists[0]?.name ?? '\u2014';
   const topSong = songs[0]?.title ?? '\u2014';
   const secondArtist = artists[1]?.name ?? '\u2014';
@@ -1505,22 +1513,6 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
   // Sort albums by descending totalListens (most listened first)
   const carouselAlbums = useMemo(() => [...albums].sort((a, b) => b.totalListens - a.totalListens), [albums]);
   const loopAlbums = useMemo(() => [...carouselAlbums, ...carouselAlbums, ...carouselAlbums], [carouselAlbums]);
-
-  // Compute fruit for summary (reuse FRUIT_PROFILES constant)
-  const fruitSummary = useMemo(() => {
-    const totalSongListens = Math.max(1, songs.reduce((s, song) => s + song.listens, 0));
-    const topSongShare = (songs[0]?.listens || 0) / totalSongListens;
-    const topFiveArtistShare = (artists[0]?.totalListens || 0) / Math.max(1, artists.slice(0, 5).reduce((s, a) => s + a.totalListens, 0));
-    const listenDepth = Math.min(100, Math.round((Math.min(1, totalMinutes / 6000) * 65) + (topFiveArtistShare * 35)));
-    const freshFinds = Math.min(100, Math.round((Math.min(1, songs.length / 80) * 80) + ((1 - topSongShare) * 20)));
-    const replayLove = Math.min(100, Math.round(topSongShare * 280));
-    const routine = Math.min(100, Math.round((Math.min(1, artists.length / 20) * 40) + 45));
-    const nightOwl = Math.min(100, Math.round((100 - listenDepth) * 0.35 + 45));
-    const vec = [nightOwl, freshFinds, listenDepth, replayLove, routine];
-    return FRUIT_PROFILES
-      .map(f => ({ ...f, score: Math.sqrt(f.v.reduce((s, val, i) => s + Math.pow(val - vec[i], 2), 0)) }))
-      .sort((a, b) => a.score - b.score)[0];
-  }, [songs, artists, totalMinutes]);
 
   useEffect(() => {
     const t = setTimeout(() => setIsAnimIn(true), 200);
@@ -1603,16 +1595,16 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
         </motion.div>
 
         {/* Fruit summary */}
-        {fruitSummary && (
+        {winningFruit && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: isAnimIn ? 1 : 0, scale: isAnimIn ? 1 : 0.9 }}
             transition={{ duration: 0.4, delay: 0.3 }}
             style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}
           >
-            <span style={{ fontSize: 42 }}>{fruitSummary.emoji}</span>
+            <span style={{ fontSize: 42 }}>{winningFruit.emoji}</span>
             <div>
-              <p style={{ margin: '0 0 2px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, color: NB.black }}>YOU ARE A {fruitSummary.name}</p>
+              <p style={{ margin: '0 0 2px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, color: NB.black }}>YOU ARE A {winningFruit.name}</p>
               <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#555' }}>Based on your listening DNA</p>
             </div>
           </motion.div>
@@ -1716,11 +1708,88 @@ const SlideDomination: React.FC<{ active: boolean; artists: Artist[] }> = ({ act
   );
 };
 
+
+
+const SlidePunkySignal: React.FC<{ active: boolean; historyRows: HistoryRow[] }> = ({ active, historyRows }) => {
+  const hourly = useMemo(() => {
+    const bins = Array(24).fill(0);
+    historyRows.forEach((row) => {
+      const hr = new Date(row.played_at).getHours();
+      bins[hr] += Math.max(1, Math.round((row.duration_ms || 0) / 60000));
+    });
+    const max = Math.max(1, ...bins);
+    const peakHour = bins.indexOf(max);
+    const primeWindow = `${String(peakHour).padStart(2, '0')}:00`;
+    return { bins, max, peakHour, primeWindow, totalSessions: historyRows.length };
+  }, [historyRows]);
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#050507', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ flex: 1, padding: '58px 16px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <h1 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(28px, 7vw, 48px)', color: NB.white, textTransform: 'uppercase', lineHeight: 1 }}>PUNKY SIGNAL</h1>
+        <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)' }}>
+          YOUR LISTENING CLOCK IN MOTION
+        </p>
+
+        <div style={{ height: 210, border: `3px solid ${NB.black}`, background: 'linear-gradient(180deg, #0F1020 0%, #07070d 100%)', boxShadow: '4px 4px 0 #000', display: 'flex', alignItems: 'flex-end', padding: '10px 8px', gap: 3 }}>
+          {hourly.bins.map((value, i) => {
+            const heightPct = Math.max(6, Math.round((value / hourly.max) * 100));
+            const isPeak = i === hourly.peakHour;
+            return (
+              <motion.div
+                key={i}
+                initial={{ height: '6%' }}
+                animate={{ height: `${active ? heightPct : 6}%`, opacity: isPeak ? 1 : 0.7 }}
+                transition={{ duration: 0.45, delay: i * 0.02 }}
+                style={{ flex: 1, border: `2px solid ${NB.black}`, background: isPeak ? NB.acidYellow : 'linear-gradient(180deg, #1A6BFF, #FF0080)' }}
+              />
+            );
+          })}
+        </div>
+
+        <BCard style={{ background: NB.white }}>
+          <p style={{ margin: '0 0 6px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 24, color: NB.black }}>
+            PRIME TIME: {hourly.primeWindow}
+          </p>
+          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>
+            {hourly.totalSessions.toLocaleString()} plays scanned. This is your strongest hour in this wrapped range.
+          </p>
+        </BCard>
+      </div>
+      <Ticker text="PUNKY SIGNAL  •  PEAK HOUR  •  LISTENING CLOCK" bg={NB.magenta} color={NB.white} />
+    </div>
+  );
+};
+
 // MAIN COMPONENT
-export default function WrappedSlides({ onClose, totalMinutes, artists, albums, songs, albumCovers, connectionGraph }: WrappedSlidesProps) {
+export default function WrappedSlides({ onClose, totalMinutes, artists, albums, songs, albumCovers, rangeLabel, rangeStart, rangeEnd, connectionGraph }: WrappedSlidesProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [historyRows, setHistoryRows] = useState<HistoryRow[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchHeatmapData().then((rows) => {
+      if (cancelled) return;
+      setHistoryRows((rows || []).map((row: any) => ({ played_at: row.played_at, duration_ms: row.duration_ms || 0, track_name: row.track_name })));
+    }).catch(() => {
+      if (!cancelled) setHistoryRows([]);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const filteredHistory = useMemo(() => {
+    const startMs = rangeStart ? new Date(rangeStart).getTime() : Number.NEGATIVE_INFINITY;
+    const endMs = rangeEnd ? new Date(rangeEnd).getTime() : Number.POSITIVE_INFINITY;
+    return historyRows.filter((row) => {
+      const t = new Date(row.played_at).getTime();
+      return t >= startMs && t <= endMs;
+    });
+  }, [historyRows, rangeStart, rangeEnd]);
+
+  const dnaMetrics = useMemo(() => computeDnaMetrics(filteredHistory, songs), [filteredHistory, songs]);
+  const winningFruit = useMemo(() => pickFruitFromMetrics(dnaMetrics), [dnaMetrics]);
 
   const goTo = useCallback((index: number, dir: number) => { setDirection(dir); setCurrentSlide(index); }, []);
   const next = useCallback(() => { if (currentSlide < TOTAL_SLIDES - 1) goTo(currentSlide + 1, 1); }, [currentSlide, goTo]);
@@ -1745,11 +1814,11 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
 
   const renderSlide = () => {
     switch (currentSlide) {
-      case 0: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} />;
+      case 0: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} rangeLabel={rangeLabel} />;
       case 1: return <Slide1 active={currentSlide === 1} artists={artists} />;
       case 2: return <Slide2 active={currentSlide === 2} songs={songs} />;
       case 3: return <Slide3 active={currentSlide === 3} albums={albums} />;
-      case 4: return <Slide4 active={currentSlide === 4} totalMinutes={totalMinutes} songs={songs} artists={artists} />;
+      case 4: return <Slide4 active={currentSlide === 4} songs={songs} historyRows={filteredHistory} />;
       case 5: return <Slide5 active={currentSlide === 5} />;
       case 6: return <Slide6 active={currentSlide === 6} artists={artists} />;
       case 7: return <Slide7 active={currentSlide === 7} artists={artists} songs={songs} />;
@@ -1758,8 +1827,9 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
       case 10: return <Slide10 active={currentSlide === 10} artists={artists} connectionGraph={connectionGraph} />;
       case 11: return <Slide11 active={currentSlide === 11} songs={songs} />;
       case 12: return <SlideDomination active={currentSlide === 12} artists={artists} />;
-      case 13: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} albums={albums} onClose={onClose} />;
-      default: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} />;
+      case 13: return <SlidePunkySignal active={currentSlide === 13} historyRows={filteredHistory} />;
+      case 14: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} albums={albums} onClose={onClose} winningFruit={winningFruit} />;
+      default: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} rangeLabel={rangeLabel} />;
     }
   };
 

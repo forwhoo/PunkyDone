@@ -10,6 +10,9 @@ interface PunkyWrappedProps {
   albumCovers: string[];
   totalMinutes?: number;
   weeklyMinutes?: number;
+  rangeLabel?: string;
+  rangeStart?: string;
+  rangeEnd?: string;
   artists?: Artist[];
   albums?: Album[];
   songs?: Song[];
@@ -76,7 +79,7 @@ function getWeekRange(): string {
   return `${fmt(monday)} – ${fmt(sunday)}, ${now.getFullYear()}`;
 }
 
-const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, totalMinutes, weeklyMinutes, artists = [], albums = [], songs = [], connectionGraph }) => {
+const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, totalMinutes, weeklyMinutes, rangeLabel, rangeStart, rangeEnd, artists = [], albums = [], songs = [], connectionGraph }) => {
   const [story, setStory] = useState<'intro' | 'slides' | 'done'>('intro');
   const [vortex, setVortex] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
@@ -147,6 +150,9 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
     return (
       <WrappedSlides
         totalMinutes={weeklyMinutes ?? totalMinutes ?? 0}
+        rangeLabel={rangeLabel}
+        rangeStart={rangeStart}
+        rangeEnd={rangeEnd}
         artists={artists}
         albums={albums}
         songs={songs}
