@@ -13,6 +13,7 @@ import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ChartSkeleton } from './components/LoadingSkeleton';
 import PunkyWrapped from './components/PunkyWrapped';
+import BrutalistDashboard from './components/BrutalistDashboard';
 
 // Extract dominant color from an image URL using canvas sampling
 const MIN_PIXEL_BRIGHTNESS = 40;
@@ -232,6 +233,9 @@ function App() {
   // Wrapped Under Construction Message State
   const [showWrappedMessage, setShowWrappedMessage] = useState(false);
   const [wrappedConnectionGraph, setWrappedConnectionGraph] = useState<{ artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> } | null>(null);
+
+  // Brutalist mode toggle
+  const [brutalistMode, setBrutalistMode] = useState(false);
 
   // Dynamic aura colors extracted from item images
   const [auraColor, setAuraColor] = useState<string>('#FA2D48');
@@ -762,11 +766,20 @@ function App() {
                         <p className="text-[11px] uppercase tracking-[0.25em] text-white/40 font-bold">Your Stats</p>
                         <h2 className="text-[30px] font-bold text-white mt-1">Hey {data.user?.display_name || 'there'}</h2>
                     </div>
-                    {data.user?.images?.[0]?.url && (
-                        <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 shadow-xl">
-                            <img src={data.user.images[0].url} alt={data.user.display_name} loading="lazy" className="w-full h-full object-cover" />
-                        </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setBrutalistMode(true)}
+                            className="text-[10px] font-bold uppercase tracking-widest border border-white/20 rounded-lg px-2.5 py-1.5 text-white/60 hover:text-white hover:border-white/40 transition-all"
+                            title="Switch to Brutalist Mode"
+                        >
+                            BRUTALIST
+                        </button>
+                        {data.user?.images?.[0]?.url && (
+                            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 shadow-xl">
+                                <img src={data.user.images[0].url} alt={data.user.display_name} loading="lazy" className="w-full h-full object-cover" />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -1036,10 +1049,10 @@ function App() {
             </div>
             
             {/* Desktop Punky Wrapped Button */}
-            <div className="mb-16">
+            <div className="mb-16 flex gap-3">
                 <button
                     onClick={() => setShowWrappedMessage(true)}
-                    className="w-full rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99] relative overflow-hidden"
+                    className="flex-1 rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99] relative overflow-hidden"
                 >
                     <div className="absolute inset-0 z-0">
                         <PrismaticBurst animationType="rotate3d" intensity={1.5} speed={0.3} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
@@ -1051,6 +1064,17 @@ function App() {
                             <p className="text-[12px] text-white/60 font-medium">View your story</p>
                         </div>
                         <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors flex-shrink-0" />
+                    </div>
+                </button>
+                <button
+                    onClick={() => setBrutalistMode(true)}
+                    className="rounded-2xl p-5 border border-white/10 hover:border-yellow-400/40 transition-all active:scale-[0.99] relative overflow-hidden"
+                    title="Switch to Brutalist Mode"
+                    style={{ minWidth: 120 }}
+                >
+                    <div className="flex flex-col items-center justify-center gap-1">
+                        <span className="text-lg">⚡</span>
+                        <span className="text-[11px] font-bold text-white/60 uppercase tracking-widest">BRUTALIST</span>
                     </div>
                 </button>
             </div>
@@ -1885,6 +1909,25 @@ function App() {
                 songs={safeSongs}
                 weeklyMinutes={dbUnifiedData?.totalMinutes ?? 0}
                 connectionGraph={wrappedConnectionGraph || undefined}
+            />
+        )}
+
+        {/* Brutalist Dashboard */}
+        {brutalistMode && (
+            <BrutalistDashboard
+                onToggleOff={() => setBrutalistMode(false)}
+                artists={safeArtists}
+                songs={safeSongs}
+                albums={safeAlbums}
+                totalMinutes={dbStats?.totalMinutes ?? 0}
+                userName={data?.user?.display_name}
+                userImage={data?.user?.images?.[0]?.url}
+                artistImages={artistImages}
+                timeRange={timeRange}
+                onTimeRangeChange={(range) => {
+                    setTimeRange(range);
+                    fetchDashboardStats(range).then((d: any) => setDbUnifiedData(d));
+                }}
             />
         )}
     </AnimatePresence>

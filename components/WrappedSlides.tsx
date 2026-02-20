@@ -1546,7 +1546,7 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
         <div style={{ position: 'relative', overflow: 'hidden' }}>
           <motion.div
             animate={{ x: hovered !== null ? 0 : [0, `-${100 / 3}%`] }}
-            transition={{ duration: 8 * (carouselAlbums.length / 6 || 1), repeat: Infinity, ease: 'linear' }}
+            transition={{ duration: Math.min(8 * (carouselAlbums.length / 6 || 1), 30), repeat: Infinity, ease: 'linear' }}
             style={{ display: 'flex', width: 'fit-content', gap: 8, paddingLeft: 8 }}
           >
             {loopAlbums.map((album, idx) => (
