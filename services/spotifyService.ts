@@ -495,7 +495,24 @@ export const searchSpotifyTracks = async (token: string, query: string, limit = 
 
 
 export const fetchTrackPreviewUrls = async (token: string, trackIds: string[]): Promise<Record<string, string>> => {
-  const ids = Array.from(new Set(trackIds.filter(Boolean)));
+  const normalizeSpotifyTrackId = (value: string): string | null => {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const fromUri = trimmed.startsWith('spotify:track:') ? trimmed.split(':').pop() || '' : trimmed;
+    const fromUrl = fromUri.includes('/track/') ? fromUri.split('/track/')[1]?.split('?')[0] || '' : fromUri;
+    return /^[A-Za-z0-9]{22}$/.test(fromUrl) ? fromUrl : null;
+  };
+
+  const normalizedToRawIds = new Map<string, Set<string>>();
+  for (const rawId of trackIds || []) {
+    const normalizedId = normalizeSpotifyTrackId(rawId);
+    if (!normalizedId) continue;
+    if (!normalizedToRawIds.has(normalizedId)) normalizedToRawIds.set(normalizedId, new Set());
+    normalizedToRawIds.get(normalizedId)!.add(rawId);
+  }
+
+  const ids = Array.from(normalizedToRawIds.keys());
   if (!token || ids.length === 0) return {};
 
   const headers = { Authorization: `Bearer ${token}` };
@@ -514,6 +531,10 @@ export const fetchTrackPreviewUrls = async (token: string, trackIds: string[]): 
       (data.tracks || []).forEach((track: any) => {
         if (track?.id && track?.preview_url) {
           output[track.id] = track.preview_url;
+          const rawIds = normalizedToRawIds.get(track.id);
+          rawIds?.forEach((rawId) => {
+            output[rawId] = track.preview_url;
+          });
         }
       });
     })
