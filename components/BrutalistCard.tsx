@@ -1,0 +1,141 @@
+import React, { useState, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Artist } from '../types';
+import { Download, Zap, Heart } from 'lucide-react';
+import html2canvas from 'html2canvas';
+
+const BC = {
+  electricBlue: '#1A6BFF',
+  coral: '#FF4D2E',
+  magenta: '#FF0080',
+  acidYellow: '#CCFF00',
+  black: '#000000',
+  white: '#FFFFFF',
+  silver: '#C0C0C0'
+};
+
+interface BrutalistCardProps {
+  artist: Artist;
+  rank: number;
+  image?: string;
+  isHolo?: boolean;
+}
+
+export const BrutalistCard: React.FC<BrutalistCardProps> = ({ artist, rank, image, isHolo = false }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const downloadCard = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!cardRef.current) return;
+    try {
+      const canvas = await html2canvas(cardRef.current, {
+        backgroundColor: null,
+        scale: 2, // Higher resolution
+        useCORS: true, // Handle external images
+        allowTaint: true,
+      });
+
+      const link = document.createElement('a');
+      link.download = `lotus-card-${artist.name.replace(/\s+/g, '-').toLowerCase()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error("Failed to download card:", err);
+    }
+  };
+
+  const hp = Math.min(999, Math.round((parseInt(artist.timeStr?.replace(/[^0-9]/g, '') || '0') / 60) * 10)); // Minutes * 10 capped
+  const atk = Math.min(999, artist.totalListens);
+
+  return (
+    <div className="relative group perspective-1000">
+        <motion.div
+            ref={cardRef}
+            className={`
+                relative w-64 h-96 bg-[#E0E0E0] border-[6px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]
+                flex flex-col overflow-hidden transition-transform duration-300 preserve-3d
+                ${isHolo ? 'hover:rotate-y-12 hover:rotate-x-12' : ''}
+            `}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            style={{
+                transformStyle: 'preserve-3d',
+            }}
+        >
+            {/* Card Header */}
+            <div className="bg-[#CCFF00] border-b-[4px] border-black p-2 flex justify-between items-center relative z-10">
+                <span className="font-black text-xs uppercase tracking-tighter">No. {String(rank).padStart(3, '0')}</span>
+                <span className="font-bold text-xs flex items-center gap-1">
+                    HP <span className="text-lg leading-none text-red-600 font-black">{hp}</span>
+                </span>
+            </div>
+
+            {/* Image Container */}
+            <div className="relative mx-3 mt-3 border-[4px] border-black aspect-square bg-black overflow-hidden">
+                <img
+                    src={image || artist.image}
+                    alt={artist.name}
+                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                    crossOrigin="anonymous"
+                />
+                {isHolo && (
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/30 via-transparent to-white/30 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none mix-blend-overlay" />
+                )}
+                {/* Holo Shine */}
+                <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shine pointer-events-none`} />
+            </div>
+
+            {/* Info Bar */}
+            <div className="bg-[#FF0080] text-white font-black text-center text-xs py-1 border-y-[4px] border-black mt-3 mx-3 uppercase tracking-widest shadow-[2px_2px_0px_0px_#000]">
+                {artist.genres?.[0] || "Musician"} Type
+            </div>
+
+            {/* Stats Area */}
+            <div className="p-3 flex-1 flex flex-col justify-between bg-[#F0F0F0]">
+                <div className="flex justify-between items-end border-b-2 border-black/10 pb-2">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase">Attack</span>
+                        <div className="flex items-center gap-1 font-black text-lg">
+                            <Zap size={14} fill="black" /> {atk}
+                        </div>
+                    </div>
+                     <div className="flex flex-col text-right">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase">Ability</span>
+                        <span className="font-bold text-xs uppercase truncate max-w-[100px]">Sonic Boom</span>
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-center mt-2">
+                    <h3 className="font-black text-lg leading-none uppercase truncate max-w-[140px]" title={artist.name}>
+                        {artist.name}
+                    </h3>
+                    <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded-full bg-black"></div>
+                        <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-black text-white text-[9px] p-1 text-center font-mono uppercase tracking-widest">
+                Lotus TCG • 2024 Edition
+            </div>
+
+            {/* Download Button (Hidden by default, visible on hover) */}
+            <button
+                onClick={downloadCard}
+                className="absolute top-2 right-2 bg-black text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:scale-110 active:scale-95 border-2 border-white shadow-lg"
+                title="Save Card"
+            >
+                <Download size={14} />
+            </button>
+
+            {/* Logo Overlay for Export */}
+            <div className="absolute bottom-2 right-2 opacity-10 pointer-events-none">
+                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            </div>
+        </motion.div>
+    </div>
+  );
+};
