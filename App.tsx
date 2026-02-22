@@ -1782,17 +1782,27 @@ function App() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] bg-black"
+                className="fixed inset-0 z-[100] bg-black overflow-hidden"
                 onClick={() => setSelectedTopAlbum(null)}
             >
-                <div className="absolute inset-0 overflow-hidden">
-                    <img 
-                        src={selectedTopAlbum.cover} 
-                        className="w-full h-full object-cover scale-110 blur-3xl opacity-20"
-                        alt=""
+                {/* Apple Music Style Background */}
+                <div className="absolute inset-0 bg-black" />
+
+                {/* Dynamic Gradient Orbs */}
+                <div className="absolute inset-0 opacity-60 animate-pulse-slow">
+                    <div
+                        className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] rounded-full blur-[100px] mix-blend-screen transition-colors duration-1000"
+                        style={{ backgroundColor: auraColor }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
+                    <div
+                        className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] rounded-full blur-[100px] mix-blend-screen transition-colors duration-1000"
+                        style={{ backgroundColor: auraColor, animationDelay: '2s' }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/90" />
                 </div>
+
+                {/* Noise Overlay */}
+                <div className="absolute inset-0 bg-noise opacity-[0.07] mix-blend-overlay pointer-events-none" />
 
                 <motion.div 
                     initial={{ y: 50, opacity: 0 }}
@@ -1939,17 +1949,27 @@ function App() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] bg-black"
+                className="fixed inset-0 z-[100] bg-black overflow-hidden"
                 onClick={() => setSelectedTopSong(null)}
             >
-                <div className="absolute inset-0 overflow-hidden">
-                    <img 
-                        src={selectedTopSong.cover} 
-                        className="w-full h-full object-cover scale-110 blur-3xl opacity-30"
-                        alt=""
+                {/* Apple Music Style Background */}
+                <div className="absolute inset-0 bg-black" />
+
+                {/* Dynamic Gradient Orbs */}
+                <div className="absolute inset-0 opacity-60 animate-pulse-slow">
+                    <div
+                        className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] rounded-full blur-[100px] mix-blend-screen transition-colors duration-1000"
+                        style={{ backgroundColor: auraColor }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
+                    <div
+                        className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] rounded-full blur-[100px] mix-blend-screen transition-colors duration-1000"
+                        style={{ backgroundColor: auraColor, animationDelay: '2s' }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/90" />
                 </div>
+
+                {/* Noise Overlay */}
+                <div className="absolute inset-0 bg-noise opacity-[0.07] mix-blend-overlay pointer-events-none" />
 
                 <motion.div 
                     initial={{ y: 50, opacity: 0 }}
