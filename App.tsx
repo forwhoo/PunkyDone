@@ -720,9 +720,9 @@ function App() {
                      dbUnifiedData.songs?.length > 0 || 
                      dbUnifiedData.albums?.length > 0);
 
-  const safeArtists = dbUnifiedData?.artists || [];
-  const safeAlbums = dbUnifiedData?.albums || [];
-  const safeSongs = dbUnifiedData?.songs || [];
+  const safeArtists = (dbUnifiedData?.artists?.length > 0) ? dbUnifiedData.artists : (data?.artists || []);
+  const safeAlbums = (dbUnifiedData?.albums?.length > 0) ? dbUnifiedData.albums : (data?.albums || []);
+  const safeSongs = (dbUnifiedData?.songs?.length > 0) ? dbUnifiedData.songs : (data?.songs || []);
 
   const handleSurpriseMe = () => {
     if (safeSongs.length > 0) {
