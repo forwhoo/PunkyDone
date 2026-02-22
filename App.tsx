@@ -16,6 +16,7 @@ import { ChartSkeleton } from './components/LoadingSkeleton';
 import LotusWrapped from './components/LotusWrapped';
 import BrutalistDashboard from './components/BrutalistDashboard';
 import BrutalistSwitch from './components/BrutalistSwitch';
+import { EmptyState } from './components/EmptyState';
 
 // Extract dominant color from an image URL using canvas sampling
 const MIN_PIXEL_BRIGHTNESS = 40;
@@ -1114,21 +1115,7 @@ function App() {
             </div>
 
             {showEmptyState ? (
-                <div className="flex flex-col items-center justify-center py-20 rounded-3xl border border-white/5 text-center px-6">
-                    <div className="relative mb-6">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FA2D48]/20 to-purple-900/20 flex items-center justify-center">
-                            <Music size={32} className="text-white/30" />
-                        </div>
-                        <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FA2D48]/30 flex items-center justify-center text-xs">🎵</div>
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Nothing here yet</h3>
-                    <p className="text-[#8E8E93] text-sm leading-relaxed max-w-[260px]">
-                        Your {timeRange.toLowerCase()} stats will appear after you've been listening. Go put on some music! 🎧
-                    </p>
-                    <div className="mt-6 px-4 py-2 rounded-full border border-white/10 text-xs text-white/40 font-medium">
-                        Tip: Switch to "All Time" to see your complete history
-                    </div>
-                </div>
+                <EmptyState timeRange={timeRange} />
             ) : (
                 <>
                     <section className="space-y-4">
@@ -1483,21 +1470,7 @@ function App() {
                 </div>
                 
                 {showEmptyState ? (
-                    <div className="flex flex-col items-center justify-center py-20 rounded-3xl border border-white/5 text-center px-6">
-                        <div className="relative mb-6">
-                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FA2D48]/20 to-purple-900/20 flex items-center justify-center">
-                                <Music size={32} className="text-white/30" />
-                            </div>
-                            <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FA2D48]/30 flex items-center justify-center text-xs">🎵</div>
-                        </div>
-                        <h3 className="text-xl font-bold text-white mb-2">Nothing here yet</h3>
-                        <p className="text-[#8E8E93] text-sm leading-relaxed max-w-[260px]">
-                            Your {timeRange.toLowerCase()} stats will appear after you've been listening. Go put on some music! 🎧
-                        </p>
-                        <div className="mt-6 px-4 py-2 rounded-full border border-white/10 text-xs text-white/40 font-medium">
-                            Tip: Switch to "All Time" to see your complete history
-                        </div>
-                    </div>
+                    <EmptyState timeRange={timeRange} />
                 ) : (
                 <div key={timeRange} className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
                     {/* TOP ARTISTS */}
