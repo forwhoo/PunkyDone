@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Artist, Album, Song } from '../types';
+import { BrutalistCard } from './BrutalistCard';
+import html2canvas from 'html2canvas';
+import { Download } from 'lucide-react';
 
 // Brutalist Color Palette
 const BC = {
@@ -26,6 +29,23 @@ const BrutTicker: React.FC<{ text: string; bg?: string; color?: string }> = ({ t
         >
              {Array(20).fill(text).map((t, i) => (
                  <span key={i} className="text-xs font-black uppercase tracking-[0.15em]" style={{ color }}>{t} ✶</span>
+             ))}
+        </motion.div>
+    </div>
+  );
+};
+
+const BrutVerticalTicker: React.FC<{ text: string }> = ({ text }) => {
+  return (
+    <div className="fixed left-0 top-0 bottom-0 w-10 bg-black border-r-4 border-[#CCFF00] overflow-hidden flex flex-col items-center justify-center z-[150] pointer-events-none hidden 2xl:flex shadow-[4px_0_0_0_rgba(0,0,0,0.5)]">
+        <motion.div
+            className="whitespace-nowrap flex flex-col items-center gap-8 py-4"
+            animate={{ y: [0, -1000] }}
+            transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
+            style={{ writingMode: 'vertical-rl' }}
+        >
+             {Array(20).fill(text).map((t, i) => (
+                 <span key={i} className="text-[10px] font-black font-mono text-[#CCFF00] uppercase tracking-widest rotate-180 drop-shadow-[0_2px_0_rgba(0,0,0,0.8)]">{t} ///</span>
              ))}
         </motion.div>
     </div>
@@ -64,6 +84,28 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
   onAlbumClick,
 }) => {
   const [activeTab, setActiveTab] = useState<'artists' | 'songs' | 'albums'>('artists');
+  const dashboardRef = useRef<HTMLDivElement>(null);
+
+  const handlePrintReceipt = async () => {
+    if (!dashboardRef.current) return;
+    try {
+        const canvas = await html2canvas(dashboardRef.current, {
+            backgroundColor: '#0D0D0D',
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            ignoreElements: (element) => element.classList.contains('no-print'),
+            height: dashboardRef.current.scrollHeight,
+            windowHeight: dashboardRef.current.scrollHeight
+        });
+        const link = document.createElement('a');
+        link.download = `lotus-brutalist-stats.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    } catch (e) {
+        console.error("Print failed", e);
+    }
+  };
 
   const hours = Math.round(totalMinutes / 60);
   const topArtist = artists[0];
@@ -71,12 +113,15 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
   const topAlbum = albums[0];
 
   return (
-    <div className="fixed inset-0 z-[200] bg-[#0D0D0D] overflow-y-auto font-sans flex flex-col text-black">
+    <div className="fixed inset-0 z-[200] bg-[#0D0D0D] overflow-y-auto font-sans flex flex-col text-black" ref={dashboardRef}>
+      {/* Vertical Ticker */}
+      <BrutVerticalTicker text="LISTENING HISTORY // ARCHIVE" />
+
       {/* Scanline Effect */}
       <div className="fixed inset-0 pointer-events-none z-[1] opacity-5 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,#ffffff_2px,#ffffff_4px)]"></div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#CCFF00] border-b-4 border-black p-4 flex justify-between items-center shadow-lg">
+      <header className="sticky top-0 z-50 bg-[#CCFF00] border-b-4 border-black p-4 flex justify-between items-center shadow-lg no-print">
          <div className="flex items-center gap-4">
              {userImage && (
                  <div className="w-12 h-12 rounded-full border-[3px] border-black overflow-hidden bg-black shrink-0">
@@ -90,12 +135,20 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
                  </h1>
              </div>
          </div>
-         <button
-            onClick={onToggleOff}
-            className="bg-black text-[#CCFF00] border-[3px] border-black px-4 py-2 font-black text-sm uppercase tracking-widest hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] transition-all active:translate-x-0 active:translate-y-0 active:shadow-none"
-         >
-             Exit Mode
-         </button>
+         <div className="flex gap-3">
+             <button
+                onClick={handlePrintReceipt}
+                className="bg-white text-black border-[3px] border-black px-3 py-2 font-black text-sm uppercase tracking-widest hover:bg-black hover:text-white transition-all flex items-center gap-2"
+             >
+                 <Download size={16} /> <span className="hidden sm:inline">Receipt</span>
+             </button>
+             <button
+                onClick={onToggleOff}
+                className="bg-black text-[#CCFF00] border-[3px] border-black px-4 py-2 font-black text-sm uppercase tracking-widest hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] transition-all active:translate-x-0 active:translate-y-0 active:shadow-none"
+             >
+                 Exit
+             </button>
+         </div>
       </header>
 
       <BrutTicker text="RAW DATA // NO FILTER // PURE ANALYTICS" />
@@ -275,6 +328,27 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
 
           </div>
 
+          {/* COLLECTED CARDS SECTION */}
+          <div className="lg:col-span-12 mt-2 border-t-4 border-black pt-8">
+               <div className="bg-[#CCFF00] border-[4px] border-black p-4 mb-8 shadow-[6px_6px_0px_0px_#000] inline-block">
+                    <h2 className="text-2xl font-black uppercase tracking-tight">Artist Collection</h2>
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Gotta listen 'em all</p>
+               </div>
+
+               <div className="flex overflow-x-auto gap-12 pb-12 px-4 snap-x custom-scrollbar">
+                   {artists.slice(0, 10).map((artist, i) => (
+                       <div key={artist.id} className="snap-center shrink-0 transform hover:-translate-y-4 transition-transform duration-300">
+                           <BrutalistCard
+                               artist={artist}
+                               rank={i + 1}
+                               image={artistImages[artist.name] || artist.image}
+                               isHolo={i === 0}
+                           />
+                       </div>
+                   ))}
+               </div>
+          </div>
+
       </main>
 
       <footer className="p-4 bg-black border-t-4 border-[#CCFF00]">
@@ -287,19 +361,19 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
 const BrutRow = ({ rank, image, title, sub, meta, badge, color, onClick }: { rank: number, image?: string, title: string, sub?: string, meta: string, badge?: string, color: string, onClick?: () => void }) => (
     <div
         onClick={onClick}
-        className="flex items-center gap-4 bg-white border-[3px] border-black p-3 shadow-[4px_4px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] transition-all group cursor-pointer active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000]"
+        className="flex items-center gap-4 bg-white border-[3px] border-black p-3 shadow-[4px_4px_0px_0px_#000] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[8px_8px_0px_0px_#CCFF00] hover:border-[#CCFF00] hover:bg-black hover:text-[#CCFF00] transition-all group cursor-pointer active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000]"
     >
-        <div className="w-10 text-center font-black text-2xl text-black/20 group-hover:text-black transition-colors">{rank}</div>
-        <div className="w-12 h-12 border-2 border-black bg-black shrink-0 overflow-hidden relative">
+        <div className="w-10 text-center font-black text-2xl text-black/20 group-hover:text-[#CCFF00] transition-colors">{rank}</div>
+        <div className="w-12 h-12 border-2 border-black group-hover:border-[#CCFF00] bg-black shrink-0 overflow-hidden relative transition-colors">
              <img src={image || fallbackImage} alt={title} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
         </div>
         <div className="flex-1 min-w-0">
-            <h3 className="font-black text-lg uppercase leading-none truncate">{title}</h3>
-            {sub && <p className="font-bold text-xs uppercase text-gray-500 mt-0.5 truncate">{sub}</p>}
+            <h3 className="font-black text-lg uppercase leading-none truncate group-hover:text-[#CCFF00]">{title}</h3>
+            {sub && <p className="font-bold text-xs uppercase text-gray-500 mt-0.5 truncate group-hover:text-[#CCFF00]/60">{sub}</p>}
         </div>
         <div className="text-right shrink-0">
-            <p className="font-bold text-sm uppercase" style={{ color }}>{meta}</p>
-            {badge && <span className="inline-block bg-black text-white text-[10px] px-2 py-0.5 font-bold uppercase mt-1">{badge}</span>}
+            <p className="font-bold text-sm uppercase group-hover:!text-[#CCFF00]" style={{ color: color }}>{meta}</p>
+            {badge && <span className="inline-block bg-black text-white text-[10px] px-2 py-0.5 font-bold uppercase mt-1 group-hover:bg-[#CCFF00] group-hover:text-black transition-colors">{badge}</span>}
         </div>
     </div>
 );
