@@ -1,7 +1,7 @@
 # Mobile UI/UX Improvements Summary
 
 ## Overview
-This document summarizes all the mobile improvements implemented for PunkyStats to enhance the mobile experience with Apple Music-inspired design.
+This document summarizes all the mobile improvements implemented for LotusStats to enhance the mobile experience with Apple Music-inspired design.
 
 ## Features Added
 

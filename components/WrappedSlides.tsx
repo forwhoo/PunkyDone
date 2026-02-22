@@ -1669,7 +1669,7 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
           transition={{ duration: 0.5 }}
           style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(36px, 10vw, 72px)', color: NB.black, textTransform: 'uppercase', margin: 0, letterSpacing: '-0.02em', zIndex: 2, textAlign: 'center' }}
         >
-          PUNKY WRAPPED
+          LOTUS WRAPPED
         </motion.h1>
         <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg, transparent 0 14px, rgba(0,0,0,0.08) 14px 22px)' }} />
       </div>
@@ -1764,7 +1764,7 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
           </button>
         </motion.div>
       </div>
-      <Ticker text="PUNKY WRAPPED  YOUR YEAR IN MUSIC  KEEP LISTENING" bg={NB.acidYellow} color={NB.black} />
+      <Ticker text="LOTUS WRAPPED  YOUR YEAR IN MUSIC  KEEP LISTENING" bg={NB.acidYellow} color={NB.black} />
     </div>
   );
 };
@@ -1850,7 +1850,7 @@ const SlideDomination: React.FC<{ active: boolean; artists: Artist[] }> = ({ act
 
 
 
-const SlidePunkySignal: React.FC<{ active: boolean; historyRows: HistoryRow[] }> = ({ active, historyRows }) => {
+const SlideLotusSignal: React.FC<{ active: boolean; historyRows: HistoryRow[] }> = ({ active, historyRows }) => {
   const hourly = useMemo(() => {
     const bins = Array(24).fill(0);
     historyRows.forEach((row) => {
@@ -1866,7 +1866,7 @@ const SlidePunkySignal: React.FC<{ active: boolean; historyRows: HistoryRow[] }>
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#050507', position: 'relative', overflow: 'hidden' }}>
       <div style={{ flex: 1, padding: '58px 16px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <h1 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(28px, 7vw, 48px)', color: NB.white, textTransform: 'uppercase', lineHeight: 1 }}>PUNKY SIGNAL</h1>
+        <h1 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(28px, 7vw, 48px)', color: NB.white, textTransform: 'uppercase', lineHeight: 1 }}>LOTUS SIGNAL</h1>
         <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)' }}>
           YOUR LISTENING CLOCK IN MOTION
         </p>
@@ -1896,7 +1896,7 @@ const SlidePunkySignal: React.FC<{ active: boolean; historyRows: HistoryRow[] }>
           </p>
         </BCard>
       </div>
-      <Ticker text="PUNKY SIGNAL  •  PEAK HOUR  •  LISTENING CLOCK" bg={NB.magenta} color={NB.white} />
+      <Ticker text="LOTUS SIGNAL  •  PEAK HOUR  •  LISTENING CLOCK" bg={NB.magenta} color={NB.white} />
     </div>
   );
 };
@@ -2032,7 +2032,7 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
       case 10: return <Slide10 active={currentSlide === 10} artists={artists} rangeLabel={rangeLabel} connectionGraph={connectionGraph} />;
       case 11: return <Slide11 active={currentSlide === 11} songs={songs} />;
       case 12: return <SlideDomination active={currentSlide === 12} artists={artists} />;
-      case 13: return <SlidePunkySignal active={currentSlide === 13} historyRows={filteredHistory} />;
+      case 13: return <SlideLotusSignal active={currentSlide === 13} historyRows={filteredHistory} />;
       case 14: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} albums={albums} onClose={onClose} winningFruit={winningFruit} />;
       default: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} rangeLabel={rangeLabel} />;
     }

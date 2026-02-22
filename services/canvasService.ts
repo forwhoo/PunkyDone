@@ -311,7 +311,7 @@ const CANVAS_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 
 // ─── System Prompt ──────────────────────────────────────────────────────
 
-const CANVAS_SYSTEM_PROMPT = `You are Punky Canvas, an advanced AI component builder for a music analytics dashboard.
+const CANVAS_SYSTEM_PROMPT = `You are Lotus Canvas, an advanced AI component builder for a music analytics dashboard.
 Your job is to create beautiful, interactive HTML/CSS/JS components based on the user's request.
 
 ## YOUR CAPABILITIES:

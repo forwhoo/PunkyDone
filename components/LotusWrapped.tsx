@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 import WrappedSlides from './WrappedSlides';
 import { Artist, Album, Song } from '../types';
 
-interface PunkyWrappedProps {
+interface LotusWrappedProps {
   onClose: () => void;
   albumCovers: string[];
   totalMinutes?: number;
@@ -78,7 +78,7 @@ function getWeekRange(): string {
   return `${fmt(monday)} – ${fmt(sunday)}, ${now.getFullYear()}`;
 }
 
-const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, totalMinutes, weeklyMinutes, rangeLabel, rangeStart, rangeEnd, artists = [], albums = [], songs = [], connectionGraph }) => {
+const LotusWrapped: React.FC<LotusWrappedProps> = ({ onClose, albumCovers, totalMinutes, weeklyMinutes, rangeLabel, rangeStart, rangeEnd, artists = [], albums = [], songs = [], connectionGraph }) => {
   const [story, setStory] = useState<'intro' | 'slides' | 'done'>('intro');
   const [vortex, setVortex] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
@@ -305,7 +305,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
         {/* Bottom ticker belt */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10, height: 36, background: '#CCFF00', overflow: 'hidden', display: 'flex', alignItems: 'center', borderTop: '3px solid #000' }}>
           <div style={{ display: 'flex', whiteSpace: 'nowrap', animation: 'tickerIntro 16s linear infinite', fontFamily: "'Barlow Condensed', Impact, sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#000' }}>
-            {Array(16).fill('PUNKY WRAPPED  ✶  YOUR MUSIC YEAR  ✶  ').join('')}
+            {Array(16).fill('LOTUS WRAPPED  ✶  YOUR MUSIC YEAR  ✶  ').join('')}
           </div>
         </div>
 
@@ -345,7 +345,7 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
                 animation: 'introGlitch 6s ease infinite',
               }}
             >
-              PUNKY<br />
+              LOTUS<br />
               <span style={{ color: '#CCFF00', textShadow: '6px 6px 0 #000, -2px -2px 0 #000' }}>WRAPPED</span>
             </h1>
           </motion.div>
@@ -386,4 +386,4 @@ const PunkyWrapped: React.FC<PunkyWrappedProps> = ({ onClose, albumCovers, total
   );
 };
 
-export default PunkyWrapped;
+export default LotusWrapped;

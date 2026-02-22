@@ -5,7 +5,7 @@ If you already uploaded your JSON files and don't have images, you can manually 
 ## Option 1: Via Chat (Easiest)
 
 1. Open your app
-2. Type `@backfill` in the Punky chat
+2. Type `@backfill` in the Lotus chat
 3. Wait for completion message
 
 ## Option 2: Via Browser Console (Manual)

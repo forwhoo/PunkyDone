@@ -1,4 +1,4 @@
-A few changes to fix based on what I see with current wrapped first the first part the button remove the hideous ai star icon thingy and box its hideous, also other slide there is canlander remove that also and the coitner foteh square make punky wrapped view your story in the story of the button next up! buudling your wrpaped loading screen is ugly remove that. make it have a backgorund based on the wrapped backgrounds remove the ai star icon and the circle just make it say punky wrapped no ai star fix the font and make the backgorund overlap the images thom sing auoura. issue the artist top artist it should have thrree images of top artist in random order not just text then a spolithgt nmation goes and does ra thing hvoer each one then it will hover on spoltigiht of the top aritst then be the center image of artist then say the name of artist and the total minutes listened. top album this slide is short maake it longer make it use ai for thssi like matrix it types terminal like i see u listen to a lot of songs, blahahah etc do a systme prompot for this what to say then at the end it will reveal top albummpeak listneing the backgorund is hideous rightnowit should use  
+A few changes to fix based on what I see with current wrapped first the first part the button remove the hideous ai star icon thingy and box its hideous, also other slide there is canlander remove that also and the coitner foteh square make lotus wrapped view your story in the story of the button next up! buudling your wrpaped loading screen is ugly remove that. make it have a backgorund based on the wrapped backgrounds remove the ai star icon and the circle just make it say lotus wrapped no ai star fix the font and make the backgorund overlap the images thom sing auoura. issue the artist top artist it should have thrree images of top artist in random order not just text then a spolithgt nmation goes and does ra thing hvoer each one then it will hover on spoltigiht of the top aritst then be the center image of artist then say the name of artist and the total minutes listened. top album this slide is short maake it longer make it use ai for thssi like matrix it types terminal like i see u listen to a lot of songs, blahahah etc do a systme prompot for this what to say then at the end it will reveal top albummpeak listneing the backgorund is hideous rightnowit should use  
 
 
 here is the light ray effect: spotlight jsut fix it to maake it workf ro our case:
@@ -815,7 +815,7 @@ export default function ColorBends({
   height: 100%;
   overflow: hidden;
 }
-New discover it should not have a shiny effect have the dither effect of the artist image. lastly the last slide I dont liek the wappeed part red maake it have a shiny text effect instead remove the untiil next time part also! this is the same for the intor punky wrapped it should be shiny instaed of red also the ai quizs are dumb right now it should be quzizes like what song did u play on sunday etc.. or what album u played 3 times, not math fomrula questions lolthe total lsitening time sldie remvoe the current backgorund its ugly and replace it with thsi oen:
+New discover it should not have a shiny effect have the dither effect of the artist image. lastly the last slide I dont liek the wappeed part red maake it have a shiny text effect instead remove the untiil next time part also! this is the same for the intor lotus wrapped it should be shiny instaed of red also the ai quizs are dumb right now it should be quzizes like what song did u play on sunday etc.. or what album u played 3 times, not math fomrula questions lolthe total lsitening time sldie remvoe the current backgorund its ugly and replace it with thsi oen:
 using grid scanner:
 npx shadcn@latest add @react-bits/GridScan-TS-CSS
 import GridScan from './GridScan';
@@ -1803,4 +1803,4 @@ function dist2(a: { x: number; y: number }, b: { x: number; y: number }) {
   border-radius: 6px;
   backdrop-filter: blur(4px);
 }
-lastly move the punky wrapped button the top under ask about your music part,
+lastly move the lotus wrapped button the top under ask about your music part,

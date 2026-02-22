@@ -7,7 +7,7 @@ This document summarizes all changes made to implement the requirements from the
 
 ### 1. Button & UI Updates
 
-#### Punky Wrapped Button Changes
+#### Lotus Wrapped Button Changes
 - ✅ **Removed AI star icon and box** - The hideous Sparkles icon inside a colored box has been removed
 - ✅ **Removed Calendar icon** - Replaced with ChevronRight for cleaner look
 - ✅ **Repositioned button** - Moved to top of page, directly under "Ask about your music" section
@@ -26,7 +26,7 @@ This document summarizes all changes made to implement the requirements from the
 - ✅ **Removed spinning circle** - Ugly loading spinner with Headphones icon removed
 - ✅ **Removed loading text** - "Building your wrapped..." text removed
 - ✅ **Added Aurora background** - Beautiful aurora effect overlaps with shimmer
-- ✅ **Simplified text** - Now only shows "Punky Wrapped" in large, bold font
+- ✅ **Simplified text** - Now only shows "Lotus Wrapped" in large, bold font
 - ✅ **Improved styling** - text-6xl, font-bold, tracking-tight for clean look
 
 **Files Modified:**
@@ -263,7 +263,7 @@ This document summarizes all changes made to implement the requirements from the
 
 ## Commit History
 
-1. **Fix Punky Wrapped buttons: remove AI star icon, remove calendar, move to top**
+1. **Fix Lotus Wrapped buttons: remove AI star icon, remove calendar, move to top**
    - Removed Sparkles icon and Calendar icon
    - Moved buttons to top under AISearchBar
    - Added all 3 new components
