@@ -12,6 +12,7 @@ import { TrendingArtists } from './components/TrendingArtists';
 import { UpcomingArtists } from './components/UpcomingArtists';
 import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
+import { ArtistOrbit } from './components/ArtistOrbit';
 import { ChartSkeleton } from './components/LoadingSkeleton';
 import LotusWrapped from './components/LotusWrapped';
 import BrutalistDashboard from './components/BrutalistDashboard';
@@ -947,9 +948,32 @@ function App() {
         </div>
 
         <div className="hidden lg:block">
-            {/* Desktop Layout - Simplified for brevity */}
+            {/* Desktop Layout */}
             <div className="mb-8 mt-8">
-                <AISearchBar token={token} history={safeRecent} user={data.user} contextData={{/*...*/}} />
+                <AISearchBar
+                    token={token}
+                    history={safeRecent}
+                    user={data.user}
+                    contextData={{
+                        userName: data.user?.display_name,
+                        artists: safeArtists.map((a: Artist, idx: number) => {
+                            const time = String(a.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
+                        }),
+                        albums: safeAlbums.map((a: Album, idx: number) => {
+                            const time = String(a.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
+                        }),
+                        songs: safeSongs.map((s: Song, idx: number) => {
+                            const time = String(s.timeStr || '');
+                            const mins = time.replace('m', '');
+                            return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
+                        }),
+                        globalStats: dbStats
+                    }}
+                />
             </div>
             
             <div className="mb-16 flex gap-3">
@@ -1125,6 +1149,44 @@ function App() {
                     </div>
                 </motion.div>
 
+                {/* Obsession Orbit */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="w-full mb-6"
+                >
+                    <ArtistOrbit
+                        centralNode={{ id: selectedTopArtist.id, name: selectedTopArtist.name, image: artistImages[selectedTopArtist.name] || selectedTopArtist.image || '' }}
+                        orbitNodes={(dbUnifiedData?.songs || [])
+                            .filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name)
+                            .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
+                            .slice(0, 6)
+                            .map((s: any) => ({ id: s.id, name: s.track_name || s.title, image: s.cover || s.album_cover }))
+                        }
+                        color={auraColor}
+                        history={safeRecent.filter((p: any) => p.artist_name === selectedTopArtist.name)}
+                    />
+                </motion.div>
+
+                {/* Activity Heatmap */}
+                 <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                    className="w-full mb-8 bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4"
+                >
+                    <h3 className="text-xs font-bold text-white/70 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                         <Calendar size={12} className="opacity-80" /> Listening Activity
+                    </h3>
+                    <div className="overflow-hidden">
+                        <ActivityHeatmap
+                            history={safeRecent.filter((p: any) => p.artist_name === selectedTopArtist.name)}
+                            variant="compact"
+                        />
+                    </div>
+                </motion.div>
+
                 {/* Top Tracks Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -1228,7 +1290,7 @@ function App() {
                 >
                     <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
                         <TrendingUp size={16} className="mb-1.5 opacity-80" />
-                        <span className="text-xl font-bold text-white">{selectedTopAlbum.totalListens || selectedTopAlbum.listens || 0}</span>
+                        <span className="text-xl font-bold text-white">{selectedTopAlbum.totalListens || (selectedTopAlbum as any).listens || 0}</span>
                         <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Plays</span>
                     </div>
                     <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
@@ -1242,6 +1304,43 @@ function App() {
                             {(dbUnifiedData?.songs || []).filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title) && (s.artist === selectedTopAlbum.artist || s.artist_name === selectedTopAlbum.artist)).length}
                         </span>
                         <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Tracks</span>
+                    </div>
+                </motion.div>
+
+                 {/* Obsession Orbit (Album) */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="w-full mb-6"
+                >
+                    <ArtistOrbit
+                        centralNode={{ id: selectedTopAlbum.id, name: selectedTopAlbum.title, image: selectedTopAlbum.cover }}
+                        orbitNodes={(dbUnifiedData?.songs || [])
+                            .filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title))
+                            .slice(0, 6)
+                             .map((s: any) => ({ id: s.id, name: s.track_name || s.title, image: s.cover || s.album_cover }))
+                        }
+                        color={auraColor}
+                         history={safeRecent.filter((p: any) => p.album_name === selectedTopAlbum.title || p.album === selectedTopAlbum.title)}
+                    />
+                </motion.div>
+
+                 {/* Activity Heatmap */}
+                 <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                    className="w-full mb-8 bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4"
+                >
+                    <h3 className="text-xs font-bold text-white/70 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                         <Calendar size={12} className="opacity-80" /> Listening Activity
+                    </h3>
+                    <div className="overflow-hidden">
+                        <ActivityHeatmap
+                            history={safeRecent.filter((p: any) => p.album_name === selectedTopAlbum.title || p.album === selectedTopAlbum.title)}
+                            variant="compact"
+                        />
                     </div>
                 </motion.div>
 
