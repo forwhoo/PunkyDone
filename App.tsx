@@ -70,7 +70,7 @@ import {
     refreshAccessToken,
     fetchArtistImages
 } from './services/spotifyService';
-import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts, fetchArtistNetwork } from './services/dbService';
+import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts } from './services/dbService';
 import { generateMusicInsight, generateRankingInsights } from './services/geminiService';
 import { supabase } from './services/supabaseClient';
 
@@ -232,7 +232,6 @@ function App() {
 
   // Wrapped Under Construction Message State
   const [showWrappedMessage, setShowWrappedMessage] = useState(false);
-  const [wrappedConnectionGraph, setWrappedConnectionGraph] = useState<{ artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> } | null>(null);
 
   // Brutalist mode toggle
   const [brutalistMode, setBrutalistMode] = useState(false);
@@ -396,12 +395,6 @@ function App() {
 
   useEffect(() => {
     if (!showWrappedMessage) return;
-    fetchArtistNetwork(1500)
-      .then((network) => setWrappedConnectionGraph(network))
-      .catch((error) => {
-        console.error('[App] Failed to load wrapped connection graph:', error);
-        setWrappedConnectionGraph(null);
-      });
   }, [showWrappedMessage]);
 
   // Sync Data to Supabase when data is loaded
@@ -716,33 +709,66 @@ function App() {
 
   if (!token) {
       return (
-          <div className="min-h-[100dvh] min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center p-6 relative overflow-hidden">
-              <div className="absolute inset-0">
-                  <div className="absolute top-[-20%] left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[#FA2D48]/[0.06] blur-[120px]" />
-                  <div className="absolute bottom-[-20%] right-[-10%] h-[400px] w-[400px] rounded-full bg-white/[0.03] blur-[140px]" />
+          <div className="min-h-[100dvh] bg-[#050505] text-white flex items-center justify-center p-6 relative overflow-hidden">
+              {/* Animated gradient orbs */}
+              <div className="absolute inset-0 overflow-hidden">
+                  <div className="absolute top-[-15%] left-[-10%] h-[500px] w-[500px] rounded-full bg-[#FA2D48]/[0.08] blur-[100px] animate-pulse" />
+                  <div className="absolute bottom-[-20%] right-[-5%] h-[400px] w-[400px] rounded-full bg-[#1DB954]/[0.05] blur-[120px] animate-pulse" style={{animationDelay: '1s'}} />
+                  <div className="absolute top-[40%] left-[60%] h-[300px] w-[300px] rounded-full bg-purple-900/[0.06] blur-[100px]" />
+                  {/* Subtle grid */}
+                  <div className="absolute inset-0 opacity-[0.02]" style={{backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '60px 60px'}} />
               </div>
 
-              <div className="relative w-full max-w-md p-8 md:p-12 z-10 flex flex-col items-center text-center">
-                  <div className="w-20 h-20 bg-white rounded-[24px] flex items-center justify-center mb-8 shadow-[0_0_60px_rgba(255,255,255,0.1)]">
-                      <Music className="w-10 h-10 text-black" strokeWidth={2.5} />
+              <div className="relative w-full max-w-sm flex flex-col items-center text-center gap-8 z-10">
+                  {/* Logo */}
+                  <div className="relative">
+                      <div className="w-20 h-20 bg-white rounded-[22px] flex items-center justify-center shadow-[0_0_80px_rgba(255,255,255,0.12),0_0_30px_rgba(255,255,255,0.06)]">
+                          <Music className="w-10 h-10 text-black" strokeWidth={2.5} />
+                      </div>
+                      <div className="absolute -inset-2 rounded-[28px] border border-white/[0.08] pointer-events-none" />
                   </div>
-                  
-                  <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-3 text-white">Lotus Stats</h1>
-                  <p className="text-[#8E8E93] text-base max-w-sm leading-relaxed mb-10 font-medium">
-                      Your music story. Real-time charts, AI insights, and your personalized journey.
-                  </p>
-                  
-                  <button 
-                    onClick={handleConnect}
-                    disabled={connecting}
-                    className="w-full max-w-xs bg-white hover:bg-gray-100 text-black font-bold text-base py-4 rounded-2xl transition-all active:scale-[0.97] shadow-lg shadow-white/5"
-                  >
-                    {connecting ? 'Connecting...' : 'Connect with Spotify'}
-                  </button>
-                  
-                  <p className="mt-6 text-[11px] text-[#505055] font-semibold tracking-widest uppercase">
-                      Secure Access • Read-only
-                  </p>
+
+                  {/* Headline */}
+                  <div className="space-y-3">
+                      <h1 className="text-[42px] font-black tracking-[-0.03em] leading-none text-white">
+                          Lotus<span className="text-[#FA2D48]">.</span>
+                      </h1>
+                      <p className="text-[15px] text-white/40 max-w-[260px] mx-auto leading-relaxed font-medium">
+                          Your music, analyzed. Real-time charts, AI insights & personalized wrapped stories.
+                      </p>
+                  </div>
+
+                  {/* CTA */}
+                  <div className="w-full space-y-3">
+                      <button
+                          onClick={handleConnect}
+                          disabled={connecting}
+                          className="w-full bg-white text-black font-bold text-[15px] py-4 rounded-2xl transition-all active:scale-[0.97] shadow-[0_0_40px_rgba(255,255,255,0.08)] hover:shadow-[0_0_60px_rgba(255,255,255,0.15)] disabled:opacity-60 flex items-center justify-center gap-2"
+                      >
+                          {connecting ? (
+                              <>
+                                  <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                  Connecting...
+                              </>
+                          ) : (
+                              <>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                                  Continue with Spotify
+                              </>
+                          )}
+                      </button>
+
+                      <p className="text-[11px] text-white/20 font-medium tracking-wider uppercase">
+                          Secure • Read-only access • No data stored without consent
+                      </p>
+                  </div>
+
+                  {/* Feature hints */}
+                  <div className="flex items-center gap-6 text-[11px] text-white/25 font-medium">
+                      <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#FA2D48]"></span>Live Charts</span>
+                      <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#1DB954]"></span>AI Insights</span>
+                      <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-purple-400"></span>Wrapped</span>
+                  </div>
               </div>
           </div>
       );
@@ -858,48 +884,151 @@ function App() {
                 </button>
             </div>
 
-            <div className="flex gap-2 p-1.5 overflow-x-auto no-scrollbar rounded-2xl border border-white/10 bg-white/5 mb-2">
-                {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
+            <div className="relative">
+                <div className="flex gap-2 p-1.5 overflow-x-auto no-scrollbar rounded-2xl border border-white/10 bg-white/5 mb-2">
+                    {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
+                        <button
+                            key={range}
+                            onClick={() => {
+                                setTimeRange(range);
+                                setCustomDateRange(null);
+                                fetchDashboardStats(range).then(data => setDbUnifiedData(data));
+                            }}
+                            aria-pressed={timeRange === range}
+                            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                                timeRange === range
+                                    ? 'bg-white text-black'
+                                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            {range}
+                        </button>
+                    ))}
                     <button
-                        key={range}
-                        onClick={() => {
-                            setTimeRange(range);
-                            setCustomDateRange(null);
-                            fetchDashboardStats(range).then(data => setDbUnifiedData(data));
-                        }}
-                        aria-pressed={timeRange === range}
-                        className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
-                            timeRange === range
+                        onClick={() => setShowDatePicker(prev => !prev)}
+                        aria-pressed={timeRange === 'Custom'}
+                        className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-2 ${
+                            timeRange === 'Custom'
                                 ? 'bg-white text-black'
                                 : 'text-white/70 hover:text-white hover:bg-white/10'
                         }`}
                     >
-                        {range}
+                        <Calendar size={14} />
+                        {timeRange === 'Custom' && customDateRange 
+                            ? `${new Date(customDateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(customDateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                            : 'Custom Range'}
                     </button>
-                ))}
-                <button
-                    onClick={() => setShowDatePicker(true)}
-                    aria-pressed={timeRange === 'Custom'}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-2 ${
-                        timeRange === 'Custom'
-                            ? 'bg-white text-black'
-                            : 'text-white/70 hover:text-white hover:bg-white/10'
-                    }`}
-                >
-                    <Calendar size={14} />
-                    {timeRange === 'Custom' && customDateRange 
-                        ? `${new Date(customDateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(customDateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                        : 'Custom Range'}
-                </button>
+                </div>
+                <AnimatePresence>
+                    {showDatePicker && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                            className="absolute top-full left-0 right-0 mt-1 bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-50 overflow-hidden p-5 space-y-4"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Calendar size={14} className="text-[#FA2D48]" />
+                                    <h2 className="text-sm font-bold text-white">Custom Range</h2>
+                                </div>
+                                <button onClick={() => setShowDatePicker(false)} className="p-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-all">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                                {[
+                                    { label: 'Last 3 days', days: 3 },
+                                    { label: 'Last 2 weeks', days: 14 },
+                                    { label: 'Last 3 months', days: 90 },
+                                ].map(preset => (
+                                    <button
+                                        key={preset.days}
+                                        onClick={() => {
+                                            const end = new Date();
+                                            const start = new Date(Date.now() - preset.days * 24 * 60 * 60 * 1000);
+                                            setCustomDateRange({
+                                                start: start.toISOString().split('T')[0],
+                                                end: end.toISOString().split('T')[0]
+                                            });
+                                        }}
+                                        className="px-2 py-2 rounded-xl text-[10px] font-semibold text-white/60 bg-white/5 hover:bg-white/10 hover:text-white transition-all border border-white/5"
+                                    >
+                                        {preset.label}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex gap-3">
+                                <div className="flex-1">
+                                    <label className="block text-[9px] font-bold text-white/30 uppercase tracking-wider mb-1.5">From</label>
+                                    <input
+                                        type="date"
+                                        max={new Date().toISOString().split('T')[0]}
+                                        onChange={(e) => {
+                                            const newStart = e.target.value;
+                                            setCustomDateRange(prev => ({
+                                                start: newStart,
+                                                end: prev?.end || new Date().toISOString().split('T')[0]
+                                            }));
+                                        }}
+                                        value={customDateRange?.start || ''}
+                                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-[#FA2D48] transition-colors"
+                                    />
+                                </div>
+                                <div className="flex items-end pb-3 text-white/20">→</div>
+                                <div className="flex-1">
+                                    <label className="block text-[9px] font-bold text-white/30 uppercase tracking-wider mb-1.5">To</label>
+                                    <input
+                                        type="date"
+                                        max={new Date().toISOString().split('T')[0]}
+                                        min={customDateRange?.start}
+                                        onChange={(e) => {
+                                            const newEnd = e.target.value;
+                                            setCustomDateRange(prev => ({
+                                                start: prev?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                                                end: newEnd
+                                            }));
+                                        }}
+                                        value={customDateRange?.end || ''}
+                                        className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-[#FA2D48] transition-colors"
+                                    />
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    if (customDateRange?.start && customDateRange?.end) {
+                                        setTimeRange('Custom');
+                                        setShowDatePicker(false);
+                                        fetchDashboardStats('Custom', customDateRange).then(data => setDbUnifiedData(data));
+                                    }
+                                }}
+                                disabled={!customDateRange?.start || !customDateRange?.end}
+                                className="w-full px-4 py-2.5 rounded-xl bg-[#FA2D48] text-white font-bold text-xs hover:bg-[#FF6B82] transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98]"
+                            >
+                                Apply Range
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {showEmptyState ? (
-                <div className="flex flex-col items-center justify-center py-16 rounded-3xl border border-white/5 animate-in fade-in zoom-in-95 duration-500 text-center">
-                    <Music size={40} className="text-white/20 mb-3" />
-                    <h3 className="text-lg font-bold text-white">No data yet</h3>
-                    <p className="text-[#8E8E93] text-sm mt-2 px-6">
-                        Start listening to music to see your {timeRange.toLowerCase()} stats appear here.
+                <div className="flex flex-col items-center justify-center py-20 rounded-3xl border border-white/5 text-center px-6">
+                    <div className="relative mb-6">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FA2D48]/20 to-purple-900/20 flex items-center justify-center">
+                            <Music size={32} className="text-white/30" />
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FA2D48]/30 flex items-center justify-center text-xs">🎵</div>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Nothing here yet</h3>
+                    <p className="text-[#8E8E93] text-sm leading-relaxed max-w-[260px]">
+                        Your {timeRange.toLowerCase()} stats will appear after you've been listening. Go put on some music! 🎧
                     </p>
+                    <div className="mt-6 px-4 py-2 rounded-full border border-white/10 text-xs text-white/40 font-medium">
+                        Tip: Switch to "All Time" to see your complete history
+                    </div>
                 </div>
             ) : (
                 <>
@@ -1115,49 +1244,153 @@ function App() {
                         <h2 className="text-2xl font-bold text-white tracking-tight">Your Top Charts</h2>
                         <p className="text-[#8E8E93] text-sm mt-1">Your most played this {timeRange.toLowerCase()}</p>
                     </div>
-                    <div className="flex gap-2 p-1.5 rounded-2xl border border-white/10 bg-white/5 overflow-x-auto no-scrollbar">
-                        {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
-                            <button 
-                                key={range}
-                                onClick={() => {
-                                    setTimeRange(range);
-                                    setCustomDateRange(null);
-                                    fetchDashboardStats(range).then(data => setDbUnifiedData(data));
-                                }}
-                                aria-pressed={timeRange === range}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                                    timeRange === range 
-                                        ? 'bg-white text-black' 
+                    <div className="relative">
+                        <div className="flex gap-2 p-1.5 rounded-2xl border border-white/10 bg-white/5 overflow-x-auto no-scrollbar">
+                            {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
+                                <button 
+                                    key={range}
+                                    onClick={() => {
+                                        setTimeRange(range);
+                                        setCustomDateRange(null);
+                                        fetchDashboardStats(range).then(data => setDbUnifiedData(data));
+                                    }}
+                                    aria-pressed={timeRange === range}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                                        timeRange === range 
+                                            ? 'bg-white text-black' 
+                                            : 'text-[#8E8E93] hover:text-white hover:bg-white/10'
+                                    }`}
+                                >
+                                    {range}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => setShowDatePicker(prev => !prev)}
+                                aria-pressed={timeRange === 'Custom'}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                                    timeRange === 'Custom'
+                                        ? 'bg-white text-black'
                                         : 'text-[#8E8E93] hover:text-white hover:bg-white/10'
                                 }`}
                             >
-                                {range}
+                                <Calendar size={14} />
+                                {timeRange === 'Custom' && customDateRange
+                                    ? `${new Date(customDateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(customDateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                                    : 'Custom'}
                             </button>
-                        ))}
-                        <button
-                            onClick={() => setShowDatePicker(true)}
-                            aria-pressed={timeRange === 'Custom'}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
-                                timeRange === 'Custom'
-                                    ? 'bg-white text-black'
-                                    : 'text-[#8E8E93] hover:text-white hover:bg-white/10'
-                            }`}
-                        >
-                            <Calendar size={14} />
-                            {timeRange === 'Custom' && customDateRange
-                                ? `${new Date(customDateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(customDateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                                : 'Custom'}
-                        </button>
+                        </div>
+                        <AnimatePresence>
+                            {showDatePicker && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                    className="absolute top-full right-0 mt-2 w-80 bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-50 overflow-hidden p-5 space-y-4"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar size={14} className="text-[#FA2D48]" />
+                                            <h2 className="text-sm font-bold text-white">Custom Range</h2>
+                                        </div>
+                                        <button onClick={() => setShowDatePicker(false)} className="p-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-all">
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[
+                                            { label: 'Last 3 days', days: 3 },
+                                            { label: 'Last 2 weeks', days: 14 },
+                                            { label: 'Last 3 months', days: 90 },
+                                        ].map(preset => (
+                                            <button
+                                                key={preset.days}
+                                                onClick={() => {
+                                                    const end = new Date();
+                                                    const start = new Date(Date.now() - preset.days * 24 * 60 * 60 * 1000);
+                                                    setCustomDateRange({
+                                                        start: start.toISOString().split('T')[0],
+                                                        end: end.toISOString().split('T')[0]
+                                                    });
+                                                }}
+                                                className="px-2 py-2 rounded-xl text-[10px] font-semibold text-white/60 bg-white/5 hover:bg-white/10 hover:text-white transition-all border border-white/5"
+                                            >
+                                                {preset.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <div className="flex-1">
+                                            <label className="block text-[9px] font-bold text-white/30 uppercase tracking-wider mb-1.5">From</label>
+                                            <input
+                                                type="date"
+                                                max={new Date().toISOString().split('T')[0]}
+                                                onChange={(e) => {
+                                                    const newStart = e.target.value;
+                                                    setCustomDateRange(prev => ({
+                                                        start: newStart,
+                                                        end: prev?.end || new Date().toISOString().split('T')[0]
+                                                    }));
+                                                }}
+                                                value={customDateRange?.start || ''}
+                                                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-[#FA2D48] transition-colors"
+                                            />
+                                        </div>
+                                        <div className="flex items-end pb-3 text-white/20">→</div>
+                                        <div className="flex-1">
+                                            <label className="block text-[9px] font-bold text-white/30 uppercase tracking-wider mb-1.5">To</label>
+                                            <input
+                                                type="date"
+                                                max={new Date().toISOString().split('T')[0]}
+                                                min={customDateRange?.start}
+                                                onChange={(e) => {
+                                                    const newEnd = e.target.value;
+                                                    setCustomDateRange(prev => ({
+                                                        start: prev?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                                                        end: newEnd
+                                                    }));
+                                                }}
+                                                value={customDateRange?.end || ''}
+                                                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-[#FA2D48] transition-colors"
+                                            />
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            if (customDateRange?.start && customDateRange?.end) {
+                                                setTimeRange('Custom');
+                                                setShowDatePicker(false);
+                                                fetchDashboardStats('Custom', customDateRange).then(data => setDbUnifiedData(data));
+                                                console.log('Custom range selected:', customDateRange);
+                                            }
+                                        }}
+                                        disabled={!customDateRange?.start || !customDateRange?.end}
+                                        className="w-full px-4 py-2.5 rounded-xl bg-[#FA2D48] text-white font-bold text-xs hover:bg-[#FF6B82] transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98]"
+                                    >
+                                        Apply Range
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
                 
                 {showEmptyState ? (
-                    <div className="flex flex-col items-center justify-center py-20 bg-[#1C1C1E] rounded-3xl border border-white/5 animate-in fade-in zoom-in-95 duration-500">
-                        <Music size={48} className="text-white/20 mb-4" />
-                        <h3 className="text-xl font-bold text-white">No data for this period</h3>
-                        <p className="text-[#8E8E93] max-w-sm text-center mt-2">
-                            Start listening to music to see your {timeRange.toLowerCase()} stats appear here!
+                    <div className="flex flex-col items-center justify-center py-20 rounded-3xl border border-white/5 text-center px-6">
+                        <div className="relative mb-6">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FA2D48]/20 to-purple-900/20 flex items-center justify-center">
+                                <Music size={32} className="text-white/30" />
+                            </div>
+                            <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#FA2D48]/30 flex items-center justify-center text-xs">🎵</div>
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">Nothing here yet</h3>
+                        <p className="text-[#8E8E93] text-sm leading-relaxed max-w-[260px]">
+                            Your {timeRange.toLowerCase()} stats will appear after you've been listening. Go put on some music! 🎧
                         </p>
+                        <div className="mt-6 px-4 py-2 rounded-full border border-white/10 text-xs text-white/40 font-medium">
+                            Tip: Switch to "All Time" to see your complete history
+                        </div>
                     </div>
                 ) : (
                 <div key={timeRange} className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -1801,129 +2034,7 @@ function App() {
         )}
     </AnimatePresence>
 
-    {/* Date Range Picker - Centered Dropdown Style */}
-    <AnimatePresence>
-        {showDatePicker && (
-            <>
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
-                    onClick={() => setShowDatePicker(false)}
-                />
-                <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm bg-[#1C1C1E] rounded-2xl border border-white/10 shadow-2xl z-[101] overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Compact Header */}
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
-                        <div className="flex items-center gap-2">
-                            <Calendar size={14} className="text-[#FA2D48]" />
-                            <h2 className="text-sm font-bold text-white">Custom Range</h2>
-                        </div>
-                        <button
-                            onClick={() => setShowDatePicker(false)}
-                            className="p-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-all"
-                        >
-                            <X size={14} />
-                        </button>
-                    </div>
-
-                    {/* Quick Presets */}
-                    <div className="px-5 py-3 border-b border-white/5">
-                        <div className="grid grid-cols-3 gap-2">
-                            {[
-                                { label: 'Last 3 days', days: 3 },
-                                { label: 'Last 2 weeks', days: 14 },
-                                { label: 'Last 3 months', days: 90 },
-                            ].map(preset => (
-                                <button
-                                    key={preset.days}
-                                    onClick={() => {
-                                        const end = new Date();
-                                        const start = new Date(Date.now() - preset.days * 24 * 60 * 60 * 1000);
-                                        setCustomDateRange({
-                                            start: start.toISOString().split('T')[0],
-                                            end: end.toISOString().split('T')[0]
-                                        });
-                                    }}
-                                    className="px-2 py-2 rounded-xl text-[10px] font-semibold text-white/60 bg-white/5 hover:bg-white/10 hover:text-white transition-all border border-white/5"
-                                >
-                                    {preset.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Date Inputs - Inline */}
-                    <div className="px-5 py-4 flex gap-3">
-                        <div className="flex-1">
-                            <label className="block text-[9px] font-bold text-white/30 uppercase tracking-wider mb-1.5">
-                                From
-                            </label>
-                            <input
-                                type="date"
-                                max={new Date().toISOString().split('T')[0]}
-                                onChange={(e) => {
-                                    const newStart = e.target.value;
-                                    setCustomDateRange(prev => ({
-                                        start: newStart,
-                                        end: prev?.end || new Date().toISOString().split('T')[0]
-                                    }));
-                                }}
-                                value={customDateRange?.start || ''}
-                                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-[#FA2D48] transition-colors"
-                            />
-                        </div>
-                        <div className="flex items-end pb-3 text-white/20">→</div>
-                        <div className="flex-1">
-                            <label className="block text-[9px] font-bold text-white/30 uppercase tracking-wider mb-1.5">
-                                To
-                            </label>
-                            <input
-                                type="date"
-                                max={new Date().toISOString().split('T')[0]}
-                                min={customDateRange?.start}
-                                onChange={(e) => {
-                                    const newEnd = e.target.value;
-                                    setCustomDateRange(prev => ({
-                                        start: prev?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                                        end: newEnd
-                                    }));
-                                }}
-                                value={customDateRange?.end || ''}
-                                className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-[#FA2D48] transition-colors"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Apply Button - Full Width */}
-                    <div className="px-5 pb-4">
-                        <button
-                            onClick={() => {
-                                if (customDateRange?.start && customDateRange?.end) {
-                                    setTimeRange('Custom');
-                                    setShowDatePicker(false);
-                                    fetchDashboardStats('Custom', customDateRange).then(data => setDbUnifiedData(data));
-                                    console.log('Custom range selected:', customDateRange);
-                                }
-                            }}
-                            disabled={!customDateRange?.start || !customDateRange?.end}
-                            className="w-full px-4 py-2.5 rounded-xl bg-[#FA2D48] text-white font-bold text-xs hover:bg-[#FF6B82] transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98]"
-                        >
-                            Apply Range
-                        </button>
-                    </div>
-                </motion.div>
-            </>
-        )}
-
-        {/* Lotus Wrapped Title Screen */}
+    {/* Lotus Wrapped Title Screen */}
         {showWrappedMessage && (
             <LotusWrapped
                 onClose={() => setShowWrappedMessage(false)}
@@ -1940,7 +2051,6 @@ function App() {
                 rangeLabel={wrappedRange.label}
                 rangeStart={wrappedRange.start}
                 rangeEnd={wrappedRange.end}
-                connectionGraph={wrappedConnectionGraph || undefined}
             />
         )}
 
@@ -1962,7 +2072,6 @@ function App() {
                 }}
             />
         )}
-    </AnimatePresence>
 
     </>
   );

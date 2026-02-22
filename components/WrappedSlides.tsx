@@ -15,7 +15,7 @@ const NB = {
   white: '#FFFFFF',
   black: '#000000',
 };
-const TOTAL_SLIDES = 15;
+const TOTAL_SLIDES = 14;
 const LEFT_TAP_ZONE = 0.3;
 
 interface WrappedSlidesProps {
@@ -28,51 +28,13 @@ interface WrappedSlidesProps {
   rangeLabel?: string;
   rangeStart?: string;
   rangeEnd?: string;
-  connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> };
 }
 
 const fallbackImage =
   'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzFDMUMxRSIvPjxwYXRoIGQ9Ik0xMzAgNjB2NzBjMCAxMS05IDIwLTIwIDIwcy0yMC05LTIwLTIwIDktMjAgMjAtMjBjNCAwIDcgMSAxMCAzVjcwbC00MCAxMHY2MGMwIDExLTkgMjAtMjAgMjBzLTIwLTktMjAtMjAgOS0yMCAyMC0yMGM0IDAgNyAxIDEwIDNWNjBsNjAtMTV6IiBmaWxsPSIjOEU4RTkzIi8+PC9zdmc+';
 
-type ConnectionPair = {
-  a: { id: string; name: string; image: string };
-  b: { id: string; name: string; image: string };
-  closeness: number;
-  sharedSessions: number;
-};
 
 const weekdayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-
-function buildConnectionPairs(connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> }): ConnectionPair[] {
-  if (!connectionGraph) return [];
-  const pairRows: ConnectionPair[] = [];
-  const seen = new Set<string>();
-  const pairMap = connectionGraph.pairs || {};
-  const artists = connectionGraph.artistInfo || {};
-  Object.entries(pairMap).forEach(([artistA, edges]) => {
-    Object.entries(edges || {}).forEach(([artistB, score]) => {
-      const key = [artistA, artistB].sort().join('::');
-      if (seen.has(key)) return;
-      seen.add(key);
-      const infoA = artists[artistA];
-      const infoB = artists[artistB];
-      if (!infoA || !infoB) return;
-      const totalA = Math.max(1, infoA.count || 1);
-      const totalB = Math.max(1, infoB.count || 1);
-      // Overlap similarity: what fraction of the more popular artist's plays are shared
-      // Max 97% so it never claims 100%, min 5% for any artists that co-occur at all
-      const overlapRatio = score / Math.max(totalA, totalB);
-      const closeness = Math.min(97, Math.max(5, Math.round(overlapRatio * 85 + Math.min(score, 5))));
-      pairRows.push({
-        a: { id: infoA.id || artistA, name: infoA.name || artistA, image: infoA.image || fallbackImage },
-        b: { id: infoB.id || artistB, name: infoB.name || artistB, image: infoB.image || fallbackImage },
-        closeness,
-        sharedSessions: score,
-      });
-    });
-  });
-  return pairRows.sort((x, y) => y.closeness - x.closeness || y.sharedSessions - x.sharedSessions).slice(0, 8);
-}
 
 function useOdometer(target: number, durationMs = 1200): number {
   const [value, setValue] = useState(0);
@@ -1048,87 +1010,43 @@ const Slide5: React.FC<{ active: boolean }> = ({ active }) => {
 
 // SLIDE 6: THE LOYALTY TEST
 const Slide6: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, artists }) => {
-  const topSix = artists.slice(0, 6);
-  const total = topSix.reduce((s, a) => s + a.totalListens, 0) || 1;
-  const topShare = (topSix[0]?.totalListens || 0) / total;
+  const top5 = artists.slice(0, 5);
+  const total = top5.reduce((s, a) => s + a.totalListens, 0) || 1;
+  const topShare = (top5[0]?.totalListens || 0) / total;
   const verdict = topShare > 0.35 ? 'RIDE OR DIE ENERGY' : 'WIDE TASTE ENERGY';
-  const winner = topSix[0];
-
-  const DOT_COUNT = 60;
-  const artistPalette = [NB.electricBlue, NB.coral, NB.magenta, '#555555', NB.acidYellow, '#888888'];
-  const [filledDots, setFilledDots] = useState(0);
-  const dotIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const dotColors = useMemo(() => {
-    const colors: string[] = [];
-    let offset = 0;
-    topSix.forEach((artist, i) => {
-      const count = Math.round((artist.totalListens / total) * DOT_COUNT);
-      for (let j = 0; j < count && offset < DOT_COUNT; j++, offset++) {
-        colors.push(artistPalette[i]);
-      }
-    });
-    while (colors.length < DOT_COUNT) colors.push('rgba(0,0,0,0.15)');
-    return colors;
-  }, [topSix, total]);
-
-  useEffect(() => {
-    if (!active || topSix.length === 0) { setFilledDots(0); if (dotIntervalRef.current) clearInterval(dotIntervalRef.current); return; }
-    setFilledDots(0);
-    let count = 0;
-    dotIntervalRef.current = setInterval(() => {
-      count++;
-      setFilledDots(count);
-      if (count >= DOT_COUNT && dotIntervalRef.current) clearInterval(dotIntervalRef.current);
-    }, 20);
-    return () => { if (dotIntervalRef.current) clearInterval(dotIntervalRef.current); };
-  }, [active, topSix.length]);
-
-  const showLegend = filledDots >= DOT_COUNT;
-  const loyaltyDotSize = 'clamp(10px, 2.8vw, 18px)';
+  const artistPalette = [NB.electricBlue, NB.coral, NB.magenta, NB.acidYellow, '#888888'];
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.acidYellow, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '56px 16px 14px', gap: 10 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '56px 16px 14px', gap: 12 }}>
         <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(30px, 7.4vw, 52px)', color: NB.black, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>YOUR LOYALTY MAP</h1>
-        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, margin: 0 }}>TOP ARTISTS • 60 DOTS • WHO OWNS YOUR PLAYS</p>
+        <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, margin: 0 }}>TOP ARTISTS • WHO OWNS YOUR PLAYS</p>
 
-        {/* Dot grid: 6 cols × 10 rows */}
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(6, ${loyaltyDotSize})`, gap: 'clamp(4px, 1vw, 6px)', marginTop: 4, justifyContent: 'center' }}>
-          {Array.from({ length: DOT_COUNT }, (_, i) => (
-            <div key={i} style={{
-              width: loyaltyDotSize,
-              height: loyaltyDotSize,
-              borderRadius: '50%',
-              background: i < filledDots ? dotColors[i] : 'transparent',
-              border: `1.5px solid ${i < filledDots ? dotColors[i] : 'rgba(0,0,0,0.25)'}`,
-              transition: 'background 80ms ease, border-color 80ms ease',
-            }} />
-          ))}
-        </div>
-
-        {/* Legend after dots fill */}
-        {showLegend && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {topSix.map((artist, i) => {
-              const dotCount = dotColors.filter(c => c === artistPalette[i]).length;
-              return (
-                <div key={artist.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: artistPalette[i], flexShrink: 0, border: `2px solid ${NB.black}` }} />
-                  <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 12, color: NB.black, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{artist.name}</span>
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 13, color: NB.black }}>{dotCount} dots</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
+          {top5.map((artist, i) => {
+            const pct = Math.round((artist.totalListens / total) * 100);
+            return (
+              <div key={artist.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.black, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{artist.name}</span>
+                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.black }}>{pct}%</span>
                 </div>
-              );
-            })}
-          </motion.div>
-        )}
+                <div style={{ height: 22, background: 'rgba(0,0,0,0.15)', border: `2px solid ${NB.black}`, overflow: 'hidden' }}>
+                  <motion.div
+                    initial={{ width: '0%' }}
+                    animate={{ width: active ? `${pct}%` : '0%' }}
+                    transition={{ duration: 0.8, delay: i * 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    style={{ height: '100%', background: artistPalette[i], borderRight: `2px solid ${NB.black}` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
         <BCard>
           <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 26, color: NB.black, textTransform: 'uppercase' }}>{verdict}</p>
-          {winner && <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>🏆 {winner.name} dominates your chart</p>}
-          <p style={{ margin: '6px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 11, color: '#222' }}>
-            Loyalty means your top artist owns <b>{Math.round(topShare * 100)}%</b> of your top-6 listens. High % = focused super-fan mode, lower % = a wider artist mix.
-          </p>
+          {top5[0] && <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>🏆 {top5[0].name} dominates your top 5 with {Math.round(topShare * 100)}%</p>}
         </BCard>
       </div>
       <Ticker text="LOYALTY MAP  ARTIST CREW  TOP ROTATION" bg={NB.nearBlack} color={NB.acidYellow} />
@@ -1412,115 +1330,8 @@ const Slide9: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = 
           ))}
         </div>
 
-        <BCard style={{ background: NB.white }}>
-          <p style={{ margin: '0 0 4px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: NB.black, textTransform: 'uppercase' }}>Compliment:</p>
-          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 13, color: '#222' }}>
-            Chapter 1: you discovered <b>{topArtist?.name || 'your top artist'}</b>. Chapter 2: you replayed favorites until they became comfort tracks. Chapter 3: orbit locked.
-          </p>
-        </BCard>
       </div>
       <Ticker text="OBSESSION ORBIT  DOM MODE  LOCKED IN" bg={NB.acidYellow} color={NB.black} />
-    </div>
-  );
-};
-
-// SLIDE 10: THE CONNECTION
-const Slide10: React.FC<{ active: boolean; artists: Artist[]; rangeLabel?: string; connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> } }> = ({ active, artists, rangeLabel, connectionGraph }) => {
-  const pairs = useMemo(() => buildConnectionPairs(connectionGraph), [connectionGraph]);
-  const [slotIndex, setSlotIndex] = useState(0);
-  const [revealed, setRevealed] = useState(false);
-  const fallbackPair = useMemo(() => {
-    const first = artists[0];
-    const second = artists[1];
-    if (!first || !second) return null;
-    return {
-      a: { id: first.id, name: first.name, image: first.image || fallbackImage },
-      b: { id: second.id, name: second.name, image: second.image || fallbackImage },
-      closeness: 68,
-      sharedSessions: 12,
-    } satisfies ConnectionPair;
-  }, [artists]);
-
-  const displayPairs = useMemo(() => {
-    const extraPairs = artists.slice(0, 4).flatMap((a, i) => artists.slice(i + 1, 5).map((b, j) => ({
-      a: { id: a.id, name: a.name, image: a.image || fallbackImage },
-      b: { id: b.id, name: b.name, image: b.image || fallbackImage },
-      closeness: Math.min(96, 52 + (i * 8) + (j * 6)),
-      sharedSessions: Math.max(3, Math.round((a.totalListens + b.totalListens) / 22)),
-    } as ConnectionPair)));
-    const mergedPairs = [...pairs, ...extraPairs].filter((pair, idx, arr) => idx === arr.findIndex((x) => [x.a.id, x.b.id].sort().join(':') === [pair.a.id, pair.b.id].sort().join(':')));
-    return mergedPairs.length ? mergedPairs : fallbackPair ? [fallbackPair] : [];
-  }, [artists, pairs, fallbackPair]);
-  const winner = displayPairs[0];
-
-  useEffect(() => {
-    if (!active || displayPairs.length <= 1) {
-      setRevealed(true);
-      return;
-    }
-    setRevealed(false);
-    let tick = 0;
-    const id = window.setInterval(() => {
-      tick += 1;
-      setSlotIndex((prev) => (prev + 1) % displayPairs.length);
-      if (tick > 10) {
-        window.clearInterval(id);
-        setSlotIndex(0);
-        setRevealed(true);
-      }
-    }, 170);
-    return () => window.clearInterval(id);
-  }, [active, displayPairs]);
-
-  const roller = displayPairs.length ? displayPairs[slotIndex] : undefined;
-
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.magenta, overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 14 }}>
-        <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 8vw, 56px)', color: NB.white, margin: 0, textTransform: 'uppercase', lineHeight: 1 }}>
-          CLOSE CONNECTION HIGHLIGHT
-        </h1>
-        <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)' }}>
-          BASED ON ARTISTS PLAYED CLOSE TOGETHER IN THIS WRAPPED RANGE
-        </p>
-
-        <div style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '14px 12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14 }}>
-            {[roller?.a, roller?.b].map((artist, idx) => (
-              <div key={artist?.id || idx} style={{ width: 94, textAlign: 'center' }}>
-                <div style={{ width: 84, height: 84, borderRadius: '50%', border: `4px solid ${NB.black}`, overflow: 'hidden', margin: '0 auto 6px auto', background: '#ddd' }}>
-                  <img src={artist?.image || fallbackImage} alt={artist?.name || 'artist'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-                </div>
-                <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: NB.black, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{artist?.name || '---'}</p>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ marginTop: 10, height: 34, background: NB.black, border: `3px solid ${NB.black}`, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
-            <motion.div
-              key={`${slotIndex}-${revealed}`}
-              initial={{ y: -18, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.18 }}
-              style={{ color: NB.acidYellow, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', width: '100%', textAlign: 'center', fontSize: 14 }}
-            >
-              {revealed && winner ? `${winner.a.name} × ${winner.b.name}` : 'SCANNING CONNECTIONS...'}
-            </motion.div>
-          </div>
-        </div>
-
-        {winner && (
-          <div style={{ background: NB.acidYellow, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 14px' }}>
-            <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 32, color: NB.black, textTransform: 'uppercase' }}>
-              {winner.closeness}% CLOSE
-            </p>
-            <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: NB.black }}>
-              {winner.sharedSessions} shared listening sessions between these artists in {rangeLabel || 'this wrapped range'}.
-            </p>
-          </div>
-        )}
-      </div>
-      <Ticker text="CONNECTION MODE  SPIN  MATCH  LOCK-IN" bg={NB.nearBlack} color={NB.white} />
     </div>
   );
 };
@@ -1902,7 +1713,7 @@ const SlideLotusSignal: React.FC<{ active: boolean; historyRows: HistoryRow[] }>
 };
 
 // MAIN COMPONENT
-export default function WrappedSlides({ onClose, totalMinutes, artists, albums, songs, albumCovers, rangeLabel, rangeStart, rangeEnd, connectionGraph }: WrappedSlidesProps) {
+export default function WrappedSlides({ onClose, totalMinutes, artists, albums, songs, albumCovers, rangeLabel, rangeStart, rangeEnd }: WrappedSlidesProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -2029,11 +1840,10 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
       case 7: return <Slide7 active={currentSlide === 7} artists={artists} songs={songs} />;
       case 8: return <Slide8 active={currentSlide === 8} songs={songs} />;
       case 9: return <Slide9 active={currentSlide === 9} artists={artists} songs={songs} />;
-      case 10: return <Slide10 active={currentSlide === 10} artists={artists} rangeLabel={rangeLabel} connectionGraph={connectionGraph} />;
-      case 11: return <Slide11 active={currentSlide === 11} songs={songs} />;
-      case 12: return <SlideDomination active={currentSlide === 12} artists={artists} />;
-      case 13: return <SlideLotusSignal active={currentSlide === 13} historyRows={filteredHistory} />;
-      case 14: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} albums={albums} onClose={onClose} winningFruit={winningFruit} />;
+      case 10: return <Slide11 active={currentSlide === 10} songs={songs} />;
+      case 11: return <SlideDomination active={currentSlide === 11} artists={artists} />;
+      case 12: return <SlideLotusSignal active={currentSlide === 12} historyRows={filteredHistory} />;
+      case 13: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} albums={albums} onClose={onClose} winningFruit={winningFruit} />;
       default: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} rangeLabel={rangeLabel} />;
     }
   };
