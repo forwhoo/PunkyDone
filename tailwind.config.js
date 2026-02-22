@@ -39,6 +39,8 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+        barlow: ['Barlow', 'sans-serif'],
+        'barlow-condensed': ['"Barlow Condensed"', 'sans-serif'],
       }
     }
   },
