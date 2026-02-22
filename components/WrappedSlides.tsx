@@ -781,18 +781,23 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
   );
 };
 
-// Fruit profile data (8 DNA dimensions)
+// Fruit profile data (Simplified 3-Axis "Flavor Cube": [Energy, Variety, Discovery])
+// Energy: 0 (Chill) -> 100 (Intense)
+// Variety: 0 (Loyalist) -> 100 (Explorer)
+// Discovery: 0 (Nostalgic) -> 100 (Fresh)
 const FRUIT_PROFILES = [
-  { name: 'MANGO', emoji: '🥭', v: [58, 74, 66, 61, 72, 64, 68, 63], vibe: 'balanced explorer energy with steady habits' },
-  { name: 'PINEAPPLE', emoji: '🍍', v: [64, 94, 54, 46, 58, 88, 42, 72], vibe: 'always digging for new sounds' },
-  { name: 'CHERRY', emoji: '🍒', v: [71, 48, 63, 91, 66, 52, 86, 57], vibe: 'emotion-first repeats that hit every time' },
-  { name: 'BANANA', emoji: '🍌', v: [44, 38, 86, 89, 88, 40, 64, 92], vibe: 'comfort-loop sessions and loyal favorites' },
-  { name: 'BLUEBERRY', emoji: '🫐', v: [92, 69, 50, 52, 46, 76, 60, 38], vibe: 'night explorer with fresh rotations' },
-  { name: 'WATERMELON', emoji: '🍉', v: [57, 62, 82, 66, 83, 70, 74, 78], vibe: 'long sessions with a consistent daily pulse' },
-  { name: 'KIWI', emoji: '🥝', v: [74, 88, 57, 44, 54, 96, 48, 64], vibe: 'high-curiosity listener with sharp pivots' },
-  { name: 'PEACH', emoji: '🍑', v: [90, 44, 58, 68, 57, 60, 92, 50], vibe: 'late-night focus and smooth transitions' },
-  { name: 'APPLE', emoji: '🍎', v: [50, 46, 79, 59, 95, 42, 58, 96], vibe: 'structured routine with dependable taste' },
-  { name: 'STRAWBERRY', emoji: '🍓', v: [65, 56, 64, 86, 74, 58, 82, 70], vibe: 'hook-heavy favorites with strong replay love' },
+  { name: 'MANGO', emoji: '🥭', v: [60, 40, 30], vibe: 'warm, steady vibes with loyal favorites' },
+  { name: 'PINEAPPLE', emoji: '🍍', v: [80, 70, 90], vibe: 'high energy explorer always finding new hits' },
+  { name: 'CHERRY', emoji: '🍒', v: [70, 20, 40], vibe: 'intense replay love for a few obsessions' },
+  { name: 'BANANA', emoji: '🍌', v: [30, 20, 10], vibe: 'comfort listening on a cozy loop' },
+  { name: 'BLUEBERRY', emoji: '🫐', v: [40, 80, 70], vibe: 'chill night explorer with deep cuts' },
+  { name: 'WATERMELON', emoji: '🍉', v: [50, 50, 50], vibe: 'perfectly balanced and refreshing sessions' },
+  { name: 'KIWI', emoji: '🥝', v: [90, 80, 80], vibe: 'sharp, tangy taste with wild variety' },
+  { name: 'PEACH', emoji: '🍑', v: [40, 30, 60], vibe: 'soft, sweet discovery in the late hours' },
+  { name: 'APPLE', emoji: '🍎', v: [50, 30, 20], vibe: 'crisp, structured routine with trusted classics' },
+  { name: 'STRAWBERRY', emoji: '🍓', v: [70, 40, 30], vibe: 'sweet, energetic favorites on repeat' },
+  { name: 'DRAGON FRUIT', emoji: '🐉', v: [85, 90, 85], vibe: 'rare, exotic taste with unpredictable shifts' },
+  { name: 'LEMON', emoji: '🍋', v: [95, 60, 50], vibe: 'zesty, high-intensity sessions that wake you up' },
 ];
 const SLIDE4_BG_EMOJIS = ['🎵','✨','🎶','💿','🎧','🎤','🎼','🎹','🎸','🎺','🥁','🎻'];
 
@@ -942,22 +947,29 @@ function metricsVector(metrics: DnaMetrics): number[] {
 }
 
 function pickFruitFromMetrics(metrics: DnaMetrics) {
-  const vec = metricsVector(metrics);
+  // Map 8-dim metrics to 3-Axis Flavor Cube
+  // Energy: Avg of Night Owl (time) + Session Depth (intensity)
+  const energy = (metrics.nightOwl + metrics.deepSessions) / 2;
+
+  // Variety: Directly map artistVariety
+  const variety = metrics.artistVariety;
+
+  // Discovery: Directly map freshFinds
+  const discovery = metrics.freshFinds;
+
+  const userVec = [energy, variety, discovery];
 
   return FRUIT_PROFILES
     .map((f) => {
-      const profileVec = f.v;
-      const euclidean = Math.sqrt(profileVec.reduce((sum, value, i) => sum + Math.pow(value - vec[i], 2), 0));
-      const dot = profileVec.reduce((sum, value, i) => sum + value * vec[i], 0);
-      const profileNorm = Math.sqrt(profileVec.reduce((sum, value) => sum + value * value, 0));
-      const vecNorm = Math.sqrt(vec.reduce((sum, value) => sum + value * value, 0));
-      const cosineDistance = 1 - dot / Math.max(1, profileNorm * vecNorm);
-      // Penalise profiles where any single dimension differs by > 30pts —
-      // prevents one dominant metric from completely deciding the fruit
-      const maxDimDiff = Math.max(...profileVec.map((value, i) => Math.abs(value - vec[i])));
-      const outlierPenalty = Math.max(0, (maxDimDiff - 30) * 0.5);
-      const score = euclidean * 0.55 + cosineDistance * 100 * 0.3 + outlierPenalty * 0.15;
-      return { ...f, score };
+      // Simple 3D Euclidean Distance (The Flavor Cube)
+      // d = sqrt((x2-x1)^2 + (y2-y1)^2 + (z2-z1)^2)
+      const distance = Math.sqrt(
+        Math.pow(userVec[0] - f.v[0], 2) +
+        Math.pow(userVec[1] - f.v[1], 2) +
+        Math.pow(userVec[2] - f.v[2], 2)
+      );
+
+      return { ...f, score: distance };
     })
     .sort((a, b) => a.score - b.score)[0];
 }
@@ -1557,7 +1569,32 @@ const Slide9: React.FC<{ active: boolean; artists: Artist[]; songs: Song[]; rang
     return () => timerRef.current.forEach(clearTimeout);
   }, [active]);
 
-  const orbitScore = Math.min(250, 80 + Math.round((topArtist?.totalListens || 0) / 3));
+  // "Gravitational Pull" Formula
+  // Rewards single-song dominance over pure volume
+  // Score = (TopSongPlays / TotalArtistPlays)^2 * log10(TotalArtistPlays) * 100
+  const orbitScore = useMemo(() => {
+    if (!topArtist || !songs.length) return 0;
+
+    // Find plays of the most played song by this artist
+    const artistSongs = songs.filter(s => s.artist === topArtist.name);
+    if (artistSongs.length === 0) return Math.min(250, 80 + Math.round(topArtist.totalListens / 3)); // Fallback
+
+    const topSongPlays = Math.max(...artistSongs.map(s => s.listens));
+    const totalPlays = topArtist.totalListens || 1;
+
+    // Dominance ratio (0.0 to 1.0)
+    const dominance = topSongPlays / totalPlays;
+
+    // The Formula
+    // 1. Square the dominance to punish "casual" listening (0.5^2 = 0.25 vs 0.9^2 = 0.81)
+    // 2. Log10 the total volume so 1000 plays isn't 10x better than 100 plays
+    const rawScore = Math.pow(dominance, 2) * Math.log10(totalPlays) * 100;
+
+    // Scale and cap (Aiming for 0-250 range)
+    // A super fan (90% dominance, 1000 plays) -> 0.81 * 3 * 100 = 243
+    // A casual fan (10% dominance, 1000 plays) -> 0.01 * 3 * 100 = 3
+    return Math.min(250, Math.round(Math.max(10, rawScore)));
+  }, [topArtist, songs]);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
