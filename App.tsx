@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight } from 'lucide-react';
+import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight, Shuffle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
 import { Artist, Album, Song } from './types';
@@ -650,6 +650,14 @@ function App() {
   const safeArtists = dbUnifiedData?.artists || [];
   const safeAlbums = dbUnifiedData?.albums || [];
   const safeSongs = dbUnifiedData?.songs || [];
+
+  const handleSurpriseMe = () => {
+    if (safeSongs.length > 0) {
+        const randomIndex = Math.floor(Math.random() * safeSongs.length);
+        setSelectedTopSong(safeSongs[randomIndex]);
+    }
+  };
+
   const safeRecent = dbUnifiedData?.recentPlays || data?.recentRaw || []; // Recent plays can still come from Spotify recent for immediate feedback? 
                                                                           // Actually user said "always use the database". 
                                                                           // But recent plays are usually synced. stick to DB for charts. 
@@ -923,6 +931,13 @@ function App() {
                         {timeRange === 'Custom' && customDateRange 
                             ? `${new Date(customDateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(customDateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
                             : 'Custom Range'}
+                    </button>
+                    <button
+                        onClick={handleSurpriseMe}
+                        className="px-3 py-2 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center border border-transparent hover:border-white/5 active:scale-95"
+                        title="Surprise Me (Random Song)"
+                    >
+                        <Shuffle size={14} />
                     </button>
                 </div>
                 <AnimatePresence>
@@ -1292,6 +1307,13 @@ function App() {
                                 {timeRange === 'Custom' && customDateRange
                                     ? `${new Date(customDateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(customDateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
                                     : 'Custom'}
+                            </button>
+                            <button
+                                onClick={handleSurpriseMe}
+                                className="px-3 py-2 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center border border-transparent hover:border-white/5 active:scale-95"
+                                title="Surprise Me (Random Song)"
+                            >
+                                <Shuffle size={14} />
                             </button>
                         </div>
                         <AnimatePresence>
