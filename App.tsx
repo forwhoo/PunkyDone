@@ -74,6 +74,7 @@ import {
 import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts } from './services/dbService';
 import { generateMusicInsight, generateRankingInsights } from './services/geminiService';
 import { supabase } from './services/supabaseClient';
+import { logger } from './services/logger';
 
 // RANKED COMPONENT: Top Album (Standard)
 const RankedAlbum = ({ album, rank, onClick }: { album: Album, rank: number, onClick?: () => void }) => {
@@ -333,7 +334,7 @@ function App() {
                     return next;
                 });
             } catch (e) {
-                console.error("BG Image Fetch Error", e);
+                logger.error("BG Image Fetch Error", e);
             }
         }
     };
@@ -405,7 +406,7 @@ function App() {
           const requestedRange = timeRange; // Capture current value
           const currentCustomRange = customDateRange; // Capture custom range
           
-          console.log(`[App] 📊 Refreshing DB Stats for ${requestedRange}... (fetchId: ${currentFetchId})`);
+          logger.info(`[App] 📊 Refreshing DB Stats for ${requestedRange}... (fetchId: ${currentFetchId})`);
           try {
             const stats = await fetchListeningStats();
             const dashboardStuff = requestedRange === 'Custom' && currentCustomRange
@@ -414,14 +415,14 @@ function App() {
             
             // Check if this request is still the latest one
             if (currentFetchId !== fetchIdRef.current) {
-                console.log(`[App] ⚠️ Discarding stale response for ${requestedRange} (fetchId: ${currentFetchId}, current: ${fetchIdRef.current})`);
+                logger.info(`[App] ⚠️ Discarding stale response for ${requestedRange} (fetchId: ${currentFetchId}, current: ${fetchIdRef.current})`);
                 return; // Discard stale response
             }
             
             // Fetch dynamic charts for AI context
             const currentCharts = await fetchCharts(requestedRange.toLowerCase() as any);
             
-            console.log(`[App] ✅ Dashboard Stats for ${requestedRange}:`, { 
+            logger.info(`[App] ✅ Dashboard Stats for ${requestedRange}:`, {
                 hasStats: !!stats, 
                 artistCount: dashboardStuff?.artists?.length || 0,
                 songCount: dashboardStuff?.songs?.length || 0,
@@ -434,7 +435,7 @@ function App() {
                 setDbUnifiedData(dashboardStuff);
             }
           } catch (e) {
-              console.error("[App] refreshDbStats failed:", e);
+              logger.error("[App] refreshDbStats failed:", e);
           }
       };
 
@@ -450,7 +451,7 @@ function App() {
                 table: 'listening_history'
             },
             (payload) => {
-                console.log('Realtime change detected:', payload);
+                logger.info('Realtime change detected:', payload);
                 refreshDbStats();
             }
         )
@@ -508,7 +509,7 @@ function App() {
                 setData(spotifyData);
             }
         } catch (e) {
-            console.error("Critical Load Error", e);
+            logger.error("Critical Load Error", e);
         } finally {
              setLoading(false);
         }
@@ -607,7 +608,7 @@ function App() {
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
           } catch (e) {
-            console.error(e);
+            logger.error(e);
           }
           return;
         }
@@ -638,7 +639,7 @@ function App() {
     
     if (!result) {
         // Token might be expired, try to refresh
-        console.log("Token expired, attempting refresh...");
+        logger.info("Token expired, attempting refresh...");
         const newToken = await refreshAccessToken();
         if (newToken) {
             setToken(newToken);
@@ -681,7 +682,7 @@ function App() {
     try {
       await redirectToAuthCodeFlow();
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     } finally {
       setConnecting(false);
     }
@@ -1466,7 +1467,7 @@ function App() {
                                                 setTimeRange('Custom');
                                                 setShowDatePicker(false);
                                                 fetchDashboardStats('Custom', customDateRange).then(data => setDbUnifiedData(data));
-                                                console.log('Custom range selected:', customDateRange);
+                                                logger.info('Custom range selected:', customDateRange);
                                             }
                                         }}
                                         disabled={!customDateRange?.start || !customDateRange?.end}
