@@ -154,9 +154,9 @@ const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick
 );
 
 const MobileHeroCard = ({ title, subtitle }: { title: string; subtitle: string }) => (
-    <div className="glass-morph rounded-[28px] p-7 shadow-xl border border-white/[0.15]">
-        <h1 className="text-[26px] font-bold text-white leading-tight tracking-tight">{title}</h1>
-        <p className="text-[14px] text-white/70 mt-3 leading-relaxed font-medium">{subtitle}</p>
+    <div className="glass-morph rounded-[32px] p-8 shadow-xl border border-white/[0.15]">
+        <h1 className="text-[28px] font-bold text-white leading-tight tracking-tight">{title}</h1>
+        <p className="text-[15px] text-white/70 mt-3 leading-relaxed font-medium">{subtitle}</p>
     </div>
 );
 
@@ -164,7 +164,7 @@ const MobileArtistCard = ({ artist, rank, image, onClick }: { artist: Artist; ra
     <button
         type="button"
         onClick={onClick}
-        className="relative w-[176px] h-[228px] shrink-0 snap-start rounded-[24px] overflow-hidden shadow-2xl border border-white/[0.08] active:scale-[0.97] transition-transform"
+        className="relative w-[210px] h-[280px] shrink-0 snap-start rounded-[28px] overflow-hidden shadow-2xl border border-white/[0.08] active:scale-[0.97] transition-transform"
     >
         <img
             src={image || artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`}
@@ -173,23 +173,23 @@ const MobileArtistCard = ({ artist, rank, image, onClick }: { artist: Artist; ra
             className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80" />
-        <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
-            <p className="text-[17px] font-bold text-white leading-tight tracking-tight drop-shadow-lg">{artist.name}</p>
-            <p className="text-[13px] text-white/70 mt-1 font-medium">{artist.timeStr}</p>
+        <div className="absolute bottom-0 left-0 right-0 p-5 text-left">
+            <p className="text-[20px] font-bold text-white leading-tight tracking-tight drop-shadow-lg">{artist.name}</p>
+            <p className="text-[14px] text-white/70 mt-1 font-medium">{artist.timeStr}</p>
         </div>
     </button>
 );
 
 const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; cover: string; title: string; subtitle: string; meta?: string }) => (
-    <div className="flex items-center gap-3 py-3 active:bg-white/5 transition-colors rounded-xl">
-        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 shadow-md border border-white/[0.06]">
+    <div className="flex items-center gap-4 py-4 active:bg-white/5 transition-colors rounded-2xl">
+        <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 shadow-md border border-white/[0.06]">
             <img src={cover} alt={title} loading="lazy" className="w-full h-full object-cover" />
         </div>
         <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-semibold text-white truncate leading-tight tracking-tight">{title}</p>
-            <p className="text-[13px] text-white/50 truncate mt-0.5 font-medium">{subtitle}</p>
+            <p className="text-[16px] font-semibold text-white truncate leading-tight tracking-tight">{title}</p>
+            <p className="text-[14px] text-white/50 truncate mt-1 font-medium">{subtitle}</p>
         </div>
-        {meta && <div className="text-[12px] text-white/40 whitespace-nowrap font-medium flex-shrink-0">{meta}</div>}
+        {meta && <div className="text-[13px] text-white/40 whitespace-nowrap font-medium flex-shrink-0">{meta}</div>}
     </div>
 );
 
@@ -822,14 +822,13 @@ function App() {
   return (
     <>
     <Layout user={data.user} currentTrack={data.currentTrack}>
-        <div className="lg:hidden space-y-12 safe-area-bottom safe-area-top safe-area-x px-4 sm:px-5">
-            <div className="space-y-5">
-                <div className="flex items-center justify-between">
+        <div className="lg:hidden space-y-8 safe-area-bottom safe-area-top safe-area-x px-4 sm:px-5 pb-20">
+            <div className="space-y-4 pt-4">
+                <div className="flex items-end justify-between">
                     <div>
-                        <p className="text-[11px] uppercase tracking-[0.25em] text-white/40 font-bold">Your Stats</p>
-                        <h2 className="text-[30px] font-bold text-white mt-1">Hey {data.user?.display_name || 'there'}</h2>
+                        <h2 className="text-[34px] font-bold text-white leading-none tracking-tight">Hey {data.user?.display_name?.split(' ')[0] || 'there'}</h2>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <button
                             onClick={() => setBrutalistMode(true)}
                             className="group flex items-center gap-2 rounded-xl border border-yellow-400/20 bg-gradient-to-r from-[#161616] to-[#111111] px-3 py-2 text-left transition-all hover:border-yellow-400/45 hover:shadow-[0_0_22px_rgba(250,204,21,0.2)]"
@@ -844,7 +843,7 @@ function App() {
                             </span>
                         </button>
                         {data.user?.images?.[0]?.url && (
-                            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 shadow-xl">
+                            <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20 shadow-xl">
                                 <img src={data.user.images[0].url} alt={data.user.display_name} loading="lazy" className="w-full h-full object-cover" />
                             </div>
                         )}
@@ -1150,14 +1149,14 @@ function App() {
                             )}
                         </div>
                         {safeAlbums.length > 0 ? (
-                            <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
+                            <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x px-1">
                                 {safeAlbums.slice(0, 6).map((album: Album, index: number) => (
-                                    <div key={album.id} className="w-[156px] shrink-0 snap-start group cursor-pointer" onClick={() => setSelectedTopAlbum(album)}>
-                                        <div className="relative w-full h-[156px] rounded-[20px] overflow-hidden shadow-xl border border-white/[0.08] active:scale-95 transition-transform">
+                                    <div key={album.id} className="w-[180px] shrink-0 snap-start group cursor-pointer" onClick={() => setSelectedTopAlbum(album)}>
+                                        <div className="relative w-full h-[180px] rounded-[24px] overflow-hidden shadow-xl border border-white/[0.08] active:scale-95 transition-transform">
                                             <img src={album.cover} alt={album.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                                         </div>
-                                        <p className="mt-3 text-[14px] font-semibold text-white truncate tracking-tight">{album.title}</p>
-                                        <p className="text-[12px] text-white/50 truncate mt-0.5 font-medium">{album.artist}</p>
+                                        <p className="mt-3 text-[16px] font-semibold text-white truncate tracking-tight">{album.title}</p>
+                                        <p className="text-[14px] text-white/50 truncate mt-1 font-medium">{album.artist}</p>
                                     </div>
                                 ))}
                             </div>
@@ -1623,7 +1622,6 @@ function App() {
                             transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
                             className="relative mb-6 group"
                         >
-                            <div className="absolute -inset-4 rounded-full blur-3xl opacity-[0.2] group-hover:opacity-[0.3] transition-opacity duration-700" style={{ backgroundColor: auraColor }}></div>
                             <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-full overflow-hidden ring-4 ring-white/10 shadow-2xl relative">
                                 <img 
                                     src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedTopArtist.name)}&background=1C1C1E&color=fff`} 
@@ -1763,7 +1761,6 @@ function App() {
                             transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
                             className="relative mb-6 group"
                         >
-                            <div className="absolute -inset-4 rounded-2xl blur-3xl opacity-[0.2] group-hover:opacity-[0.3] transition-opacity duration-700" style={{ backgroundColor: auraColor }}></div>
                             <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl overflow-hidden ring-4 ring-white/10 shadow-2xl relative">
                                 <img 
                                     src={selectedTopAlbum.cover} 
@@ -1918,7 +1915,6 @@ function App() {
                             transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
                             className="relative mb-6 group"
                         >
-                            <div className="absolute -inset-4 rounded-2xl blur-3xl opacity-[0.2] group-hover:opacity-[0.3] transition-opacity duration-700" style={{ backgroundColor: auraColor }}></div>
                             <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl overflow-hidden ring-4 ring-white/10 shadow-2xl relative">
                                 <img 
                                     src={selectedTopSong.cover} 
