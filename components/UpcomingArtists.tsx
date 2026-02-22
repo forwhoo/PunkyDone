@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
-import { ArrowUpRight, Disc, Info, X, TrendingUp, BarChart3 } from 'lucide-react';
+import { ArrowUpRight, Disc, Info, TrendingUp, BarChart3, Clock, Play } from 'lucide-react';
 import { Artist } from '../types';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { getDiscoveryDate } from '../services/dbService';
+import { FullScreenModal } from './FullScreenModal';
 
 interface UpcomingArtistsProps {
     recentPlays: any[];
@@ -22,8 +22,6 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
 
         const processCandidates = async () => {
             setLoading(true);
-
-            // Logic: distinct artists in recentPlays who are NOT in topArtists (Top 30)
             const topArtistNames = new Set(topArtists.slice(0, 30).map(a => a.name));
             const candidates: Record<string, any> = {};
 
@@ -35,8 +33,8 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                     if (!candidates[artistName]) {
                         candidates[artistName] = {
                             name: artistName,
-                            image: artistImages[artistName] || play.album_cover || play.cover, // Prefer artist image
-                            firstPlay: play.played_at, // Temporary, will verify with DB
+                            image: artistImages[artistName] || play.album_cover || play.cover,
+                            firstPlay: play.played_at,
                             lastPlay: play.played_at,
                             plays: 0,
                             trackSample: play.track_name,
@@ -56,30 +54,26 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                 }
             });
 
-            // Initial filtering for meaningful candidates
             const potentialCandidates = Object.values(candidates)
                 .filter(c => c.plays >= 2)
                 .sort((a, b) => b.plays - a.plays)
-                .slice(0, 15); // Verify top 15 to find true new discoveries
+                .slice(0, 15);
 
             const verificationResults = await Promise.all(
                 potentialCandidates.map(async (candidate) => {
                     try {
-                        // VERIFY: Check ALL TIME history to see if this is truly new
                         const discovery = await getDiscoveryDate(candidate.name);
-
                         if (discovery) {
                             const firstPlayedDate = new Date(discovery.first_played);
                             const now = new Date();
                             const daysSinceFirst = (now.getTime() - firstPlayedDate.getTime()) / (1000 * 60 * 60 * 24);
 
-                            // Strict Definition: "Upcoming" means discovered recently (e.g., within last 60 days)
                             if (daysSinceFirst <= 60) {
                                 return {
                                     ...candidate,
                                     uniqueTracksCount: candidate.uniqueTracks.size,
                                     avgDuration: Math.floor(candidate.totalDuration / candidate.plays / 1000 / 60),
-                                    firstPlay: discovery.first_played, // Use TRUE first play from DB
+                                    firstPlay: discovery.first_played,
                                     daysSinceFirstPlay: Math.floor(daysSinceFirst)
                                 };
                             }
@@ -97,9 +91,8 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
         };
 
         processCandidates();
-    }, [recentPlays, topArtists]); // Re-run when inputs change
+    }, [recentPlays, topArtists]);
 
-    // Compute growth data for selected artist
     const growthData = useMemo(() => {
         if (!selectedArtist?.playDates) return [];
         const dateMap = new Map<string, number>();
@@ -110,7 +103,7 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
         return Array.from(dateMap.entries()).map(([date, count]) => ({ date, count }));
     }, [selectedArtist]);
 
-    if (loading && upcoming.length === 0) return null; // Or show skeleton
+    if (loading && upcoming.length === 0) return null;
     if (upcoming.length === 0) return null;
 
     return (
@@ -127,7 +120,7 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                             {showTooltip && (
                                 <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 bg-[#1C1C1E] border border-white/10 rounded-xl p-3 w-64 shadow-2xl">
                                     <p className="text-xs text-white/70 leading-relaxed text-left font-normal">
-                                        Artists entering your radar — new names appearing in your recent listening that aren&apos;t in your top charts yet. Our algorithm spots fresh discoveries in your rotation.
+                                        Artists entering your radar — new names appearing in your recent listening that aren&apos;t in your top charts yet.
                                     </p>
                                 </div>
                             )}
@@ -173,184 +166,102 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                 </div>
             </div>
 
-            {/* Modal for Selected Artist - Full Screen Style - PORTALLED to body */}
-            {createPortal(
-                <AnimatePresence>
-                    {selectedArtist && (
-                        <motion.div
-                            key="modal"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-[100] bg-black"
-                            onClick={() => setSelectedArtist(null)}
-                        >
-                            {/* Full-screen blurred background */}
-                            <div className="absolute inset-0 overflow-hidden">
+            {/* FULL SCREEN MODAL */}
+            <FullScreenModal
+                isOpen={!!selectedArtist}
+                onClose={() => setSelectedArtist(null)}
+                image={selectedArtist?.image}
+                title="Rising Star"
+            >
+                {selectedArtist && (
+                    <div className="flex flex-col items-center w-full">
+                         {/* Artist Hero */}
+                         <div className="flex flex-col items-center mb-8">
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="w-48 h-48 sm:w-64 sm:h-64 rounded-full overflow-hidden shadow-2xl border-4 border-white/10 mb-6"
+                            >
                                 <img
                                     src={selectedArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtist.name)}&background=1DB954&color=fff`}
-                                    className="w-full h-full object-cover scale-110 blur-3xl opacity-20"
-                                    alt=""
+                                    className="w-full h-full object-cover"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
-                            </div>
-
-                            <motion.div
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                exit={{ y: 20, opacity: 0 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                className="relative h-full overflow-y-auto no-scrollbar px-4 pt-12 pb-8"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {/* Close Button */}
-                                <button
-                                    onClick={() => setSelectedArtist(null)}
-                                    className="fixed top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/10 hover:scale-105 active:scale-95"
-                                >
-                                    <X size={18} />
-                                </button>
-
-                                <div className="flex flex-col items-center max-w-2xl mx-auto">
-                                    {/* Artist Image */}
-                                    <motion.div
-                                        initial={{ scale: 0.8, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
-                                        className="relative mb-6 group"
-                                    >
-                                        {/* <div className="absolute -inset-4 rounded-full blur-3xl opacity-[0.2] bg-blue-500/30 group-hover:opacity-[0.3] transition-opacity duration-700"></div> */}
-                                        <div className="w-32 h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-full overflow-hidden ring-4 ring-white/10 shadow-2xl relative">
-                                            <img
-                                                src={selectedArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtist.name)}&background=1DB954&color=fff`}
-                                                className="w-full h-full object-cover bg-[#1C1C1E]"
-                                                alt={selectedArtist.name}
-                                            />
-                                        </div>
-                                        {/* Tag */}
-                                        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-blue-500/20 backdrop-blur-md border border-blue-400/30 text-blue-300 px-4 py-1 rounded-full font-bold text-xs shadow-xl uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap">
-                                            <TrendingUp size={12} className="text-blue-400" />
-                                            Upcoming
-                                        </div>
-                                    </motion.div>
-
-                                    {/* Name + Intro */}
-                                    <motion.h1
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.15 }}
-                                        className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight mb-2"
-                                    >
-                                        {selectedArtist.name}
-                                    </motion.h1>
-                                    <motion.p
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: 0.2 }}
-                                        className="text-lg text-white/60 mb-8 text-center"
-                                    >
-                                        Discovered {selectedArtist.daysSinceFirstPlay} days ago
-                                    </motion.p>
-
-                                    {/* Stats Row */}
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 30 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.25 }}
-                                        className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl mb-8"
-                                    >
-                                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
-                                            <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mb-1">Total Plays</p>
-                                            <span className="text-xl font-black text-white">{selectedArtist.plays}</span>
-                                        </div>
-                                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
-                                            <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mb-1">Unique Tracks</p>
-                                            <span className="text-xl font-black text-white">{selectedArtist.uniqueTracksCount || 1}</span>
-                                        </div>
-                                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
-                                            <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mb-1">Avg Listen</p>
-                                            <span className="text-xl font-black text-white">{selectedArtist.avgDuration || 3}m</span>
-                                        </div>
-                                        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
-                                            <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mb-1">First Heard</p>
-                                            <span className="text-sm font-bold text-white mt-1">
-                                                {new Date(selectedArtist.firstPlay).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                            </span>
-                                        </div>
-                                    </motion.div>
-
-                                    {/* Growth Graph - Enhanced */}
-                                    {growthData.length > 1 && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.3 }}
-                                            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 mb-6"
-                                        >
-                                            <p className="text-[11px] uppercase tracking-wider text-white/40 font-bold mb-4 flex items-center gap-2">
-                                                <BarChart3 size={14} className="text-blue-400" /> Listening Activity
-                                            </p>
-                                            <div className="flex items-end gap-2 h-32">
-                                                {growthData.map((d, i) => {
-                                                    const maxCount = Math.max(...growthData.map(g => g.count));
-                                                    const height = (d.count / maxCount) * 100;
-                                                    return (
-                                                        <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
-                                                            <div className="relative w-full flex items-end justify-center h-full">
-                                                                <div
-                                                                    className="w-full max-w-[20px] rounded-t-sm bg-gradient-to-t from-blue-500/40 to-blue-400/80 transition-all hover:from-blue-500/60 hover:to-blue-400 min-h-[4px]"
-                                                                    style={{ height: `${Math.max(4, height)}%` }}
-                                                                ></div>
-                                                                {/* Tooltip */}
-                                                                <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1C1C1E] border border-white/10 px-2 py-1 rounded text-[10px] whitespace-nowrap z-10 pointer-events-none">
-                                                                    {d.count} plays
-                                                                </div>
-                                                            </div>
-                                                            {growthData.length <= 10 && (
-                                                                <span className="text-[9px] text-white/30 truncate w-full text-center font-mono">{d.date.split(' ')[1]}</span>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </motion.div>
-                                    )}
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                                        {/* Recent Track */}
-                                        <motion.div
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: 0.35 }}
-                                            className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5"
-                                        >
-                                            <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-3 flex items-center gap-1.5">
-                                                <Disc size={12} /> Recent Track
-                                            </p>
-                                            <p className="text-lg font-bold text-white truncate">{selectedArtist.trackSample}</p>
-                                        </motion.div>
-
-                                        {/* Trajectory Summary */}
-                                        <motion.div
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: 0.35 }}
-                                            className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5"
-                                        >
-                                            <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-3">Trajectory</p>
-                                            <p className="text-sm text-white/70 leading-relaxed">
-                                                With <span className="text-white font-bold">{selectedArtist.plays} plays</span> across <span className="text-white font-bold">{selectedArtist.uniqueTracksCount || 1} tracks</span>,
-                                                {selectedArtist.plays >= 5 ? ' this artist is gaining serious momentum in your rotation.' : ' you\'re just getting started with this artist.'}
-                                            </p>
-                                        </motion.div>
-                                    </div>
-                                </div>
                             </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>,
-                document.body
-            )}
+                            <h1 className="text-3xl sm:text-5xl font-bold text-white text-center tracking-tight mb-2">
+                                {selectedArtist.name}
+                            </h1>
+                            <div className="flex items-center gap-2 bg-blue-500/20 px-4 py-1.5 rounded-full border border-blue-500/30">
+                                <TrendingUp size={14} className="text-blue-400" />
+                                <span className="text-sm font-bold text-blue-100">Discovered {selectedArtist.daysSinceFirstPlay} days ago</span>
+                            </div>
+                        </div>
+
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full mb-10">
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center text-center">
+                                <Play size={20} className="text-white/50 mb-2" />
+                                <span className="text-2xl font-bold text-white">{selectedArtist.plays}</span>
+                                <span className="text-xs uppercase tracking-wider text-white/40 font-bold mt-1">Total Plays</span>
+                            </div>
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center text-center">
+                                <Disc size={20} className="text-white/50 mb-2" />
+                                <span className="text-2xl font-bold text-white">{selectedArtist.uniqueTracksCount || 1}</span>
+                                <span className="text-xs uppercase tracking-wider text-white/40 font-bold mt-1">Unique Tracks</span>
+                            </div>
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center text-center">
+                                <Clock size={20} className="text-white/50 mb-2" />
+                                <span className="text-2xl font-bold text-white">{selectedArtist.avgDuration || 3}m</span>
+                                <span className="text-xs uppercase tracking-wider text-white/40 font-bold mt-1">Avg Listen</span>
+                            </div>
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center text-center">
+                                <BarChart3 size={20} className="text-white/50 mb-2" />
+                                <span className="text-lg font-bold text-white mt-1 leading-tight">
+                                    {new Date(selectedArtist.firstPlay).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                                <span className="text-xs uppercase tracking-wider text-white/40 font-bold mt-1">First Heard</span>
+                            </div>
+                        </div>
+
+                        {/* Growth Chart */}
+                        {growthData.length > 1 && (
+                            <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 mb-8">
+                                <div className="flex items-center gap-2 mb-6">
+                                    <TrendingUp size={16} className="text-green-400" />
+                                    <h3 className="text-sm font-bold text-white uppercase tracking-wide">Growth Trajectory</h3>
+                                </div>
+                                <div className="flex items-end gap-2 h-40 w-full">
+                                    {growthData.map((d, i) => {
+                                        const maxCount = Math.max(...growthData.map(g => g.count));
+                                        const height = (d.count / maxCount) * 100;
+                                        return (
+                                            <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
+                                                <div className="relative w-full flex items-end justify-center h-full">
+                                                    <div
+                                                        className="w-full max-w-[24px] rounded-t-md bg-white/20 hover:bg-white transition-all min-h-[4px]"
+                                                        style={{ height: `${Math.max(4, height)}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-[10px] text-white/30 truncate w-full text-center">{d.date.split(' ')[1]}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Recent Track Info */}
+                        <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                                <Disc size={24} className="text-white" />
+                            </div>
+                            <div>
+                                <h4 className="text-lg font-bold text-white">{selectedArtist.trackSample}</h4>
+                                <p className="text-sm text-white/50">Most recent track in rotation</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </FullScreenModal>
         </div>
     );
 };

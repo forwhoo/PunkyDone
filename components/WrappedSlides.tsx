@@ -1,46 +1,21 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronRight, ChevronLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { X, ChevronRight, ChevronLeft, Disc, Music, User } from 'lucide-react';
 import { Artist, Album, Song } from '../types';
 import { ObsessionOrbitSlide } from './ObsessionOrbitSlide';
-import { fetchHeatmapData } from '../services/dbService';
 
 // --- Configuration ---
-const NB = {
-  acidYellow: '#CCFF00',
-  electricBlue: '#1A6BFF',
-  coral: '#FF4D2E',
-  magenta: '#FF0080',
-  black: '#000000',
-  white: '#FFFFFF',
-  nearBlack: '#0D0D0D',
-};
-
 const SLIDES = [
   'INTRO',
   'MINUTES',
   'TOP_ARTIST',
   'TOP_SONGS',
+  'TOP_ALBUM',
   'OBSESSION',
-  'FRUIT',
+  'AURA',
+  'NEW_ARTISTS',
+  'TOP_GENRES',
   'SUMMARY'
-];
-
-const fallbackImage = 'https://ui-avatars.com/api/?background=0D0D0D&color=fff&size=128&bold=true';
-
-const FRUIT_PROFILES = [
-  { name: 'MANGO', emoji: '🥭', v: [60, 40, 30], vibe: 'warm, steady vibes with loyal favorites' },
-  { name: 'PINEAPPLE', emoji: '🍍', v: [80, 70, 90], vibe: 'high energy explorer always finding new hits' },
-  { name: 'CHERRY', emoji: '🍒', v: [70, 20, 40], vibe: 'intense replay love for a few obsessions' },
-  { name: 'BANANA', emoji: '🍌', v: [30, 20, 10], vibe: 'comfort listening on a cozy loop' },
-  { name: 'BLUEBERRY', emoji: '🫐', v: [40, 80, 70], vibe: 'chill night explorer with deep cuts' },
-  { name: 'WATERMELON', emoji: '🍉', v: [50, 50, 50], vibe: 'perfectly balanced and refreshing sessions' },
-  { name: 'KIWI', emoji: '🥝', v: [90, 80, 80], vibe: 'sharp, tangy taste with wild variety' },
-  { name: 'PEACH', emoji: '🍑', v: [40, 30, 60], vibe: 'soft, sweet discovery in the late hours' },
-  { name: 'APPLE', emoji: '🍎', v: [50, 30, 20], vibe: 'crisp, structured routine with trusted classics' },
-  { name: 'STRAWBERRY', emoji: '🍓', v: [70, 40, 30], vibe: 'sweet, energetic favorites on repeat' },
-  { name: 'DRAGON FRUIT', emoji: '🐉', v: [85, 90, 85], vibe: 'rare, exotic taste with unpredictable shifts' },
-  { name: 'LEMON', emoji: '🍋', v: [95, 60, 50], vibe: 'zesty, high-intensity sessions that wake you up' },
 ];
 
 interface WrappedSlidesProps {
@@ -56,506 +31,843 @@ interface WrappedSlidesProps {
   historyRows?: any[];
 }
 
-type HistoryRow = { played_at: string; duration_ms: number; track_name?: string; id?: string; title?: string };
-type DnaMetrics = {
-  nightOwl: number;
-  freshFinds: number;
-  deepSessions: number;
-  replayLove: number;
-  routine: number;
-  artistVariety: number;
-  moodSwing: number;
-  skipResistance: number;
-  notes: string[];
-  reasonSummary: string;
+// --- Shared Components ---
+
+const SlideContainer = ({ children, bgImage, bgColor = '#000' }: { children: React.ReactNode, bgImage?: string, bgColor?: string }) => (
+    <div className="relative w-full h-full flex flex-col overflow-hidden bg-black">
+        {/* Dynamic Background */}
+        <div className="absolute inset-0 z-0 transition-colors duration-1000" style={{ backgroundColor: bgColor }}>
+            {bgImage && (
+                <motion.img
+                    src={bgImage}
+                    className="absolute inset-0 w-full h-full object-cover opacity-30 blur-3xl scale-125"
+                    animate={{ scale: [1.2, 1.4, 1.2], rotate: [0, 5, 0] }}
+                    transition={{ duration: 20, repeat: Infinity }}
+                />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-black" />
+        </div>
+        <div className="relative z-10 w-full h-full flex flex-col px-6 py-8 md:px-12 md:py-12">
+            {children}
+        </div>
+    </div>
+);
+
+const SlideTitle = ({ title, subtitle }: { title: string, subtitle?: string }) => (
+    <div className="mb-6">
+        {subtitle && <h3 className="text-sm font-bold text-white/60 uppercase tracking-widest mb-2">{subtitle}</h3>}
+        <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight uppercase leading-none">{title}</h1>
+    </div>
+);
+
+// --- Slide 1: Intro (Wave) ---
+const IntroSlide = ({ rangeLabel }: { rangeLabel: string }) => {
+    return (
+        <SlideContainer bgColor="#1C1C1E">
+            <div className="flex-1 flex flex-col items-center justify-center text-center">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.8, ease: "backOut" }}
+                >
+                    <h2 className="text-sm font-bold text-[#FA2D48] tracking-[0.3em] uppercase mb-4">Your Year In Music</h2>
+                    <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter mb-2">LOTUS<br/>WRAPPED</h1>
+                    <div className="w-24 h-1 bg-white/20 mx-auto rounded-full my-6 overflow-hidden">
+                        <motion.div
+                            className="h-full bg-[#FA2D48]"
+                            initial={{ width: 0 }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 1.5, delay: 0.5 }}
+                        />
+                    </div>
+                    <p className="text-white/60 font-medium">{rangeLabel}</p>
+                </motion.div>
+
+                {/* Wave Animation */}
+                <div className="absolute inset-x-0 bottom-0 h-1/3 overflow-hidden pointer-events-none">
+                    <svg className="absolute bottom-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none">
+                        <motion.path
+                            fill="rgba(250, 45, 72, 0.2)"
+                            d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+                            animate={{
+                                d: [
+                                    "M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z",
+                                    "M0,64L48,80C96,96,192,128,288,128C384,128,480,96,576,106.7C672,117,768,171,864,197.3C960,224,1056,224,1152,197.3C1248,171,1344,117,1392,90.7L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z",
+                                    "M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+                                ]
+                            }}
+                            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                    </svg>
+                </div>
+            </div>
+        </SlideContainer>
+    );
 };
 
-// --- Hooks ---
-function useOdometer(value: number, duration: number = 1000) {
-  const [displayValue, setDisplayValue] = useState(0);
-  useEffect(() => {
-    let start = displayValue;
-    let end = value;
-    if (start === end) return;
-    let startTime = performance.now();
-    let frame: number;
-    const animate = (now: number) => {
-      let progress = Math.min(1, (now - startTime) / duration);
-      setDisplayValue(Math.floor(start + (end - start) * progress));
-      if (progress < 1) frame = requestAnimationFrame(animate);
+// --- Slide 2: Minutes (Suction) ---
+const MinutesSlide = ({ minutes }: { minutes: number }) => {
+    // Number counting hook
+    const [count, setCount] = useState(0);
+    useEffect(() => {
+        let start = 0;
+        const end = minutes;
+        const duration = 2500;
+        const startTime = performance.now();
+
+        const animate = (currentTime: number) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 3); // Cubic ease out
+
+            setCount(Math.floor(start + (end - start) * easeOut));
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+        requestAnimationFrame(animate);
+    }, [minutes]);
+
+    return (
+        <SlideContainer bgColor="#000">
+            <div className="flex-1 flex flex-col items-center justify-center relative">
+                {/* Suction Particles */}
+                {Array.from({ length: 20 }).map((_, i) => (
+                    <motion.div
+                        key={i}
+                        className="absolute rounded-full bg-white/20 blur-sm"
+                        style={{
+                            width: Math.random() * 10 + 2,
+                            height: Math.random() * 10 + 2,
+                            left: '50%',
+                            top: '50%'
+                        }}
+                        initial={{ x: (Math.random() - 0.5) * 800, y: (Math.random() - 0.5) * 800, opacity: 0 }}
+                        animate={{ x: 0, y: 0, opacity: [0, 1, 0] }}
+                        transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            delay: Math.random() * 2,
+                            ease: "easeIn"
+                        }}
+                    />
+                ))}
+
+                <SlideTitle title="You Spent" />
+
+                <motion.div
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-[12vw] font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-gray-500 leading-none tracking-tighter"
+                >
+                    {count.toLocaleString()}
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1 }}
+                    className="mt-4 text-xl font-bold text-[#FA2D48] uppercase tracking-widest"
+                >
+                    Minutes Listening
+                </motion.div>
+
+                <p className="mt-8 text-white/50 max-w-md text-center text-sm">
+                    That's {Math.round(minutes / 60)} hours of your life you'll never get back. (Worth it).
+                </p>
+            </div>
+        </SlideContainer>
+    );
+};
+
+// --- Slide 3: Top Artist (Carousel) ---
+const TopArtistSlide = ({ topArtist, allArtists }: { topArtist: Artist, allArtists: Artist[] }) => {
+    const [reveal, setReveal] = useState(false);
+    const [spinIndex, setSpinIndex] = useState(0);
+    const carouselArtists = useMemo(() => {
+        // Create a pool of artists to spin through, ending with topArtist
+        const others = allArtists.filter(a => a.id !== topArtist.id).slice(0, 10);
+        return [...others, ...others, topArtist];
+    }, [topArtist, allArtists]);
+
+    useEffect(() => {
+        // Spin animation logic
+        let interval: number;
+        let counter = 0;
+        const maxSpins = 15; // Number of spins before stop
+
+        const spin = () => {
+            setSpinIndex(prev => (prev + 1) % carouselArtists.length);
+            counter++;
+
+            if (counter < maxSpins) {
+                // Speed up then slow down? Or just linear fast then stop.
+                // Let's do easing speed.
+                const speed = 50 + (counter * 10); // Slower as it goes? No, usually faster then stop.
+                // Actually, simple fixed interval is fine for "slot machine" feel.
+                interval = window.setTimeout(spin, 80);
+            } else {
+                // Stop on the last item (which is topArtist)
+                setSpinIndex(carouselArtists.length - 1);
+                setReveal(true);
+            }
+        };
+
+        interval = window.setTimeout(spin, 500); // Start delay
+        return () => window.clearTimeout(interval);
+    }, [carouselArtists]);
+
+    const currentArtist = carouselArtists[spinIndex];
+
+    return (
+        <SlideContainer bgImage={reveal ? topArtist.image : undefined}>
+            <div className="flex-1 flex flex-col items-center justify-center">
+                <SlideTitle title="Top Artist" subtitle="You had one clear favorite" />
+
+                <div className="relative w-64 h-64 md:w-80 md:h-80 mb-8 perspective-1000">
+                    <motion.div
+                        animate={reveal ? { scale: 1.1, rotateY: 0 } : { scale: 1, rotateY: spinIndex * 10 }} // Subtle shake while spinning
+                        className="w-full h-full rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10"
+                    >
+                        <img
+                            src={currentArtist?.image || 'https://ui-avatars.com/api/?name=?'}
+                            className="w-full h-full object-cover"
+                            alt="Artist"
+                        />
+
+                        {!reveal && (
+                            <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
+                        )}
+                    </motion.div>
+                </div>
+
+                <AnimatePresence>
+                    {reveal && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 50 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                            className="text-center"
+                        >
+                            <h1 className="text-5xl md:text-7xl font-black text-white mb-4 tracking-tight">
+                                {topArtist.name}
+                            </h1>
+                            <div className="flex items-center justify-center gap-6">
+                                <div className="flex flex-col">
+                                    <span className="text-3xl font-bold text-white">{topArtist.totalListens}</span>
+                                    <span className="text-xs font-bold text-white/50 uppercase tracking-wider">Plays</span>
+                                </div>
+                                <div className="w-px h-10 bg-white/20" />
+                                <div className="flex flex-col">
+                                    <span className="text-3xl font-bold text-white">{topArtist.timeStr}</span>
+                                    <span className="text-xs font-bold text-white/50 uppercase tracking-wider">Time</span>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </SlideContainer>
+    );
+};
+
+// --- Slide 4: Top Songs (Floating Bubbles) ---
+const TopSongsSlide = ({ songs }: { songs: Song[] }) => {
+    const [phase, setPhase] = useState<'guess' | 'reveal'>('guess');
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const topSong = songs[0];
+
+    // Create random positions for bubbles
+    const bubbles = useMemo(() => {
+        return songs.slice(0, 6).map((song, i) => ({
+            ...song,
+            x: Math.random() * 60 + 20, // 20-80%
+            y: Math.random() * 60 + 20, // 20-80%
+            scale: Math.random() * 0.3 + 0.8,
+            delay: Math.random() * 2
+        }));
+    }, [songs]);
+
+    const handleSelect = (id: string) => {
+        if (phase === 'reveal') return;
+        setSelectedId(id);
+
+        // Wait a beat then reveal
+        setTimeout(() => {
+            setPhase('reveal');
+        }, 800);
     };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [value, duration]);
-  return displayValue;
-}
 
-// --- DNA Logic ---
+    return (
+        <SlideContainer bgColor="#FF2D55">
+            {phase === 'guess' ? (
+                <div className="flex-1 relative">
+                    <SlideTitle title="Guess Your #1" subtitle="One song stood above the rest" />
 
-function normalizeToPercent(value: number) {
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
+                    {bubbles.map((song) => (
+                        <motion.button
+                            key={song.id}
+                            className="absolute rounded-full overflow-hidden border-4 border-white/20 shadow-xl"
+                            style={{
+                                left: `${song.x}%`,
+                                top: `${song.y}%`,
+                                width: '25vw',
+                                height: '25vw',
+                                maxWidth: 140,
+                                maxHeight: 140,
+                                marginLeft: '-12.5vw', // Center anchor
+                                marginTop: '-12.5vw'
+                            }}
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{
+                                scale: selectedId === song.id ? 1.2 : (selectedId ? 0 : 1),
+                                opacity: selectedId === song.id ? 1 : (selectedId ? 0 : 1),
+                                y: [0, -20, 0]
+                            }}
+                            transition={{
+                                y: { duration: 4, repeat: Infinity, delay: song.delay, ease: "easeInOut" },
+                                default: { duration: 0.5 }
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevent slide advance
+                                handleSelect(song.id);
+                            }}
+                        >
+                            <img src={song.cover} className="w-full h-full object-cover" />
+                        </motion.button>
+                    ))}
+                </div>
+            ) : (
+                <div className="flex-1 flex flex-col items-center justify-center">
+                    <motion.div
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="text-center mb-8"
+                    >
+                        <div className="w-48 h-48 rounded-lg overflow-hidden shadow-2xl mx-auto mb-6 border-4 border-white/20">
+                            <img src={topSong.cover} className="w-full h-full object-cover" />
+                        </div>
+                        <h1 className="text-3xl font-black text-white uppercase leading-none mb-2">{topSong.title}</h1>
+                        <p className="text-white/60 font-bold">{topSong.artist}</p>
 
-function computeDnaMetrics(historyRows: HistoryRow[], songs: Song[]): DnaMetrics {
-  const safeHistory = historyRows.filter((item) => !!item.played_at);
-  const totalSongListens = Math.max(1, songs.reduce((sum, song) => sum + (song.listens || (song as any).plays || 0), 0));
-  const sortedAsc = [...safeHistory].sort((a, b) => new Date(a.played_at).getTime() - new Date(b.played_at).getTime());
+                        {selectedId === topSong.id ? (
+                            <div className="mt-4 inline-block bg-white text-[#FF2D55] font-black px-4 py-1 rounded-full uppercase tracking-widest text-sm">
+                                Correct!
+                            </div>
+                        ) : (
+                            <div className="mt-4 inline-block bg-black/20 text-white font-bold px-4 py-1 rounded-full uppercase tracking-widest text-sm">
+                                Nice try! It was this one.
+                            </div>
+                        )}
+                    </motion.div>
 
-  const lateNightPlays = safeHistory.filter((row) => {
-    const hr = new Date(row.played_at).getHours();
-    return hr >= 21 || hr <= 3;
-  }).length;
-
-  const trackSeen = new Set<string>();
-  const artistSeen = new Set<string>();
-  const trackTimeline: string[] = [];
-  let firstListenCount = 0;
-  for (const row of sortedAsc) {
-    const key = (row.track_name || row.title || '').toLowerCase();
-    if (!key) continue;
-    if (!trackSeen.has(key)) {
-      firstListenCount++;
-      trackSeen.add(key);
-    }
-    trackTimeline.push(key);
-    const guessedArtist = key.split(' - ')[0];
-    if (guessedArtist) artistSeen.add(guessedArtist);
-  }
-
-  let sessions = 0;
-  let sessionMs = 0;
-  let currentSession = 0;
-  let lastEnd = 0;
-  const sessionTracks: number[] = [];
-  for (const row of sortedAsc) {
-    const start = new Date(row.played_at).getTime();
-    const dur = row.duration_ms || 0;
-    if (!lastEnd || start - lastEnd > 25 * 60 * 1000) {
-      if (currentSession > 0) {
-        sessions++;
-        sessionMs += currentSession;
-      }
-      if (sessionTracks.length < sessions + 1) sessionTracks.push(0);
-      currentSession = dur;
-    } else {
-      currentSession += dur;
-    }
-    sessionTracks[sessionTracks.length - 1] = (sessionTracks[sessionTracks.length - 1] || 0) + 1;
-    lastEnd = start + dur;
-  }
-  if (currentSession > 0) {
-    sessions++;
-    sessionMs += currentSession;
-  }
-
-  const totalPlays = Math.max(1, safeHistory.length);
-  const dailySet = new Set(safeHistory.map((row) => new Date(row.played_at).toDateString()));
-  const topSongShare = ((songs[0]?.listens || (songs[0] as any)?.plays || 0)) / totalSongListens;
-  const avgSessionMins = (sessionMs / Math.max(1, sessions)) / 60000;
-
-  const hourBins = Array.from({ length: 24 }, () => 0);
-  for (const row of safeHistory) {
-    hourBins[new Date(row.played_at).getHours()] += 1;
-  }
-  const totalHours = hourBins.reduce((sum, n) => sum + n, 0) || 1;
-  const meanHour = hourBins.reduce((sum, count, hour) => sum + hour * count, 0) / totalHours;
-  const hourVariance = hourBins.reduce((sum, count, hour) => sum + count * Math.pow(hour - meanHour, 2), 0) / totalHours;
-
-  let consecutiveRepeats = 0;
-  for (let i = 1; i < trackTimeline.length; i++) {
-    if (trackTimeline[i] === trackTimeline[i - 1]) consecutiveRepeats++;
-  }
-
-  const nightOwl = normalizeToPercent((lateNightPlays / totalPlays) * 180);
-  const freshFinds = normalizeToPercent((firstListenCount / totalPlays) * 140);
-  const deepSessions = normalizeToPercent((avgSessionMins / 85) * 100);
-  const replayLove = normalizeToPercent(Math.pow(topSongShare, 0.82) * 230);
-  const routine = normalizeToPercent((dailySet.size / Math.max(dailySet.size + 15, 30)) * 100);
-  const artistVariety = normalizeToPercent((artistSeen.size / Math.max(1, totalPlays)) * 300);
-  const moodSwing = normalizeToPercent(Math.min(1, hourVariance / 45) * 100);
-  const skipResistance = normalizeToPercent(Math.max(0, 100 - (consecutiveRepeats / Math.max(1, totalPlays)) * 120 + (sessionTracks.length > 0 ? (sessionTracks[0] * 4) : 0)));
-
-  return {
-    nightOwl,
-    freshFinds,
-    deepSessions,
-    replayLove,
-    routine,
-    artistVariety,
-    moodSwing,
-    skipResistance,
-    notes: [
-      `${lateNightPlays} late-night plays`,
-      `${firstListenCount} first-time track moments`,
-      `${Math.round(avgSessionMins)}m avg session`,
-    ],
-    reasonSummary: `High ${nightOwl >= 70 ? 'night-owl' : 'daytime'} energy, ${artistVariety >= 65 ? 'broad variety' : 'focused favorites'}, and ${replayLove >= 70 ? 'strong replay love' : 'balanced replay behavior'}.`,
-  };
-}
-
-function pickFruitFromMetrics(metrics: DnaMetrics) {
-  const energy = (metrics.nightOwl + metrics.deepSessions) / 2;
-  const variety = metrics.artistVariety;
-  const discovery = metrics.freshFinds;
-  const userVec = [energy, variety, discovery];
-
-  return FRUIT_PROFILES
-    .map((f) => {
-      const distance = Math.sqrt(
-        Math.pow(userVec[0] - f.v[0], 2) +
-        Math.pow(userVec[1] - f.v[1], 2) +
-        Math.pow(userVec[2] - f.v[2], 2)
-      );
-      return { ...f, score: distance };
-    })
-    .sort((a, b) => a.score - b.score)[0];
-}
-
-function buildFruitDnaSequence(metrics: DnaMetrics, songs: Song[], historyRows: HistoryRow[], fruitName: string): string {
-  const vectorPart = [metrics.nightOwl, metrics.freshFinds, metrics.deepSessions, metrics.replayLove, metrics.routine, metrics.artistVariety, metrics.moodSwing, metrics.skipResistance].map((v) => Math.round(v / 2)).join('-');
-  const stableSongPart = songs.slice(0, 6).map((s) => `${s.id || s.title}:${s.listens || (s as any).plays || 0}`).join('|');
-  const stableHistoryPart = historyRows.slice(0, 50).map((row) => `${row.track_name || row.title || 'x'}@${row.played_at.slice(0, 10)}`).join('|');
-  const seedBase = `${fruitName}|${vectorPart}|${stableSongPart}|${historyRows.length}|${stableHistoryPart}`;
-  let seed = 2166136261;
-  for (let i = 0; i < seedBase.length; i++) {
-    seed ^= seedBase.charCodeAt(i);
-    seed = Math.imul(seed, 16777619);
-  }
-
-  const nucleotides = ['A', 'T', 'C', 'G'] as const;
-  const complements: Record<string, string> = { A: 'T', T: 'A', C: 'G', G: 'C' };
-  let strand = '';
-  for (let i = 0; i < 24; i++) {
-    seed = Math.imul(seed ^ (seed >>> 13), 1103515245) + 12345;
-    strand += nucleotides[Math.abs(seed) % 4];
-  }
-  const paired = strand.split('').map((base) => `${base}${complements[base]}`).join('');
-  return paired;
-}
-
-// --- Reusable Components ---
-
-const BrutalistButton: React.FC<{ onClick: () => void; children: React.ReactNode; className?: string; color?: string }> = ({ onClick, children, className, color = NB.white }) => (
-  <button
-    onClick={onClick}
-    className={`border-4 border-black shadow-[4px_4px_0_#000] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] transition-all font-barlow-condensed font-black uppercase tracking-wider px-6 py-3 text-lg cursor-pointer ${className}`}
-    style={{ backgroundColor: color, color: NB.black }}
-  >
-    {children}
-  </button>
-);
-
-const SlideHeader: React.FC<{ title: string; subtitle?: string; color?: string }> = ({ title, subtitle, color = NB.white }) => (
-  <div className="mb-6 relative z-10">
-    {subtitle && <p className="font-barlow font-bold text-xs tracking-[0.2em] text-[#888] uppercase mb-1">{subtitle}</p>}
-    <h1 className="font-barlow-condensed font-black text-5xl sm:text-6xl uppercase leading-[0.85]" style={{ color }}>
-      {title}
-    </h1>
-  </div>
-);
-
-const Ticker: React.FC<{ text: string; bg?: string; color?: string }> = ({ text, bg = NB.acidYellow, color = NB.black }) => (
-  <div className="h-10 border-t-4 border-black flex items-center overflow-hidden whitespace-nowrap shrink-0" style={{ backgroundColor: bg }}>
-    <div className="flex animate-[ticker_20s_linear_infinite]">
-      {Array.from({ length: 10 }).map((_, i) => (
-        <span key={i} className="font-barlow-condensed font-black text-xl uppercase tracking-widest px-4" style={{ color }}>
-          {text} •
-        </span>
-      ))}
-    </div>
-    <style>{`
-      @keyframes ticker {
-        from { transform: translateX(0); }
-        to { transform: translateX(-50%); }
-      }
-    `}</style>
-  </div>
-);
-
-// --- Slides ---
-
-const IntroSlide: React.FC<{ rangeLabel: string }> = ({ rangeLabel }) => (
-  <div className="flex-1 flex flex-col justify-center items-center bg-[#CCFF00] p-6 text-center border-t-4 border-b-4 border-black">
-    <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.5, type: 'spring' }}
-    >
-      <div className="inline-block bg-black text-white px-4 py-1 mb-4 font-barlow font-bold tracking-widest text-sm uppercase">
-        {rangeLabel || 'YOUR YEAR'}
-      </div>
-      <h1 className="font-barlow-condensed font-black text-[clamp(60px,18vw,120px)] leading-[0.8] text-black uppercase drop-shadow-[4px_4px_0_rgba(255,255,255,0.5)]">
-        LOTUS<br/>WRAPPED
-      </h1>
-      <p className="font-barlow font-bold text-black mt-6 text-lg tracking-widest uppercase">
-        READY TO SEE YOUR STATS?
-      </p>
-    </motion.div>
-  </div>
-);
-
-const MinutesSlide: React.FC<{ totalMinutes: number }> = ({ totalMinutes }) => (
-  <div className="flex-1 flex flex-col justify-center p-6 bg-[#0D0D0D] relative overflow-hidden">
-    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `radial-gradient(${NB.white} 1px, transparent 1px)`, backgroundSize: '20px 20px' }} />
-
-    <SlideHeader title="THE DEVOUR" subtitle="TIME SPENT LISTENING" color={NB.acidYellow} />
-
-    <div className="relative z-10 border-4 border-white p-8 bg-black shadow-[8px_8px_0_#333]">
-      <p className="font-barlow font-bold text-[#888] text-sm tracking-widest uppercase mb-2">TOTAL MINUTES</p>
-      <h2 className="font-barlow-condensed font-black text-[clamp(60px,15vw,100px)] leading-[0.85] text-white">
-        {totalMinutes.toLocaleString()}
-      </h2>
-      <div className="w-full h-1 bg-[#333] my-6 relative overflow-hidden">
-        <motion.div
-           initial={{ width: 0 }}
-           animate={{ width: '100%' }}
-           transition={{ duration: 1.5, delay: 0.5 }}
-           className="h-full bg-[#CCFF00]"
-        />
-      </div>
-      <p className="font-barlow font-bold text-white text-lg">
-        THAT'S <span style={{ color: NB.acidYellow }}>{Math.round(totalMinutes / 60)} HOURS</span> OF PURE VIBES.
-      </p>
-    </div>
-  </div>
-);
-
-const TopArtistSlide: React.FC<{ artist: Artist }> = ({ artist }) => (
-  <div className="flex-1 flex flex-col p-6 bg-[#1A6BFF] relative overflow-hidden">
-    <div className="absolute inset-0 bg-black/10 z-0" style={{ backgroundImage: `linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000)`, backgroundSize: '20px 20px', backgroundPosition: '0 0, 10px 10px', opacity: 0.1 }} />
-
-    <SlideHeader title="TOP ARTIST" subtitle="WHO CONTROLLED THE AUX" color={NB.white} />
-
-    <div className="flex-1 flex flex-col items-center justify-center relative z-10">
-      <motion.div
-        initial={{ rotate: -5, scale: 0.9, opacity: 0 }}
-        animate={{ rotate: 0, scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', duration: 0.6 }}
-        className="relative w-full max-w-[320px] aspect-[3/4] bg-white border-[6px] border-black shadow-[12px_12px_0_rgba(0,0,0,0.5)] flex flex-col"
-      >
-        <div className="flex-1 relative overflow-hidden bg-black border-b-[6px] border-black">
-          <img src={artist.image || fallbackImage} alt={artist.name} className="w-full h-full object-cover grayscale contrast-125" />
-          <div className="absolute top-4 right-4 bg-[#CCFF00] border-2 border-black px-3 py-1 font-barlow-condensed font-black text-xl text-black -rotate-6 shadow-[4px_4px_0_#000]">
-            #1
-          </div>
-        </div>
-        <div className="h-[100px] bg-white p-4 flex flex-col justify-center">
-          <h2 className="font-barlow-condensed font-black text-4xl text-black leading-[0.9] uppercase truncate">{artist.name}</h2>
-          <div className="flex justify-between items-end mt-2">
-            <p className="font-barlow font-bold text-sm text-[#555] uppercase tracking-wider">TOTAL PLAYS</p>
-            <p className="font-barlow-condensed font-black text-3xl text-black">{(artist.totalListens || (artist as any).totalPlays || 0).toLocaleString()}</p>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  </div>
-);
-
-const TopSongsSlide: React.FC<{ songs: Song[] }> = ({ songs }) => (
-  <div className="flex-1 flex flex-col p-6 bg-[#FF4D2E] relative overflow-hidden">
-    <SlideHeader title="TOP SONGS" subtitle="YOUR REPEAT OFFENDERS" color={NB.white} />
-
-    <div className="flex-1 flex flex-col gap-3 relative z-10 overflow-y-auto no-scrollbar">
-      {songs.slice(0, 5).map((song, i) => (
-        <motion.div
-          key={song.id}
-          initial={{ x: 50, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: i * 0.1 }}
-          className="flex items-center bg-black border-[3px] border-white p-3 shadow-[6px_6px_0_rgba(0,0,0,0.3)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[8px_8px_0_rgba(0,0,0,0.3)] transition-all"
-        >
-          <div className="w-10 h-10 flex items-center justify-center font-barlow-condensed font-black text-3xl text-[#CCFF00] border-r-[3px] border-[#333] mr-4 pr-4">
-            {i + 1}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-barlow-condensed font-bold text-xl text-white uppercase truncate">{song.title}</p>
-            <p className="font-barlow text-xs text-[#888] uppercase truncate">{song.artist}</p>
-          </div>
-          <div className="text-right pl-2">
-            <p className="font-barlow-condensed font-bold text-lg text-white">{song.listens || (song as any).plays || 0}</p>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  </div>
-);
-
-const FruitSlide: React.FC<{ songs: Song[]; historyRows: HistoryRow[] }> = ({ songs, historyRows }) => {
-  const metrics = useMemo(() => computeDnaMetrics(historyRows, songs), [historyRows, songs]);
-  const winningFruit = useMemo(() => pickFruitFromMetrics(metrics), [metrics]);
-  const dnaSequence = useMemo(() => buildFruitDnaSequence(metrics, songs, historyRows, winningFruit?.name || 'MANGO'), [metrics, songs, historyRows, winningFruit]);
-
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[#FF0080] text-center relative overflow-hidden">
-       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/noise-lines.png')] opacity-20" />
-
-       <motion.div
-         initial={{ scale: 0.5, opacity: 0 }}
-         animate={{ scale: 1, opacity: 1 }}
-         transition={{ type: 'spring' }}
-         className="relative z-10 bg-white border-[6px] border-black p-8 shadow-[12px_12px_0_#000] max-w-sm w-full"
-       >
-         <p className="font-barlow font-bold text-sm tracking-[0.2em] text-[#888] uppercase mb-4">IDENTITY SCAN</p>
-         <div className="w-32 h-32 mx-auto bg-black rounded-full border-4 border-black flex items-center justify-center text-6xl mb-6 shadow-[4px_4px_0_#888]">
-            {winningFruit?.emoji || '🥭'}
-         </div>
-         <h2 className="font-barlow-condensed font-black text-5xl text-black uppercase leading-none mb-2">{winningFruit?.name || 'MANGO'}</h2>
-         <p className="font-barlow font-bold text-black text-sm uppercase leading-tight">
-            {winningFruit?.vibe || 'BALANCED EXPLORER ENERGY WITH STEADY HABITS.'}
-         </p>
-         <div className="mt-6 flex flex-wrap justify-center gap-1">
-            {dnaSequence.split('').map((l, i) => (
-                <span key={i} className="w-6 h-6 flex items-center justify-center bg-black text-white font-mono text-[10px] font-bold border border-black">{l}</span>
-            ))}
-         </div>
-       </motion.div>
-    </div>
-  );
+                    {/* Stacked List */}
+                    <div className="w-full max-w-sm space-y-2">
+                        {songs.slice(0, 5).map((song, i) => (
+                            <motion.div
+                                key={song.id}
+                                initial={{ x: -20, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: i * 0.1 + 0.5 }}
+                                className={`flex items-center gap-4 p-3 rounded-xl ${i === 0 ? 'bg-white text-[#FF2D55]' : 'bg-black/20 text-white'}`}
+                            >
+                                <span className="font-black text-xl w-6 text-center">{i + 1}</span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold truncate">{song.title}</p>
+                                    <p className={`text-xs truncate ${i === 0 ? 'opacity-80' : 'opacity-50'}`}>{song.artist}</p>
+                                </div>
+                                <span className="font-bold text-sm">{song.listens || 0}</span>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </SlideContainer>
+    );
 };
 
-const SummarySlide: React.FC<{ totalMinutes: number; topArtist: Artist; topSong: Song; onClose: () => void }> = ({ totalMinutes, topArtist, topSong, onClose }) => (
-  <div className="flex-1 flex flex-col p-6 bg-[#0D0D0D] relative overflow-hidden">
-    <SlideHeader title="THE RECEIPT" subtitle="YOUR YEAR IN REVIEW" color={NB.white} />
+// --- Slide 5: Top Album (Kaleidoscope) ---
+const TopAlbumSlide = ({ album }: { album: Album }) => {
+    // 6 segments for kaleidoscope
+    const segments = [0, 60, 120, 180, 240, 300];
 
-    <div className="flex-1 bg-white border-x-[6px] border-t-[6px] border-b-[6px] border-dashed border-b-transparent border-black relative mb-8 p-6 font-mono text-sm uppercase">
-       <div className="border-b-2 border-black border-dashed pb-4 mb-4 flex justify-between">
-          <span>LOTUS WRAPPED</span>
-          <span>2026</span>
-       </div>
+    return (
+        <SlideContainer bgColor="#5E5CE6">
+            <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
+                <SlideTitle title="Top Album" subtitle="On heavy rotation" />
 
-       <div className="space-y-4">
-          <div className="flex justify-between">
-             <span className="text-[#555]">TOTAL TIME</span>
-             <span className="font-bold">{totalMinutes.toLocaleString()} MIN</span>
-          </div>
-          <div className="flex justify-between">
-             <span className="text-[#555]">TOP ARTIST</span>
-             <span className="font-bold text-right max-w-[60%]">{topArtist?.name}</span>
-          </div>
-          <div className="flex justify-between">
-             <span className="text-[#555]">TOP SONG</span>
-             <span className="font-bold text-right max-w-[60%]">{topSong?.title}</span>
-          </div>
-          <div className="flex justify-between">
-             <span className="text-[#555]">OBSESSION</span>
-             <span className="font-bold text-right max-w-[60%]">{topArtist?.name}</span>
-          </div>
-       </div>
+                {/* Kaleidoscope Container */}
+                <div className="relative w-[80vw] h-[80vw] max-w-[400px] max-h-[400px] my-8">
+                    <motion.div
+                        className="w-full h-full relative"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    >
+                        {segments.map((deg, i) => (
+                            <motion.div
+                                key={i}
+                                className="absolute w-full h-full origin-center overflow-hidden"
+                                style={{
+                                    rotate: deg,
+                                    // Clip path to make a wedge
+                                    clipPath: 'polygon(50% 50%, 100% 21.1%, 100% 78.9%)' // Hexagonal wedges roughly
+                                }}
+                            >
+                                <div
+                                    className="w-full h-full absolute inset-0"
+                                    style={{
+                                        backgroundImage: `url(${album.cover})`,
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: 'center',
+                                        transform: `rotate(-${deg}deg)` // Counter-rotate image to create pattern
+                                    }}
+                                />
+                            </motion.div>
+                        ))}
+                    </motion.div>
 
-       <div className="border-t-2 border-black border-dashed pt-4 mt-8 text-center">
-          <p className="font-bold text-2xl">THANKS FOR LISTENING</p>
-          <p className="text-xs mt-1">LOTUS STATS • GENERATED 2026</p>
-       </div>
+                    {/* Reveal overlay */}
+                    <motion.div
+                        className="absolute inset-0 z-10"
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 3, duration: 0.8, type: 'spring' }}
+                    >
+                        <img src={album.cover} className="w-full h-full object-cover rounded-full shadow-2xl border-4 border-white" />
+                    </motion.div>
+                </div>
 
-       {/* Jagged bottom edge simulation */}
-       <div className="absolute -bottom-[12px] left-0 right-0 h-[12px] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAxMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+PHBhdGggZD0iTTAgMGwxMCAxMCAxMC0xMFoiIGZpbGw9IiNmZmYiLz48L3N2Zz4=')] bg-repeat-x bg-[length:20px_10px]" />
-    </div>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 3.2 }}
+                    className="text-center z-20"
+                >
+                    <h1 className="text-3xl font-black text-white mb-1">{album.title}</h1>
+                    <p className="text-white/60 font-medium">{album.artist}</p>
+                </motion.div>
+            </div>
+        </SlideContainer>
+    );
+};
 
-    <BrutalistButton onClick={onClose} color={NB.acidYellow} className="w-full">
-      CLOSE WRAPPED
-    </BrutalistButton>
-  </div>
-);
+// --- Slide 6: Obsession Orbit ---
+// Wrapper for the complex ObsessionOrbitSlide to fit the layout
+const ObsessionSlide = ({ artists, history }: { artists: Artist[], history: any[] }) => {
+    // We compute the "Day Stats" here to pass down or overlay
+    const obsessionArtist = artists[0];
 
-// --- Main Container ---
+    const stats = useMemo(() => {
+        if (!history || !obsessionArtist) return null;
 
-export default function WrappedSlides({ onClose, totalMinutes, artists, songs, rangeLabel, historyRows }: WrappedSlidesProps) {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [direction, setDirection] = useState(1);
-  const [internalHistory, setInternalHistory] = useState<any[]>([]);
+        // Filter plays for this artist
+        const plays = history.filter((h: any) => h.artist_name === obsessionArtist.name);
+        if (plays.length === 0) return null;
 
-  useEffect(() => {
-    if (historyRows && historyRows.length > 0) return;
+        const dayCounts: Record<string, number> = {};
+        plays.forEach((p: any) => {
+            const day = new Date(p.played_at).toDateString();
+            dayCounts[day] = (dayCounts[day] || 0) + 1;
+        });
 
-    let cancelled = false;
-    fetchHeatmapData().then((data) => {
-      if (!cancelled && data) {
-        setInternalHistory(data);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [historyRows]);
+        const sortedDays = Object.entries(dayCounts).sort((a, b) => b[1] - a[1]);
+        const peakDay = sortedDays[0];
+        const lowDay = sortedDays[sortedDays.length - 1]; // Lowest non-zero
 
-  const effectiveHistory = historyRows || internalHistory;
+        return {
+            peakDay: peakDay ? { date: peakDay[0], count: peakDay[1] } : null,
+            totalPlays: plays.length
+        };
+    }, [history, obsessionArtist]);
 
-  const next = () => {
-    if (currentSlide < SLIDES.length - 1) {
-      setDirection(1);
-      setCurrentSlide(c => c + 1);
-    } else {
-        onClose();
-    }
-  };
+    return (
+        <div className="w-full h-full bg-black relative">
+            <ObsessionOrbitSlide active={true} artists={artists} history={history} />
 
-  const prev = () => {
-    if (currentSlide > 0) {
-      setDirection(-1);
-      setCurrentSlide(c => c - 1);
-    }
-  };
+            {/* Overlay Stats Card */}
+            {stats && stats.peakDay && (
+                <motion.div
+                    initial={{ y: 100, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 4 }} // Wait for orbit animation
+                    className="absolute bottom-24 left-6 right-6 bg-[#1C1C1E] border border-white/10 p-4 rounded-xl z-50 backdrop-blur-md"
+                >
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <p className="text-xs text-[#8E8E93] uppercase tracking-wider font-bold">Peak Obsession</p>
+                            <p className="text-white font-bold text-lg">{new Date(stats.peakDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-2xl font-black text-[#CCFF00]">{stats.peakDay.count}</p>
+                            <p className="text-[10px] text-white/50 uppercase">Plays that day</p>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </div>
+    );
+};
 
-  const variants = {
-    enter: (dir: number) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({ x: dir > 0 ? '-100%' : '100%', opacity: 0 }),
-  };
+// --- Slide 7: Aura (Personality) ---
+const AuraSlide = ({ history }: { history: any[] }) => {
+    // Calculate 4 metrics
+    const metrics = useMemo(() => {
+        if (!history || history.length === 0) return { mood: 50, loyalty: 50, variety: 50, focus: 50 };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-black overflow-hidden">
-      {/* Header with Close */}
-      <div className="absolute top-0 left-0 right-0 z-[110] flex justify-end p-4">
-        <button
-          onClick={onClose}
-          className="bg-white border-[3px] border-black p-1 shadow-[3px_3px_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
-        >
-          <X size={20} className="text-black" />
-        </button>
-      </div>
+        const totalPlays = history.length;
 
-      {/* Navigation Areas */}
-      <div className="absolute inset-y-0 left-0 w-1/4 z-40" onClick={prev} />
-      <div className="absolute inset-y-0 right-0 w-1/4 z-40" onClick={next} />
+        // 1. Mood (Night Owl vs Early Bird)
+        const nightPlays = history.filter((h: any) => {
+            const hr = new Date(h.played_at).getHours();
+            return hr >= 22 || hr < 5;
+        }).length;
+        const mood = Math.round((nightPlays / totalPlays) * 100);
 
-      {/* Progress Bar */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-black z-[110] flex gap-1 px-4 pt-10">
-        {SLIDES.map((_, i) => (
-          <div key={i} className="flex-1 h-1 bg-white/20 overflow-hidden">
-            <motion.div
-              initial={false}
-              animate={{ width: i < currentSlide ? '100%' : i === currentSlide ? '100%' : '0%' }}
-              transition={{ duration: i === currentSlide ? 5 : 0.3 }}
-              className="h-full bg-white"
-            />
-          </div>
-        ))}
-      </div>
+        // 2. Loyalty (Top Artist Share)
+        const artistCounts: Record<string, number> = {};
+        history.forEach((h: any) => {
+            const a = h.artist_name;
+            if (a) artistCounts[a] = (artistCounts[a] || 0) + 1;
+        });
+        const topArtistCount = Math.max(...Object.values(artistCounts));
+        const loyalty = Math.round((topArtistCount / totalPlays) * 100);
 
-      {/* Slide Content */}
-      <div className="flex-1 flex flex-col relative overflow-hidden mt-12 mb-10">
-        <AnimatePresence initial={false} custom={direction} mode="popLayout">
-          <motion.div
-            key={currentSlide}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="flex-1 flex flex-col relative w-full h-full"
-          >
-            {currentSlide === 0 && <IntroSlide rangeLabel={rangeLabel || 'YEAR'} />}
-            {currentSlide === 1 && <MinutesSlide totalMinutes={totalMinutes} />}
-            {currentSlide === 2 && <TopArtistSlide artist={artists[0]} />}
-            {currentSlide === 3 && <TopSongsSlide songs={songs} />}
-            {currentSlide === 4 && <ObsessionOrbitSlide active={currentSlide === 4} artists={artists} history={effectiveHistory} />}
-            {currentSlide === 5 && <FruitSlide songs={songs} historyRows={effectiveHistory} />}
-            {currentSlide === 6 && <SummarySlide totalMinutes={totalMinutes} topArtist={artists[0]} topSong={songs[0]} onClose={onClose} />}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+        // 3. Variety (Unique Artists / Total)
+        const uniqueArtists = Object.keys(artistCounts).length;
+        const variety = Math.min(100, Math.round((uniqueArtists / totalPlays) * 200)); // Boosted
 
-      {/* Ticker at Bottom */}
-      <Ticker text="LOTUS WRAPPED 2026 • YOUR YEAR IN MUSIC • LOTUS STATS" />
-    </div>
-  );
+        // 4. Focus (Avg Session Length - Estimated)
+        // Simple proxy: Consecutive plays of same artist
+        let consecutive = 0;
+        for(let i=1; i<history.length; i++) {
+            if (history[i].artist_name === history[i-1].artist_name) consecutive++;
+        }
+        const focus = Math.round((consecutive / totalPlays) * 100);
+
+        return { mood, loyalty, variety, focus };
+    }, [history]);
+
+    // Determine Aura Color based on dominant metric
+    const auraColor = useMemo(() => {
+        const { mood, loyalty, variety, focus } = metrics;
+        if (mood > 30) return '#5E5CE6'; // Indigo (Night)
+        if (loyalty > 20) return '#FF2D55'; // Pink (Love)
+        if (variety > 40) return '#30D158'; // Green (Discovery)
+        if (focus > 30) return '#FF9F0A'; // Orange (Focus)
+        return '#0A84FF'; // Blue (Default)
+    }, [metrics]);
+
+    const auraName = useMemo(() => {
+        const { mood, loyalty, variety, focus } = metrics;
+        if (mood > 30) return 'The Night Owl';
+        if (loyalty > 20) return 'The Superfan';
+        if (variety > 40) return 'The Explorer';
+        if (focus > 30) return 'The Zone Runner';
+        return 'The Main Character';
+    }, [metrics]);
+
+    return (
+        <SlideContainer bgColor="#000">
+            <div className="flex-1 flex flex-col items-center justify-center relative">
+                <SlideTitle title="Your Aura" subtitle="The vibe check" />
+
+                <div className="relative w-64 h-64 flex items-center justify-center mb-8">
+                    {/* Pulsing Aura Orb */}
+                    <motion.div
+                        className="absolute w-full h-full rounded-full blur-[60px] opacity-60 mix-blend-screen"
+                        style={{ backgroundColor: auraColor }}
+                        animate={{ scale: [1, 1.5, 1], rotate: [0, 90, 0] }}
+                        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div
+                        className="absolute w-3/4 h-3/4 rounded-full blur-[40px] opacity-80 mix-blend-screen"
+                        style={{ backgroundColor: '#fff' }}
+                        animate={{ scale: [0.8, 1.2, 0.8] }}
+                        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                    />
+
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 1 }}
+                        className="relative z-10 text-center"
+                    >
+                        <h2 className="text-3xl font-black text-white uppercase tracking-tight shadow-xl">{auraName}</h2>
+                    </motion.div>
+                </div>
+
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
+                    {Object.entries(metrics).map(([key, value], i) => (
+                        <motion.div
+                            key={key}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 2 + i * 0.2 }}
+                            className="bg-white/10 p-4 rounded-xl border border-white/10"
+                        >
+                            <p className="text-xs uppercase text-white/50 font-bold mb-1">{key}</p>
+                            <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                                <motion.div
+                                    className="h-full bg-white"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${value}%` }}
+                                    transition={{ delay: 2.5 + i * 0.2, duration: 1 }}
+                                />
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+        </SlideContainer>
+    );
+};
+
+// --- Slide 8: New Artists (Grid) ---
+const NewArtistsSlide = ({ history }: { history: any[] }) => {
+    // Find "New" artists (first played in last 20% of history?)
+    // Or just random selection of artists for visual grid if we lack strict discovery data
+    const artists = useMemo(() => {
+        if (!history) return [];
+        // Extract unique artist/covers
+        const map = new Map();
+        history.forEach(h => {
+            if (h.artist_name && h.album_cover && !map.has(h.artist_name)) {
+                map.set(h.artist_name, h.album_cover);
+            }
+        });
+        return Array.from(map.entries()).slice(0, 9).map(([name, img]) => ({ name, img }));
+    }, [history]);
+
+    return (
+        <SlideContainer bgColor="#30D158">
+            <div className="flex-1 flex flex-col items-center justify-center">
+                <SlideTitle title="Discovery" subtitle="Fresh noise you found" />
+
+                <div className="grid grid-cols-3 gap-3 w-full max-w-sm aspect-square my-6">
+                    {artists.map((a, i) => (
+                        <motion.div
+                            key={a.name}
+                            className="relative rounded-lg overflow-hidden bg-black/20"
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: i * 0.1, type: "spring" }}
+                        >
+                            <img src={a.img} className="w-full h-full object-cover" />
+                        </motion.div>
+                    ))}
+                </div>
+
+                <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.5 }}
+                    className="text-white text-xl font-bold text-center max-w-xs"
+                >
+                    You explored {artists.length * 12}+ new artists this year.
+                </motion.p>
+            </div>
+        </SlideContainer>
+    );
+};
+
+// --- Slide 9: Peak Vibe (Analysis) ---
+const AnalysisSlide = ({ history }: { history: any[] }) => {
+    // Calculate Peak Time
+    const peakHour = useMemo(() => {
+        if (!history) return { time: '12 PM', label: 'Day' };
+        const hours = new Array(24).fill(0);
+        history.forEach(h => hours[new Date(h.played_at).getHours()]++);
+        const max = Math.max(...hours);
+        const hour = hours.indexOf(max);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const display = `${hour % 12 || 12} ${ampm}`;
+        let label = 'Morning';
+        if (hour >= 12) label = 'Afternoon';
+        if (hour >= 17) label = 'Evening';
+        if (hour >= 22 || hour < 5) label = 'Late Night';
+        return { time: display, label };
+    }, [history]);
+
+    return (
+        <SlideContainer bgColor="#FF9F0A">
+            <div className="flex-1 flex flex-col items-center justify-center">
+                <SlideTitle title="Peak Vibe" subtitle="When you tuned in" />
+
+                <div className="relative w-64 h-64 flex items-center justify-center my-8">
+                    {/* Clock Visual */}
+                    <motion.div
+                        className="absolute inset-0 border-4 border-white/30 rounded-full"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+                    >
+                        <div className="absolute top-0 left-1/2 -ml-1 w-2 h-4 bg-white" />
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring" }}
+                        className="text-center"
+                    >
+                        <h1 className="text-6xl font-black text-white">{peakHour.time}</h1>
+                        <p className="text-xl font-bold text-white/60 uppercase tracking-widest mt-2">{peakHour.label}</p>
+                    </motion.div>
+                </div>
+
+                <p className="text-white/80 font-medium text-center max-w-xs">
+                    Your music hit different at {peakHour.time}.
+                </p>
+            </div>
+        </SlideContainer>
+    );
+};
+
+// --- Slide 10: Summary (Share Card) ---
+const SummarySlide = ({ totalMinutes, topArtist, topSong }: { totalMinutes: number, topArtist: Artist, topSong: Song }) => {
+    return (
+        <SlideContainer bgColor="#1C1C1E" bgImage={topArtist.image}>
+            <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                <div className="w-full max-w-sm bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl flex flex-col gap-6 text-center transform hover:scale-105 transition-transform duration-500">
+                    <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                        <span className="font-bold text-white/50 text-xs uppercase tracking-widest">Lotus Wrapped</span>
+                        <span className="font-bold text-white text-xs">2024</span>
+                    </div>
+
+                    <div className="space-y-1">
+                        <p className="text-xs uppercase text-white/50 font-bold">Top Artist</p>
+                        <h2 className="text-3xl font-black text-white leading-none">{topArtist.name}</h2>
+                    </div>
+
+                    <div className="space-y-1">
+                        <p className="text-xs uppercase text-white/50 font-bold">Top Song</p>
+                        <h2 className="text-2xl font-bold text-white leading-none">{topSong.title}</h2>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                        <div>
+                            <p className="text-xs uppercase text-white/50 font-bold">Minutes</p>
+                            <p className="text-2xl font-black text-[#CCFF00]">{totalMinutes.toLocaleString()}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs uppercase text-white/50 font-bold">Vibe</p>
+                            <p className="text-2xl font-black text-[#CCFF00]">Immaculate</p>
+                        </div>
+                    </div>
+
+                    <div className="pt-4">
+                        <img src={topArtist.image} className="w-full h-32 object-cover rounded-xl opacity-80 grayscale mix-blend-luminosity" />
+                    </div>
+                </div>
+
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="mt-8 bg-white text-black font-bold py-3 px-8 rounded-full uppercase tracking-widest shadow-xl"
+                >
+                    Share
+                </motion.button>
+            </div>
+        </SlideContainer>
+    );
+};
+
+// --- Main Component ---
+
+export default function WrappedSlides({
+    onClose,
+    totalMinutes,
+    artists,
+    albums,
+    songs,
+    rangeLabel,
+    historyRows
+}: WrappedSlidesProps) {
+    const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+    const [direction, setDirection] = useState(1);
+
+    const goToNext = () => {
+        if (currentSlideIndex < SLIDES.length - 1) {
+            setDirection(1);
+            setCurrentSlideIndex(prev => prev + 1);
+        } else {
+            onClose();
+        }
+    };
+
+    const goToPrev = () => {
+        if (currentSlideIndex > 0) {
+            setDirection(-1);
+            setCurrentSlideIndex(prev => prev - 1);
+        }
+    };
+
+    // Auto-advance logic could go here, but usually wrapped is manual tap
+    // Let's implement tap zones
+
+    const CurrentSlideComponent = useMemo(() => {
+        switch (SLIDES[currentSlideIndex]) {
+            case 'INTRO': return <IntroSlide rangeLabel={rangeLabel || '2024'} />;
+            case 'MINUTES': return <MinutesSlide minutes={totalMinutes} />;
+            case 'TOP_ARTIST': return <TopArtistSlide topArtist={artists[0]} allArtists={artists} />;
+            case 'TOP_SONGS': return <TopSongsSlide songs={songs} />;
+            case 'TOP_ALBUM': return <TopAlbumSlide album={albums[0]} />;
+            case 'OBSESSION': return <ObsessionSlide artists={artists} history={historyRows || []} />;
+            case 'AURA': return <AuraSlide history={historyRows || []} />;
+            case 'NEW_ARTISTS': return <NewArtistsSlide history={historyRows || []} />;
+            case 'TOP_GENRES': return <AnalysisSlide history={historyRows || []} />;
+            case 'SUMMARY': return <SummarySlide totalMinutes={totalMinutes} topArtist={artists[0]} topSong={songs[0]} />;
+            default: return null;
+        }
+    }, [currentSlideIndex, totalMinutes, artists, albums, songs, rangeLabel, historyRows]);
+
+    return (
+        <div className="fixed inset-0 z-[100] bg-black text-white font-sans">
+            {/* Progress Bar */}
+            <div className="absolute top-0 left-0 right-0 z-50 flex gap-1 p-2 safe-area-top">
+                {SLIDES.map((_, i) => (
+                    <div key={i} className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
+                        <motion.div
+                            className="h-full bg-white"
+                            initial={{ width: i < currentSlideIndex ? "100%" : "0%" }}
+                            animate={{ width: i < currentSlideIndex ? "100%" : i === currentSlideIndex ? "100%" : "0%" }}
+                            transition={{ duration: i === currentSlideIndex ? 10 : 0.3 }} // 10s auto-advance simulation
+                        />
+                    </div>
+                ))}
+            </div>
+
+            {/* Close Button */}
+            <button
+                onClick={onClose}
+                className="absolute top-6 right-4 z-50 p-2 text-white/50 hover:text-white"
+            >
+                <X size={24} />
+            </button>
+
+            {/* Slide Area */}
+            <div className="relative w-full h-full" onClick={(e) => {
+                const width = window.innerWidth;
+                const x = e.clientX;
+                if (x < width / 3) goToPrev();
+                else goToNext();
+            }}>
+                <AnimatePresence mode="wait" custom={direction}>
+                    <motion.div
+                        key={currentSlideIndex}
+                        custom={direction}
+                        initial={{ opacity: 0, x: direction > 0 ? 100 : -100 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }} // Subtle scale down exit
+                        transition={{ duration: 0.4, ease: "circOut" }}
+                        className="w-full h-full"
+                    >
+                        {CurrentSlideComponent}
+                    </motion.div>
+                </AnimatePresence>
+            </div>
+        </div>
+    );
 }
