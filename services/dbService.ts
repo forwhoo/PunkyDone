@@ -65,28 +65,25 @@ export const logSinglePlay = async (track: any, listenedMs: number, extraData: a
     // Log if at least 30 seconds (Spotify standard)
     if (!track || listenedMs < 30000) return;
 
-    // Cap duration
-    const duration = track.duration_ms ? Math.min(listenedMs, track.duration_ms) : listenedMs;
-
     const historyItem: HistoryItem = {
         spotify_id: track.id,
         played_at: new Date().toISOString(),
         track_name: track.name,
-        artist_name: track.artists[0].name,
-        album_name: track.album.name,
-        album_cover: track.album.images[0]?.url || '',
-        duration_ms: listenedMs,
+        artist_name: track.artists?.[0]?.name || 'Unknown',
+        album_name: track.album?.name || '',
+        album_cover: track.album?.images?.[0]?.url || '',
+        duration_ms: track.duration_ms ? Math.min(listenedMs, track.duration_ms) : listenedMs,
         user_timezone: extraData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
     };
 
-    const { error } = await supabase
-        .from('listening_history')
-        .insert(historyItem);
-
-    if (error) {
-        console.error("Failed to log play:", error);
-    } else {
-        // console.log("Logged play:", track.name, listenedMs);
+    // Retry up to 3 times on transient failures
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        const { error } = await supabase
+            .from('listening_history')
+            .upsert(historyItem, { onConflict: 'spotify_id,played_at', ignoreDuplicates: true });
+        if (!error) return;
+        if (attempt < 3) await new Promise(r => setTimeout(r, attempt * 500));
+        else console.error('[logSinglePlay] Failed after 3 attempts:', error);
     }
 };
 
@@ -121,15 +118,15 @@ export const syncRecentPlays = async (recentItems: any[], token?: string) => {
         spotify_id: item.track.id,
         played_at: item.played_at,
         track_name: item.track.name,
-        artist_name: item.track.artists[0].name,
-        album_name: item.track.album.name,
-        album_cover: item.track.album.images[0]?.url || '',
+        artist_name: item.track.artists?.[0]?.name || 'Unknown',
+        album_name: item.track.album?.name || '',
+        album_cover: item.track.album?.images?.[0]?.url || '',
         duration_ms: item.track.duration_ms
     }));
 
     const { error } = await supabase
         .from('listening_history')
-        .upsert(historyItems, { onConflict: 'played_at' });
+        .upsert(historyItems, { onConflict: 'spotify_id,played_at', ignoreDuplicates: true });
 
     if (error) {
         console.error('Error syncing history:', error);

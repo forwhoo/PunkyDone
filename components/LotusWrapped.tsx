@@ -15,9 +15,7 @@ interface LotusWrappedProps {
   artists?: Artist[];
   albums?: Album[];
   songs?: Song[];
-  connectionGraph?: { artistInfo: Record<string, any>; pairs: Record<string, Record<string, number>> };
 }
-
 // --- Configuration ---
 const LAYER_COUNT = 7;
 const ITEMS_PER_LAYER = [15, 13, 11, 9, 7, 6, 4];
@@ -78,7 +76,7 @@ function getWeekRange(): string {
   return `${fmt(monday)} – ${fmt(sunday)}, ${now.getFullYear()}`;
 }
 
-const LotusWrapped: React.FC<LotusWrappedProps> = ({ onClose, albumCovers, totalMinutes, weeklyMinutes, rangeLabel, rangeStart, rangeEnd, artists = [], albums = [], songs = [], connectionGraph }) => {
+const LotusWrapped: React.FC<LotusWrappedProps> = ({ onClose, albumCovers, totalMinutes, weeklyMinutes, rangeLabel, rangeStart, rangeEnd, artists = [], albums = [], songs = [] }) => {
   const [story, setStory] = useState<'intro' | 'slides' | 'done'>('intro');
   const [vortex, setVortex] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
@@ -156,7 +154,6 @@ const LotusWrapped: React.FC<LotusWrappedProps> = ({ onClose, albumCovers, total
         albums={albums}
         songs={songs}
         albumCovers={albumCovers}
-        connectionGraph={connectionGraph}
         onClose={handleSlidesComplete}
       />
     );
