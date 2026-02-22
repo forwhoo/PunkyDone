@@ -368,6 +368,16 @@ function App() {
       setTimeout(() => setIsRefreshing(false), 1000);
   };
 
+  const handleConnect = async () => {
+      setConnecting(true);
+      try {
+          await redirectToAuthCodeFlow();
+      } catch (e) {
+          logger.error("Auth redirect failed", e);
+          setConnecting(false);
+      }
+  };
+
   const wrappedRange = useMemo(() => {
     const now = new Date();
     const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -624,6 +634,7 @@ function App() {
   const safeAlbums = (dbUnifiedData?.albums?.length > 0) ? dbUnifiedData.albums : (data?.albums || []);
   const safeSongs = (dbUnifiedData?.songs?.length > 0) ? dbUnifiedData.songs : (data?.songs || []);
   const safeRecent = dbUnifiedData?.recentPlays || data?.recentRaw || [];
+  const hasDbData = safeArtists.length > 0 || safeSongs.length > 0 || safeAlbums.length > 0;
   const showEmptyState = !loading && dbUnifiedData && !hasDbData;
 
   const selectedArtistStats = useMemo(() => {
