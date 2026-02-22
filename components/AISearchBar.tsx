@@ -120,7 +120,7 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                                     <div className="w-8 h-8 rounded-lg bg-[#FA2D48]/10 flex items-center justify-center">
                                         <MessageSquare className="w-4 h-4 text-[#FA2D48]" />
                                     </div>
-                                    <h2 className="text-base font-bold text-white tracking-tight">Chat with Punky</h2>
+                                    <h2 className="text-base font-bold text-white tracking-tight">Chat with Lotus</h2>
                                 </div>
                                 <button
                                     onClick={handleClose}

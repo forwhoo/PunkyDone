@@ -12,7 +12,7 @@ import { UpcomingArtists } from './components/UpcomingArtists';
 import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ChartSkeleton } from './components/LoadingSkeleton';
-import PunkyWrapped from './components/PunkyWrapped';
+import LotusWrapped from './components/LotusWrapped';
 import BrutalistDashboard from './components/BrutalistDashboard';
 
 // Extract dominant color from an image URL using canvas sampling
@@ -609,7 +609,7 @@ function App() {
         document.getElementsByTagName('head')[0].appendChild(link);
         
         // Also update title incase it wasn't
-        document.title = "Punky | Your Music DNA";
+        document.title = "Lotus | Your Music DNA";
     }
   }, [data]);
 
@@ -727,7 +727,7 @@ function App() {
                       <Music className="w-10 h-10 text-black" strokeWidth={2.5} />
                   </div>
                   
-                  <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-3 text-white">Punky Stats</h1>
+                  <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-3 text-white">Lotus Stats</h1>
                   <p className="text-[#8E8E93] text-base max-w-sm leading-relaxed mb-10 font-medium">
                       Your music story. Real-time charts, AI insights, and your personalized journey.
                   </p>
@@ -839,7 +839,7 @@ function App() {
                     }}
                 />
                 
-                {/* Mobile Punky Wrapped Button */}
+                {/* Mobile Lotus Wrapped Button */}
                 <button
                     onClick={() => setShowWrappedMessage(true)}
                     className="w-full rounded-2xl p-6 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all relative overflow-hidden"
@@ -850,7 +850,7 @@ function App() {
                     <div className="absolute inset-0 bg-black/60 z-[1]" />
                     <div className="flex items-center justify-between relative z-10">
                         <div className="text-left">
-                            <h3 className="text-[17px] font-bold text-white tracking-tight">Punky Wrapped</h3>
+                            <h3 className="text-[17px] font-bold text-white tracking-tight">Lotus Wrapped</h3>
                             <p className="text-[13px] text-white/60 font-medium">View your story</p>
                         </div>
                         <ChevronRight className="w-5 h-5 text-white/60 flex-shrink-0" />
@@ -1077,7 +1077,7 @@ function App() {
                 />
             </div>
             
-            {/* Desktop Punky Wrapped Button */}
+            {/* Desktop Lotus Wrapped Button */}
             <div className="mb-16 flex gap-3">
                 <button
                     onClick={() => setShowWrappedMessage(true)}
@@ -1089,7 +1089,7 @@ function App() {
                     <div className="absolute inset-0 bg-black/60 z-[1]" />
                     <div className="flex items-center justify-between relative z-10">
                         <div className="text-left">
-                            <h3 className="text-[15px] font-bold text-white tracking-tight">Punky Wrapped</h3>
+                            <h3 className="text-[15px] font-bold text-white tracking-tight">Lotus Wrapped</h3>
                             <p className="text-[12px] text-white/60 font-medium">View your story</p>
                         </div>
                         <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors flex-shrink-0" />
@@ -1923,9 +1923,9 @@ function App() {
             </>
         )}
 
-        {/* Punky Wrapped Title Screen */}
+        {/* Lotus Wrapped Title Screen */}
         {showWrappedMessage && (
-            <PunkyWrapped
+            <LotusWrapped
                 onClose={() => setShowWrappedMessage(false)}
                 albumCovers={[...new Set([
                     ...safeAlbums.map((a: Album) => a.cover),

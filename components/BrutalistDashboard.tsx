@@ -324,7 +324,7 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
         </button>
       </div>
 
-      <BrutTicker text="PUNKY STATS  •  YOUR MUSIC DNA  •  KEEP LISTENING" bg={NB.acidYellow} color={NB.black} />
+      <BrutTicker text="LOTUS STATS  •  YOUR MUSIC DNA  •  KEEP LISTENING" bg={NB.acidYellow} color={NB.black} />
     </div>
   );
 };
