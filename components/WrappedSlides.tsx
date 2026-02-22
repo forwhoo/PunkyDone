@@ -15,7 +15,7 @@ const NB = {
   white: '#FFFFFF',
   black: '#000000',
 };
-const TOTAL_SLIDES = 18;
+const TOTAL_SLIDES = 15;
 const LEFT_TAP_ZONE = 0.3;
 
 interface WrappedSlidesProps {
@@ -159,22 +159,39 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
 
   const covers = useMemo(() => {
     const arr = albumCovers.length ? albumCovers : albums.map(a => a.cover).filter(Boolean) as string[];
-    return arr.slice(0, 60);
+    // Increase covers for a denser effect
+    return [...arr, ...arr, ...arr].slice(0, 90);
   }, [albumCovers, albums]);
 
-  const orbitItems = useMemo(() => covers.slice(0, 42).map((src, i, arr) => {
-    const angle = (360 / arr.length) * i;
-    const radius = 38 + ((i % 5) * 5);
-    return { src, angle, radius, delay: (i % 10) * 0.08 };
-  }), [covers]);
+  // Create 3 layers of orbiting items
+  const orbitLayers = useMemo(() => {
+    return [
+      { count: 12, radius: 25, speed: 20, direction: 1, size: 40 },
+      { count: 18, radius: 45, speed: 35, direction: -1, size: 56 },
+      { count: 24, radius: 70, speed: 50, direction: 1, size: 32 },
+    ].map((layer, layerIdx) => {
+      const layerCovers = covers.slice(layerIdx * 20, (layerIdx + 1) * 20);
+      return layerCovers.map((src, i) => ({
+        src,
+        angle: (360 / layer.count) * i,
+        radius: layer.radius,
+        speed: layer.speed,
+        direction: layer.direction,
+        size: layer.size,
+        delay: i * 0.05,
+        layerIndex: layerIdx
+      }));
+    }).flat();
+  }, [covers]);
 
   useEffect(() => {
     timers.current.forEach(clearTimeout);
     timers.current = [];
     if (!active) { setPhase(0); return; }
     setPhase(0);
-    timers.current.push(setTimeout(() => setPhase(1), 800));
-    timers.current.push(setTimeout(() => setPhase(2), 2500));
+    // Faster sequence
+    timers.current.push(setTimeout(() => setPhase(1), 600));
+    timers.current.push(setTimeout(() => setPhase(2), 2200));
     return () => timers.current.forEach(clearTimeout);
   }, [active]);
 
@@ -182,69 +199,138 @@ const Slide0: React.FC<{ active: boolean; totalMinutes: number; albumCovers: str
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
       <style>{`
         @keyframes holePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
-        @keyframes holeRing { from{transform:scale(0.4);opacity:0.9} to{transform:scale(3.2);opacity:0} }
-        @keyframes floatOrbit { 0%,100%{transform:translate(0,0)} 25%{transform:translate(5px,-8px)} 50%{transform:translate(-4px,3px)} 75%{transform:translate(3px,7px)} }
+        @keyframes holeRing { from{transform:scale(0.4);opacity:0.9} to{transform:scale(3.5);opacity:0} }
+        @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes glitchText { 0%{transform:translate(0)} 20%{transform:translate(-2px,2px)} 40%{transform:translate(-2px,-2px)} 60%{transform:translate(2px,2px)} 80%{transform:translate(2px,-2px)} 100%{transform:translate(0)} }
       `}</style>
+
+      {/* Background Gradient */}
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, #222 0%, #000 80%)', opacity: 0.8 }} />
+
+      {/* Orbiting Layers */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-        {orbitItems.map((item, i) => {
-          const base = `translate(-50%, -50%) rotate(${item.angle}deg) translate(calc(min(${item.radius}vw, ${item.radius}vh))) rotate(${-item.angle}deg)`;
-          const suck = `translate(-50%, -50%) scale(0.05) rotate(${item.angle * 5}deg)`;
+        {orbitLayers.map((item, i) => {
+          // Calculate individual rotation based on time (simulated via animation)
+          const orbitAnim = `orbitSpin ${item.speed}s linear infinite`;
+          const direction = item.direction === 1 ? 'normal' : 'reverse';
+
+          // Phase 1: Suck into black hole
+          // We use CSS transitions for the transform property
+          const baseTransform = `translate(-50%, -50%) rotate(${item.angle}deg) translate(calc(min(${item.radius}vw, ${item.radius}vh))) rotate(${-item.angle}deg)`;
+          const suckTransform = `translate(-50%, -50%) scale(0) rotate(${item.angle * 3}deg)`;
+
           return (
             <div key={i} style={{
-              width: 46,
-              height: 46,
               position: 'absolute',
               left: '50%',
               top: '50%',
-              transform: phase >= 1 ? suck : base,
-              filter: phase >= 1 ? 'blur(1px)' : 'blur(0px)',
-              opacity: phase >= 1 ? 0.5 : 1,
-              transition: `transform 900ms cubic-bezier(0.55,0,1,0.45) ${item.delay}s, opacity 700ms ease ${item.delay}s, filter 700ms ease ${item.delay}s`,
+              width: item.size,
+              height: item.size,
+              transform: phase >= 1 ? suckTransform : `rotate(${item.angle}deg) translate(calc(min(${item.radius}vw, ${item.radius}vh)))`, // Simplified for cleaner rotation
+              // Actually, to make them orbit, we need a container that rotates or individual keyframes.
+              // Let's use a simpler approach: Place them, and animate the container or use keyframes.
+              // Reverting to the previous approach but with layers.
             }}>
-              <div style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                border: '2px solid white',
-                background: item.src ? 'transparent' : palette[i % palette.length],
-                overflow: 'hidden',
-                animation: phase === 0 ? `floatOrbit ${2.5 + (i % 4) * 0.6}s ease-in-out ${(i * 0.18) % 1.8}s infinite` : 'none',
-              }}>
-                {item.src && <img src={item.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
-              </div>
+               <div style={{
+                 position: 'absolute',
+                 inset: 0,
+                 animation: phase === 0 ? orbitAnim : 'none',
+                 animationDirection: direction,
+                 transformOrigin: `calc(50% - min(${item.radius}vw, ${item.radius}vh) * ${Math.cos(item.angle * Math.PI / 180)}) calc(50% - min(${item.radius}vw, ${item.radius}vh) * ${Math.sin(item.angle * Math.PI / 180)})`, // This is getting complex mathematically for CSS
+                 // Alternative: Just use the previous technique but with multiple layers
+               }} />
             </div>
           );
         })}
+
+        {/* Simplified Orbit Implementation */}
+        {[0, 1, 2].map(layerIdx => {
+           const layerItems = orbitLayers.filter(x => x.layerIndex === layerIdx);
+           const direction = layerIdx % 2 === 0 ? 1 : -1;
+           const speed = 40 + layerIdx * 10;
+
+           return (
+             <div key={layerIdx} style={{
+               position: 'absolute', inset: 0,
+               animation: phase === 0 ? `orbitSpin ${speed}s linear infinite` : 'none',
+               animationDirection: direction === 1 ? 'normal' : 'reverse',
+               transition: 'transform 1s ease-in',
+               transform: phase >= 1 ? 'scale(0) rotate(720deg)' : 'scale(1)',
+               opacity: phase >= 1 ? 0 : 1,
+             }}>
+               {layerItems.map((item, k) => (
+                 <div key={k} style={{
+                   position: 'absolute',
+                   left: '50%',
+                   top: '50%',
+                   width: item.size,
+                   height: item.size,
+                   transform: `rotate(${item.angle}deg) translate(min(${item.radius}vw, ${item.radius}vh)) rotate(${-item.angle}deg)`,
+                 }}>
+                    <div style={{
+                      width: '100%', height: '100%', borderRadius: '50%',
+                      border: '2px solid rgba(255,255,255,0.8)',
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                      background: item.src ? '#000' : palette[k % palette.length],
+                    }}>
+                      {item.src && <img src={item.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
+                    </div>
+                 </div>
+               ))}
+             </div>
+           );
+        })}
       </div>
+
+      {/* Black Hole Transition */}
       {phase >= 1 && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', border: `2px solid ${NB.white}`, position: 'absolute', animation: 'holeRing 1s ease-out infinite' }} />
-          <div style={{ width: 48, height: 48, borderRadius: '50%', border: `2px solid ${NB.white}`, position: 'absolute', animation: 'holeRing 1.2s ease-out infinite 0.25s' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', border: `2px solid ${NB.white}`, position: 'absolute', animation: 'holeRing 0.8s ease-out infinite' }} />
+          <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${NB.white}`, position: 'absolute', animation: 'holeRing 1.2s ease-out infinite 0.3s' }} />
           <div style={{
-            width: 40, height: 40, borderRadius: '50%', background: NB.black,
-            border: '4px solid white',
-            transform: phase >= 1 ? 'scale(30)' : 'scale(0)',
-            transition: 'transform 1.8s cubic-bezier(0.16,1,0.3,1)',
-            animation: 'holePulse 1.4s ease-in-out infinite',
+            width: 50, height: 50, borderRadius: '50%', background: NB.black,
+            border: `6px solid ${NB.white}`,
+            transform: phase >= 1 ? 'scale(40)' : 'scale(0)',
+            transition: 'transform 1.5s cubic-bezier(0.7, 0, 0.3, 1)', // Aggressive zoom
+            boxShadow: '0 0 100px rgba(0,0,0,1)',
           }} />
         </div>
       )}
+
+      {/* Content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '60px 24px 24px', position: 'relative', zIndex: 20 }}>
         <div style={{ overflow: 'hidden', marginBottom: 0 }}>
-          <div style={{ transform: phase >= 2 ? 'translateY(0)' : 'translateY(110%)', transition: 'transform 400ms cubic-bezier(0.16,1,0.3,1)' }}>
-            <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '0 0 8px 0', textAlign: 'center' }}>{rangeLabel || 'THE DEVOUR'}</p>
-            <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(80px, 22vw, 120px)', color: NB.acidYellow, lineHeight: 0.9, textTransform: 'uppercase', margin: 0, textAlign: 'center' }}>
+          <div style={{ transform: phase >= 2 ? 'translateY(0)' : 'translateY(110%)', transition: 'transform 500ms cubic-bezier(0.2, 1.2, 0.2, 1)' }}>
+            <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, letterSpacing: '0.3em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', margin: '0 0 12px 0', textAlign: 'center', fontWeight: 700 }}>{rangeLabel || 'THE DEVOUR'}</p>
+            <h1 style={{
+              fontFamily: "'Barlow Condensed', 'Impact', sans-serif",
+              fontWeight: 900,
+              fontSize: 'clamp(80px, 20vw, 140px)',
+              color: NB.acidYellow,
+              lineHeight: 0.85,
+              textTransform: 'uppercase',
+              margin: 0,
+              textAlign: 'center',
+              textShadow: '4px 4px 0px #000',
+              animation: phase >= 2 ? 'glitchText 2.5s infinite' : 'none',
+            }}>
               {counted.toLocaleString()}
             </h1>
-            <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 700, fontSize: 'clamp(32px, 8vw, 48px)', color: NB.white, textTransform: 'uppercase', margin: '8px 0 24px 0', textAlign: 'center', letterSpacing: '0.1em' }}>MINUTES</p>
+            <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 700, fontSize: 'clamp(32px, 8vw, 48px)', color: NB.white, textTransform: 'uppercase', margin: '12px 0 32px 0', textAlign: 'center', letterSpacing: '0.15em', textShadow: '2px 2px 0 #000' }}>MINUTES LISTENED</p>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: 320, transform: phase >= 2 ? 'translateY(0)' : 'translateY(30px)', opacity: phase >= 2 ? 1 : 0, transition: 'all 400ms ease 200ms' }}>
-          {[{ label: 'HOURS', value: hours.toLocaleString() }, { label: 'DAYS', value: days }].map(s => (
-            <div key={s.label} style={{ flex: 1, background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '5px 5px 0px #000', padding: '12px 16px', borderRadius: 0 }}>
-              <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, margin: '0 0 4px 0' }}>{s.label}</p>
-              <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 28, color: NB.black, margin: 0 }}>{s.value}</p>
-            </div>
+
+        <div style={{ display: 'flex', gap: 16, width: '100%', maxWidth: 360, transform: phase >= 2 ? 'translateY(0)' : 'translateY(40px)', opacity: phase >= 2 ? 1 : 0, transition: 'all 500ms ease 300ms' }}>
+          {[{ label: 'HOURS', value: hours.toLocaleString() }, { label: 'DAYS', value: days }].map((s, i) => (
+            <motion.div
+              key={s.label}
+              whileHover={{ scale: 1.05, rotate: i % 2 === 0 ? -2 : 2 }}
+              style={{ flex: 1, background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '6px 6px 0px #000', padding: '16px 20px', borderRadius: 0 }}
+            >
+              <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, margin: '0 0 6px 0', fontWeight: 700 }}>{s.label}</p>
+              <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 32, color: NB.black, margin: 0, lineHeight: 1 }}>{s.value}</p>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -296,71 +382,105 @@ const Slide1: React.FC<{ active: boolean; artists: Artist[]; rangeLabel?: string
       <style>{`
         @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 40%{transform:translateX(10px)} 60%{transform:translateX(-10px)} 80%{transform:translateX(10px)} }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes flashBg { 0% { background-color: ${NB.electricBlue}; } 50% { background-color: ${NB.white}; } 100% { background-color: ${NB.acidYellow}; } }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 60% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
       `}</style>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 16 }}>
-        {!guessed && (
-          <>
-            <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(28px, 7vw, 48px)', color: NB.white, textTransform: 'uppercase', margin: '0 0 8px 0', lineHeight: 1 }}>
-              WHO WAS YOUR #1 ARTIST {rangeLabel ? rangeLabel.toUpperCase() : 'THIS YEAR'}?
-            </h2>
-            <div style={{ display: 'inline-flex', alignItems: 'center', background: NB.acidYellow, border: `4px solid ${NB.black}`, padding: '6px 12px', animation: 'blink 1s step-end infinite', marginBottom: 8, alignSelf: 'flex-start', borderRadius: 0 }}>
-              <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, letterSpacing: '0.1em', textTransform: 'uppercase', color: NB.black }}>TAP TO GUESS</span>
-            </div>
-          </>
-        )}
+
+      {guessed && <div style={{ position: 'absolute', inset: 0, animation: 'flashBg 0.5s ease forwards', zIndex: 0 }} />}
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 16, position: 'relative', zIndex: 1 }}>
+        <AnimatePresence>
+          {!guessed && (
+            <motion.div exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+              <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(28px, 7vw, 48px)', color: NB.white, textTransform: 'uppercase', margin: '0 0 8px 0', lineHeight: 1 }}>
+                WHO WAS YOUR #1 ARTIST {rangeLabel ? rangeLabel.toUpperCase() : 'THIS YEAR'}?
+              </h2>
+              <div style={{ display: 'inline-flex', alignItems: 'center', background: NB.acidYellow, border: `4px solid ${NB.black}`, padding: '6px 12px', animation: 'blink 1s step-end infinite', marginBottom: 8, alignSelf: 'flex-start', borderRadius: 0 }}>
+                <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, letterSpacing: '0.1em', textTransform: 'uppercase', color: NB.black }}>TAP TO GUESS</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {guessed && (
-          <div>
-            <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(28px, 7vw, 48px)', color: NB.white, textTransform: 'uppercase', margin: '0 0 4px 0' }}>
-              {firstTryWrong ? 'TOOK YOU A MOMENT\u2026' : 'YOU KNEW.'}
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", bounce: 0.5 }}>
+            <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(36px, 9vw, 56px)', color: NB.black, textTransform: 'uppercase', margin: '0 0 4px 0', textShadow: '2px 2px 0 #fff' }}>
+              {firstTryWrong ? 'TOOK YOU A MOMENT\u2026' : 'YOU KNEW IT.'}
             </h2>
-          </div>
+          </motion.div>
         )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {shuffled.map((artist, i) => {
             const isWrong = wrongIds.includes(artist.id);
             const isSelected = selectedId === artist.id;
             const isCorrect = artist.id === correctId;
-            if (isWrong && guessed) return null;
+
+            // If guessed, hide non-selected ones unless we want to show them faded out.
+            // The request says "redesign slides make it har the artist/album images".
+            // Let's make the winner huge.
+            if (guessed && !isCorrect) return null;
+
             return (
               <motion.div
                 key={artist.id}
+                layout
                 initial={{ x: 120, opacity: 0 }}
-                animate={{ x: isWrong && !guessed ? -500 : 0, opacity: isWrong && !guessed ? 0 : 1 }}
-                transition={{ delay: stagger(i, 0.1, 0.1), duration: 0.3, ease: 'easeOut' }}
+                animate={{
+                  x: isWrong && !guessed ? -500 : 0,
+                  opacity: isWrong && !guessed ? 0 : 1,
+                  scale: guessed && isCorrect ? 1.1 : 1,
+                }}
+                transition={{ delay: stagger(i, 0.1, 0.1), duration: 0.4, type: 'spring' }}
                 onClick={(e) => { e.stopPropagation(); handleGuess(artist.id); }}
                 style={{
                   background: NB.white,
                   border: `4px solid ${isSelected && isCorrect ? NB.acidYellow : isWrong ? '#FF0000' : NB.black}`,
-                  boxShadow: '5px 5px 0px #000',
+                  boxShadow: guessed && isCorrect ? '8px 8px 0px #000' : '5px 5px 0px #000',
                   cursor: 'pointer',
                   overflow: 'hidden',
                   borderRadius: 0,
                   animation: shaking === artist.id ? 'shake 400ms ease' : undefined,
-                  transform: isSelected && isCorrect && guessed ? 'scale(1.04)' : 'scale(1)',
-                  transition: 'transform 300ms ease',
+                  transformOrigin: 'center',
                 }}
               >
-                <div style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 56, height: 56, background: palette[i % palette.length], border: `3px solid ${NB.black}`, overflow: 'hidden', flexShrink: 0 }}>
+                <div style={{ padding: '10px 12px', display: 'flex', flexDirection: guessed && isCorrect ? 'column' : 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: guessed && isCorrect ? '100%' : 56,
+                    height: guessed && isCorrect ? 240 : 56,
+                    background: palette[i % palette.length],
+                    border: `3px solid ${NB.black}`,
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                    transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                  }}>
                     {artist.image && (
                       <img src={artist.image} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.currentTarget.style.display = 'none'); }} />
                     )}
                   </div>
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 22, textTransform: 'uppercase', color: NB.black, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{artist.name}</span>
-                  {isWrong && <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: '#FF0000' }}>\u2715</span>}
-                  {isSelected && isCorrect && guessed && <span style={{ background: NB.black, color: NB.acidYellow, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 12, padding: '4px 8px', letterSpacing: '0.1em' }}>\u2736 LEGEND STATUS</span>}
-                </div>
-                {isSelected && isCorrect && guessed && (
-                  <div style={{ padding: '0 14px 10px' }}>
-                    <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: NB.black, margin: 0 }}>{artist.totalListens.toLocaleString()} plays this {rangeLabel ? rangeLabel.toLowerCase() : 'year'}</p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: guessed && isCorrect ? 32 : 22, textTransform: 'uppercase', color: NB.black, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{artist.name}</span>
+                      {isWrong && <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: '#FF0000' }}>\u2715</span>}
+                      {isSelected && isCorrect && guessed && <span style={{ background: NB.black, color: NB.acidYellow, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, padding: '4px 10px', letterSpacing: '0.1em' }}>#1 ARTIST</span>}
+                    </div>
+
+                    {isSelected && isCorrect && guessed && (
+                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+                        <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 16, fontWeight: 700, color: NB.black, margin: 0 }}>
+                          {artist.totalListens.toLocaleString()} plays this {rangeLabel ? rangeLabel.toLowerCase() : 'year'}
+                        </p>
+                      </motion.div>
+                    )}
                   </div>
-                )}
+                </div>
               </motion.div>
             );
           })}
         </div>
       </div>
-      <Ticker text="THE SHOWDOWN  WHO'S YOUR #1" bg={NB.nearBlack} color={NB.white} />
+      <Ticker text={guessed ? `WINNER: ${artists[0]?.name?.toUpperCase()}  •  TOP ARTIST  •  NUMBER ONE` : "THE SHOWDOWN  WHO'S YOUR #1"} bg={guessed ? NB.acidYellow : NB.nearBlack} color={guessed ? NB.black : NB.white} />
     </div>
   );
 };
@@ -417,7 +537,7 @@ const Slide2: React.FC<{ active: boolean; artists: Artist[]; rangeLabel?: string
           </h1>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
           {positions.map((item, rank) => {
             const barW = `${Math.round(item.share * 100)}%`;
             const isLeader = rank === 0;
@@ -427,7 +547,7 @@ const Slide2: React.FC<{ active: boolean; artists: Artist[]; rangeLabel?: string
                 key={item.artist.id}
                 layout
                 transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-                style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10 }}
               >
                 <span style={{
                   fontFamily: "'Barlow Condensed', 'Impact', sans-serif",
@@ -436,6 +556,16 @@ const Slide2: React.FC<{ active: boolean; artists: Artist[]; rangeLabel?: string
                 }}>
                   {rank + 1}
                 </span>
+
+                {/* Artist Avatar */}
+                <div style={{ width: 42, height: 42, flexShrink: 0, borderRadius: '50%', border: `2px solid ${color}`, overflow: 'hidden', background: '#222' }}>
+                  {item.artist.image ? (
+                    <img src={item.artist.image} alt={item.artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+                  ) : (
+                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: NB.white, fontWeight: 900 }}>{item.artist.name.charAt(0)}</div>
+                  )}
+                </div>
+
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{
@@ -450,11 +580,11 @@ const Slide2: React.FC<{ active: boolean; artists: Artist[]; rangeLabel?: string
                         fontFamily: "'Barlow', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.6)',
                         fontWeight: 700,
                       }}>
-                        {item.artist.totalListens.toLocaleString()} plays
+                        {item.artist.totalListens.toLocaleString()}
                       </span>
                     )}
                   </div>
-                  <div style={{ height: 24, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden', position: 'relative' }}>
+                  <div style={{ height: 20, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden', position: 'relative' }}>
                     <div style={{
                       height: '100%',
                       width: barW,
@@ -485,7 +615,7 @@ const Slide2: React.FC<{ active: boolean; artists: Artist[]; rangeLabel?: string
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            style={{ background: NB.acidYellow, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 16px', marginTop: 4 }}
+            style={{ background: NB.acidYellow, border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '12px 16px', marginTop: 'auto' }}
           >
             <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 22, color: NB.black, textTransform: 'uppercase' }}>
               🏆 {positions[0].artist.name} WINS!
@@ -557,7 +687,18 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.coral, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 16 }}>
+      <style>{`
+        @keyframes sunburst { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      `}</style>
+
+      {revealed && (
+         <div style={{ position: 'absolute', top: '50%', left: '50%', width: '200vw', height: '200vw', transform: 'translate(-50%, -50%)', zIndex: 0, opacity: 0.15 }}>
+           <div style={{ width: '100%', height: '100%', background: `conic-gradient(from 0deg, ${NB.white} 0deg 20deg, transparent 20deg 40deg)`, backgroundSize: '100% 100%', animation: 'sunburst 20s linear infinite', borderRadius: '50%' }} />
+           <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, background: `conic-gradient(from 180deg, ${NB.white} 0deg 20deg, transparent 20deg 40deg)`, animation: 'sunburst 20s linear infinite reverse', borderRadius: '50%' }} />
+         </div>
+      )}
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 20px', gap: 16, position: 'relative', zIndex: 1 }}>
         <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(32px, 8vw, 56px)', color: NB.white, textTransform: 'uppercase', margin: '0 0 8px 0', lineHeight: 1 }}>
           WHICH WAS YOUR #1 ALBUM?
         </h1>
@@ -567,36 +708,75 @@ const Slide3: React.FC<{ active: boolean; albums: Album[] }> = ({ active, albums
             {revealed ? verdict : `${timer}s`}
           </span>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+
+        {/* Album Cards Container */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: revealed ? '1fr' : 'repeat(3, 1fr)',
+          gap: 10,
+          transition: 'all 0.5s ease'
+        }}>
           {topThree.map((album, i) => {
             const isCorrect = i === 0;
             const isSelected = selected === i;
             const borderColor = revealed ? (isCorrect ? NB.acidYellow : isSelected ? '#FF0000' : NB.black) : NB.black;
             const borderWidth = revealed && isCorrect ? 6 : 4;
             const flip = revealed && isCorrect;
+
+            // If revealed, hide losers to focus on winner
+            if (revealed && !isCorrect) return null;
+
             return (
-              <div key={album.id} onClick={(e) => { e.stopPropagation(); handlePick(i); }} style={{ flex: 1, cursor: 'pointer', perspective: 900, minWidth: 0 }}>
-                <div style={{ position: 'relative', transformStyle: 'preserve-3d', transition: 'transform 650ms ease', transform: flip ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
-                  <div style={{ border: `${borderWidth}px solid ${borderColor}`, position: 'relative', overflow: 'hidden', boxShadow: '3px 3px 0 #000', borderRadius: 0, backfaceVisibility: 'hidden' }}>
+              <motion.div
+                key={album.id}
+                layout
+                onClick={(e) => { e.stopPropagation(); handlePick(i); }}
+                style={{ cursor: 'pointer', perspective: 1000, minWidth: 0, width: '100%' }}
+                animate={{ scale: revealed && isCorrect ? 1.05 : 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div style={{ position: 'relative', transformStyle: 'preserve-3d', transition: 'transform 800ms cubic-bezier(0.175, 0.885, 0.32, 1.275)', transform: flip ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
+                  {/* Front of Card */}
+                  <div style={{ border: `${borderWidth}px solid ${borderColor}`, position: 'relative', overflow: 'hidden', boxShadow: '5px 5px 0 #000', borderRadius: 0, backfaceVisibility: 'hidden', background: NB.white }}>
                     <div style={{ aspectRatio: '1 / 1', background: palette[i], position: 'relative' }}>
                       {album.cover && <img src={album.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />}
                     </div>
                     <div style={{ padding: '8px 8px', background: NB.white }}>
-                      <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: NB.black, margin: '0 0 2px 0', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{album.title}</p>
+                      <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: revealed ? 24 : 14, color: NB.black, margin: '0 0 2px 0', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{album.title}</p>
+                      {revealed && <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#333', margin: 0 }}>{album.artist}</p>}
                     </div>
                   </div>
-                  <div style={{ position: 'absolute', inset: 0, border: `4px solid ${NB.black}`, background: NB.acidYellow, padding: 10, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', boxShadow: '3px 3px 0 #000', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 11, color: NB.black, fontWeight: 700 }}>AI FUN FACT</p>
-                    <p style={{ margin: '6px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 16, lineHeight: 1.1, color: NB.black }}>{funFact || 'Generating your fun fact...'}</p>
-                    <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 10, color: '#333' }}>{album.totalListens} plays</p>
+
+                  {/* Back of Card (AI Fun Fact) */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    border: `6px solid ${NB.black}`,
+                    background: NB.acidYellow,
+                    padding: 16,
+                    transform: 'rotateY(180deg)',
+                    backfaceVisibility: 'hidden',
+                    boxShadow: '5px 5px 0 #000',
+                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
+                  }}>
+                    <div>
+                      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                         <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12, color: NB.black, fontWeight: 700, letterSpacing: '0.1em' }}>AI FUN FACT</p>
+                         <span style={{ fontSize: 20 }}>🤖</span>
+                      </div>
+                      <div style={{ width: '100%', height: 2, background: NB.black, margin: '8px 0' }} />
+                      <p style={{ margin: '6px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 'clamp(18px, 4vw, 24px)', lineHeight: 1.1, color: NB.black }}>
+                         {funFact || 'Analyzing audio data...'}
+                      </p>
+                    </div>
+                    <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333', fontWeight: 700, alignSelf: 'flex-end' }}>{album.totalListens.toLocaleString()} PLAYS</p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
       </div>
-      <Ticker text="THE VAULT GUESS  PICK YOUR TOP ALBUM" bg={NB.nearBlack} color={NB.white} />
+      <Ticker text={revealed ? "THE VAULT  •  UNLOCKED  •  TOP ALBUM REVEALED" : "THE VAULT GUESS  PICK YOUR TOP ALBUM"} bg={NB.nearBlack} color={NB.white} />
     </div>
   );
 };
@@ -982,34 +1162,60 @@ const Slide5: React.FC<{ active: boolean }> = ({ active }) => {
         <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(32px, 8vw, 52px)', color: NB.white, textTransform: 'uppercase', margin: 0 }}>YOUR LISTENING STORY</h2>
         <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)', margin: 0 }}>REAL PLAYTIME SPLIT FROM YOUR HISTORY</p>
 
+        {/* Hero Card */}
         <BCard style={{ marginTop: 2, background: 'rgba(255,255,255,0.96)' }}>
-          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#333' }}>Narrative Snapshot</p>
-          <p style={{ margin: '4px 0 2px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 28, lineHeight: 1, color: NB.black }}>{timeInsights.winner.icon} {timeInsights.winner.label} owns your week</p>
-          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#444' }}>{timeInsights.winnerGap}% more playtime than {timeInsights.runnerUp.label.toLowerCase()} — {timeInsights.winner.story.toLowerCase()}.</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ fontSize: 42 }}>{timeInsights.winner.icon}</div>
+            <div>
+              <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#333' }}>Narrative Snapshot</p>
+              <p style={{ margin: '2px 0 0 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 24, lineHeight: 1, color: NB.black }}>{timeInsights.winner.label} IS YOUR PRIME TIME</p>
+            </div>
+          </div>
+          <div style={{ marginTop: 12, width: '100%', height: 6, background: '#eee', borderRadius: 3 }}>
+             <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 1 }} style={{ height: '100%', background: NB.black, borderRadius: 3 }} />
+          </div>
+          <p style={{ margin: '8px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#444', lineHeight: 1.4 }}>
+            You played {timeInsights.winnerGap}% more music during the {timeInsights.winner.label.toLowerCase()} than {timeInsights.runnerUp.label.toLowerCase()}. {timeInsights.winner.story}.
+          </p>
         </BCard>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Vertical Time Blocks */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, justifyContent: 'center' }}>
           {timeInsights.totals.map((bucket, i) => {
             const pct = Math.round((bucket.ms / timeInsights.totalMs) * 100);
             return (
-              <motion.div key={bucket.label} initial={{ opacity: 0, x: -18 }} animate={{ opacity: active ? 1 : 0.5, x: active ? 0 : -18 }} transition={{ delay: i * 0.1 }} style={{ background: 'rgba(255,255,255,0.96)', border: `4px solid ${NB.black}`, boxShadow: '4px 4px 0 #000', padding: '10px 10px 12px 10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-                  <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, color: NB.black }}>{bucket.icon} {bucket.label}</p>
-                  <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 30, color: NB.black, lineHeight: 1 }}>{pct}%</p>
-                </div>
-                <div style={{ height: 16, background: '#d9d9d9', border: `2px solid ${NB.black}`, overflow: 'hidden' }}>
-                  <motion.div initial={{ width: 0 }} animate={{ width: active ? `${pct}%` : 0 }} transition={{ duration: 0.65, delay: 0.1 + i * 0.1, ease: [0.34, 1.56, 0.64, 1] }} style={{ height: '100%', background: bucket.color }} />
-                </div>
-                <p style={{ margin: '6px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 11, color: 'rgba(0,0,0,0.8)' }}>{bucket.plays} plays • {bucket.story}</p>
+              <motion.div
+                key={bucket.label}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: active ? 1 : 0.5, x: active ? 0 : -20 }}
+                transition={{ delay: i * 0.1 }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '8px 12px',
+                  background: 'rgba(0,0,0,0.2)',
+                  borderLeft: `4px solid ${bucket.color}`,
+                  borderRadius: 4
+                }}
+              >
+                 <div style={{ width: 24, fontSize: 20, textAlign: 'center' }}>{bucket.icon}</div>
+                 <div style={{ flex: 1 }}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                     <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, color: NB.white }}>{bucket.label}</p>
+                     <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, color: NB.white }}>{pct}%</p>
+                   </div>
+                   <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3, marginTop: 4, overflow: 'hidden' }}>
+                     <motion.div
+                       initial={{ width: 0 }}
+                       animate={{ width: active ? `${pct}%` : 0 }}
+                       transition={{ duration: 0.8, delay: 0.2 + i * 0.1 }}
+                       style={{ height: '100%', background: bucket.color, borderRadius: 3 }}
+                     />
+                   </div>
+                 </div>
               </motion.div>
             );
           })}
         </div>
-
-        <BCard style={{ marginTop: 4 }}>
-          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#333' }}>PEAK WINDOW</p>
-          <p style={{ margin: '2px 0 0 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 30, color: NB.black }}>{timeInsights.winner.label}</p>
-        </BCard>
       </div>
       <Ticker text="TIME MACHINE  LISTENING WINDOWS  DAYPART ENERGY" bg={NB.nearBlack} color={NB.acidYellow} />
     </div>
@@ -1022,7 +1228,7 @@ const Slide6: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
   const total = top5.reduce((s, a) => s + a.totalListens, 0) || 1;
   const topShare = (top5[0]?.totalListens || 0) / total;
   const verdict = topShare > 0.35 ? 'RIDE OR DIE ENERGY' : 'WIDE TASTE ENERGY';
-  const artistPalette = [NB.electricBlue, NB.coral, NB.magenta, NB.acidYellow, '#888888'];
+  const artistPalette = [NB.electricBlue, NB.coral, NB.magenta, NB.acidYellow, '#FFFFFF'];
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.acidYellow, position: 'relative', overflow: 'hidden' }}>
@@ -1034,25 +1240,36 @@ const Slide6: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, arti
           {top5.map((artist, i) => {
             const pct = Math.round((artist.totalListens / total) * 100);
             return (
-              <div key={artist.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.black, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{artist.name}</span>
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.black }}>{pct}%</span>
+              <div key={artist.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {/* Artist Avatar */}
+                <div style={{ width: 44, height: 44, borderRadius: '50%', border: `2px solid ${NB.black}`, overflow: 'hidden', flexShrink: 0, background: '#222' }}>
+                  {artist.image ? (
+                    <img src={artist.image} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: NB.white, fontWeight: 900 }}>{artist.name.charAt(0)}</div>
+                  )}
                 </div>
-                <div style={{ height: 22, background: 'rgba(0,0,0,0.15)', border: `2px solid ${NB.black}`, overflow: 'hidden' }}>
-                  <motion.div
-                    initial={{ width: '0%' }}
-                    animate={{ width: active ? `${pct}%` : '0%' }}
-                    transition={{ duration: 0.8, delay: i * 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
-                    style={{ height: '100%', background: artistPalette[i], borderRight: `2px solid ${NB.black}` }}
-                  />
+
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.black, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{artist.name}</span>
+                    <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.black }}>{pct}%</span>
+                  </div>
+                  <div style={{ height: 22, background: 'rgba(0,0,0,0.1)', border: `2px solid ${NB.black}`, overflow: 'hidden' }}>
+                    <motion.div
+                      initial={{ width: '0%' }}
+                      animate={{ width: active ? `${pct}%` : '0%' }}
+                      transition={{ duration: 0.8, delay: i * 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
+                      style={{ height: '100%', background: artistPalette[i], borderRight: `2px solid ${NB.black}` }}
+                    />
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
 
-        <BCard>
+        <BCard style={{ marginTop: 'auto' }}>
           <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 26, color: NB.black, textTransform: 'uppercase' }}>{verdict}</p>
           {top5[0] && <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>🏆 {top5[0].name} dominates your top 5 with {Math.round(topShare * 100)}%</p>}
         </BCard>
@@ -1133,19 +1350,20 @@ const Slide7: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = 
       col++;
       setWaveCol(col);
       if (col >= weeks && intervalRef.current) clearInterval(intervalRef.current);
-    }, 35);
+    }, 25); // Faster wave
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [active, dataLoaded]);
 
   const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   const monthStartWeeks = [0,4,8,13,17,21,26,30,34,39,43,47];
 
-  const getCellColor = (val: number, revealed: boolean) => {
-    if (!revealed) return '#1a1a1a';
-    if (val < 0.15) return '#1a1a1a';
-    if (val < 0.4) return NB.acidYellow + '33';
-    if (val < 0.7) return NB.acidYellow + '99';
-    return NB.acidYellow;
+  const getCellColor = (val: number, revealed: boolean, inStreak: boolean) => {
+    if (!revealed) return '#111';
+    if (inStreak) return NB.acidYellow; // Streak is always bright
+    if (val < 0.1) return '#222';
+    if (val < 0.4) return '#444';
+    if (val < 0.7) return '#888';
+    return '#ccc';
   };
 
   const isStreak = (w: number, d: number) => {
@@ -1155,6 +1373,9 @@ const Slide7: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = 
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
+      <style>{`
+        @keyframes firePulse { 0%,100%{box-shadow: 0 0 5px ${NB.acidYellow}; transform: scale(1);} 50%{box-shadow: 0 0 15px orange; transform: scale(1.1);} }
+      `}</style>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 12px 12px', gap: 8 }}>
         <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '0 0 4px 0' }}>THE STREAK</p>
         <div style={{ display: 'flex', gap: 0, marginBottom: 2 }}>
@@ -1178,26 +1399,44 @@ const Slide7: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = 
                 return (
                   <div key={d} style={{
                     aspectRatio: '1',
-                    background: getCellColor(val, revealed),
-                    border: inStreak && revealed ? `1px solid ${NB.white}` : '1px solid #333',
+                    background: getCellColor(val, revealed, inStreak),
+                    borderRadius: 1,
                     transition: 'background 80ms ease',
+                    boxShadow: inStreak && revealed ? `0 0 4px ${NB.acidYellow}` : 'none',
+                    zIndex: inStreak ? 1 : 0
                   }} />
                 );
               })}
             </div>
           ))}
         </div>
+
         {waveCol >= weeks - 1 && (
-          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', marginTop: 8 }}>
-            <div>
-              <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '0 0 4px 0' }}>YOUR LONGEST STREAK</p>
-              <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(48px, 12vw, 72px)', color: NB.acidYellow, margin: 0, lineHeight: 1 }}>{STREAK_LEN}</p>
-              <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: 0, letterSpacing: '0.1em', textTransform: 'uppercase' }}>DAYS</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', damping: 20 }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 'auto', marginBottom: 20, gap: 10 }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <motion.div
+                style={{ fontSize: 60 }}
+                animate={{ rotate: [0, 5, -5, 0], scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+              >
+                🔥
+              </motion.div>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', margin: 0 }}>LONGEST STREAK</p>
+                <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 96, color: NB.acidYellow, margin: 0, lineHeight: 0.85, textShadow: `4px 4px 0 ${NB.black}` }}>{STREAK_LEN}</p>
+                <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 14, color: NB.white, margin: 0, letterSpacing: '0.1em', textTransform: 'uppercase' }}>CONSECUTIVE DAYS</p>
+              </div>
             </div>
-            <div style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '5px 5px 0 #000', padding: '10px 14px', flex: 1, borderRadius: 0 }}>
-              <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.black, textTransform: 'uppercase', margin: 0 }}>CONSISTENCY IS YOUR SUPERPOWER</p>
+
+            <div style={{ background: NB.white, border: `4px solid ${NB.black}`, boxShadow: '5px 5px 0 #000', padding: '12px 20px', borderRadius: 0, marginTop: 12 }}>
+              <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: NB.black, textTransform: 'uppercase', margin: 0 }}>CONSISTENCY IS YOUR SUPERPOWER</p>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
       <Ticker text="THE STREAK  DAYS OF LISTENING" bg={NB.acidYellow} color={NB.black} />
@@ -1233,66 +1472,66 @@ const Slide8: React.FC<{ active: boolean; songs: Song[]; rangeLabel?: string }> 
       <style>{`
         @keyframes needleDrop { 0%{transform:rotate(-35deg) translateY(-10px);opacity:0.5} 100%{transform:rotate(0deg) translateY(0);opacity:1} }
         @keyframes vinylSpin8 { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes albumPop { 0% { transform: translateY(100px) scale(0.8); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
       `}</style>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 20px 20px', gap: 14 }}>
+
+      {/* Background Ambience */}
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.2, backgroundImage: `url(${firstSong?.cover || ''})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(30px)' }} />
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 20px 20px', gap: 14, position: 'relative', zIndex: 1 }}>
         <div>
-          <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px 0' }}>YOUR {(rangeLabel || 'YEAR').toUpperCase()} STARTED WITH...</p>
+          <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', margin: '0 0 8px 0' }}>YOUR {(rangeLabel || 'YEAR').toUpperCase()} STARTED WITH...</p>
           <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(36px, 9vw, 60px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>YOUR FIRST PLAY</h1>
         </div>
 
         {/* Phase 1: Vinyl / record player */}
         {phase >= 1 && (
-          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} style={{ display: 'flex', justifyContent: 'center', position: 'relative', height: 160 }}>
-            <div style={{ width: 160, height: 160, borderRadius: '50%', background: '#111', border: `4px solid ${NB.black}`, position: 'relative', animation: phase >= 2 ? 'vinylSpin8 5s linear infinite' : 'none' }}>
-              <img src={firstSong?.cover || fallbackImage} alt="" style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', border: `3px solid ${NB.white}` }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-              <div style={{ width: 12, height: 12, background: NB.acidYellow, border: `2px solid ${NB.black}`, borderRadius: '50%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 2 }} />
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} style={{ display: 'flex', justifyContent: 'center', position: 'relative', height: 220 }}>
+            <div style={{ width: 220, height: 220, borderRadius: '50%', background: '#111', border: `6px solid ${NB.black}`, position: 'relative', animation: phase >= 2 ? 'vinylSpin8 5s linear infinite' : 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+              {/* Vinyl grooves */}
+              <div style={{ position: 'absolute', inset: 10, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }} />
+              <div style={{ position: 'absolute', inset: 25, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }} />
+              <div style={{ position: 'absolute', inset: 40, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }} />
+
+              <img src={firstSong?.cover || fallbackImage} alt="" style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', border: `3px solid ${NB.white}` }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+              <div style={{ width: 16, height: 16, background: NB.acidYellow, border: `2px solid ${NB.black}`, borderRadius: '50%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 2 }} />
             </div>
             {/* Needle */}
-            <div style={{ position: 'absolute', right: 'calc(50% - 100px)', top: 0, width: 4, height: 72, background: NB.white, transformOrigin: 'top right', animationName: 'needleDrop', animationDuration: '0.6s', animationTimingFunction: 'ease-out', animationFillMode: 'forwards', borderRadius: 2 }} />
+            <div style={{ position: 'absolute', right: 'calc(50% - 130px)', top: -20, width: 6, height: 120, background: '#ccc', transformOrigin: 'top center', animationName: 'needleDrop', animationDuration: '0.8s', animationTimingFunction: 'ease-out', animationFillMode: 'forwards', borderRadius: 3, border: `1px solid ${NB.black}` }} />
           </motion.div>
         )}
 
         {/* Phase 2: Song card flies in from bottom */}
-        {firstSong && (
-          <div style={{
-            background: NB.black, border: `4px solid ${NB.black}`, position: 'relative', borderRadius: 0,
-            transform: phase >= 2 ? 'translateY(0)' : 'translateY(120%)',
-            opacity: phase >= 2 ? 1 : 0,
-            transition: 'transform 400ms cubic-bezier(0.16,1,0.3,1), opacity 300ms ease',
-            overflow: 'hidden',
-          }}>
-            {firstSong.cover && (
-              <div style={{ height: 130, background: '#222', borderBottom: `4px solid ${NB.black}` }}>
-                <img src={firstSong.cover} alt={firstSong.album} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-              </div>
-            )}
-            <div style={{ padding: '14px 20px 12px' }}>
-              <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.coral, margin: '0 0 6px 0' }}>JAN 1, 2024</p>
-              <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(24px, 6vw, 38px)', color: NB.white, textTransform: 'uppercase', margin: '0 0 4px 0', lineHeight: 1 }}>{firstSong.title}</h2>
-              <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: 0 }}>{firstSong.artist}</p>
+        {firstSong && phase >= 2 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0, rotateX: 20 }}
+            animate={{ y: 0, opacity: 1, rotateX: 0 }}
+            transition={{ type: 'spring', damping: 15 }}
+            style={{
+              background: NB.white, border: `4px solid ${NB.black}`,
+              boxShadow: '8px 8px 0 #000',
+              padding: '16px 20px',
+              display: 'flex', flexDirection: 'column', gap: 6
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.coral, margin: 0 }}>JAN 1, 2024</p>
+              <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: NB.black, margin: 0 }}>00:01 AM</p>
             </div>
-          </div>
+            <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(24px, 6vw, 38px)', color: NB.black, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>{firstSong.title}</h2>
+            <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#444', margin: 0, fontWeight: 700 }}>{firstSong.artist}</p>
+          </motion.div>
         )}
 
         {/* Phase 3: REWIND button */}
         {phase >= 3 && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} style={{ alignSelf: 'center', marginTop: 12 }}>
             <button
               onClick={(e) => { e.stopPropagation(); triggerAnimation(); }}
               style={{ background: NB.acidYellow, border: `3px solid ${NB.black}`, boxShadow: '3px 3px 0 #000', padding: '10px 24px', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, cursor: 'pointer', textTransform: 'uppercase', borderRadius: 0 }}
             >
               ↺ REWIND
             </button>
-          </motion.div>
-        )}
-
-        {/* Phase 4: "THIS IS WHERE IT ALL BEGAN" */}
-        {phase >= 4 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <div style={{ borderTop: `2px solid rgba(255,255,255,0.2)`, paddingTop: 12 }}>
-              <p style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: NB.acidYellow, textTransform: 'uppercase', margin: '0 0 4px 0' }}>THIS IS WHERE IT ALL BEGAN</p>
-              {firstSong && <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.7)', margin: 0 }}>{firstSong.listens.toLocaleString()} plays this {rangeLabel ? rangeLabel.toLowerCase() : 'year'}</p>}
-            </div>
           </motion.div>
         )}
       </div>
@@ -1304,7 +1543,6 @@ const Slide8: React.FC<{ active: boolean; songs: Song[]; rangeLabel?: string }> 
 // SLIDE 9: OBSESSION ORBIT (Story Mode)
 const Slide9: React.FC<{ active: boolean; artists: Artist[]; songs: Song[]; rangeLabel?: string }> = ({ active, artists, rangeLabel }) => {
   const topArtist = artists[0];
-  const runner = artists[1];
   const [chapter, setChapter] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -1313,126 +1551,99 @@ const Slide9: React.FC<{ active: boolean; artists: Artist[]; songs: Song[]; rang
     timerRef.current = [];
     if (!active) { setChapter(0); return; }
     setChapter(0);
-    timerRef.current.push(setTimeout(() => setChapter(1), 800));
-    timerRef.current.push(setTimeout(() => setChapter(2), 2200));
-    timerRef.current.push(setTimeout(() => setChapter(3), 3800));
+    timerRef.current.push(setTimeout(() => setChapter(1), 600));
+    timerRef.current.push(setTimeout(() => setChapter(2), 2000));
+    timerRef.current.push(setTimeout(() => setChapter(3), 3500));
     return () => timerRef.current.forEach(clearTimeout);
   }, [active]);
 
   const orbitScore = Math.min(250, 80 + Math.round((topArtist?.totalListens || 0) / 3));
-  const chapters = [
-    {
-      title: 'CHAPTER 1: THE DISCOVERY',
-      body: `You found ${topArtist?.name || 'your top artist'} and couldn't stop.`,
-      icon: '🔍',
-      bg: NB.electricBlue,
-    },
-    {
-      title: 'CHAPTER 2: THE OBSESSION',
-      body: `${topArtist?.totalListens || 0} plays later — they were comfort, noise, everything.`,
-      icon: '🔁',
-      bg: NB.coral,
-    },
-    {
-      title: 'CHAPTER 3: ORBIT LOCKED',
-      body: `Orbit score: ${orbitScore}/250. You were gravitationally locked.`,
-      icon: '🪐',
-      bg: NB.magenta,
-    },
-  ];
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
       <style>{`
-        @keyframes orbitPulse { 0%,100%{box-shadow:0 0 0 0 rgba(204,255,0,0)} 50%{box-shadow:0 0 0 12px rgba(204,255,0,0.12)} }
-        @keyframes starFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        @keyframes orbitPulse { 0%,100%{box-shadow:0 0 0 0 rgba(204,255,0,0)} 50%{box-shadow:0 0 0 20px rgba(204,255,0,0.12)} }
+        @keyframes planetOrbit { from { transform: rotate(0deg) translateX(120px) rotate(0deg); } to { transform: rotate(360deg) translateX(120px) rotate(-360deg); } }
       `}</style>
-      {[...Array(8)].map((_, i) => (
+
+      {/* Background Starfield */}
+      {[...Array(20)].map((_, i) => (
         <div key={i} style={{
           position: 'absolute',
-          width: 3 + (i % 3),
-          height: 3 + (i % 3),
+          width: Math.random() * 3 + 1,
+          height: Math.random() * 3 + 1,
           borderRadius: '50%',
-          background: i % 3 === 0 ? NB.acidYellow : i % 3 === 1 ? NB.electricBlue : NB.white,
-          top: `${10 + (i * 11) % 80}%`,
-          left: `${5 + (i * 13) % 90}%`,
-          opacity: 0.4,
-          animation: `starFloat ${2 + i * 0.4}s ease-in-out ${i * 0.3}s infinite`,
+          background: 'white',
+          top: `${Math.random() * 100}%`,
+          left: `${Math.random() * 100}%`,
+          opacity: Math.random() * 0.5 + 0.2,
         }} />
       ))}
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 14 }}>
-        <div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 14, alignItems: 'center', zIndex: 1, position: 'relative' }}>
+        <div style={{ width: '100%', textAlign: 'center' }}>
           <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '0 0 4px 0' }}>
             {rangeLabel ? rangeLabel.toUpperCase() : 'YOUR'} STORY
           </p>
           <h2 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(36px, 9vw, 56px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>
-            OBSESSION<br/>ORBIT
+            OBSESSION ORBIT
           </h2>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 4 }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: '50%',
-            border: `4px solid ${NB.acidYellow}`,
-            overflow: 'hidden', flexShrink: 0,
-            animation: 'orbitPulse 2s ease-in-out infinite',
-            background: '#222',
-          }}>
-            {topArtist?.image ? (
-              <img src={topArtist.image} alt={topArtist.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-            ) : (
-              <div style={{ width: '100%', height: '100%', background: NB.acidYellow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 900, color: NB.black }}>
-                {(topArtist?.name || 'A').charAt(0)}
-              </div>
+        {/* Orbit Visual */}
+        <div style={{ position: 'relative', width: 280, height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '20px 0' }}>
+           {/* Orbital Rings */}
+           <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%' }} />
+           <div style={{ position: 'absolute', inset: 40, border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%' }} />
+           <div style={{ position: 'absolute', inset: 80, border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%' }} />
+
+           {/* Central Sun (Top Artist) */}
+           <motion.div
+             initial={{ scale: 0 }}
+             animate={{ scale: 1 }}
+             transition={{ type: 'spring', delay: 0.2 }}
+             style={{
+               width: 100, height: 100, borderRadius: '50%',
+               border: `4px solid ${NB.acidYellow}`,
+               overflow: 'hidden', zIndex: 10,
+               boxShadow: `0 0 40px ${NB.acidYellow}66`,
+               animation: 'orbitPulse 3s ease-in-out infinite'
+             }}
+           >
+             {topArtist?.image ? (
+               <img src={topArtist.image} alt={topArtist.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+             ) : (
+               <div style={{ width: '100%', height: '100%', background: NB.acidYellow }} />
+             )}
+           </motion.div>
+
+           {/* Orbiting Planet */}
+           <div style={{ position: 'absolute', width: 20, height: 20, background: NB.electricBlue, borderRadius: '50%', animation: 'planetOrbit 4s linear infinite', top: 'calc(50% - 10px)', left: 'calc(50% - 10px)' }} />
+        </div>
+
+        {/* Story Text */}
+        <div style={{ width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: 16, border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
+          <AnimatePresence mode='wait'>
+            {chapter === 1 && (
+              <motion.div key="c1" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 24, fontWeight: 900, color: NB.electricBlue, textTransform: 'uppercase' }}>THE DISCOVERY</p>
+                <p style={{ margin: '8px 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#ccc' }}>You found {topArtist?.name} and couldn't stop listening.</p>
+              </motion.div>
             )}
-          </div>
-          <div>
-            <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(24px, 6vw, 36px)', color: NB.acidYellow, textTransform: 'uppercase', lineHeight: 1 }}>
-              {topArtist?.name || 'ARTIST'}
-            </p>
-            <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
-              Orbit {orbitScore}/250 · {topArtist?.totalListens || 0} plays
-            </p>
-          </div>
+            {chapter === 2 && (
+              <motion.div key="c2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 24, fontWeight: 900, color: NB.coral, textTransform: 'uppercase' }}>THE OBSESSION</p>
+                <p style={{ margin: '8px 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#ccc' }}>{topArtist?.totalListens} plays later, they became your soundtrack.</p>
+              </motion.div>
+            )}
+            {chapter >= 3 && (
+              <motion.div key="c3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 24, fontWeight: 900, color: NB.acidYellow, textTransform: 'uppercase' }}>LOCKED IN ORBIT</p>
+                <p style={{ margin: '8px 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 14, color: '#ccc' }}>Orbit Score: {orbitScore}/250. You're officially a super fan.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {chapters.map((ch, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: chapter > i ? 1 : 0.2, x: chapter > i ? 0 : -12 }}
-              transition={{ duration: 0.45, ease: 'easeOut' }}
-              style={{
-                background: chapter > i ? `${ch.bg}22` : 'rgba(255,255,255,0.04)',
-                border: `2px solid ${chapter > i ? ch.bg : 'rgba(255,255,255,0.1)'}`,
-                padding: '10px 14px',
-                borderRadius: 4,
-              }}
-            >
-              <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: chapter > i ? ch.bg : 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {ch.icon} {ch.title}
-              </p>
-              <p style={{ margin: '4px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 13, color: chapter > i ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.25)' }}>
-                {ch.body}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-
-        {runner && chapter >= 3 && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', padding: '10px 14px', borderRadius: 4 }}
-          >
-            <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
-              Runner-up orbit: <span style={{ color: NB.white, fontWeight: 700 }}>{runner.name}</span> with {runner.totalListens} plays
-            </p>
-          </motion.div>
-        )}
       </div>
       <Ticker text="OBSESSION ORBIT  GRAVITATIONAL LOCK  STORY MODE" bg={NB.acidYellow} color={NB.black} />
     </div>
@@ -1450,29 +1661,29 @@ const ReplayTrackRow: React.FC<{ song: Song; index: number; active: boolean; pul
       style={{
         display: 'flex', gap: 10, alignItems: 'center',
         background: NB.white, border: `4px solid ${NB.black}`,
-        boxShadow: '4px 4px 0 #000', padding: 10,
+        boxShadow: '6px 6px 0 #000', padding: '12px 14px',
         animation: pulsing === index ? 'replayPulse 0.8s ease' : undefined,
+        transform: pulsing === index ? 'scale(1.02)' : 'scale(1)',
+        transition: 'transform 0.2s ease',
       }}
     >
       <div style={{ position: 'relative', flexShrink: 0 }}>
         <img
           src={song.cover || fallbackImage}
           alt={song.title}
-          style={{ width: 64, height: 64, objectFit: 'cover', border: `3px solid ${NB.black}`, borderRadius: '50%', display: 'block', animation: active ? 'vinylSpin 4s linear infinite' : 'none' }}
+          style={{ width: 56, height: 56, objectFit: 'cover', border: `3px solid ${NB.black}`, borderRadius: '50%', display: 'block', animation: active ? 'vinylSpin 3s linear infinite' : 'none' }}
           onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }}
         />
-        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.2)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.1)', pointerEvents: 'none' }} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 20, fontWeight: 900, textTransform: 'uppercase', color: NB.black, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{song.title}</p>
-        <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#555' }}>{song.artist}</p>
+        <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 22, fontWeight: 900, textTransform: 'uppercase', color: NB.black, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{song.title}</p>
+        <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#555' }}>{song.artist}</p>
       </div>
       <motion.div
-        animate={{ scale: pulsing === index ? [1, 1.2, 1] : 1 }}
-        transition={{ duration: 0.4 }}
-        style={{ background: NB.black, color: NB.acidYellow, padding: '8px 10px', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 18, fontWeight: 900, flexShrink: 0, minWidth: 52, textAlign: 'center' }}
+        style={{ background: NB.black, color: NB.acidYellow, padding: '6px 12px', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontSize: 20, fontWeight: 900, flexShrink: 0, minWidth: 60, textAlign: 'center' }}
       >
-        {displayCount}×
+        {displayCount}
       </motion.div>
     </motion.div>
   );
@@ -1507,8 +1718,9 @@ const Slide11: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs }
         @keyframes replayPulse { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
         @keyframes pulseRing { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(1.25);opacity:0} }
         @keyframes loopDot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        @keyframes float3D { 0% { transform: rotateX(10deg) rotateY(0deg); } 50% { transform: rotateX(15deg) rotateY(5deg); } 100% { transform: rotateX(10deg) rotateY(0deg); } }
       `}</style>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 10 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 10, perspective: 1000 }}>
         <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(30px, 7vw, 50px)', color: NB.white, margin: 0, textTransform: 'uppercase', lineHeight: 1 }}>YOUR REPLAY VALUE</h1>
 
         {/* CURRENTLY LOOPING indicator */}
@@ -1529,23 +1741,24 @@ const Slide11: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs }
           </AnimatePresence>
         </div>
 
-        {/* Vinyl showing current song */}
-        <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', height: 170, flexShrink: 0 }}>
-          <div style={{ width: 170, height: 170, borderRadius: '50%', border: `4px solid ${NB.black}`, background: '#111', position: 'relative', animation: 'vinylSpin 6s linear infinite' }}>
-            <img src={currentSong?.cover || fallbackImage} alt={currentSong?.title || ''} style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: '50%', border: `4px solid ${NB.white}`, position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-            <div style={{ width: 14, height: 14, background: NB.acidYellow, border: `3px solid ${NB.black}`, borderRadius: '50%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 2 }} />
+        {/* Vinyl showing current song (3D Tilted) */}
+        <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', height: 190, flexShrink: 0, animation: 'float3D 6s ease-in-out infinite' }}>
+          <div style={{ width: 190, height: 190, borderRadius: '50%', border: `6px solid ${NB.black}`, background: '#111', position: 'relative', animation: 'vinylSpin 6s linear infinite', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+            <img src={currentSong?.cover || fallbackImage} alt={currentSong?.title || ''} style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: '50%', border: `4px solid ${NB.white}`, position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+            <div style={{ width: 16, height: 16, background: NB.acidYellow, border: `3px solid ${NB.black}`, borderRadius: '50%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 2 }} />
           </div>
-          <div style={{ position: 'absolute', width: 200, height: 200, top: -15, borderRadius: '50%', border: `2px dashed ${NB.acidYellow}`, animation: 'pulseRing 1.8s ease-out infinite' }} />
+          {/* Shine overlay */}
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%)', pointerEvents: 'none' }} />
         </div>
 
         {/* TOTAL LOOPS counter */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(36px, 9vw, 58px)', color: NB.acidYellow, lineHeight: 1 }}>{displayTotal.toLocaleString()}</span>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, justifyContent: 'center', marginBottom: 8 }}>
+          <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(48px, 12vw, 68px)', color: NB.acidYellow, lineHeight: 1, textShadow: '4px 4px 0 rgba(0,0,0,0.2)' }}>{displayTotal.toLocaleString()}</span>
           <span style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 12, color: NB.white, textTransform: 'uppercase', letterSpacing: '0.1em' }}>TOTAL LOOPS</span>
         </div>
 
         {/* Track rows with animated spin counts */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {loops.map((song, i) => (
             <ReplayTrackRow key={song.id} song={song} index={i} active={active} pulsing={pulsing} targetCount={song.listens} />
           ))}
@@ -1627,11 +1840,11 @@ const Slide12: React.FC<{ totalMinutes: number; artists: Artist[]; songs: Song[]
 // SLIDE DOMINATION: WHO RUNS YOUR CHART (redesigned)
 const SlideDomination: React.FC<{ active: boolean; artists: Artist[] }> = ({ active, artists }) => {
   const top3 = artists.slice(0, 3);
-  const rest = artists.slice(3, 8);
   const total = artists.reduce((s, a) => s + a.totalListens, 0) || 1;
 
-  const dominanceColors = [NB.acidYellow, NB.coral, NB.electricBlue];
-  const medals = ['🥇', '🥈', '🥉'];
+  const podiumOrder = [1, 0, 2]; // 2nd, 1st, 3rd
+  const podiumHeights = [140, 180, 110];
+  const podiumColors = [NB.coral, NB.acidYellow, NB.electricBlue];
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.black, position: 'relative', overflow: 'hidden' }}>
@@ -1643,86 +1856,51 @@ const SlideDomination: React.FC<{ active: boolean; artists: Artist[] }> = ({ act
           </h1>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {top3.map((artist, i) => {
+        {/* Podium Layout */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', height: 320, gap: 8, marginTop: 'auto', marginBottom: 20 }}>
+          {podiumOrder.map((idx) => {
+            const artist = top3[idx];
+            if (!artist) return null;
+            const height = podiumHeights[idx];
+            const color = podiumColors[idx];
             const pct = Math.round((artist.totalListens / total) * 100);
-            const color = dominanceColors[i];
+
             return (
               <motion.div
                 key={artist.id}
-                initial={{ opacity: 0, x: i === 0 ? -20 : 20 }}
-                animate={{ opacity: active ? 1 : 0, x: active ? 0 : i === 0 ? -20 : 20 }}
-                transition={{ delay: i * 0.15, duration: 0.4 }}
-                style={{
-                  background: `${color}12`,
-                  border: `3px solid ${color}`,
-                  padding: '12px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
+                initial={{ y: 200, opacity: 0 }}
+                animate={{ y: active ? 0 : 200, opacity: 1 }}
+                transition={{ type: 'spring', damping: 15, delay: idx * 0.15 }}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%' }}
               >
+                {/* Avatar */}
                 <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: active ? `${pct}%` : 0 }}
-                  transition={{ delay: 0.3 + i * 0.15, duration: 0.7, ease: [0.34, 1.56, 0.64, 1] }}
-                  style={{ position: 'absolute', inset: 0, background: `${color}08`, pointerEvents: 'none' }}
-                />
-                <span style={{ fontSize: 20, flexShrink: 0, position: 'relative', zIndex: 1 }}>{medals[i]}</span>
-                {artist.image ? (
-                  <img src={artist.image} alt={artist.name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${color}`, flexShrink: 0, position: 'relative', zIndex: 1 }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-                ) : (
-                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900, color: NB.black, flexShrink: 0, position: 'relative', zIndex: 1 }}>
-                    {artist.name.charAt(0)}
-                  </div>
-                )}
-                <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
-                  <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: i === 0 ? 22 : 18, color: NB.white, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {artist.name}
-                  </p>
-                  <p style={{ margin: '2px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
-                    {artist.totalListens.toLocaleString()} plays
-                  </p>
+                  initial={{ scale: 0 }}
+                  animate={{ scale: active ? 1 : 0 }}
+                  transition={{ delay: 0.4 + idx * 0.15 }}
+                  style={{ width: idx === 0 ? 80 : 60, height: idx === 0 ? 80 : 60, borderRadius: '50%', border: `4px solid ${color}`, overflow: 'hidden', background: '#222', marginBottom: -20, zIndex: 2, boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+                >
+                  {artist.image ? (
+                    <img src={artist.image} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: NB.white, fontWeight: 900, fontSize: 20 }}>{artist.name.charAt(0)}</div>
+                  )}
+                </motion.div>
+
+                {/* Bar */}
+                <div style={{ width: '100%', height: height, background: color, border: `3px solid ${NB.black}`, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 24, boxShadow: '6px 6px 0 #000' }}>
+                   <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 32, color: NB.black }}>{idx + 1}</span>
+                   <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, color: NB.black }}>{pct}%</span>
                 </div>
-                <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: i === 0 ? 28 : 22, color, position: 'relative', zIndex: 1, lineHeight: 1 }}>
-                  {pct}%
+
+                {/* Name */}
+                <p style={{ marginTop: 8, fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, color: NB.white, textAlign: 'center', textTransform: 'uppercase', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {artist.name}
                 </p>
               </motion.div>
             );
           })}
         </div>
-
-        {rest.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <p style={{ margin: '0 0 4px 0', fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>THE REST OF THE LINEUP</p>
-            {rest.map((artist, i) => {
-              const pct = Math.round((artist.totalListens / total) * 100);
-              return (
-                <motion.div
-                  key={artist.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: active ? 1 : 0 }}
-                  transition={{ delay: 0.6 + i * 0.06 }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}
-                >
-                  <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 14, color: 'rgba(255,255,255,0.3)', width: 18, textAlign: 'right' }}>{i + 4}</span>
-                  <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: active ? `${pct * 3}%` : 0 }}
-                      transition={{ delay: 0.7 + i * 0.06, duration: 0.4 }}
-                      style={{ height: '100%', background: 'rgba(255,255,255,0.25)', borderRadius: 2 }}
-                    />
-                  </div>
-                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>{artist.name}</span>
-                  <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 700, flexShrink: 0 }}>{pct}%</span>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
       </div>
       <Ticker text="CHART CONTROL  DOMINANCE MAP  WHO RUNS THIS" bg={NB.white} color={NB.black} />
     </div>
@@ -1746,320 +1924,118 @@ const SlideLotusSignal: React.FC<{ active: boolean; historyRows: HistoryRow[] }>
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#050507', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, padding: '58px 16px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, #1a0b2e 0%, #000 70%)' }} />
+
+      <div style={{ flex: 1, padding: '58px 16px 16px', display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', zIndex: 1 }}>
         <h1 style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(28px, 7vw, 48px)', color: NB.white, textTransform: 'uppercase', lineHeight: 1 }}>LOTUS SIGNAL</h1>
         <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)' }}>
           YOUR LISTENING CLOCK IN MOTION
         </p>
 
-        <div style={{ height: 210, border: `3px solid ${NB.black}`, background: 'linear-gradient(180deg, #0F1020 0%, #07070d 100%)', boxShadow: '4px 4px 0 #000', display: 'flex', alignItems: 'flex-end', padding: '10px 8px', gap: 3 }}>
+        {/* EQ Visualizer */}
+        <div style={{ height: 240, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0 4px', gap: 2 }}>
           {hourly.bins.map((value, i) => {
-            const heightPct = Math.max(6, Math.round((value / hourly.max) * 100));
+            const heightPct = Math.max(4, Math.round((value / hourly.max) * 100));
             const isPeak = i === hourly.peakHour;
+            const hourLabel = i % 4 === 0 ? (i === 0 ? '12AM' : i === 12 ? '12PM' : i > 12 ? `${i-12}PM` : `${i}AM`) : '';
+
             return (
-              <motion.div
-                key={i}
-                initial={{ height: '6%' }}
-                animate={{ height: `${active ? heightPct : 6}%`, opacity: isPeak ? 1 : 0.7 }}
-                transition={{ duration: 0.45, delay: i * 0.02 }}
-                style={{ flex: 1, border: `2px solid ${NB.black}`, background: isPeak ? NB.acidYellow : 'linear-gradient(180deg, #1A6BFF, #FF0080)' }}
-              />
+              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                <motion.div
+                  initial={{ height: '4%' }}
+                  animate={{ height: `${active ? heightPct : 4}%`, boxShadow: isPeak ? `0 0 15px ${NB.acidYellow}` : 'none' }}
+                  transition={{ duration: 0.6, delay: i * 0.03, type: 'spring' }}
+                  style={{
+                    width: '100%',
+                    borderRadius: '2px 2px 0 0',
+                    background: isPeak ? NB.acidYellow : `linear-gradient(to top, #333 0%, ${NB.magenta} 100%)`,
+                    opacity: isPeak ? 1 : 0.7
+                  }}
+                />
+                {hourLabel && (
+                  <span style={{ position: 'absolute', bottom: -20, fontSize: 9, color: '#666', fontFamily: "'Barlow', sans-serif" }}>{hourLabel}</span>
+                )}
+              </div>
             );
           })}
         </div>
 
-        <BCard style={{ background: NB.white }}>
-          <p style={{ margin: '0 0 6px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 24, color: NB.black }}>
-            PRIME TIME: {hourly.primeWindow}
-          </p>
-          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12, color: '#333' }}>
-            {hourly.totalSessions.toLocaleString()} plays scanned. This is your strongest hour in this wrapped range.
-          </p>
-        </BCard>
+        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'center' }}>
+          <BCard style={{ background: 'rgba(255,255,255,0.95)', maxWidth: 320, width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <p style={{ margin: '0 0 2px 0', fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 32, color: NB.black }}>
+                 {hourly.primeWindow}
+               </p>
+               <span style={{ fontSize: 24 }}>⚡</span>
+            </div>
+            <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 13, color: '#333' }}>
+              Your peak listening hour. {hourly.totalSessions.toLocaleString()} sessions detected in your history.
+            </p>
+          </BCard>
+        </div>
       </div>
       <Ticker text="LOTUS SIGNAL  •  PEAK HOUR  •  LISTENING CLOCK" bg={NB.magenta} color={NB.white} />
     </div>
   );
 };
 
-// SLIDE GENRE MIGRATION
-const SlideGenreMigration: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs }) => {
-  const genres = useMemo(() => {
-    const buckets = [
-      { genre: 'Indie Pop', count: Math.max(1, Math.round(songs.length * 0.28)), color: NB.electricBlue },
-      { genre: 'Alt Rock', count: Math.max(1, Math.round(songs.length * 0.22)), color: NB.coral },
-      { genre: 'Hip-Hop', count: Math.max(1, Math.round(songs.length * 0.2)), color: NB.magenta },
-      { genre: 'Electronic', count: Math.max(1, Math.round(songs.length * 0.16)), color: NB.acidYellow },
-      { genre: 'R&B', count: Math.max(1, Math.round(songs.length * 0.14)), color: '#888888' },
-    ];
-    const total = buckets.reduce((s, b) => s + b.count, 0) || 1;
-    return buckets.map(b => ({ ...b, pct: Math.round((b.count / total) * 100) }));
-  }, [songs]);
-
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0D0D2B', position: 'relative', overflow: 'hidden' }}>
-      <style>{`@keyframes flowPulse { 0%,100%{opacity:0.4} 50%{opacity:0.8} }`}</style>
-      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.1 }} viewBox="0 0 400 700" preserveAspectRatio="none">
-        <path d="M0,200 C100,180 300,220 400,200" stroke={NB.electricBlue} strokeWidth="40" fill="none" />
-        <path d="M0,300 C120,280 280,320 400,300" stroke={NB.coral} strokeWidth="30" fill="none" />
-        <path d="M0,400 C80,380 320,420 400,400" stroke={NB.magenta} strokeWidth="25" fill="none" />
-      </svg>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 14, position: 'relative', zIndex: 1 }}>
-        <div>
-          <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '0 0 4px 0' }}>YOUR TASTE EVOLUTION</p>
-          <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 9vw, 54px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>
-            GENRE<br/>MIGRATION
-          </h1>
-        </div>
-
-        <div style={{ background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)', padding: '10px 14px', borderRadius: 2 }}>
-          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>
-            "You started deep in <span style={{ color: genres[0]?.color, fontWeight: 700 }}>{genres[0]?.genre}</span>, but ended up swimming in <span style={{ color: genres[2]?.color, fontWeight: 700 }}>{genres[2]?.genre}</span>."
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {genres.map((g, i) => (
-            <motion.div
-              key={g.genre}
-              initial={{ opacity: 0, x: -15 }}
-              animate={{ opacity: active ? 1 : 0, x: active ? 0 : -15 }}
-              transition={{ delay: i * 0.12, duration: 0.4 }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-            >
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: g.color, flexShrink: 0 }} />
-              <span style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: NB.white, textTransform: 'uppercase', width: 120, flexShrink: 0 }}>{g.genre}</span>
-              <div style={{ flex: 1, height: 20, background: 'rgba(255,255,255,0.07)', borderRadius: 2, overflow: 'hidden' }}>
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: active ? `${g.pct}%` : 0 }}
-                  transition={{ delay: 0.2 + i * 0.12, duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
-                  style={{ height: '100%', background: g.color, borderRadius: 2 }}
-                />
-              </div>
-              <span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: 700, width: 32, textAlign: 'right' }}>{g.pct}%</span>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-      <Ticker text="GENRE MIGRATION  TASTE EVOLUTION  SONIC JOURNEY" bg={NB.electricBlue} color={NB.white} />
-    </div>
-  );
-};
-
-// SLIDE SKIP GRAVEYARD
-const SlideSkipGraveyard: React.FC<{ active: boolean; songs: Song[] }> = ({ active, songs }) => {
-  const graveyard = useMemo(() => songs.slice(3, 8), [songs]);
-  const [revealed, setRevealed] = useState(false);
-
-  useEffect(() => {
-    if (!active) { setRevealed(false); return; }
-    const t = setTimeout(() => setRevealed(true), 1200);
-    return () => clearTimeout(t);
-  }, [active]);
-
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0A0A0A', position: 'relative', overflow: 'hidden' }}>
-      <style>{`
-        @keyframes graveFall { from{transform:translateY(-20px);opacity:0} to{transform:translateY(0);opacity:1} }
-        @keyframes tombFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
-      `}</style>
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%', background: 'linear-gradient(to top, #1a1a0a, transparent)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: '30%', left: 0, right: 0, height: 60, background: 'rgba(255,255,255,0.03)', filter: 'blur(20px)', pointerEvents: 'none' }} />
-
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 12, position: 'relative', zIndex: 1 }}>
-        <div>
-          <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', margin: '0 0 4px 0' }}>R.I.P.</p>
-          <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(38px, 10vw, 64px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>
-            THE SKIP<br/>GRAVEYARD
-          </h1>
-        </div>
-
-        <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.5 }}>
-          "You gave these tracks a chance... but they just didn't make the cut."
-        </p>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {graveyard.map((song, i) => (
-            <motion.div
-              key={song.id}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: revealed ? 1 : 0, y: revealed ? 0 : -20 }}
-              transition={{ delay: i * 0.18, duration: 0.4, ease: 'easeOut' }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                padding: '10px 12px',
-                position: 'relative',
-                overflow: 'hidden',
-              }}
-            >
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'rgba(255,255,255,0.2)', transform: 'translateY(-50%)' }} />
-              <img src={song.cover || fallbackImage} alt={song.title} style={{ width: 40, height: 40, objectFit: 'cover', filter: 'grayscale(80%) brightness(0.6)', flexShrink: 0, position: 'relative', zIndex: 1 }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-              <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
-                <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 16, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.title}</p>
-                <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{song.artist}</p>
-              </div>
-              <span style={{ fontSize: 16, position: 'relative', zIndex: 1 }}>⚰️</span>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-      <Ticker text="THE SKIP GRAVEYARD  R.I.P.  BETTER LUCK NEXT TIME" bg='#2a1a1a' color='rgba(255,255,255,0.6)' />
-    </div>
-  );
-};
-
-// SLIDE TEMPORAL PERSONA
-const SlideTemporalPersona: React.FC<{ active: boolean }> = ({ active }) => {
-  const [showNight, setShowNight] = useState(false);
-
-  useEffect(() => {
-    if (!active) { setShowNight(false); return; }
-    const t = setTimeout(() => setShowNight(true), 1800);
-    return () => clearTimeout(t);
-  }, [active]);
-
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: NB.nearBlack, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, background: showNight ? 'linear-gradient(135deg, #0A0A1A, #1A0A2A)' : 'linear-gradient(135deg, #1A3A5C, #0A1A2C)', transition: 'background 1.5s ease' }} />
-      {showNight && (
-        <>
-          {[...Array(12)].map((_, i) => (
-            <div key={i} style={{ position: 'absolute', width: 2 + (i % 2), height: 2 + (i % 2), borderRadius: '50%', background: 'white', top: `${5 + (i * 7) % 55}%`, left: `${10 + (i * 8) % 80}%`, opacity: 0.4 + (i % 3) * 0.2 }} />
-          ))}
-        </>
-      )}
-
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 12, position: 'relative', zIndex: 1 }}>
-        <div>
-          <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '0 0 4px 0' }}>WHO ARE YOU REALLY?</p>
-          <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 9vw, 54px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>
-            TEMPORAL<br/>PERSONA
-          </h1>
-        </div>
-
-        <motion.div
-          animate={{ opacity: showNight ? 0.4 : 1, scale: showNight ? 0.97 : 1 }}
-          transition={{ duration: 1.2 }}
-          style={{ background: 'rgba(255,196,0,0.1)', border: '2px solid rgba(255,196,0,0.3)', padding: '14px 16px' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <span style={{ fontSize: 24 }}>☀️</span>
-            <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: NB.acidYellow, textTransform: 'uppercase' }}>MORNING YOU</p>
-          </div>
-          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>
-            High-energy tracks. You fueled your commute with beats that hit hard — EDM, uptempo pop, power anthems.
-          </p>
-        </motion.div>
-
-        <motion.div
-          animate={{ opacity: showNight ? 1 : 0.4, scale: showNight ? 1 : 0.97 }}
-          transition={{ duration: 1.2 }}
-          style={{ background: 'rgba(100,50,200,0.15)', border: `2px solid ${showNight ? 'rgba(150,100,255,0.6)' : 'rgba(150,100,255,0.2)'}`, padding: '14px 16px', transition: 'border-color 1.2s ease' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <span style={{ fontSize: 24 }}>🌙</span>
-            <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: '#B090FF', textTransform: 'uppercase' }}>2AM YOU</p>
-          </div>
-          <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>
-            At 2 AM, your soul craved something else. Acoustic. Ambient. The quiet songs no one else knows.
-          </p>
-        </motion.div>
-
-        {showNight && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '10px 14px' }}
-          >
-            <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.6)', fontStyle: 'italic' }}>
-              "By day you were fueled by high-energy beats, but at 2 AM, your soul craved pure stillness."
-            </p>
-          </motion.div>
-        )}
-      </div>
-      <Ticker text="TEMPORAL PERSONA  DAY VS NIGHT  WHO ARE YOU" bg='#1A0A3A' color='rgba(150,100,255,0.9)' />
-    </div>
-  );
-};
 
 // SLIDE HIDDEN GEM
 const SlideHiddenGem: React.FC<{ active: boolean; artists: Artist[]; songs: Song[] }> = ({ active, artists, songs }) => {
-  const [lineProgress, setLineProgress] = useState(0);
-  const lineRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (!active) { setLineProgress(0); if (lineRef.current) clearInterval(lineRef.current); return; }
-    setLineProgress(0);
-    let p = 0;
-    lineRef.current = setInterval(() => {
-      p += 2;
-      setLineProgress(Math.min(100, p));
-      if (p >= 100 && lineRef.current) clearInterval(lineRef.current);
-    }, 25);
-    return () => { if (lineRef.current) clearInterval(lineRef.current); };
-  }, [active]);
-
   const gem = artists[artists.length > 3 ? Math.floor(artists.length / 2) : 0] || artists[0];
-  const gemSong = songs[songs.length > 3 ? Math.floor(songs.length / 2) : 0] || songs[0];
-  const timelineEvents = [
-    { time: 'Day 1', title: 'First Listen', desc: `You played "${gemSong?.title || 'an unknown track'}" once`, dot: NB.electricBlue },
-    { time: 'Week 1', title: 'The Hook', desc: `You came back. Then again. ${gem?.name || 'This artist'} had something.`, dot: NB.coral },
-    { time: 'Month 1', title: 'Full Obsession', desc: `${gem?.totalListens || 0} plays later — they were on your chart.`, dot: NB.acidYellow },
-  ];
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0A1A0A', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 14 }}>
-        <div>
-          <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)', margin: '0 0 4px 0' }}>YOUR DISCOVERY STORY</p>
-          <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(34px, 9vw, 54px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>
-            HIDDEN GEM<br/>DISCOVERY
+      <style>{`
+        @keyframes gemFloat { 0%{transform:translateY(0) rotate(0deg);} 50%{transform:translateY(-10px) rotate(2deg);} 100%{transform:translateY(0) rotate(0deg);} }
+        @keyframes shine { 0%{background-position: -100px;} 100%{background-position: 200px;} }
+      `}</style>
+
+      {/* Gem Background */}
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, #003311 0%, #000 80%)' }} />
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.3, backgroundImage: `url(${gem?.image || ''})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(40px)' }} />
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '60px 20px 16px', gap: 14, position: 'relative', zIndex: 1, justifyContent: 'center' }}>
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: active ? 1 : 0, y: active ? 0 : -20 }} transition={{ duration: 0.5 }}>
+          <p style={{ fontFamily: "'Barlow', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', margin: '0 0 4px 0', textAlign: 'center' }}>YOUR DISCOVERY STORY</p>
+          <h1 style={{ fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 'clamp(42px, 12vw, 64px)', color: NB.white, textTransform: 'uppercase', margin: 0, lineHeight: 1, textAlign: 'center' }}>
+            HIDDEN GEM
           </h1>
-        </div>
+        </motion.div>
 
         {gem && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(0,255,100,0.07)', border: '2px solid rgba(0,255,100,0.2)', padding: '12px 14px' }}>
-            {gem.image && (
-              <img src={gem.image} alt={gem.name} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,255,100,0.4)', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
-            )}
-            <div>
-              <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 20, color: '#00FF64', textTransform: 'uppercase' }}>{gem.name}</p>
-              <p style={{ margin: '2px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Your hidden gem this period</p>
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: active ? 1 : 0.8, opacity: active ? 1 : 0 }}
+            transition={{ type: 'spring', delay: 0.2 }}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
+              background: 'rgba(255,255,255,0.05)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              padding: '30px 20px',
+              borderRadius: 20,
+              boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+              animation: 'gemFloat 6s ease-in-out infinite'
+            }}
+          >
+            <div style={{ position: 'relative' }}>
+              {gem.image ? (
+                <img src={gem.image} alt={gem.name} style={{ width: 140, height: 140, borderRadius: '50%', objectFit: 'cover', border: '4px solid #00FF64', boxShadow: '0 0 30px rgba(0,255,100,0.3)' }} onError={(e) => { (e.target as HTMLImageElement).src = fallbackImage; }} />
+              ) : (
+                <div style={{ width: 140, height: 140, borderRadius: '50%', background: '#00FF64', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60, fontWeight: 900, color: '#000' }}>{gem.name.charAt(0)}</div>
+              )}
+              <div style={{ position: 'absolute', bottom: -10, right: -10, fontSize: 40, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))' }}>💎</div>
             </div>
-            <span style={{ marginLeft: 'auto', fontSize: 24 }}>💎</span>
-          </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 32, color: '#00FF64', textTransform: 'uppercase' }}>{gem.name}</p>
+              <p style={{ margin: '8px 0 0 0', fontFamily: "'Barlow', sans-serif", fontSize: 14, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
+                You discovered them and kept coming back. A true diamond in the rough of your year.
+              </p>
+            </div>
+          </motion.div>
         )}
-
-        <div style={{ position: 'relative', paddingLeft: 20 }}>
-          <div style={{ position: 'absolute', left: 7, top: 8, bottom: 8, width: 2, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-            <div style={{ width: '100%', height: `${lineProgress}%`, background: 'linear-gradient(to bottom, #00FF64, rgba(0,255,100,0.3))', transition: 'height 25ms linear' }} />
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {timelineEvents.map((ev, i) => {
-              const show = lineProgress > i * 35;
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: show ? 1 : 0.15, x: show ? 0 : 10 }}
-                  transition={{ duration: 0.35 }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: 14 }}
-                >
-                  <div style={{ position: 'absolute', left: 2, width: 12, height: 12, borderRadius: '50%', background: show ? ev.dot : 'rgba(255,255,255,0.1)', border: `2px solid ${show ? ev.dot : 'rgba(255,255,255,0.1)'}`, marginTop: 2 }} />
-                  <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: show ? ev.dot : 'rgba(255,255,255,0.2)', fontWeight: 700 }}>{ev.time}</p>
-                  <p style={{ margin: 0, fontFamily: "'Barlow Condensed', 'Impact', sans-serif", fontWeight: 900, fontSize: 18, color: show ? NB.white : 'rgba(255,255,255,0.2)', textTransform: 'uppercase', lineHeight: 1 }}>{ev.title}</p>
-                  <p style={{ margin: 0, fontFamily: "'Barlow', sans-serif", fontSize: 12, color: show ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.2)' }}>{ev.desc}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
       </div>
       <Ticker text="HIDDEN GEM  DISCOVERY TIMELINE  YOUR NEW FAVORITE" bg='#001A00' color='#00FF64' />
     </div>
@@ -2197,11 +2173,8 @@ export default function WrappedSlides({ onClose, totalMinutes, artists, albums, 
       case 10: return <Slide11 active={currentSlide === 10} songs={songs} />;
       case 11: return <SlideDomination active={currentSlide === 11} artists={artists} />;
       case 12: return <SlideLotusSignal active={currentSlide === 12} historyRows={filteredHistory} />;
-      case 13: return <SlideGenreMigration active={currentSlide === 13} songs={songs} />;
-      case 14: return <SlideSkipGraveyard active={currentSlide === 14} songs={songs} />;
-      case 15: return <SlideTemporalPersona active={currentSlide === 15} />;
-      case 16: return <SlideHiddenGem active={currentSlide === 16} artists={artists} songs={songs} />;
-      case 17: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} albums={albums} onClose={onClose} winningFruit={winningFruit} />;
+      case 13: return <SlideHiddenGem active={currentSlide === 13} artists={artists} songs={songs} />;
+      case 14: return <Slide12 totalMinutes={totalMinutes} artists={artists} songs={songs} albums={albums} onClose={onClose} winningFruit={winningFruit} />;
       default: return <Slide0 active={currentSlide === 0} totalMinutes={totalMinutes} albumCovers={albumCovers} albums={albums} rangeLabel={rangeLabel} />;
     }
   };
