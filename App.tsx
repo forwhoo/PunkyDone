@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight, Shuffle } from 'lucide-react';
+import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight, Shuffle, Copy, RefreshCw, ArrowUp } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
+import { BackToTop } from './components/BackToTop';
 import { Artist, Album, Song } from './types';
 // import { TopCharts } from './components/TopCharts';
 import { RankingWidget } from './components/RankingWidget';
@@ -75,7 +76,9 @@ import { generateMusicInsight, generateRankingInsights } from './services/gemini
 import { supabase } from './services/supabaseClient';
 
 // RANKED COMPONENT: Top Album (Standard)
-const RankedAlbum = ({ album, rank, onClick }: { album: Album, rank: number, onClick?: () => void }) => (
+const RankedAlbum = ({ album, rank, onClick }: { album: Album, rank: number, onClick?: () => void }) => {
+    const [imageLoaded, setImageLoaded] = useState(false);
+    return (
     <div 
         className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]"
         onClick={onClick}
@@ -85,7 +88,16 @@ const RankedAlbum = ({ album, rank, onClick }: { album: Album, rank: number, onC
         </span>
         <div className="relative z-10 ml-10 md:ml-12">
             <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
-                <img src={album.cover} alt={album.title} loading="lazy" className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
+                {!imageLoaded && (
+                    <div className="absolute inset-0 bg-[#2C2C2E] animate-pulse rounded-xl z-10" />
+                )}
+                <img
+                    src={album.cover}
+                    alt={album.title}
+                    loading="lazy"
+                    onLoad={() => setImageLoaded(true)}
+                    className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm ${!imageLoaded ? 'opacity-0' : 'opacity-100'}`}
+                />
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
                      <span className="text-white font-bold text-xl drop-shadow-md">{album.timeStr}</span>
@@ -97,10 +109,13 @@ const RankedAlbum = ({ album, rank, onClick }: { album: Album, rank: number, onC
             </div>
         </div>
     </div>
-);
+    );
+};
 
 // RANKED COMPONENT: Top Artist (Number style like Top Albums)
-const RankedArtist = ({ artist, rank, realImage, onClick }: { artist: Artist, rank: number, realImage?: string, onClick?: () => void }) => (
+const RankedArtist = ({ artist, rank, realImage, onClick }: { artist: Artist, rank: number, realImage?: string, onClick?: () => void }) => {
+    const [imageLoaded, setImageLoaded] = useState(false);
+    return (
     <div 
         className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]"
         onClick={onClick}
@@ -110,11 +125,15 @@ const RankedArtist = ({ artist, rank, realImage, onClick }: { artist: Artist, ra
         </span>
         <div className="relative z-10 ml-10 md:ml-12">
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
+                {!imageLoaded && (
+                    <div className="absolute inset-0 bg-[#2C2C2E] animate-pulse rounded-full z-10" />
+                )}
                 <img 
                     src={realImage || artist.image || `https://ui-avatars.com/api/?name=${artist.name}&background=1DB954&color=fff`} 
                     alt={artist.name} 
                     loading="lazy"
-                    className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" 
+                    onLoad={() => setImageLoaded(true)}
+                    className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm ${!imageLoaded ? 'opacity-0' : 'opacity-100'}`}
                 />
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
@@ -126,10 +145,13 @@ const RankedArtist = ({ artist, rank, realImage, onClick }: { artist: Artist, ra
             </div>
         </div>
     </div>
-);
+    );
+};
 
 // RANKED COMPONENT: Top Song (Ranked Album Style)
-const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick?: () => void }) => (
+const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick?: () => void }) => {
+    const [imageLoaded, setImageLoaded] = useState(false);
+    return (
     <div 
         className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]"
         onClick={onClick}
@@ -139,7 +161,16 @@ const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick
         </span>
         <div className="relative z-10 ml-10 md:ml-12">
             <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
-                <img src={song.cover} alt={song.title} loading="lazy" className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm" />
+                {!imageLoaded && (
+                    <div className="absolute inset-0 bg-[#2C2C2E] animate-pulse rounded-xl z-10" />
+                )}
+                <img
+                    src={song.cover}
+                    alt={song.title}
+                    loading="lazy"
+                    onLoad={() => setImageLoaded(true)}
+                    className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm ${!imageLoaded ? 'opacity-0' : 'opacity-100'}`}
+                />
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
                      <span className="text-white font-bold text-xl drop-shadow-md">{song.timeStr}</span>
@@ -151,7 +182,8 @@ const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick
             </div>
         </div>
     </div>
-);
+    );
+};
 
 const MobileHeroCard = ({ title, subtitle }: { title: string; subtitle: string }) => (
     <div className="glass-morph rounded-[32px] p-8 shadow-xl border border-white/[0.15]">
@@ -195,6 +227,27 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 
 import { SeeAllModal } from './components/SeeAllModal';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
+
+const CopyButton = ({ text }: { text: string }) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <button
+            onClick={handleCopy}
+            className="p-2 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-all flex items-center gap-1.5"
+            title="Copy to clipboard"
+        >
+            {copied ? <span className="text-[10px] font-bold text-green-400 uppercase tracking-wider">Copied</span> : <Copy size={16} />}
+        </button>
+    );
+};
 
 function App() {
   const hasAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
@@ -294,6 +347,21 @@ function App() {
   const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly' | 'All Time' | 'Custom'>('Weekly');
   const [customDateRange, setCustomDateRange] = useState<{ start: string; end: string } | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const getGreeting = () => {
+      const hour = new Date().getHours();
+      if (hour < 12) return 'Good morning';
+      if (hour < 18) return 'Good afternoon';
+      return 'Good evening';
+  };
+
+  const handleManualRefresh = async () => {
+      if (isRefreshing) return;
+      setIsRefreshing(true);
+      await refreshDbStats();
+      setTimeout(() => setIsRefreshing(false), 1000);
+  };
 
   const wrappedRange = useMemo(() => {
     const now = new Date();
@@ -826,7 +894,7 @@ function App() {
             <div className="space-y-4 pt-4">
                 <div className="flex items-end justify-between">
                     <div>
-                        <h2 className="text-[34px] font-bold text-white leading-none tracking-tight">Hey {data.user?.display_name?.split(' ')[0] || 'there'}</h2>
+                        <h2 className="text-[34px] font-bold text-white leading-none tracking-tight">{getGreeting()}, {data.user?.display_name?.split(' ')[0] || 'friend'}</h2>
                     </div>
                     <div className="flex items-center gap-3">
                         <button
@@ -937,6 +1005,14 @@ function App() {
                         title="Surprise Me (Random Song)"
                     >
                         <Shuffle size={14} />
+                    </button>
+                    <button
+                        onClick={handleManualRefresh}
+                        className={`px-3 py-2 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center border border-transparent hover:border-white/5 active:scale-95 ${isRefreshing ? 'animate-spin' : ''}`}
+                        title="Refresh Data"
+                        disabled={isRefreshing}
+                    >
+                        <RefreshCw size={14} />
                     </button>
                 </div>
                 <AnimatePresence>
@@ -1314,6 +1390,14 @@ function App() {
                             >
                                 <Shuffle size={14} />
                             </button>
+                            <button
+                                onClick={handleManualRefresh}
+                                className={`px-3 py-2 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center border border-transparent hover:border-white/5 active:scale-95 ${isRefreshing ? 'animate-spin' : ''}`}
+                                title="Refresh Data"
+                                disabled={isRefreshing}
+                            >
+                                <RefreshCw size={14} />
+                            </button>
                         </div>
                         <AnimatePresence>
                             {showDatePicker && (
@@ -1636,14 +1720,17 @@ function App() {
                         </motion.div>
 
                         {/* Name + Listening Time */}
-                        <motion.h1 
+                        <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.15 }}
-                            className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight mb-1"
+                            className="flex items-center justify-center gap-3 mb-1"
                         >
-                            {selectedTopArtist.name}
-                        </motion.h1>
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight">
+                                {selectedTopArtist.name}
+                            </h1>
+                            <CopyButton text={selectedTopArtist.name} />
+                        </motion.div>
                         <motion.p
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -1773,14 +1860,17 @@ function App() {
                             </div>
                         </motion.div>
 
-                        <motion.h1 
+                        <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.15 }}
-                            className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight mb-1"
+                            className="flex items-center justify-center gap-3 mb-1"
                         >
-                            {selectedTopAlbum.title}
-                        </motion.h1>
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight">
+                                {selectedTopAlbum.title}
+                            </h1>
+                            <CopyButton text={selectedTopAlbum.title} />
+                        </motion.div>
                         <motion.p 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -1927,14 +2017,17 @@ function App() {
                             </div>
                         </motion.div>
 
-                        <motion.h1 
+                        <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.15 }}
-                            className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight mb-1"
+                            className="flex items-center justify-center gap-3 mb-1"
                         >
-                            {selectedTopSong.title}
-                        </motion.h1>
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight">
+                                {selectedTopSong.title}
+                            </h1>
+                            <CopyButton text={selectedTopSong.title} />
+                        </motion.div>
                         <motion.p 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -2106,6 +2199,7 @@ function App() {
             />
         )}
 
+        <BackToTop />
     </>
   );
 }
