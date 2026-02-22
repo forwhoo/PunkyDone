@@ -131,131 +131,178 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                 </div>
             </div>
 
-            {/* Modal for Selected Artist - Side Panel Style */}
+            {/* Modal for Selected Artist - Full Screen Style */}
             <AnimatePresence>
                 {selectedArtist && (
-                    <>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-black"
+                        onClick={() => setSelectedArtist(null)}
+                    >
+                        {/* Full-screen blurred background */}
+                        <div className="absolute inset-0 overflow-hidden">
+                            <img
+                                src={selectedArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtist.name)}&background=1DB954&color=fff`}
+                                className="w-full h-full object-cover scale-110 blur-3xl opacity-20"
+                                alt=""
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
+                        </div>
+
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
-                            onClick={() => setSelectedArtist(null)}
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
+                            initial={{ y: 50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 50, opacity: 0 }}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-32px)] max-w-md z-[101] pointer-events-none"
+                            className="relative h-full overflow-y-auto no-scrollbar px-4 py-16"
+                            onClick={(e) => e.stopPropagation()}
                         >
-                            <div 
-                                className="h-auto max-h-[85vh] w-full bg-[#1C1C1E] rounded-3xl overflow-hidden flex flex-col relative shadow-2xl border border-white/10 pointer-events-auto"
-                                onClick={(e) => e.stopPropagation()}
+                            {/* Close Button */}
+                            <button
+                                onClick={() => setSelectedArtist(null)}
+                                className="fixed top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all z-50 border border-white/10 hover:scale-105 active:scale-95"
                             >
-                                {/* Close Button */}
-                                <button
-                                    onClick={() => setSelectedArtist(null)}
-                                    className="absolute top-4 right-4 z-10 bg-black/40 hover:bg-black/60 rounded-full p-2 text-white transition-all backdrop-blur-md"
+                                <X size={18} />
+                            </button>
+
+                            <div className="flex flex-col items-center max-w-2xl mx-auto">
+                                {/* Artist Image */}
+                                <motion.div
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
+                                    className="relative mb-6 group"
                                 >
-                                    <X size={16} />
-                                </button>
-
-                                {/* Header Image */}
-                                <div className="relative h-44 overflow-hidden flex-shrink-0">
-                                    <img
-                                        src={selectedArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtist.name)}&background=1DB954&color=fff`}
-                                        alt={selectedArtist.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1E] via-transparent to-transparent"></div>
-                                    <div className="absolute bottom-4 left-5 right-5">
-                                        <h2 className="text-xl font-black text-white mb-1.5 drop-shadow-lg line-clamp-1">{selectedArtist.name}</h2>
-                                        <div className="inline-flex items-center gap-1.5 bg-blue-500/20 border border-blue-400/30 px-2.5 py-0.5 rounded-full">
-                                            <TrendingUp size={10} className="text-blue-400" />
-                                            <span className="text-[10px] font-bold text-blue-300">Upcoming Artist</span>
-                                        </div>
+                                    <div className="absolute -inset-4 rounded-full blur-3xl opacity-[0.2] bg-blue-500/30 group-hover:opacity-[0.3] transition-opacity duration-700"></div>
+                                    <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-full overflow-hidden ring-4 ring-white/10 shadow-2xl relative">
+                                        <img
+                                            src={selectedArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtist.name)}&background=1DB954&color=fff`}
+                                            className="w-full h-full object-cover bg-[#1C1C1E]"
+                                            alt={selectedArtist.name}
+                                        />
                                     </div>
-                                </div>
-
-                                {/* Content */}
-                                <div className="flex-1 overflow-y-auto no-scrollbar p-5 space-y-4">
-                                    {/* Stats Grid */}
-                                    <div className="grid grid-cols-2 gap-2.5">
-                                        <div className="bg-white/[0.04] p-3.5 rounded-xl border border-white/5">
-                                            <p className="text-[9px] uppercase tracking-wider text-white/30 font-bold mb-1">Total Plays</p>
-                                            <p className="text-xl font-black text-white">{selectedArtist.plays}</p>
-                                        </div>
-                                        <div className="bg-white/[0.04] p-3.5 rounded-xl border border-white/5">
-                                            <p className="text-[9px] uppercase tracking-wider text-white/30 font-bold mb-1">Unique Tracks</p>
-                                            <p className="text-xl font-black text-white">{selectedArtist.uniqueTracksCount || 1}</p>
-                                        </div>
+                                    {/* Tag */}
+                                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-blue-500/20 backdrop-blur-md border border-blue-400/30 text-blue-300 px-4 py-1 rounded-full font-bold text-xs shadow-xl uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap">
+                                        <TrendingUp size={12} className="text-blue-400" />
+                                        Upcoming
                                     </div>
+                                </motion.div>
 
-                                    <div className="grid grid-cols-2 gap-2.5">
-                                        <div className="bg-white/[0.04] p-3.5 rounded-xl border border-white/5">
-                                            <p className="text-[9px] uppercase tracking-wider text-white/30 font-bold mb-1">First Heard</p>
-                                            <p className="text-sm font-semibold text-white">
-                                                {new Date(selectedArtist.firstPlay).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                            </p>
-                                            <p className="text-[9px] text-white/30 mt-0.5">
-                                                {selectedArtist.daysSinceFirstPlay} days ago
-                                            </p>
-                                        </div>
-                                        <div className="bg-white/[0.04] p-3.5 rounded-xl border border-white/5">
-                                            <p className="text-[9px] uppercase tracking-wider text-white/30 font-bold mb-1">Avg Listen</p>
-                                            <p className="text-sm font-semibold text-white">
-                                                {selectedArtist.avgDuration || 3} mins
-                                            </p>
-                                        </div>
+                                {/* Name + Intro */}
+                                <motion.h1
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.15 }}
+                                    className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight mb-2"
+                                >
+                                    {selectedArtist.name}
+                                </motion.h1>
+                                <motion.p
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="text-lg text-white/60 mb-8 text-center"
+                                >
+                                    Discovered {selectedArtist.daysSinceFirstPlay} days ago
+                                </motion.p>
+
+                                {/* Stats Row */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 30 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.25 }}
+                                    className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl mb-8"
+                                >
+                                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                                        <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mb-1">Total Plays</p>
+                                        <span className="text-xl font-black text-white">{selectedArtist.plays}</span>
                                     </div>
+                                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                                        <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mb-1">Unique Tracks</p>
+                                        <span className="text-xl font-black text-white">{selectedArtist.uniqueTracksCount || 1}</span>
+                                    </div>
+                                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                                        <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mb-1">Avg Listen</p>
+                                        <span className="text-xl font-black text-white">{selectedArtist.avgDuration || 3}m</span>
+                                    </div>
+                                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                                        <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mb-1">First Heard</p>
+                                        <span className="text-sm font-bold text-white mt-1">
+                                            {new Date(selectedArtist.firstPlay).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                        </span>
+                                    </div>
+                                </motion.div>
 
-                                    {/* Growth Graph */}
-                                    {growthData.length > 1 && (
-                                        <div className="bg-white/[0.04] p-4 rounded-xl border border-white/5">
-                                            <p className="text-[9px] uppercase tracking-wider text-white/30 font-bold mb-3 flex items-center gap-1">
-                                                <BarChart3 size={10} className="text-blue-400" /> Listening Growth
-                                            </p>
-                                            <div className="flex items-end gap-1 h-16">
-                                                {growthData.map((d, i) => {
-                                                    const maxCount = Math.max(...growthData.map(g => g.count));
-                                                    const height = (d.count / maxCount) * 100;
-                                                    return (
-                                                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                                {/* Growth Graph - Enhanced */}
+                                {growthData.length > 1 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.3 }}
+                                        className="w-full bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 mb-6"
+                                    >
+                                        <p className="text-[11px] uppercase tracking-wider text-white/40 font-bold mb-4 flex items-center gap-2">
+                                            <BarChart3 size={14} className="text-blue-400" /> Listening Activity
+                                        </p>
+                                        <div className="flex items-end gap-2 h-32">
+                                            {growthData.map((d, i) => {
+                                                const maxCount = Math.max(...growthData.map(g => g.count));
+                                                const height = (d.count / maxCount) * 100;
+                                                return (
+                                                    <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
+                                                        <div className="relative w-full flex items-end justify-center h-full">
                                                             <div 
-                                                                className="w-full rounded-t bg-gradient-to-t from-blue-500/60 to-blue-400/30 transition-all hover:from-blue-500/80 hover:to-blue-400/50 min-h-[2px]"
+                                                                className="w-full max-w-[20px] rounded-t-sm bg-gradient-to-t from-blue-500/40 to-blue-400/80 transition-all hover:from-blue-500/60 hover:to-blue-400 min-h-[4px]"
                                                                 style={{ height: `${Math.max(4, height)}%` }}
-                                                                title={`${d.date}: ${d.count} plays`}
-                                                            />
-                                                            {growthData.length <= 7 && (
-                                                                <span className="text-[7px] text-white/20 truncate w-full text-center">{d.date.split(' ')[1]}</span>
-                                                            )}
+                                                            ></div>
+                                                            {/* Tooltip */}
+                                                            <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1C1C1E] border border-white/10 px-2 py-1 rounded text-[10px] whitespace-nowrap z-10 pointer-events-none">
+                                                                {d.count} plays
+                                                            </div>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
+                                                        {growthData.length <= 10 && (
+                                                            <span className="text-[9px] text-white/30 truncate w-full text-center font-mono">{d.date.split(' ')[1]}</span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
-                                    )}
+                                    </motion.div>
+                                )}
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                                    {/* Recent Track */}
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.35 }}
+                                        className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5"
+                                    >
+                                        <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-3 flex items-center gap-1.5">
+                                            <Disc size={12} /> Recent Track
+                                        </p>
+                                        <p className="text-lg font-bold text-white truncate">{selectedArtist.trackSample}</p>
+                                    </motion.div>
 
                                     {/* Trajectory Summary */}
-                                    <div className="bg-white/[0.04] p-4 rounded-xl border border-white/5">
-                                        <p className="text-[9px] uppercase tracking-wider text-white/30 font-bold mb-2">Growth Trajectory</p>
-                                        <p className="text-[12px] text-white/60 leading-relaxed">
-                                            Entered your rotation <span className="font-semibold text-white">{selectedArtist.daysSinceFirstPlay} days ago</span> with <span className="font-semibold text-white">{selectedArtist.plays} plays</span> across <span className="font-semibold text-white">{selectedArtist.uniqueTracksCount || 1} tracks</span>. {selectedArtist.plays >= 5 ? 'Gaining serious momentum!' : 'Still early — keep listening!'}
+                                    <motion.div
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.35 }}
+                                        className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5"
+                                    >
+                                        <p className="text-[10px] uppercase tracking-wider text-white/40 font-bold mb-3">Trajectory</p>
+                                        <p className="text-sm text-white/70 leading-relaxed">
+                                            With <span className="text-white font-bold">{selectedArtist.plays} plays</span> across <span className="text-white font-bold">{selectedArtist.uniqueTracksCount || 1} tracks</span>,
+                                            {selectedArtist.plays >= 5 ? ' this artist is gaining serious momentum in your rotation.' : ' you\'re just getting started with this artist.'}
                                         </p>
-                                    </div>
-
-                                    {/* Recent Track */}
-                                    <div className="bg-white/[0.04] p-4 rounded-xl border border-white/5">
-                                        <p className="text-[9px] uppercase tracking-wider text-white/30 font-bold mb-2 flex items-center gap-1">
-                                            <Disc size={10} /> Recent Track
-                                        </p>
-                                        <p className="text-sm font-medium text-white truncate">{selectedArtist.trackSample}</p>
-                                    </div>
+                                    </motion.div>
                                 </div>
                             </div>
                         </motion.div>
-                    </>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>
