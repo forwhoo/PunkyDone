@@ -17,6 +17,7 @@ import LotusWrapped from './components/LotusWrapped';
 import BrutalistDashboard from './components/BrutalistDashboard';
 import BrutalistSwitch from './components/BrutalistSwitch';
 import { EmptyState } from './components/EmptyState';
+import Particles from './components/reactbits/Particles';
 
 // Extract dominant color from an image URL using canvas sampling
 const MIN_PIXEL_BRIGHTNESS = 40;
@@ -789,41 +790,42 @@ function App() {
 
   if (!token) {
       return (
-          <div className="min-h-[100dvh] bg-[#050505] text-white flex items-center justify-center p-6 relative overflow-hidden">
-              {/* Animated gradient orbs */}
-              <div className="absolute inset-0 overflow-hidden">
-                  <div className="absolute top-[-15%] left-[-10%] h-[500px] w-[500px] rounded-full bg-[#FA2D48]/[0.08] blur-[100px] animate-pulse" />
-                  <div className="absolute bottom-[-20%] right-[-5%] h-[400px] w-[400px] rounded-full bg-[#1DB954]/[0.05] blur-[120px] animate-pulse" style={{animationDelay: '1s'}} />
-                  <div className="absolute top-[40%] left-[60%] h-[300px] w-[300px] rounded-full bg-purple-900/[0.06] blur-[100px]" />
-                  {/* Subtle grid */}
-                  <div className="absolute inset-0 opacity-[0.02]" style={{backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '60px 60px'}} />
+          <div className="fixed inset-0 bg-black text-white flex flex-col items-center justify-between p-6 overflow-hidden font-sans">
+              {/* Top Bar */}
+              <div className="w-full flex justify-center pt-8 relative z-20">
+                  <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/5 shadow-lg">
+                      <Music size={20} className="text-white opacity-90" />
+                  </div>
               </div>
 
-              <div className="relative w-full max-w-sm flex flex-col items-center text-center gap-8 z-10">
-                  {/* Logo */}
-                  <div className="relative">
-                      <div className="w-20 h-20 bg-white rounded-[22px] flex items-center justify-center shadow-[0_0_80px_rgba(255,255,255,0.12),0_0_30px_rgba(255,255,255,0.06)]">
-                          <Music className="w-10 h-10 text-black" strokeWidth={2.5} />
-                      </div>
-                      <div className="absolute -inset-2 rounded-[28px] border border-white/[0.08] pointer-events-none" />
+              {/* Central Visual - Particles */}
+              <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-50">
+                  <Particles
+                      particleCount={450}
+                      particleSpread={12}
+                      speed={0.12}
+                      particleColors={['#ffffff', '#a0a0a0', '#404040']}
+                      moveParticlesOnHover={true}
+                      particleHoverFactor={1.5}
+                      alphaParticles={false}
+                      particleBaseSize={90}
+                      sizeRandomness={0.8}
+                      cameraDistance={22}
+                  />
+              </div>
+
+              {/* Bottom Content */}
+              <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-8 pb-10 animate-fade-in">
+                  <div className="text-center space-y-3">
+                      <h1 className="text-[34px] font-bold tracking-tight text-white leading-tight drop-shadow-lg">Welcome</h1>
+                      <p className="text-white/50 text-[17px] font-medium tracking-wide">Your journey starts from here</p>
                   </div>
 
-                  {/* Headline */}
-                  <div className="space-y-3">
-                      <h1 className="text-[42px] font-black tracking-[-0.03em] leading-none text-white">
-                          Lotus<span className="text-[#FA2D48]">.</span>
-                      </h1>
-                      <p className="text-[15px] text-white/40 max-w-[260px] mx-auto leading-relaxed font-medium">
-                          Your music, analyzed. Real-time charts, AI insights & personalized wrapped stories.
-                      </p>
-                  </div>
-
-                  {/* CTA */}
                   <div className="w-full space-y-3">
                       <button
                           onClick={handleConnect}
                           disabled={connecting}
-                          className="w-full bg-white text-black font-bold text-[15px] py-4 rounded-2xl transition-all active:scale-[0.97] shadow-[0_0_40px_rgba(255,255,255,0.08)] hover:shadow-[0_0_60px_rgba(255,255,255,0.15)] disabled:opacity-60 flex items-center justify-center gap-2"
+                          className="auth-button-primary flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all"
                       >
                           {connecting ? (
                               <>
@@ -831,24 +833,22 @@ function App() {
                                   Connecting...
                               </>
                           ) : (
-                              <>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-                                  Continue with Spotify
-                              </>
+                              'Continue with Spotify'
                           )}
                       </button>
-
-                      <p className="text-[11px] text-white/20 font-medium tracking-wider uppercase">
-                          Secure • Read-only access • No data stored without consent
-                      </p>
+                       <button
+                          className="auth-button-secondary opacity-60 cursor-not-allowed hover:bg-[#1C1C1E] active:scale-[0.98] transition-all"
+                          disabled
+                      >
+                          <svg className="w-4 h-4 fill-current mb-0.5" viewBox="0 0 24 24">
+                              <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.74 1.18 0 2.45-1.64 4.09-1.29 1.57.14 2.68.86 3.39 1.96-3.23 1.97-2.69 6.2 1.25 7.6-.66 1.7-1.6 3.48-3.81 3.96zm-1.89-13.43c.8-.97 1.34-2.31 1.19-3.66-1.15.05-2.54.77-3.36 1.73-.78.91-1.46 2.37-1.28 3.65 1.3.1 2.62-.63 3.45-1.72z"/>
+                          </svg> Continue with Apple
+                      </button>
                   </div>
 
-                  {/* Feature hints */}
-                  <div className="flex items-center gap-6 text-[11px] text-white/25 font-medium">
-                      <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#FA2D48]"></span>Live Charts</span>
-                      <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#1DB954]"></span>AI Insights</span>
-                      <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-purple-400"></span>Wrapped</span>
-                  </div>
+                  <p className="text-[11px] text-white/30 text-center max-w-[260px] leading-relaxed font-medium">
+                      By pressing on "Continue with..." you agree to our <span className="text-white/50 cursor-pointer hover:underline">Terms of Service</span> and <span className="text-white/50 cursor-pointer hover:underline">Privacy Policy</span>
+                  </p>
               </div>
           </div>
       );
@@ -1628,18 +1628,27 @@ function App() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] bg-black"
+                className="fixed inset-0 z-[100] bg-black overflow-hidden"
                 onClick={() => setSelectedTopArtist(null)}
             >
-                {/* Full-screen blurred background */}
-                <div className="absolute inset-0 overflow-hidden">
-                    <img 
-                        src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedTopArtist.name)}&background=1C1C1E&color=fff`}
-                        className="w-full h-full object-cover scale-110 blur-3xl opacity-20"
-                        alt=""
+                {/* Apple Music Style Background */}
+                <div className="absolute inset-0 bg-black" />
+
+                {/* Dynamic Gradient Orbs */}
+                <div className="absolute inset-0 opacity-60 animate-pulse-slow">
+                    <div
+                        className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] rounded-full blur-[100px] mix-blend-screen transition-colors duration-1000"
+                        style={{ backgroundColor: auraColor }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black" />
+                    <div
+                        className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] rounded-full blur-[100px] mix-blend-screen transition-colors duration-1000"
+                        style={{ backgroundColor: auraColor, animationDelay: '2s' }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/90" />
                 </div>
+
+                {/* Noise Overlay */}
+                <div className="absolute inset-0 bg-noise opacity-[0.07] mix-blend-overlay pointer-events-none" />
 
                 <motion.div 
                     initial={{ y: 50, opacity: 0 }}
