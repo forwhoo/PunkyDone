@@ -15,6 +15,7 @@ import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ChartSkeleton } from './components/LoadingSkeleton';
 import LotusWrapped from './components/LotusWrapped';
 import BrutalistDashboard from './components/BrutalistDashboard';
+import BrutalistSwitch from './components/BrutalistSwitch';
 
 // Extract dominant color from an image URL using canvas sampling
 const MIN_PIXEL_BRIGHTNESS = 40;
