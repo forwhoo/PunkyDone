@@ -798,10 +798,16 @@ function App() {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setBrutalistMode(true)}
-                            className="text-[10px] font-bold uppercase tracking-widest border border-white/20 rounded-lg px-2.5 py-1.5 text-white/60 hover:text-white hover:border-white/40 transition-all"
+                            className="group flex items-center gap-2 rounded-xl border border-yellow-400/20 bg-gradient-to-r from-[#161616] to-[#111111] px-3 py-2 text-left transition-all hover:border-yellow-400/45 hover:shadow-[0_0_22px_rgba(250,204,21,0.2)]"
                             title="Switch to Brutalist Mode"
                         >
-                            BRUTALIST
+                            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-yellow-400/35 bg-yellow-300/10 text-[13px]">
+                                ⚡
+                            </span>
+                            <span className="leading-tight">
+                                <span className="block text-[9px] font-semibold uppercase tracking-[0.25em] text-white/35">Mode</span>
+                                <span className="block text-[11px] font-bold uppercase tracking-[0.16em] text-yellow-300/80 group-hover:text-yellow-200">Brutalist</span>
+                            </span>
                         </button>
                         {data.user?.images?.[0]?.url && (
                             <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 shadow-xl">
@@ -1097,13 +1103,22 @@ function App() {
                 </button>
                 <button
                     onClick={() => setBrutalistMode(true)}
-                    className="rounded-2xl p-5 border border-white/10 hover:border-yellow-400/40 transition-all active:scale-[0.99] relative overflow-hidden"
+                    className="group rounded-2xl border border-yellow-400/20 bg-gradient-to-br from-[#151515] via-[#101010] to-[#080808] p-4 hover:border-yellow-400/45 transition-all active:scale-[0.99] relative overflow-hidden min-w-[156px]"
                     title="Switch to Brutalist Mode"
-                    style={{ minWidth: 120 }}
                 >
-                    <div className="flex flex-col items-center justify-center gap-1">
-                        <span className="text-lg">⚡</span>
-                        <span className="text-[11px] font-bold text-white/60 uppercase tracking-widest">BRUTALIST</span>
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.18),transparent_60%)] opacity-80 group-hover:opacity-100" />
+                    <div className="relative z-10 flex h-full flex-col justify-between gap-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.26em] text-white/45">Mode</span>
+                            <span className="rounded-md border border-yellow-300/40 bg-yellow-300/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-yellow-200">Beta</span>
+                        </div>
+                        <div className="flex items-end justify-between">
+                            <div className="text-left">
+                                <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-yellow-200/95">Brutalist</p>
+                                <p className="text-[11px] font-medium text-white/45">Raw analytics view</p>
+                            </div>
+                            <span className="text-xl leading-none">⚡</span>
+                        </div>
                     </div>
                 </button>
             </div>
