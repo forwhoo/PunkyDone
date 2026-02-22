@@ -15,6 +15,7 @@ import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ChartSkeleton } from './components/LoadingSkeleton';
 import LotusWrapped from './components/LotusWrapped';
 import BrutalistDashboard from './components/BrutalistDashboard';
+import BrutalistToggle from './components/BrutalistToggle';
 
 // Extract dominant color from an image URL using canvas sampling
 const MIN_PIXEL_BRIGHTNESS = 40;
@@ -897,19 +898,7 @@ function App() {
                         <h2 className="text-[34px] font-bold text-white leading-none tracking-tight">{getGreeting()}, {data.user?.display_name?.split(' ')[0] || 'friend'}</h2>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => setBrutalistMode(true)}
-                            className="group flex items-center gap-2 rounded-xl border border-yellow-400/20 bg-gradient-to-r from-[#161616] to-[#111111] px-3 py-2 text-left transition-all hover:border-yellow-400/45 hover:shadow-[0_0_22px_rgba(250,204,21,0.2)]"
-                            title="Switch to Brutalist Mode"
-                        >
-                            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-yellow-400/35 bg-yellow-300/10 text-[13px]">
-                                ⚡
-                            </span>
-                            <span className="leading-tight">
-                                <span className="block text-[9px] font-semibold uppercase tracking-[0.25em] text-white/35">Mode</span>
-                                <span className="block text-[11px] font-bold uppercase tracking-[0.16em] text-yellow-300/80 group-hover:text-yellow-200">Brutalist</span>
-                            </span>
-                        </button>
+                        <BrutalistToggle isOn={brutalistMode} onToggle={() => setBrutalistMode(true)} label="MODE" />
                         {data.user?.images?.[0]?.url && (
                             <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20 shadow-xl">
                                 <img src={data.user.images[0].url} alt={data.user.display_name} loading="lazy" className="w-full h-full object-cover" />
@@ -1320,26 +1309,9 @@ function App() {
                         <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors flex-shrink-0" />
                     </div>
                 </button>
-                <button
-                    onClick={() => setBrutalistMode(true)}
-                    className="group rounded-2xl border border-yellow-400/20 bg-gradient-to-br from-[#151515] via-[#101010] to-[#080808] p-4 hover:border-yellow-400/45 transition-all active:scale-[0.99] relative overflow-hidden min-w-[156px]"
-                    title="Switch to Brutalist Mode"
-                >
-                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.18),transparent_60%)] opacity-80 group-hover:opacity-100" />
-                    <div className="relative z-10 flex h-full flex-col justify-between gap-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.26em] text-white/45">Mode</span>
-                            <span className="rounded-md border border-yellow-300/40 bg-yellow-300/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-yellow-200">Beta</span>
-                        </div>
-                        <div className="flex items-end justify-between">
-                            <div className="text-left">
-                                <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-yellow-200/95">Brutalist</p>
-                                <p className="text-[11px] font-medium text-white/45">Raw analytics view</p>
-                            </div>
-                            <span className="text-xl leading-none">⚡</span>
-                        </div>
-                    </div>
-                </button>
+                <div className="flex items-center px-6 rounded-2xl border border-yellow-400/20 bg-gradient-to-br from-[#151515] via-[#101010] to-[#080808]">
+                    <BrutalistToggle isOn={brutalistMode} onToggle={() => setBrutalistMode(true)} label="BRUTALIST" />
+                </div>
             </div>
 
             {/* SECTION 2: TOP RANKINGS - Prominent Showcase */}
@@ -1669,7 +1641,7 @@ function App() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] bg-black"
+                className="fixed inset-0 z-[300] bg-black"
                 onClick={() => setSelectedTopArtist(null)}
             >
                 {/* Full-screen blurred background */}
@@ -1814,7 +1786,7 @@ function App() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] bg-black"
+                className="fixed inset-0 z-[300] bg-black"
                 onClick={() => setSelectedTopAlbum(null)}
             >
                 <div className="absolute inset-0 overflow-hidden">
@@ -1971,7 +1943,7 @@ function App() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] bg-black"
+                className="fixed inset-0 z-[300] bg-black"
                 onClick={() => setSelectedTopSong(null)}
             >
                 <div className="absolute inset-0 overflow-hidden">
@@ -2196,6 +2168,9 @@ function App() {
                     setTimeRange(range);
                     fetchDashboardStats(range).then((d: any) => setDbUnifiedData(d));
                 }}
+                onArtistClick={setSelectedTopArtist}
+                onSongClick={setSelectedTopSong}
+                onAlbumClick={setSelectedTopAlbum}
             />
         )}
 
