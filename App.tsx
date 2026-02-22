@@ -465,6 +465,7 @@ function App() {
     if (!showWrappedMessage) return;
   }, [showWrappedMessage]);
 
+
   // Sync Data to Supabase when data is loaded
   useEffect(() => {
       const syncAndFetchStats = async () => {
@@ -1320,26 +1321,9 @@ function App() {
                         <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors flex-shrink-0" />
                     </div>
                 </button>
-                <button
-                    onClick={() => setBrutalistMode(true)}
-                    className="group rounded-2xl border border-yellow-400/20 bg-gradient-to-br from-[#151515] via-[#101010] to-[#080808] p-4 hover:border-yellow-400/45 transition-all active:scale-[0.99] relative overflow-hidden min-w-[156px]"
-                    title="Switch to Brutalist Mode"
-                >
-                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.18),transparent_60%)] opacity-80 group-hover:opacity-100" />
-                    <div className="relative z-10 flex h-full flex-col justify-between gap-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.26em] text-white/45">Mode</span>
-                            <span className="rounded-md border border-yellow-300/40 bg-yellow-300/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-yellow-200">Beta</span>
-                        </div>
-                        <div className="flex items-end justify-between">
-                            <div className="text-left">
-                                <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-yellow-200/95">Brutalist</p>
-                                <p className="text-[11px] font-medium text-white/45">Raw analytics view</p>
-                            </div>
-                            <span className="text-xl leading-none">⚡</span>
-                        </div>
-                    </div>
-                </button>
+                <div className="flex flex-col justify-center min-w-[150px] items-center rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <BrutalistSwitch isEnabled={brutalistMode} onToggle={() => setBrutalistMode(!brutalistMode)} />
+                </div>
             </div>
 
             {/* SECTION 2: TOP RANKINGS - Prominent Showcase */}
@@ -2196,6 +2180,9 @@ function App() {
                     setTimeRange(range);
                     fetchDashboardStats(range).then((d: any) => setDbUnifiedData(d));
                 }}
+                onArtistClick={setSelectedTopArtist}
+                onSongClick={setSelectedTopSong}
+                onAlbumClick={setSelectedTopAlbum}
             />
         )}
 
