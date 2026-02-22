@@ -392,11 +392,17 @@ export const fetchArtistImages = async (
 
                 const data = await res.json();
                 const artist = data.artists?.items[0];
-                if (artist && artist.images?.length > 0) {
-                    const url = artist.images[0].url;
-                    imageMap[name] = url;
-                    artistImageCache[name] = url;
-                    found++;
+
+                // Verify name match (case-insensitive) to prevent "Drake" -> "Kanye" issues
+                if (artist && artist.name.toLowerCase().trim() === name.toLowerCase().trim()) {
+                    if (artist.images?.length > 0) {
+                        const url = artist.images[0].url;
+                        imageMap[name] = url;
+                        artistImageCache[name] = url;
+                        found++;
+                    }
+                } else if (artist) {
+                    console.warn(`[fetchArtistImages] ⚠️ Mismatch: Searched "${name}", found "${artist.name}" - skipping`);
                 }
             } catch (e) {
                 console.error(`[fetchArtistImages] ❌ Error for ${name}:`, e);
