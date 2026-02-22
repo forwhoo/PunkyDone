@@ -196,6 +196,33 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 import { SeeAllModal } from './components/SeeAllModal';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
 
+const BrutalistSwitch = ({ isEnabled, onToggle }: { isEnabled: boolean; onToggle: () => void }) => (
+    <button
+        onClick={onToggle}
+        className="group relative flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-1 py-1 pr-4 backdrop-blur-md transition-all hover:border-white/20 active:scale-95"
+    >
+        <div
+            className={`relative flex h-8 w-8 items-center justify-center rounded-full transition-all duration-300 ${
+                isEnabled ? 'bg-[#FA2D48] text-white shadow-[0_0_15px_rgba(250,45,72,0.4)]' : 'bg-[#27272A] text-white/40'
+            }`}
+        >
+            <div className={`transition-transform duration-500 ${isEnabled ? 'rotate-180 scale-110' : 'rotate-0'}`}>
+                {isEnabled ? '⚡' : '✦'}
+            </div>
+        </div>
+        <div className="flex flex-col items-start">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Mode</span>
+            <span
+                className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                    isEnabled ? 'text-[#FA2D48]' : 'text-white'
+                }`}
+            >
+                Brutalist
+            </span>
+        </div>
+    </button>
+);
+
 function App() {
   const hasAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
   const authFlowHandledRef = useRef(false);
@@ -396,6 +423,7 @@ function App() {
   useEffect(() => {
     if (!showWrappedMessage) return;
   }, [showWrappedMessage]);
+
 
   // Sync Data to Supabase when data is loaded
   useEffect(() => {
@@ -822,19 +850,7 @@ function App() {
                         <h2 className="text-[30px] font-bold text-white mt-1">Hey {data.user?.display_name || 'there'}</h2>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setBrutalistMode(true)}
-                            className="group flex items-center gap-2 rounded-xl border border-yellow-400/20 bg-gradient-to-r from-[#161616] to-[#111111] px-3 py-2 text-left transition-all hover:border-yellow-400/45 hover:shadow-[0_0_22px_rgba(250,204,21,0.2)]"
-                            title="Switch to Brutalist Mode"
-                        >
-                            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-yellow-400/35 bg-yellow-300/10 text-[13px]">
-                                ⚡
-                            </span>
-                            <span className="leading-tight">
-                                <span className="block text-[9px] font-semibold uppercase tracking-[0.25em] text-white/35">Mode</span>
-                                <span className="block text-[11px] font-bold uppercase tracking-[0.16em] text-yellow-300/80 group-hover:text-yellow-200">Brutalist</span>
-                            </span>
-                        </button>
+                        <BrutalistSwitch isEnabled={brutalistMode} onToggle={() => setBrutalistMode(!brutalistMode)} />
                         {data.user?.images?.[0]?.url && (
                             <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 shadow-xl">
                                 <img src={data.user.images[0].url} alt={data.user.display_name} loading="lazy" className="w-full h-full object-cover" />
@@ -1230,26 +1246,9 @@ function App() {
                         <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors flex-shrink-0" />
                     </div>
                 </button>
-                <button
-                    onClick={() => setBrutalistMode(true)}
-                    className="group rounded-2xl border border-yellow-400/20 bg-gradient-to-br from-[#151515] via-[#101010] to-[#080808] p-4 hover:border-yellow-400/45 transition-all active:scale-[0.99] relative overflow-hidden min-w-[156px]"
-                    title="Switch to Brutalist Mode"
-                >
-                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.18),transparent_60%)] opacity-80 group-hover:opacity-100" />
-                    <div className="relative z-10 flex h-full flex-col justify-between gap-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.26em] text-white/45">Mode</span>
-                            <span className="rounded-md border border-yellow-300/40 bg-yellow-300/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-yellow-200">Beta</span>
-                        </div>
-                        <div className="flex items-end justify-between">
-                            <div className="text-left">
-                                <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-yellow-200/95">Brutalist</p>
-                                <p className="text-[11px] font-medium text-white/45">Raw analytics view</p>
-                            </div>
-                            <span className="text-xl leading-none">⚡</span>
-                        </div>
-                    </div>
-                </button>
+                <div className="flex flex-col justify-center min-w-[150px] items-center rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <BrutalistSwitch isEnabled={brutalistMode} onToggle={() => setBrutalistMode(!brutalistMode)} />
+                </div>
             </div>
 
             {/* SECTION 2: TOP RANKINGS - Prominent Showcase */}
@@ -2085,6 +2084,9 @@ function App() {
                     setTimeRange(range);
                     fetchDashboardStats(range).then((d: any) => setDbUnifiedData(d));
                 }}
+                onArtistClick={setSelectedTopArtist}
+                onSongClick={setSelectedTopSong}
+                onAlbumClick={setSelectedTopAlbum}
             />
         )}
 

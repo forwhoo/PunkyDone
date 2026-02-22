@@ -43,6 +43,9 @@ interface BrutalistDashboardProps {
   artistImages?: Record<string, string>;
   timeRange: string;
   onTimeRangeChange: (range: 'Daily' | 'Weekly' | 'Monthly' | 'All Time') => void;
+  onArtistClick?: (artist: Artist) => void;
+  onSongClick?: (song: Song) => void;
+  onAlbumClick?: (album: Album) => void;
 }
 
 const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
@@ -56,6 +59,9 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
   artistImages = {},
   timeRange,
   onTimeRangeChange,
+  onArtistClick,
+  onSongClick,
+  onAlbumClick,
 }) => {
   const [activeTab, setActiveTab] = useState<'artists' | 'songs' | 'albums'>('artists');
 
@@ -131,8 +137,11 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
 
               {/* Top Artist Card - BIG */}
               {topArtist && (
-                  <div className="relative border-[6px] border-black bg-white shadow-[10px_10px_0px_0px_#000] group overflow-hidden">
-                      <div className="absolute top-0 left-0 bg-black text-white px-3 py-1 text-xs font-black uppercase tracking-widest z-20">
+                  <div
+                      onClick={() => onArtistClick?.(topArtist)}
+                      className="relative border-[6px] border-black bg-white shadow-[10px_10px_0px_0px_#000] group overflow-hidden cursor-pointer hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[14px_14px_0px_0px_#000] transition-all active:translate-x-0 active:translate-y-0 active:shadow-[6px_6px_0px_0px_#000]"
+                  >
+                      <div className="absolute top-0 left-0 bg-black text-white px-3 py-1 text-xs font-black uppercase tracking-widest z-20 pointer-events-none">
                           #1 Obsession
                       </div>
                       <div className="aspect-square w-full relative overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-500">
@@ -163,9 +172,12 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
               {/* Top Song & Album Mini-Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {topSong && (
-                      <div className="bg-[#FF4D2E] border-[4px] border-black p-4 shadow-[6px_6px_0px_0px_#000] flex flex-col justify-between h-40 relative overflow-hidden group">
+                      <div
+                           onClick={() => onSongClick?.(topSong)}
+                           className="bg-[#FF4D2E] border-[4px] border-black p-4 shadow-[6px_6px_0px_0px_#000] flex flex-col justify-between h-40 relative overflow-hidden group cursor-pointer hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_#000] transition-all active:translate-y-0 active:shadow-[4px_4px_0px_0px_#000]"
+                      >
                            <div className="absolute right-[-20px] top-[-20px] text-[100px] leading-none opacity-20 font-black rotate-12 pointer-events-none">#1</div>
-                           <div className="relative z-10">
+                           <div className="relative z-10 pointer-events-none">
                                <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-2 text-black/60">Top Track</h3>
                                <p className="text-xl font-black text-white leading-tight uppercase line-clamp-2">{topSong.title}</p>
                                <p className="text-sm font-bold text-black uppercase mt-1">{topSong.artist}</p>
@@ -174,9 +186,12 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
                       </div>
                   )}
                   {topAlbum && (
-                      <div className="bg-[#FF0080] border-[4px] border-black p-4 shadow-[6px_6px_0px_0px_#000] flex flex-col justify-between h-40 relative overflow-hidden group">
+                      <div
+                           onClick={() => onAlbumClick?.(topAlbum)}
+                           className="bg-[#FF0080] border-[4px] border-black p-4 shadow-[6px_6px_0px_0px_#000] flex flex-col justify-between h-40 relative overflow-hidden group cursor-pointer hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_#000] transition-all active:translate-y-0 active:shadow-[4px_4px_0px_0px_#000]"
+                      >
                            <div className="absolute right-[-20px] top-[-20px] text-[100px] leading-none opacity-20 font-black rotate-12 pointer-events-none">#1</div>
-                           <div className="relative z-10">
+                           <div className="relative z-10 pointer-events-none">
                                <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-2 text-black/60">Top Album</h3>
                                <p className="text-xl font-black text-white leading-tight uppercase line-clamp-2">{topAlbum.title}</p>
                                <p className="text-sm font-bold text-black uppercase mt-1">{topAlbum.artist}</p>
@@ -227,6 +242,7 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
                                   meta={`${artist.totalListens} plays`}
                                   badge={artist.timeStr}
                                   color="#1A6BFF"
+                                  onClick={() => onArtistClick?.(artist)}
                               />
                           ))}
                           {activeTab === 'songs' && songs.slice(0, 10).map((song, i) => (
@@ -238,6 +254,7 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
                                   sub={song.artist}
                                   meta={`${song.listens} plays`}
                                   color="#FF4D2E"
+                                  onClick={() => onSongClick?.(song)}
                               />
                           ))}
                           {activeTab === 'albums' && albums.slice(0, 10).map((album, i) => (
@@ -249,6 +266,7 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
                                   sub={album.artist}
                                   meta={`${album.totalListens} plays`}
                                   color="#FF0080"
+                                  onClick={() => onAlbumClick?.(album)}
                               />
                           ))}
                       </motion.div>
@@ -266,8 +284,11 @@ const BrutalistDashboard: React.FC<BrutalistDashboardProps> = ({
   );
 };
 
-const BrutRow = ({ rank, image, title, sub, meta, badge, color }: { rank: number, image?: string, title: string, sub?: string, meta: string, badge?: string, color: string }) => (
-    <div className="flex items-center gap-4 bg-white border-[3px] border-black p-3 shadow-[4px_4px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] transition-all group">
+const BrutRow = ({ rank, image, title, sub, meta, badge, color, onClick }: { rank: number, image?: string, title: string, sub?: string, meta: string, badge?: string, color: string, onClick?: () => void }) => (
+    <div
+        onClick={onClick}
+        className="flex items-center gap-4 bg-white border-[3px] border-black p-3 shadow-[4px_4px_0px_0px_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#000] transition-all group cursor-pointer active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0px_0px_#000]"
+    >
         <div className="w-10 text-center font-black text-2xl text-black/20 group-hover:text-black transition-colors">{rank}</div>
         <div className="w-12 h-12 border-2 border-black bg-black shrink-0 overflow-hidden relative">
              <img src={image || fallbackImage} alt={title} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
