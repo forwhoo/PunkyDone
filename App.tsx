@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight } from 'lucide-react';
+import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight, Zap } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
 import { Artist, Album, Song } from './types';
@@ -824,15 +824,15 @@ function App() {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setBrutalistMode(true)}
-                            className="group flex items-center gap-2 rounded-xl border border-yellow-400/20 bg-gradient-to-r from-[#161616] to-[#111111] px-3 py-2 text-left transition-all hover:border-yellow-400/45 hover:shadow-[0_0_22px_rgba(250,204,21,0.2)]"
+                            className="group flex items-center gap-3 border-2 border-white bg-black px-4 py-2 text-left transition-transform active:translate-y-1 hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]"
                             title="Switch to Brutalist Mode"
                         >
-                            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-yellow-400/35 bg-yellow-300/10 text-[13px]">
-                                ⚡
+                            <span className="flex items-center justify-center text-white">
+                                <Zap size={18} fill="currentColor" />
                             </span>
-                            <span className="leading-tight">
-                                <span className="block text-[9px] font-semibold uppercase tracking-[0.25em] text-white/35">Mode</span>
-                                <span className="block text-[11px] font-bold uppercase tracking-[0.16em] text-yellow-300/80 group-hover:text-yellow-200">Brutalist</span>
+                            <span className="leading-none">
+                                <span className="block text-[10px] font-bold uppercase tracking-widest text-white">Mode</span>
+                                <span className="block text-[12px] font-black uppercase tracking-wider text-white">Brutalist</span>
                             </span>
                         </button>
                         {data.user?.images?.[0]?.url && (
@@ -1232,22 +1232,19 @@ function App() {
                 </button>
                 <button
                     onClick={() => setBrutalistMode(true)}
-                    className="group rounded-2xl border border-yellow-400/20 bg-gradient-to-br from-[#151515] via-[#101010] to-[#080808] p-4 hover:border-yellow-400/45 transition-all active:scale-[0.99] relative overflow-hidden min-w-[156px]"
+                    className="group relative flex flex-col justify-between border-2 border-white bg-black p-4 transition-transform active:translate-y-1 hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] min-w-[160px]"
                     title="Switch to Brutalist Mode"
                 >
-                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.18),transparent_60%)] opacity-80 group-hover:opacity-100" />
-                    <div className="relative z-10 flex h-full flex-col justify-between gap-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.26em] text-white/45">Mode</span>
-                            <span className="rounded-md border border-yellow-300/40 bg-yellow-300/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-yellow-200">Beta</span>
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white">Mode</span>
+                        <span className="border border-white bg-white text-black px-1.5 py-0.5 text-[9px] font-black uppercase">Beta</span>
+                    </div>
+                    <div className="flex items-end justify-between">
+                        <div className="text-left">
+                            <p className="text-[16px] font-black uppercase tracking-wider text-white">Brutalist</p>
+                            <p className="text-[10px] font-medium text-white/60">Raw Data</p>
                         </div>
-                        <div className="flex items-end justify-between">
-                            <div className="text-left">
-                                <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-yellow-200/95">Brutalist</p>
-                                <p className="text-[11px] font-medium text-white/45">Raw analytics view</p>
-                            </div>
-                            <span className="text-xl leading-none">⚡</span>
-                        </div>
+                        <Zap size={24} className="text-white" fill="currentColor" />
                     </div>
                 </button>
             </div>
