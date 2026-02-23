@@ -14,9 +14,6 @@ import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ArtistOrbit } from './components/ArtistOrbit';
 import { ChartSkeleton } from './components/LoadingSkeleton';
-import LotusWrapped from './components/LotusWrapped';
-import BrutalistDashboard from './components/BrutalistDashboard';
-import BrutalistSwitch from './components/BrutalistSwitch';
 import { EmptyState } from './components/EmptyState';
 import Particles from './components/reactbits/Particles';
 import { FullScreenModal } from './components/FullScreenModal';
@@ -288,12 +285,6 @@ function App() {
   // AI Discovery Modal State
   const [aiModalOpen, setAiModalOpen] = useState(false);
 
-  // Wrapped Under Construction Message State
-  const [showWrappedMessage, setShowWrappedMessage] = useState(false);
-
-  // Brutalist mode toggle
-  const [brutalistMode, setBrutalistMode] = useState(false);
-
   // Dynamic aura colors extracted from item images
   const [auraColor, setAuraColor] = useState<string>('#FA2D48');
 
@@ -377,6 +368,22 @@ function App() {
           logger.error("Auth redirect failed", e);
           setConnecting(false);
       }
+  };
+
+  const handleSeeAll = (type: 'artist' | 'album' | 'song') => {
+      let items: any[] = [];
+      let title = '';
+      if (type === 'artist') {
+          items = safeArtists;
+          title = 'Top Artists';
+      } else if (type === 'album') {
+          items = safeAlbums;
+          title = 'Top Albums';
+      } else if (type === 'song') {
+          items = safeSongs;
+          title = 'Top Songs';
+      }
+      setSeeAllModal({ isOpen: true, title, items, type });
   };
 
   const wrappedRange = useMemo(() => {
@@ -571,8 +578,7 @@ function App() {
     const shouldLockScroll = Boolean(
       selectedTopArtist ||
       selectedTopAlbum ||
-      selectedTopSong ||
-      showWrappedMessage
+      selectedTopSong
     );
 
     if (!shouldLockScroll) return;
@@ -586,7 +592,7 @@ function App() {
       document.body.style.overflow = previousBodyOverflow;
       document.documentElement.style.overflow = previousHtmlOverflow;
     };
-  }, [selectedTopArtist, selectedTopAlbum, selectedTopSong, showWrappedMessage]);
+  }, [selectedTopArtist, selectedTopAlbum, selectedTopSong]);
 
   useEffect(() => {
     if (authFlowHandledRef.current) return;
@@ -802,22 +808,6 @@ function App() {
                     }}
                 />
                 
-                <button
-                    onClick={() => setShowWrappedMessage(true)}
-                    className="w-full rounded-2xl p-6 border border-white/10 hover:border-white/20 active:scale-[0.98] transition-all relative overflow-hidden"
-                >
-                    <div className="absolute inset-0 z-0">
-                        <PrismaticBurst animationType="rotate3d" intensity={1.5} speed={0.3} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
-                    </div>
-                    <div className="absolute inset-0 bg-black/60 z-[1]" />
-                    <div className="flex items-center justify-between relative z-10">
-                        <div className="text-left">
-                            <h3 className="text-[17px] font-bold text-white tracking-tight">Lotus Wrapped</h3>
-                            <p className="text-[13px] text-white/60 font-medium">View your story</p>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-white/60 flex-shrink-0" />
-                    </div>
-                </button>
             </div>
 
             <div className="relative">
@@ -850,7 +840,7 @@ function App() {
                     <section className="space-y-4">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Your Top Artists</h3>
-                            {/* ... See All ... */}
+                            <button onClick={() => handleSeeAll('artist')} className="text-xs font-semibold text-[#FA2D48] hover:text-[#ff5c70] transition-colors">See All</button>
                         </div>
                         {safeArtists.length > 0 ? (
                             <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
@@ -873,6 +863,7 @@ function App() {
                     <section className="space-y-4">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
+                            <button onClick={() => handleSeeAll('song')} className="text-xs font-semibold text-[#FA2D48] hover:text-[#ff5c70] transition-colors">See All</button>
                         </div>
                         <div>
                             {safeSongs.length > 0 ? (
@@ -904,6 +895,7 @@ function App() {
                     <section className="space-y-4">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
+                            <button onClick={() => handleSeeAll('album')} className="text-xs font-semibold text-[#FA2D48] hover:text-[#ff5c70] transition-colors">See All</button>
                         </div>
                         {safeAlbums.length > 0 ? (
                             <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x px-1">
@@ -976,24 +968,33 @@ function App() {
                 />
             </div>
             
-            <div className="mb-16 flex gap-3">
-                <button onClick={() => setShowWrappedMessage(true)} className="flex-1 rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all group active:scale-[0.99] relative overflow-hidden">
-                    {/* ... Lotus Wrapped Button ... */}
-                    <div className="absolute inset-0 z-0">
-                        <PrismaticBurst animationType="rotate3d" intensity={1.5} speed={0.3} colors={['#FA2D48', '#7C3AED', '#ffffff']} mixBlendMode="lighten" />
-                    </div>
-                    <div className="absolute inset-0 bg-black/60 z-[1]" />
-                    <div className="flex items-center justify-between relative z-10">
-                        <div className="text-left">
-                            <h3 className="text-[15px] font-bold text-white tracking-tight">Lotus Wrapped</h3>
-                            <p className="text-[12px] text-white/60 font-medium">View your story</p>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors flex-shrink-0" />
-                    </div>
-                </button>
-                <div className="flex flex-col justify-center min-w-[150px] items-center rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <BrutalistSwitch isEnabled={brutalistMode} onToggle={() => setBrutalistMode(!brutalistMode)} />
+            {/* Desktop Date Range Selector */}
+            <div className="flex items-center justify-between mb-12">
+                <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
+                    {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
+                        <button
+                            key={range}
+                            onClick={() => {
+                                setTimeRange(range);
+                                setCustomDateRange(null);
+                                fetchDashboardStats(range).then(data => setDbUnifiedData(data));
+                            }}
+                            className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                                timeRange === range ? 'bg-white text-black shadow-lg scale-105' : 'text-white/60 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            {range}
+                        </button>
+                    ))}
                 </div>
+
+                <button
+                    onClick={handleManualRefresh}
+                    className={`p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all ${isRefreshing ? 'animate-spin' : 'hover:rotate-180 duration-500'}`}
+                    title="Refresh Data"
+                >
+                    <RefreshCw size={20} className="text-white/70" />
+                </button>
             </div>
 
             <div className="mb-20">
@@ -1004,7 +1005,7 @@ function App() {
                         <div>
                             <div className="flex justify-between items-center mb-6 px-1">
                                 <h3 className="text-[20px] font-bold text-white tracking-tight">Top Artists</h3>
-                                {/* ... */}
+                                <button onClick={() => handleSeeAll('artist')} className="text-sm font-semibold text-[#FA2D48] hover:text-[#ff5c70] transition-colors px-4 py-2 bg-white/5 rounded-full hover:bg-white/10">See All</button>
                             </div>
                             {safeArtists.length > 0 && (
                                 <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
@@ -1025,6 +1026,7 @@ function App() {
                         <div>
                             <div className="flex justify-between items-center mb-6 px-1">
                                 <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
+                                <button onClick={() => handleSeeAll('album')} className="text-sm font-semibold text-[#FA2D48] hover:text-[#ff5c70] transition-colors px-4 py-2 bg-white/5 rounded-full hover:bg-white/10">See All</button>
                             </div>
                             {safeAlbums.length > 0 && (
                                 <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
@@ -1039,6 +1041,7 @@ function App() {
                         <div>
                             <div className="flex justify-between items-center mb-6 px-1">
                                 <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
+                                <button onClick={() => handleSeeAll('song')} className="text-sm font-semibold text-[#FA2D48] hover:text-[#ff5c70] transition-colors px-4 py-2 bg-white/5 rounded-full hover:bg-white/10">See All</button>
                             </div>
                             {safeSongs.length > 0 && (
                                 <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
@@ -1169,23 +1172,6 @@ function App() {
                     />
                 </motion.div>
 
-                {/* Activity Heatmap */}
-                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.35 }}
-                    className="w-full mb-8 bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4"
-                >
-                    <h3 className="text-xs font-bold text-white/70 mb-4 flex items-center gap-2 uppercase tracking-wider">
-                         <Calendar size={12} className="opacity-80" /> Listening Activity
-                    </h3>
-                    <div className="overflow-hidden">
-                        <ActivityHeatmap
-                            history={safeRecent.filter((p: any) => p.artist_name === selectedTopArtist.name)}
-                            variant="compact"
-                        />
-                    </div>
-                </motion.div>
 
                 {/* Top Tracks Section */}
                 <motion.div
@@ -1298,94 +1284,12 @@ function App() {
                         <span className="text-xl font-bold text-white">{selectedTopAlbum.timeStr ? String(selectedTopAlbum.timeStr).replace('m', '') : '0'}</span>
                         <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Minutes</span>
                     </div>
-                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
-                        <Disc size={16} className="mb-1.5 opacity-80" />
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center relative group">
+                        <Sparkles size={16} className="mb-1.5 opacity-80" />
                         <span className="text-xl font-bold text-white">
-                            {(dbUnifiedData?.songs || []).filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title) && (s.artist === selectedTopAlbum.artist || s.artist_name === selectedTopAlbum.artist)).length}
+                            {selectedTopAlbum.totalListens ? Math.round((selectedTopAlbum.totalListens / (safeRecent.length || 1)) * 100) : 0}%
                         </span>
-                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Tracks</span>
-                    </div>
-                </motion.div>
-
-                 {/* Obsession Orbit (Album) */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="w-full mb-6"
-                >
-                    <ArtistOrbit
-                        centralNode={{ id: selectedTopAlbum.id, name: selectedTopAlbum.title, image: selectedTopAlbum.cover }}
-                        orbitNodes={(dbUnifiedData?.songs || [])
-                            .filter((s: any) => (s.album === selectedTopAlbum.title || s.album_name === selectedTopAlbum.title))
-                            .slice(0, 6)
-                             .map((s: any) => ({ id: s.id, name: s.track_name || s.title, image: s.cover || s.album_cover }))
-                        }
-                        color={auraColor}
-                         history={safeRecent.filter((p: any) => p.album_name === selectedTopAlbum.title || p.album === selectedTopAlbum.title)}
-                    />
-                </motion.div>
-
-                 {/* Activity Heatmap */}
-                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.35 }}
-                    className="w-full mb-8 bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4"
-                >
-                    <h3 className="text-xs font-bold text-white/70 mb-4 flex items-center gap-2 uppercase tracking-wider">
-                         <Calendar size={12} className="opacity-80" /> Listening Activity
-                    </h3>
-                    <div className="overflow-hidden">
-                        <ActivityHeatmap
-                            history={safeRecent.filter((p: any) => p.album_name === selectedTopAlbum.title || p.album === selectedTopAlbum.title)}
-                            variant="compact"
-                        />
-                    </div>
-                </motion.div>
-
-                {/* Album Tracks - More Compact */}
-                <motion.div
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="w-full max-w-md bg-gradient-to-b from-[#1C1C1E] to-[#121212] border border-white/[0.08] rounded-2xl p-4"
-                >
-                    <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                        <Music size={14} className="opacity-80" /> Tracks
-                    </h3>
-                    <div className="space-y-1 max-h-64 overflow-y-auto no-scrollbar">
-                        {(() => {
-                            const normalizedAlbumTitle = (selectedTopAlbum.title || '').toLowerCase().trim();
-                            const normalizedAlbumArtist = (selectedTopAlbum.artist || '').toLowerCase().trim();
-
-                            const filteredTracks = (dbUnifiedData?.songs || [])
-                                .filter((s: any) => {
-                                    const songAlbum = (s.album || s.album_name || '').toLowerCase().trim();
-                                    const songArtist = (s.artist || s.artist_name || '').toLowerCase().trim();
-                                    return songAlbum === normalizedAlbumTitle && songArtist === normalizedAlbumArtist;
-                                })
-                                .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
-                                .slice(0, 10);
-
-                            return filteredTracks.length === 0 ? (
-                                <p className="text-[#8E8E93] text-xs text-center py-4 italic">No track data available</p>
-                            ) : (
-                                filteredTracks.map((song: any, idx: number) => (
-                                    <div key={idx} className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg transition-all group">
-                                        <div className="text-[#8E8E93] font-mono text-xs w-4 font-bold text-right">{idx + 1}</div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="text-xs font-semibold text-white truncate">
-                                                {song.track_name || song.title}
-                                            </div>
-                                            <div className="text-[10px] text-[#8E8E93]">
-                                                {song.listens || song.plays || 0} plays
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            );
-                        })()}
+                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Of Plays</span>
                     </div>
                 </motion.div>
             </div>
@@ -1522,49 +1426,6 @@ function App() {
         )}
     </AnimatePresence>
 
-    {/* Lotus Wrapped Title Screen */}
-        {showWrappedMessage && (
-            <LotusWrapped
-                onClose={() => setShowWrappedMessage(false)}
-                albumCovers={[...new Set([
-                    ...safeAlbums.map((a: Album) => a.cover),
-                    ...safeSongs.map((s: Song) => s.cover),
-                    ...safeArtists.map((a: Artist) => a.image)
-                ].filter(Boolean))]}
-                totalMinutes={dbStats?.totalMinutes ?? 0}
-                artists={safeArtists}
-                albums={safeAlbums}
-                songs={safeSongs}
-                weeklyMinutes={dbUnifiedData?.totalMinutes ?? 0}
-                rangeLabel={wrappedRange.label}
-                rangeStart={wrappedRange.start}
-                rangeEnd={wrappedRange.end}
-                // Pass full history data for granular stats in Wrapped
-                historyRows={safeRecent}
-            />
-        )}
-
-        {/* Brutalist Dashboard */}
-        {brutalistMode && (
-            <BrutalistDashboard
-                onToggleOff={() => setBrutalistMode(false)}
-                artists={safeArtists}
-                songs={safeSongs}
-                albums={safeAlbums}
-                totalMinutes={dbStats?.totalMinutes ?? 0}
-                userName={data?.user?.display_name}
-                userImage={data?.user?.images?.[0]?.url}
-                artistImages={artistImages}
-                timeRange={timeRange}
-                onTimeRangeChange={(range) => {
-                    setTimeRange(range);
-                    fetchDashboardStats(range).then((d: any) => setDbUnifiedData(d));
-                }}
-                onArtistClick={setSelectedTopArtist}
-                onSongClick={setSelectedTopSong}
-                onAlbumClick={setSelectedTopAlbum}
-            />
-        )}
 
         <BackToTop />
     </>

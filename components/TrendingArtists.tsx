@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { TrendingUp, Sparkles, Disc, Mic2, Music, X, Clock, ChevronDown, Check, Info, Grid3x3, Orbit, ArrowUpDown, SlidersHorizontal } from 'lucide-react';
+import { TrendingUp, Sparkles, Disc, Mic2, Music, X, Clock, ChevronDown, Check, Info, Orbit, ArrowUpDown, SlidersHorizontal } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { GridView } from './GridView';
 
 const AVAILABLE_YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
 
@@ -34,10 +33,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
     const [selectedItem, setSelectedItem] = useState<TrendingItem | null>(null);
     const [selectedYear, setSelectedYear] = useState<number>(2026);
     const [showYearDropdown, setShowYearDropdown] = useState(false);
-    const [viewType, setViewType] = useState<'orbit' | 'grid'>('orbit');
     const [sortBy, setSortBy] = useState<'obsession' | 'frequency' | 'recency' | 'consistency'>('obsession');
-    const [showSortMenu, setShowSortMenu] = useState(false);
-    const sortMenuRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Close dropdowns when clicking outside
@@ -45,9 +41,6 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
         const handleClickOutside = (e: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
                 setShowYearDropdown(false);
-            }
-            if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
-                setShowSortMenu(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -241,7 +234,24 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
 
         // Compute Scores - Advanced Obsession Algorithm with Complex Math
         const result: TrendingItem[] = [];
-        const halfLifeMs = 14 * 24 * 60 * 60 * 1000; // 14-day exponential decay
+
+        // Adjust decay based on time range to prevent data bias
+        let halfLifeMs = 14 * 24 * 60 * 60 * 1000;
+        let volumeMultiplier = 12.5;
+
+        if (timeRange === 'Daily') {
+            halfLifeMs = 4 * 60 * 60 * 1000; // 4 hours
+            volumeMultiplier = 25; // Boost volume score for shorter periods
+        } else if (timeRange === 'Weekly') {
+            halfLifeMs = 3 * 24 * 60 * 60 * 1000; // 3 days
+            volumeMultiplier = 18;
+        } else if (timeRange === 'Monthly') {
+            halfLifeMs = 10 * 24 * 60 * 60 * 1000; // 10 days
+        } else if (timeRange === 'All Time') {
+            halfLifeMs = 90 * 24 * 60 * 60 * 1000; // 90 days
+            volumeMultiplier = 8; // Reduce volume multiplier for long periods to avoid saturation
+        }
+
         const sessionGapMs = 90 * 60 * 1000; // 90-minute session gap
         const bingeThreshold = 5; // 5+ plays in a session = binge
 
@@ -320,13 +330,15 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
 
             // Advanced Score Components - Normalized to 0-250 scale for greater variation
             // 1. Volume: Logarithmic scale with saturation - Max 50
-            const volumeScore = Math.min(50, Math.log1p(totalPlays) * 12.5);
+            const volumeScore = Math.min(50, Math.log1p(totalPlays) * volumeMultiplier);
             
             // 2. Consistency: Regularity with exponential reward - Max 45
             const consistencyScore = Math.min(45, Math.pow(consistency, 0.7) * 45);
             
             // 3. Intensity: Average plays per day with logarithmic scaling - Max 40
-            const intensityScore = Math.min(40, Math.log1p(playsPerDay) * 20);
+            // Adjust intensity scaling based on range
+            const intensityMultiplier = timeRange === 'Daily' ? 10 : 20;
+            const intensityScore = Math.min(40, Math.log1p(playsPerDay) * intensityMultiplier);
             
             // 4. Focus: Session intensity with binge bonus - Max 30
             const baseFocusScore = Math.min(1, sessionIntensity / 6) * 20;
@@ -408,13 +420,6 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
     // Handle Closing
     const handleClose = () => setSelectedItem(null);
 
-    const SORT_LABELS: Record<typeof sortBy, string> = {
-        obsession: 'Obsession Score',
-        frequency: 'Play Count',
-        recency: 'Most Recent',
-        consistency: 'Consistency',
-    };
-
     // ORBITAL LAYOUT
     const centerItem = trendingItems[0];
     const innerRing = trendingItems.slice(1, 9);
@@ -432,23 +437,14 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         <div>
                             <div className="flex items-center gap-2">
                                 <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                                    {viewType === 'grid' ? 'Connections' : 'Obsession Orbit'}
+                                    Obsession Orbit
                                 </h2>
                                 <div className="relative group/info">
                                     <Info size={16} className="text-[#8E8E93] hover:text-white transition-colors cursor-help" />
                                     <div className="absolute left-0 top-full mt-2 w-72 bg-[#1C1C1E] border border-white/10 rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
                                         <p className="text-[11px] text-[#8E8E93] leading-relaxed">
-                                            {viewType === 'grid' ? (
-                                                <>
-                                                    <span className="text-white font-semibold">Connections</span> maps your {activeTab}s based on listening similarity. 
-                                                    {activeTab === 'artist' ? ' Artists' : ' Albums'} that share listening patterns — similar times, days, and frequency — appear closer together with red lines showing the strongest connections. Use the search bar to find specific items. Click an edge to see similarity details.
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span className="text-white font-semibold">Obsession Orbit</span> visualizes your top {activeTab}s based on listening patterns. 
-                                                    The center shows your #1, with rings displaying your most obsessed {activeTab}s based on consistency, volume, and recency.
-                                                </>
-                                            )}
+                                            <span className="text-white font-semibold">Obsession Orbit</span> visualizes your top {activeTab}s based on listening patterns.
+                                            The center shows your #1, with rings displaying your most obsessed {activeTab}s based on consistency, volume, and recency.
                                         </p>
                                     </div>
                                 </div>
@@ -457,24 +453,6 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         </div>
                         
                         <div className="flex items-center gap-2 flex-shrink-0">
-                            {/* View Toggle: Orbit / Connection */}
-                            <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-0.5 border border-white/5 shadow-sm">
-                                <button
-                                    onClick={() => setViewType('orbit')}
-                                    className={`p-1.5 rounded-full transition-all ${viewType === 'orbit' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
-                                    title="Orbit View"
-                                >
-                                    <Orbit size={14} />
-                                </button>
-                                <button
-                                    onClick={() => { setViewType('grid'); if (sortBy === 'obsession') setSortBy('frequency'); }}
-                                    className={`p-1.5 rounded-full transition-all ${viewType === 'grid' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
-                                    title="Connection View"
-                                >
-                                    <Grid3x3 size={14} />
-                                </button>
-                            </div>
-
                             {/* Year Dropdown */}
                             <div className="relative" ref={dropdownRef}>
                                 <button 
@@ -523,44 +501,6 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         </div>
                     </div>
 
-                    {/* Sort/Filter Bar - Only show for grid/connection view */}
-                    {viewType === 'grid' && (
-                        <div className="flex items-center gap-2 mt-2">
-                            <div className="relative" ref={sortMenuRef}>
-                                <button
-                                    onClick={() => setShowSortMenu(!showSortMenu)}
-                                    className="flex items-center gap-1.5 text-[11px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors"
-                                >
-                                    <SlidersHorizontal size={12} />
-                                    {SORT_LABELS[sortBy]}
-                                    <ChevronDown size={10} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
-                                </button>
-                                {showSortMenu && (
-                                    <div className="absolute left-0 top-full mt-1 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[150px] animate-in fade-in slide-in-from-top-2 duration-200">
-                                        {([
-                                            { key: 'frequency', label: 'Play Count', desc: 'Total number of plays' },
-                                            { key: 'recency', label: 'Most Recent', desc: 'Last listened first' },
-                                            { key: 'consistency', label: 'Consistency', desc: 'Regularity of listening' },
-                                        ] as const).map(opt => (
-                                            <button
-                                                key={opt.key}
-                                                onClick={() => { setSortBy(opt.key); setShowSortMenu(false); }}
-                                                className={`w-full px-3 py-2 text-left hover:bg-white/5 transition-colors flex items-center justify-between gap-2 ${
-                                                    sortBy === opt.key ? 'text-white bg-white/5' : 'text-[#8E8E93]'
-                                                }`}
-                                            >
-                                                <div>
-                                                    <div className="text-[11px] font-medium">{opt.label}</div>
-                                                    <div className="text-[9px] opacity-50">{opt.desc}</div>
-                                                </div>
-                                                {sortBy === opt.key && <Check size={10} className="text-[#FA2D48] flex-shrink-0" />}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* MAIN VIEW */}
@@ -570,8 +510,6 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                         <p className="text-white/30 text-sm font-medium">No data for {selectedYear}</p>
                         <p className="text-white/15 text-xs mt-1">Try selecting a different year</p>
                     </div>
-                ) : viewType === 'grid' ? (
-                    <GridView items={trendingItems} plays={filteredPlays} onItemClick={handleItemClick} />
                 ) : (
                 <motion.div 
                     layout
@@ -851,16 +789,21 @@ const OrbitNode = ({ item, rank, size, isActive, isDimmed, onClick }: { item: Tr
                 <div 
                     style={{ 
                         position: 'fixed',
-                        left: tooltipPos.x + 12,
-                        top: tooltipPos.y - 10,
+                        left: tooltipPos.x + 16,
+                        top: tooltipPos.y - 16,
                         zIndex: 9999,
                         pointerEvents: 'none'
                     }}
                 >
-                    <div className="bg-[rgba(28,28,30,0.95)] backdrop-blur-lg border border-white/10 rounded-[10px] px-3 py-2 shadow-2xl">
-                        <div className="text-[13px] font-bold text-white">{item.name}</div>
-                        {item.subName && <div className="text-[11px] text-white/60">{item.subName}</div>}
-                        <div className="text-[10px] text-white/50 mt-0.5">{item.recentPlays} plays</div>
+                    <div className="bg-[#000000] border border-white/20 rounded-lg px-4 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+                        <div className="text-[14px] font-bold text-white leading-tight">{item.name}</div>
+                        {item.subName && <div className="text-[11px] font-medium text-white/60 mt-0.5">{item.subName}</div>}
+                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10">
+                            <div className="text-[10px] font-bold text-[#FA2D48] bg-[#FA2D48]/10 px-1.5 py-0.5 rounded">
+                                SCORE: {item.trendScore}
+                            </div>
+                            <div className="text-[10px] font-medium text-white/50">{item.recentPlays} plays</div>
+                        </div>
                     </div>
                 </div>,
                 document.body
