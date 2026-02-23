@@ -71,23 +71,29 @@ export const AI_MODELS: AIModel[] = [
 export const DEFAULT_MODEL_ID = "llama-3.1-8b-instant";
 
 const trimToolPayload = (payload: any): any => {
-    if (!payload || typeof payload !== 'object') return payload;
+    if (!payload) return payload;
 
-    const clone: any = { ...payload };
-    const trimArray = (arr: any[], max = 6) => arr.slice(0, max);
+    // Handle Arrays: Strict limit to 8 items
+    if (Array.isArray(payload)) {
+        return payload.slice(0, 8).map(item => trimToolPayload(item));
+    }
 
-    ['songs', 'artists', 'albums', 'plays', 'tracks', 'results', 'items', 'connections', 'edges', 'nodes'].forEach((key) => {
-        if (Array.isArray(clone[key])) clone[key] = trimArray(clone[key]);
-    });
+    // Handle Objects
+    if (typeof payload === 'object') {
+        const clone: any = {};
+        Object.keys(payload).forEach((key) => {
+            const val = payload[key];
+            if (typeof val === 'string') {
+                // Truncate long strings
+                clone[key] = val.length > 150 ? `${val.slice(0, 147)}...` : val;
+            } else {
+                clone[key] = trimToolPayload(val);
+            }
+        });
+        return clone;
+    }
 
-    Object.keys(clone).forEach((key) => {
-        const val = clone[key];
-        if (typeof val === 'string' && val.length > 280) {
-            clone[key] = `${val.slice(0, 277)}...`;
-        }
-    });
-
-    return clone;
+    return payload;
 };
 
 // ─── TOOL CALL TYPES ──────────────────────────────────────────────
@@ -808,7 +814,7 @@ async function executeAgentTool(
         switch (funcName) {
             case 'get_top_songs': {
                 const period = funcArgs.period || 'Weekly';
-                const limit = Math.min(funcArgs.limit || 10, 50);
+                const limit = Math.min(funcArgs.limit || 8, 20);
                 const stats = await fetchDashboardStats(period as any);
                 let songs = (stats.songs || []).slice(0, limit);
                 if (funcArgs.artist_filter) {
@@ -831,7 +837,7 @@ async function executeAgentTool(
 
             case 'get_top_artists': {
                 const period = funcArgs.period || 'Weekly';
-                const limit = Math.min(funcArgs.limit || 10, 50);
+                const limit = Math.min(funcArgs.limit || 8, 20);
                 const stats = await fetchDashboardStats(period as any);
                 const artists = (stats.artists || []).slice(0, limit);
                 return {
@@ -850,7 +856,7 @@ async function executeAgentTool(
 
             case 'get_top_albums': {
                 const period = funcArgs.period || 'Weekly';
-                const limit = Math.min(funcArgs.limit || 10, 50);
+                const limit = Math.min(funcArgs.limit || 8, 20);
                 const stats = await fetchDashboardStats(period as any);
                 const albums = (stats.albums || []).slice(0, limit);
                 return {
@@ -1016,7 +1022,7 @@ async function executeAgentTool(
                 const charts = await fetchCharts(period as any);
                 return {
                     period,
-                    charts: (charts || []).slice(0, 20).map((c: any) => ({
+                    charts: (charts || []).slice(0, 10).map((c: any) => ({
                         rank: c.rank,
                         title: c.title,
                         artist: c.artist,
@@ -1204,7 +1210,7 @@ async function executeAgentTool(
             }
 
             case 'get_recent_plays': {
-                const limit = Math.min(funcArgs.limit || 20, 50);
+                const limit = Math.min(funcArgs.limit || 8, 20);
                 const stats = await fetchDashboardStats('Daily');
                 const recentPlays = (stats.recentPlays || stats.songs || []).slice(0, limit);
                 return {

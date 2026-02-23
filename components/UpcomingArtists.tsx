@@ -39,12 +39,17 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                             plays: 0,
                             trackSample: play.track_name,
                             uniqueTracks: new Set(),
+                            trackCounts: {},
                             totalDuration: 0,
                             playDates: []
                         };
                     }
                     candidates[artistName].plays += 1;
                     candidates[artistName].uniqueTracks.add(play.track_name);
+
+                    const trackName = play.track_name;
+                    candidates[artistName].trackCounts[trackName] = (candidates[artistName].trackCounts[trackName] || 0) + 1;
+
                     candidates[artistName].totalDuration += (play.duration_ms || 180000);
                     candidates[artistName].playDates.push(play.played_at);
 
@@ -249,10 +254,34 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                             </div>
                         )}
 
+                        {/* Top Tracks */}
+                        <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 mb-8">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Disc size={16} className="text-[#FA2D48]" />
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wide">Top Tracks</h3>
+                            </div>
+                            <div className="space-y-3">
+                                {Object.entries(selectedArtist.trackCounts || {})
+                                    .sort(([, a], [, b]) => (b as number) - (a as number))
+                                    .slice(0, 3)
+                                    .map(([track, count], idx) => (
+                                    <div key={idx} className="flex items-center justify-between group">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-white/20 font-bold text-sm w-4">{idx + 1}</span>
+                                            <span className="text-white font-medium text-sm">{track}</span>
+                                        </div>
+                                        <div className="text-white/40 text-xs font-bold bg-white/5 px-2 py-1 rounded-md group-hover:bg-white/10 transition-colors">
+                                            {count as number} plays
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* Recent Track Info */}
                         <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 flex items-center gap-4">
                             <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                                <Disc size={24} className="text-white" />
+                                <Clock size={24} className="text-white" />
                             </div>
                             <div>
                                 <h4 className="text-lg font-bold text-white">{selectedArtist.trackSample}</h4>

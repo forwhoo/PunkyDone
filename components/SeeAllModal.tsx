@@ -196,15 +196,15 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                             {/* Summary Bar */}
                             <div className="flex items-center gap-6 mt-6 text-xs font-medium text-white/40">
                                 <span className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
                                     {processedItems.length} visible
                                 </span>
                                 <span className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
                                     {totalPlays.toLocaleString()} total plays
                                 </span>
                                 <span className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]"></div>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
                                     {totalTime.toLocaleString()}m listened
                                 </span>
                             </div>
