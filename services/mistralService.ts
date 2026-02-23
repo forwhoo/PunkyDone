@@ -1118,7 +1118,7 @@ export const streamMusicQuestionWithTools = async (
                 model: selectedModelId,
                 messages: messages,
                 // @ts-ignore
-                tools: AGENT_TOOLS,
+                tools: [...AGENT_TOOLS, { type: 'web_search' }],
             });
 
             let toolCallsBuffer: any[] = [];
@@ -1152,14 +1152,14 @@ export const streamMusicQuestionWithTools = async (
                             } else if (part.type === 'thinking') {
                                 // Handle thinking part
                                 // Based on user doc: "thinking": [ { "type": "text", "text": "..." } ]
-                                if (Array.isArray(part.thinking)) {
+                                if (typeof part.thinking === 'string') {
+                                    onChunk({ type: 'thinking', content: part.thinking });
+                                } else if (Array.isArray(part.thinking)) {
                                     for (const p of part.thinking) {
                                         if (p.type === 'text' && p.text) {
                                             onChunk({ type: 'thinking', content: p.text });
                                         }
                                     }
-                                } else if (typeof part.thinking === 'string') {
-                                    onChunk({ type: 'thinking', content: part.thinking });
                                 }
                             }
                         }
@@ -1296,7 +1296,7 @@ export const answerMusicQuestionWithTools = async (
                 model: selectedModelId,
                 messages: messages,
                 // @ts-ignore
-                tools: AGENT_TOOLS,
+                tools: [...AGENT_TOOLS, { type: 'web_search' }],
             });
 
             const choice = response.choices?.[0];

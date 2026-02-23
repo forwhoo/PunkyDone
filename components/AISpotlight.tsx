@@ -766,7 +766,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                         isThinking = true;
 
                                         // Check for title
-                                        const titleMatch = buffer.match(/^\s*\/(.+?)(\n|$)/);
+                                        const titleMatch = buffer.match(/^\s*\/text\{(.+?)\}/) || buffer.match(/^\s*\/(.+?)(\n|$)/);
                                         if (titleMatch) {
                                             currentThoughtTitle = titleMatch[1];
                                             buffer = buffer.substring(titleMatch[0].length);
@@ -789,7 +789,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                         isThinking = true;
 
                                         // Check for title
-                                        const titleMatch = buffer.match(/^\s*\/(.+?)(\n|$)/);
+                                        const titleMatch = buffer.match(/^\s*\/text\{(.+?)\}/) || buffer.match(/^\s*\/(.+?)(\n|$)/);
                                         if (titleMatch) {
                                             currentThoughtTitle = titleMatch[1];
                                             buffer = buffer.substring(titleMatch[0].length);
@@ -1019,7 +1019,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                                         {/* Tool Logs */}
                                         {msg.tools && msg.tools.map((tool, tIdx) => (
-                                            <Tool key={tIdx} toolPart={tool} />
+                                            <Tool key={tIdx} toolPart={tool} className="w-full max-w-md" />
                                         ))}
 
                                         {/* Thinking Indicator */}
