@@ -40,7 +40,7 @@ import { fetchArtistImages, searchSpotifyTracks } from './spotifyService';
 // Initialize Mistral lazily
 const getAiClient = () => {
     // @ts-ignore
-    const apiKey = import.meta.env.VITE_GROQ_API_KEY || '';
+    const apiKey = import.meta.env.VITE_MISTRAL_API_KEY || import.meta.env.VITE_GROQ_API_KEY || '';
     if (!apiKey) return null;
 
     return new Mistral({ apiKey });
@@ -1089,7 +1089,7 @@ export const streamMusicQuestionWithTools = async (
     try {
         const client = getAiClient();
         if (!client) {
-            onChunk({ type: 'text', content: "& Configure VITE_GROQ_API_KEY to use chat features." });
+            onChunk({ type: 'text', content: "& Configure VITE_MISTRAL_API_KEY to use chat features." });
             return;
         }
 
@@ -1268,7 +1268,7 @@ export const answerMusicQuestionWithTools = async (
 
     try {
         const client = getAiClient();
-        if (!client) return { text: "Configure VITE_GROQ_API_KEY to use chat features.", toolCalls: [] };
+        if (!client) return { text: "Configure VITE_MISTRAL_API_KEY to use chat features.", toolCalls: [] };
 
         const selectedModelId = modelId || DEFAULT_MODEL_ID;
 
@@ -1359,7 +1359,7 @@ export const answerMusicQuestionWithTools = async (
 export const generateMusicInsights = async (contextData: string): Promise<string> => {
     try {
         const client = getAiClient();
-        if (!client) return "Configure VITE_GROQ_API_KEY to see insights.";
+        if (!client) return "Configure VITE_MISTRAL_API_KEY to see insights.";
 
         const prompt = `You are a music analytics expert. Analyze: ${contextData}`;
         const result = await client.chat.complete({
@@ -1377,7 +1377,7 @@ export const generateMusicInsights = async (contextData: string): Promise<string
 export const answerMusicQuestion = async (question: string, context: any): Promise<string> => {
     try {
         const client = getAiClient();
-        if (!client) return "Configure VITE_GROQ_API_KEY.";
+        if (!client) return "Configure VITE_MISTRAL_API_KEY.";
 
         const prompt = `User: ${context.userName}. Question: ${question}. Context: ${JSON.stringify(context.globalStats)}`;
         const result = await client.chat.complete({
@@ -1394,7 +1394,7 @@ export const answerMusicQuestion = async (question: string, context: any): Promi
 export const generateMusicInsight = async (query: string, stats: any): Promise<string> => {
     try {
         const client = getAiClient();
-        if (!client) return "Configure VITE_GROQ_API_KEY.";
+        if (!client) return "Configure VITE_MISTRAL_API_KEY.";
         const prompt = `Data: ${JSON.stringify(stats)}. User: ${query}`;
         const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,

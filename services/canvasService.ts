@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { Mistral } from "@mistralai/mistralai";
 import {
     getObsessionArtist,
     getPeakListeningHour,
@@ -9,17 +9,13 @@ import {
     fetchDashboardStats,
 } from './dbService';
 
-// Initialize Groq (via OpenAI SDK) lazily - same pattern as geminiService
+// Initialize Mistral lazily
 const getAiClient = () => {
     // @ts-ignore
-    const apiKey = import.meta.env.VITE_GROQ_API_KEY || '';
+    const apiKey = import.meta.env.VITE_MISTRAL_API_KEY || import.meta.env.VITE_GROQ_API_KEY || '';
     if (!apiKey) return null;
 
-    return new OpenAI({
-        apiKey: apiKey,
-        baseURL: "https://api.groq.com/openai/v1",
-        dangerouslyAllowBrowser: true
-    });
+    return new Mistral({ apiKey });
 };
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -50,7 +46,7 @@ export interface CanvasToolContext {
 
 // ─── Tool Definitions ───────────────────────────────────────────────────
 
-const CANVAS_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+const CANVAS_TOOLS: any[] = [
     {
         type: "function",
         function: {
@@ -484,7 +480,7 @@ export const generateCanvasComponent = async (
                 onRetry(retry, lastError);
             }
 
-            const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+            const messages: any[] = [
                 { role: "system", content: CANVAS_SYSTEM_PROMPT },
             ];
 
@@ -509,26 +505,27 @@ export const generateCanvasComponent = async (
             while (iterations < MAX_TOOL_ITERATIONS) {
                 iterations++;
 
-                const response = await client.chat.completions.create({
-                    model: "moonshotai/kimi-k2-instruct-0905",
+                const response = await client.chat.complete({
+                    model: "mistral-large-latest",
                     messages,
+                    // @ts-ignore
                     tools: CANVAS_TOOLS,
-                    tool_choice: "auto",
+                    toolChoice: "auto",
                     temperature: 0.7,
-                    max_tokens: 8000
+                    maxTokens: 8000
                 });
 
-                const assistantMessage = response.choices[0]?.message;
+                const assistantMessage = response.choices?.[0]?.message;
                 if (!assistantMessage) break;
 
-                messages.push(assistantMessage as any);
+                messages.push(assistantMessage);
 
-                if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-                    for (const toolCall of assistantMessage.tool_calls) {
-                        // @ts-ignore - Groq SDK types
-                        const funcName = toolCall.function?.name || (toolCall as any).name;
-                        // @ts-ignore
-                        const funcArgs = JSON.parse(toolCall.function?.arguments || (toolCall as any).arguments || "{}");
+                if (assistantMessage.toolCalls && assistantMessage.toolCalls.length > 0) {
+                    for (const toolCall of assistantMessage.toolCalls) {
+                        const funcName = toolCall.function?.name;
+                        const funcArgs = typeof toolCall.function?.arguments === 'string'
+                            ? JSON.parse(toolCall.function.arguments)
+                            : toolCall.function?.arguments || {};
                         let toolResult: any = {};
 
                         switch (funcName) {
@@ -631,9 +628,10 @@ export const generateCanvasComponent = async (
 
                         messages.push({
                             role: "tool",
-                            tool_call_id: toolCall.id,
+                            toolCallId: toolCall.id,
+                            name: funcName,
                             content: JSON.stringify(toolResult)
-                        } as any);
+                        });
                     }
 
                     // If we got a canvas result, we're done

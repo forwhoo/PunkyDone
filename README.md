@@ -51,7 +51,7 @@
     VITE_SPOTIFY_CLIENT_ID=your_spotify_client_id
     VITE_SPOTIFY_REDIRECT_URI=http://localhost:3000/
     VITE_GEMINI_API_KEY=your_gemini_api_key
-    VITE_GROQ_API_KEY=your_groq_api_key
+    VITE_MISTRAL_API_KEY=your_mistral_api_key
     ```
 
 4.  **Run the development server:**

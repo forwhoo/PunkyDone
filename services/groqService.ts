@@ -2,7 +2,7 @@ import OpenAI from "openai";
 
 const getClient = () => {
     // @ts-ignore
-    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+    const apiKey = import.meta.env.VITE_MISTRAL_API_KEY || import.meta.env.VITE_GROQ_API_KEY;
     if (!apiKey) return null;
     
     return new OpenAI({
@@ -15,7 +15,7 @@ const getClient = () => {
 export const generateMusicInsight = async (query: string, stats: any) => {
     const client = getClient();
     if (!client) {
-        return "Please set VITE_GROQ_API_KEY in your environment to use the AI features.";
+        return "Please set VITE_MISTRAL_API_KEY in your environment to use the AI features.";
     }
 
     // Prepare context from stats (summarized to avoid token limits if data is huge, though Groq is fast/large context)
