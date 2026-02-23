@@ -60,7 +60,7 @@ const SlideTitle = ({ title, subtitle }: { title: string, subtitle?: string }) =
     </div>
 );
 
-// --- Slide 1: Intro (Wave) ---
+// --- Slide 1: Intro (Brutalist) ---
 const IntroSlide = ({ rangeLabel }: { rangeLabel: string }) => {
     return (
         <SlideContainer bgColor="#1C1C1E">
@@ -69,44 +69,34 @@ const IntroSlide = ({ rangeLabel }: { rangeLabel: string }) => {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.8, ease: "backOut" }}
+                    className="relative z-10"
                 >
                     <h2 className="text-sm font-bold text-[#FA2D48] tracking-[0.3em] uppercase mb-4">Your Year In Music</h2>
-                    <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter mb-2">LOTUS<br/>WRAPPED</h1>
-                    <div className="w-24 h-1 bg-white/20 mx-auto rounded-full my-6 overflow-hidden">
+                    <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter mb-2 leading-none">LOTUS<br/>WRAPPED</h1>
+                    <div className="w-24 h-2 bg-white/10 mx-auto mt-8 overflow-hidden">
                         <motion.div
-                            className="h-full bg-[#FA2D48]"
+                            className="h-full bg-white"
                             initial={{ width: 0 }}
                             animate={{ width: "100%" }}
-                            transition={{ duration: 1.5, delay: 0.5 }}
+                            transition={{ duration: 1.5, delay: 0.5, ease: "circOut" }}
                         />
                     </div>
-                    <p className="text-white/60 font-medium">{rangeLabel}</p>
+                    <p className="text-white/60 font-bold mt-4 uppercase tracking-widest text-sm">{rangeLabel}</p>
                 </motion.div>
 
-                {/* Wave Animation */}
-                <div className="absolute inset-x-0 bottom-0 h-1/3 overflow-hidden pointer-events-none">
-                    <svg className="absolute bottom-0 w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none">
-                        <motion.path
-                            fill="rgba(250, 45, 72, 0.2)"
-                            d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-                            animate={{
-                                d: [
-                                    "M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z",
-                                    "M0,64L48,80C96,96,192,128,288,128C384,128,480,96,576,106.7C672,117,768,171,864,197.3C960,224,1056,224,1152,197.3C1248,171,1344,117,1392,90.7L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z",
-                                    "M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-                                ]
-                            }}
-                            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                        />
-                    </svg>
-                </div>
+                {/* Noise overlay */}
+                <div className="absolute inset-0 pointer-events-none opacity-20 mix-blend-overlay"
+                    style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+                    }}
+                />
             </div>
         </SlideContainer>
     );
 };
 
-// --- Slide 2: Minutes (Suction) ---
-const MinutesSlide = ({ minutes }: { minutes: number }) => {
+// --- Slide 2: Minutes (Eat the Albums) ---
+const MinutesSlide = ({ minutes, albumCovers }: { minutes: number, albumCovers: string[] }) => {
     // Number counting hook
     const [count, setCount] = useState(0);
     useEffect(() => {
@@ -129,118 +119,147 @@ const MinutesSlide = ({ minutes }: { minutes: number }) => {
         requestAnimationFrame(animate);
     }, [minutes]);
 
+    // Generate flying albums
+    const flyingAlbums = useMemo(() => {
+        // Use provided covers or placeholders
+        const pool = albumCovers && albumCovers.length > 0 ? albumCovers : Array(10).fill('https://ui-avatars.com/api/?name=?');
+        // Generate ~20 flying items
+        return Array.from({ length: 20 }).map((_, i) => {
+             const cover = pool[i % pool.length];
+             // Random start position outside the center
+             const angle = Math.random() * Math.PI * 2;
+             const dist = 800 + Math.random() * 400; // Far out
+             const x = Math.cos(angle) * dist;
+             const y = Math.sin(angle) * dist;
+             return { id: i, cover, startX: x, startY: y, delay: Math.random() * 2 };
+        });
+    }, [albumCovers]);
+
     return (
         <SlideContainer bgColor="#000">
-            <div className="flex-1 flex flex-col items-center justify-center relative">
-                {/* Suction Particles */}
-                {Array.from({ length: 20 }).map((_, i) => (
-                    <motion.div
-                        key={i}
-                        className="absolute rounded-full bg-white/20 blur-sm"
-                        style={{
-                            width: Math.random() * 10 + 2,
-                            height: Math.random() * 10 + 2,
-                            left: '50%',
-                            top: '50%'
-                        }}
-                        initial={{ x: (Math.random() - 0.5) * 800, y: (Math.random() - 0.5) * 800, opacity: 0 }}
-                        animate={{ x: 0, y: 0, opacity: [0, 1, 0] }}
-                        transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            delay: Math.random() * 2,
-                            ease: "easeIn"
-                        }}
-                    />
-                ))}
-
+            <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
                 <SlideTitle title="You Spent" />
 
-                <motion.div
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-[12vw] font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-gray-500 leading-none tracking-tighter"
-                >
-                    {count.toLocaleString()}
-                </motion.div>
+                {/* Flying Albums */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                     {flyingAlbums.map((item) => (
+                         <motion.div
+                             key={item.id}
+                             className="absolute w-16 h-16 md:w-24 md:h-24 rounded shadow-2xl"
+                             initial={{ x: item.startX, y: item.startY, opacity: 1, scale: 1, rotate: Math.random() * 360 }}
+                             animate={{ x: 0, y: 0, opacity: 0, scale: 0.1, rotate: 0 }}
+                             transition={{
+                                 duration: 1.5,
+                                 delay: item.delay,
+                                 ease: "easeIn"
+                             }}
+                         >
+                             <img src={item.cover} className="w-full h-full object-cover rounded opacity-80" />
+                         </motion.div>
+                     ))}
+                </div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1 }}
-                    className="mt-4 text-xl font-bold text-[#FA2D48] uppercase tracking-widest"
-                >
-                    Minutes Listening
-                </motion.div>
+                <div className="relative z-10 flex flex-col items-center">
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: [0.8, 1.1, 1], opacity: 1 }}
+                        transition={{ duration: 0.5, times: [0, 0.6, 1] }}
+                        className="text-[15vw] font-black text-white leading-none tracking-tighter"
+                        style={{ textShadow: '0 0 30px rgba(255,255,255,0.3)' }}
+                    >
+                        {count.toLocaleString()}
+                    </motion.div>
 
-                <p className="mt-8 text-white/50 max-w-md text-center text-sm">
-                    That's {Math.round(minutes / 60)} hours of your life you'll never get back. (Worth it).
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1 }}
+                        className="mt-4 text-xl font-bold text-[#CCFF00] uppercase tracking-widest bg-white/10 px-6 py-2 rounded-full backdrop-blur-md border border-white/10"
+                    >
+                        Minutes Listening
+                    </motion.div>
+                </div>
+
+                <p className="mt-8 text-white/50 max-w-md text-center text-sm relative z-10">
+                    That's {Math.round(minutes / 60)} hours. Pure dedication.
                 </p>
             </div>
         </SlideContainer>
     );
 };
 
-// --- Slide 3: Top Artist (Carousel) ---
+// --- Slide 3: Top Artist (Carousel Ticker) ---
 const TopArtistSlide = ({ topArtist, allArtists }: { topArtist: Artist, allArtists: Artist[] }) => {
     const [reveal, setReveal] = useState(false);
-    const [spinIndex, setSpinIndex] = useState(0);
-    const carouselArtists = useMemo(() => {
-        // Create a pool of artists to spin through, ending with topArtist
-        const others = allArtists.filter(a => a.id !== topArtist.id).slice(0, 10);
-        return [...others, ...others, topArtist];
+
+    // Create a ticker strip
+    // We want a sequence of images that slides horizontally
+    const strip = useMemo(() => {
+        // Exclude top artist from random shuffle if possible
+        const others = allArtists.filter(a => a.id !== topArtist.id);
+        const pool = others.length > 0 ? others : [topArtist];
+        // Create a long strip: 30 items
+        const items = Array.from({ length: 30 }).map((_, i) => pool[i % pool.length]);
+        // Add top artist at the very end
+        return [...items, topArtist];
     }, [topArtist, allArtists]);
 
+    // Animation control
+    const controls = useAnimation();
+
     useEffect(() => {
-        // Spin animation logic
-        let interval: number;
-        let counter = 0;
-        const maxSpins = 15; // Number of spins before stop
+        const sequence = async () => {
+            // Wait a beat
+            await new Promise(r => setTimeout(r, 500));
 
-        const spin = () => {
-            setSpinIndex(prev => (prev + 1) % carouselArtists.length);
-            counter++;
+            // Animate
+            // Assuming each item is ~260px (w-[260px]) + gap
+            // We'll use percentage or fixed width. Let's use % if responsive, or fixed.
+            // Responsive is tricky with framer motion sequence values if we don't know width.
+            // Let's use a ref or just estimate for now.
+            // Better: Move by %? No, items are fixed width.
+            // Let's assume mobile width 260px.
+            const itemWidth = window.innerWidth < 768 ? 260 : 320;
 
-            if (counter < maxSpins) {
-                // Speed up then slow down? Or just linear fast then stop.
-                // Let's do easing speed.
-                const speed = 50 + (counter * 10); // Slower as it goes? No, usually faster then stop.
-                // Actually, simple fixed interval is fine for "slot machine" feel.
-                interval = window.setTimeout(spin, 80);
-            } else {
-                // Stop on the last item (which is topArtist)
-                setSpinIndex(carouselArtists.length - 1);
-                setReveal(true);
-            }
+            await controls.start({
+                x: [0, -((strip.length - 1) * itemWidth)],
+                transition: {
+                    duration: 4,
+                    ease: [0.1, 1, 0.2, 1] // Custom ease: start fast, decelerate to stop
+                }
+            });
+
+            setReveal(true);
         };
-
-        interval = window.setTimeout(spin, 500); // Start delay
-        return () => window.clearTimeout(interval);
-    }, [carouselArtists]);
-
-    const currentArtist = carouselArtists[spinIndex];
+        sequence();
+    }, [strip, controls]);
 
     return (
         <SlideContainer bgImage={reveal ? topArtist.image : undefined}>
-            <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="flex-1 flex flex-col items-center justify-center overflow-hidden w-full">
                 <SlideTitle title="Top Artist" subtitle="You had one clear favorite" />
 
-                <div className="relative w-64 h-64 md:w-80 md:h-80 mb-8 perspective-1000">
-                    <motion.div
-                        animate={reveal ? { scale: 1.1, rotateY: 0 } : { scale: 1, rotateY: spinIndex * 10 }} // Subtle shake while spinning
-                        className="w-full h-full rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10"
-                    >
-                        <img
-                            src={currentArtist?.image || 'https://ui-avatars.com/api/?name=?'}
-                            className="w-full h-full object-cover"
-                            alt="Artist"
-                        />
-
-                        {!reveal && (
-                            <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
-                        )}
-                    </motion.div>
+                {/* Carousel Window */}
+                <div className="relative w-[260px] h-[260px] md:w-[320px] md:h-[320px] mb-8 overflow-hidden rounded-2xl border-4 border-white/20 shadow-2xl bg-black">
+                     {/* The sliding strip */}
+                     <motion.div
+                        className="flex h-full"
+                        animate={controls}
+                        initial={{ x: 0 }}
+                     >
+                        {strip.map((artist, i) => (
+                            <div
+                                key={i}
+                                className="w-[260px] md:w-[320px] h-full flex-shrink-0"
+                            >
+                                <img
+                                    src={artist.image}
+                                    className="w-full h-full object-cover"
+                                    alt="Artist"
+                                />
+                            </div>
+                        ))}
+                     </motion.div>
                 </div>
 
                 <AnimatePresence>
@@ -273,28 +292,19 @@ const TopArtistSlide = ({ topArtist, allArtists }: { topArtist: Artist, allArtis
     );
 };
 
-// --- Slide 4: Top Songs (Floating Bubbles) ---
+// --- Slide 4: Top Songs (Grid) ---
 const TopSongsSlide = ({ songs }: { songs: Song[] }) => {
     const [phase, setPhase] = useState<'guess' | 'reveal'>('guess');
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const topSong = songs[0];
 
-    // Create random positions for bubbles
-    const bubbles = useMemo(() => {
-        return songs.slice(0, 6).map((song, i) => ({
-            ...song,
-            x: Math.random() * 60 + 20, // 20-80%
-            y: Math.random() * 60 + 20, // 20-80%
-            scale: Math.random() * 0.3 + 0.8,
-            delay: Math.random() * 2
-        }));
-    }, [songs]);
+    // Take top 6 songs for grid
+    const candidates = useMemo(() => songs.slice(0, 6), [songs]);
 
     const handleSelect = (id: string) => {
         if (phase === 'reveal') return;
         setSelectedId(id);
 
-        // Wait a beat then reveal
         setTimeout(() => {
             setPhase('reveal');
         }, 800);
@@ -303,41 +313,33 @@ const TopSongsSlide = ({ songs }: { songs: Song[] }) => {
     return (
         <SlideContainer bgColor="#FF2D55">
             {phase === 'guess' ? (
-                <div className="flex-1 relative">
+                <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto">
                     <SlideTitle title="Guess Your #1" subtitle="One song stood above the rest" />
 
-                    {bubbles.map((song) => (
-                        <motion.button
-                            key={song.id}
-                            className="absolute rounded-full overflow-hidden border-4 border-white/20 shadow-xl"
-                            style={{
-                                left: `${song.x}%`,
-                                top: `${song.y}%`,
-                                width: '25vw',
-                                height: '25vw',
-                                maxWidth: 140,
-                                maxHeight: 140,
-                                marginLeft: '-12.5vw', // Center anchor
-                                marginTop: '-12.5vw'
-                            }}
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{
-                                scale: selectedId === song.id ? 1.2 : (selectedId ? 0 : 1),
-                                opacity: selectedId === song.id ? 1 : (selectedId ? 0 : 1),
-                                y: [0, -20, 0]
-                            }}
-                            transition={{
-                                y: { duration: 4, repeat: Infinity, delay: song.delay, ease: "easeInOut" },
-                                default: { duration: 0.5 }
-                            }}
-                            onClick={(e) => {
-                                e.stopPropagation(); // Prevent slide advance
-                                handleSelect(song.id);
-                            }}
-                        >
-                            <img src={song.cover} className="w-full h-full object-cover" />
-                        </motion.button>
-                    ))}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full px-4">
+                        {candidates.map((song, i) => (
+                            <motion.button
+                                key={song.id}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: i * 0.1 }}
+                                onClick={(e) => {
+                                    e.stopPropagation(); // Prevent slide advance
+                                    handleSelect(song.id);
+                                }}
+                                className={`
+                                    relative aspect-square rounded-xl overflow-hidden border-4 transition-all duration-300
+                                    ${selectedId === song.id ? 'border-white scale-105 shadow-xl z-10' : 'border-transparent hover:border-white/50 hover:scale-105'}
+                                    ${selectedId && selectedId !== song.id ? 'opacity-50 grayscale' : 'opacity-100'}
+                                `}
+                            >
+                                <img src={song.cover} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end p-2">
+                                    <p className="text-white text-xs font-bold truncate w-full text-left">{song.title}</p>
+                                </div>
+                            </motion.button>
+                        ))}
+                    </div>
                 </div>
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center">
@@ -388,9 +390,9 @@ const TopSongsSlide = ({ songs }: { songs: Song[] }) => {
     );
 };
 
-// --- Slide 5: Top Album (Kaleidoscope) ---
+// --- Slide 5: Top Album (Better Kaleidoscope) ---
 const TopAlbumSlide = ({ album }: { album: Album }) => {
-    // 6 segments for kaleidoscope
+    // 6 segments
     const segments = [0, 60, 120, 180, 240, 300];
 
     return (
@@ -399,20 +401,19 @@ const TopAlbumSlide = ({ album }: { album: Album }) => {
                 <SlideTitle title="Top Album" subtitle="On heavy rotation" />
 
                 {/* Kaleidoscope Container */}
-                <div className="relative w-[80vw] h-[80vw] max-w-[400px] max-h-[400px] my-8">
+                <div className="relative w-[80vw] h-[80vw] max-w-[400px] max-h-[400px] my-8 flex items-center justify-center">
                     <motion.div
                         className="w-full h-full relative"
                         animate={{ rotate: 360 }}
-                        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
                     >
                         {segments.map((deg, i) => (
-                            <motion.div
+                            <div
                                 key={i}
-                                className="absolute w-full h-full origin-center overflow-hidden"
+                                className="absolute top-0 left-0 w-full h-full origin-center overflow-hidden"
                                 style={{
-                                    rotate: deg,
-                                    // Clip path to make a wedge
-                                    clipPath: 'polygon(50% 50%, 100% 21.1%, 100% 78.9%)' // Hexagonal wedges roughly
+                                    transform: `rotate(${deg}deg)`,
+                                    clipPath: 'polygon(50% 50%, 100% 21.13%, 100% 78.86%)'
                                 }}
                             >
                                 <div
@@ -421,21 +422,25 @@ const TopAlbumSlide = ({ album }: { album: Album }) => {
                                         backgroundImage: `url(${album.cover})`,
                                         backgroundSize: 'cover',
                                         backgroundPosition: 'center',
-                                        transform: `rotate(-${deg}deg)` // Counter-rotate image to create pattern
+                                        // Counter-rotate to keep image upright relative to wedge, then MIRROR odd ones
+                                        transform: `rotate(${-deg}deg) ${i % 2 !== 0 ? 'scaleX(-1)' : ''} scale(1.5)`
                                     }}
                                 />
-                            </motion.div>
+                            </div>
                         ))}
                     </motion.div>
 
+                    {/* Center Overlay */}
+                    <div className="absolute w-1/3 h-1/3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 z-10" />
+
                     {/* Reveal overlay */}
                     <motion.div
-                        className="absolute inset-0 z-10"
+                        className="absolute inset-0 z-20 flex items-center justify-center"
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 3, duration: 0.8, type: 'spring' }}
                     >
-                        <img src={album.cover} className="w-full h-full object-cover rounded-full shadow-2xl border-4 border-white" />
+                        <img src={album.cover} className="w-2/3 h-2/3 object-cover rounded-full shadow-2xl border-4 border-white" />
                     </motion.div>
                 </div>
 
@@ -510,62 +515,59 @@ const ObsessionSlide = ({ artists, history }: { artists: Artist[], history: any[
     );
 };
 
-// --- Slide 7: Aura (Personality) ---
+// --- Slide 7: Aura (Brutalist Shapes) ---
 const AuraSlide = ({ history }: { history: any[] }) => {
     // Calculate 4 metrics
     const metrics = useMemo(() => {
         if (!history || history.length === 0) return { mood: 50, loyalty: 50, variety: 50, focus: 50 };
-
         const totalPlays = history.length;
-
         // 1. Mood (Night Owl vs Early Bird)
         const nightPlays = history.filter((h: any) => {
             const hr = new Date(h.played_at).getHours();
             return hr >= 22 || hr < 5;
         }).length;
         const mood = Math.round((nightPlays / totalPlays) * 100);
-
         // 2. Loyalty (Top Artist Share)
         const artistCounts: Record<string, number> = {};
-        history.forEach((h: any) => {
-            const a = h.artist_name;
-            if (a) artistCounts[a] = (artistCounts[a] || 0) + 1;
-        });
+        history.forEach((h: any) => { const a = h.artist_name; if (a) artistCounts[a] = (artistCounts[a] || 0) + 1; });
         const topArtistCount = Math.max(...Object.values(artistCounts));
         const loyalty = Math.round((topArtistCount / totalPlays) * 100);
-
-        // 3. Variety (Unique Artists / Total)
+        // 3. Variety
         const uniqueArtists = Object.keys(artistCounts).length;
-        const variety = Math.min(100, Math.round((uniqueArtists / totalPlays) * 200)); // Boosted
-
-        // 4. Focus (Avg Session Length - Estimated)
-        // Simple proxy: Consecutive plays of same artist
+        const variety = Math.min(100, Math.round((uniqueArtists / totalPlays) * 200));
+        // 4. Focus
         let consecutive = 0;
-        for(let i=1; i<history.length; i++) {
-            if (history[i].artist_name === history[i-1].artist_name) consecutive++;
-        }
+        for(let i=1; i<history.length; i++) { if (history[i].artist_name === history[i-1].artist_name) consecutive++; }
         const focus = Math.round((consecutive / totalPlays) * 100);
-
         return { mood, loyalty, variety, focus };
     }, [history]);
 
-    // Determine Aura Color based on dominant metric
-    const auraColor = useMemo(() => {
+    const { auraColor, auraName, AuraShape } = useMemo(() => {
         const { mood, loyalty, variety, focus } = metrics;
-        if (mood > 30) return '#5E5CE6'; // Indigo (Night)
-        if (loyalty > 20) return '#FF2D55'; // Pink (Love)
-        if (variety > 40) return '#30D158'; // Green (Discovery)
-        if (focus > 30) return '#FF9F0A'; // Orange (Focus)
-        return '#0A84FF'; // Blue (Default)
-    }, [metrics]);
-
-    const auraName = useMemo(() => {
-        const { mood, loyalty, variety, focus } = metrics;
-        if (mood > 30) return 'The Night Owl';
-        if (loyalty > 20) return 'The Superfan';
-        if (variety > 40) return 'The Explorer';
-        if (focus > 30) return 'The Zone Runner';
-        return 'The Main Character';
+        if (mood > 30) return {
+            auraColor: '#5E5CE6', auraName: 'The Night Owl',
+            AuraShape: () => <div className="w-48 h-48 bg-[#5E5CE6] rounded-full border-4 border-white animate-pulse" /> // Circle
+        };
+        if (loyalty > 20) return {
+            auraColor: '#FF2D55', auraName: 'The Superfan',
+            AuraShape: () => <div className="w-48 h-48 bg-[#FF2D55] rotate-45 border-4 border-white animate-pulse" /> // Diamond/Square
+        };
+        if (variety > 40) return {
+            auraColor: '#30D158', auraName: 'The Explorer',
+            AuraShape: () => (
+                <div className="w-0 h-0 border-l-[100px] border-l-transparent border-b-[170px] border-b-[#30D158] border-r-[100px] border-r-transparent relative">
+                   <div className="absolute top-[10px] -left-[90px] w-0 h-0 border-l-[90px] border-l-transparent border-b-[150px] border-b-transparent border-r-[90px] border-r-transparent border-b-white/20" />
+                </div>
+            ) // Triangle
+        };
+        if (focus > 30) return {
+            auraColor: '#FF9F0A', auraName: 'The Zone Runner',
+            AuraShape: () => <div className="w-64 h-32 bg-[#FF9F0A] border-4 border-white animate-pulse" /> // Rectangle
+        };
+        return {
+            auraColor: '#0A84FF', auraName: 'The Main Character',
+            AuraShape: () => <div className="w-48 h-48 bg-[#0A84FF] rounded-3xl border-4 border-white animate-pulse" /> // Squircle
+        };
     }, [metrics]);
 
     return (
@@ -573,48 +575,45 @@ const AuraSlide = ({ history }: { history: any[] }) => {
             <div className="flex-1 flex flex-col items-center justify-center relative">
                 <SlideTitle title="Your Aura" subtitle="The vibe check" />
 
-                <div className="relative w-64 h-64 flex items-center justify-center mb-8">
-                    {/* Pulsing Aura Orb */}
+                <div className="relative w-80 h-80 flex items-center justify-center mb-8">
+                    {/* Brutalist Shape */}
                     <motion.div
-                        className="absolute w-full h-full rounded-full blur-[60px] opacity-60 mix-blend-screen"
-                        style={{ backgroundColor: auraColor }}
-                        animate={{ scale: [1, 1.5, 1], rotate: [0, 90, 0] }}
-                        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                    <motion.div
-                        className="absolute w-3/4 h-3/4 rounded-full blur-[40px] opacity-80 mix-blend-screen"
-                        style={{ backgroundColor: '#fff' }}
-                        animate={{ scale: [0.8, 1.2, 0.8] }}
-                        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                    />
+                        initial={{ scale: 0, rotate: 180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: "spring", stiffness: 100, damping: 15 }}
+                    >
+                        <AuraShape />
+                    </motion.div>
 
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 1 }}
-                        className="relative z-10 text-center"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="absolute -bottom-12 left-0 right-0 text-center"
                     >
-                        <h2 className="text-3xl font-black text-white uppercase tracking-tight shadow-xl">{auraName}</h2>
+                        <h2 className="text-4xl font-black text-white uppercase tracking-tight" style={{ textShadow: `0 0 20px ${auraColor}` }}>
+                            {auraName}
+                        </h2>
                     </motion.div>
                 </div>
 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
+                <div className="grid grid-cols-2 gap-4 w-full max-w-sm mt-8">
                     {Object.entries(metrics).map(([key, value], i) => (
                         <motion.div
                             key={key}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 2 + i * 0.2 }}
-                            className="bg-white/10 p-4 rounded-xl border border-white/10"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 1 + i * 0.1 }}
+                            className="bg-white/5 border border-white/20 p-3"
                         >
-                            <p className="text-xs uppercase text-white/50 font-bold mb-1">{key}</p>
-                            <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                            <p className="text-[10px] uppercase text-white/50 font-bold mb-2 tracking-widest">{key}</p>
+                            <div className="h-2 w-full bg-black border border-white/20">
                                 <motion.div
                                     className="h-full bg-white"
                                     initial={{ width: 0 }}
                                     animate={{ width: `${value}%` }}
-                                    transition={{ delay: 2.5 + i * 0.2, duration: 1 }}
+                                    transition={{ delay: 1.5 + i * 0.1, duration: 1 }}
                                 />
                             </div>
                         </motion.div>
@@ -625,48 +624,58 @@ const AuraSlide = ({ history }: { history: any[] }) => {
     );
 };
 
-// --- Slide 8: New Artists (Grid) ---
+// --- Slide 8: New Artists (Horizontal Scroll) ---
 const NewArtistsSlide = ({ history }: { history: any[] }) => {
-    // Find "New" artists (first played in last 20% of history?)
-    // Or just random selection of artists for visual grid if we lack strict discovery data
+    // Find "New" artists
     const artists = useMemo(() => {
         if (!history) return [];
-        // Extract unique artist/covers
         const map = new Map();
         history.forEach(h => {
             if (h.artist_name && h.album_cover && !map.has(h.artist_name)) {
                 map.set(h.artist_name, h.album_cover);
             }
         });
-        return Array.from(map.entries()).slice(0, 9).map(([name, img]) => ({ name, img }));
+        return Array.from(map.entries()).slice(0, 10).map(([name, img]) => ({ name, img }));
     }, [history]);
 
     return (
         <SlideContainer bgColor="#30D158">
-            <div className="flex-1 flex flex-col items-center justify-center">
-                <SlideTitle title="Discovery" subtitle="Fresh noise you found" />
+            <div className="flex-1 flex flex-col justify-center w-full overflow-hidden">
+                <div className="px-6 md:px-12">
+                    <SlideTitle title="Discovery" subtitle="Fresh noise you found" />
+                </div>
 
-                <div className="grid grid-cols-3 gap-3 w-full max-w-sm aspect-square my-6">
+                {/* Horizontal Scroll Area */}
+                <div className="w-full overflow-x-auto no-scrollbar pb-8 px-6 md:px-12 flex gap-4 snap-x snap-mandatory">
                     {artists.map((a, i) => (
                         <motion.div
                             key={a.name}
-                            className="relative rounded-lg overflow-hidden bg-black/20"
-                            initial={{ opacity: 0, scale: 0 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: i * 0.1, type: "spring" }}
+                            className="flex-shrink-0 w-48 md:w-64 snap-center"
+                            initial={{ opacity: 0, x: 50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.1 }}
                         >
-                            <img src={a.img} className="w-full h-full object-cover" />
+                            <div className="aspect-square bg-black border-4 border-black mb-3 overflow-hidden shadow-xl">
+                                <img src={a.img} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" />
+                            </div>
+                            <p className="font-black text-black text-xl leading-none uppercase truncate">{a.name}</p>
                         </motion.div>
                     ))}
+
+                    {artists.length === 0 && (
+                        <div className="w-full text-center text-black/50 font-bold">
+                            No new discoveries this period.
+                        </div>
+                    )}
                 </div>
 
                 <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.5 }}
-                    className="text-white text-xl font-bold text-center max-w-xs"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1 }}
+                    className="px-6 md:px-12 text-black font-bold text-lg mt-4"
                 >
-                    You explored {artists.length * 12}+ new artists this year.
+                    You explored {artists.length * 12}+ new artists.
                 </motion.p>
             </div>
         </SlideContainer>
@@ -810,7 +819,7 @@ export default function WrappedSlides({
     const CurrentSlideComponent = useMemo(() => {
         switch (SLIDES[currentSlideIndex]) {
             case 'INTRO': return <IntroSlide rangeLabel={rangeLabel || '2024'} />;
-            case 'MINUTES': return <MinutesSlide minutes={totalMinutes} />;
+            case 'MINUTES': return <MinutesSlide minutes={totalMinutes} albumCovers={albumCovers} />;
             case 'TOP_ARTIST': return <TopArtistSlide topArtist={artists[0]} allArtists={artists} />;
             case 'TOP_SONGS': return <TopSongsSlide songs={songs} />;
             case 'TOP_ALBUM': return <TopAlbumSlide album={albums[0]} />;
