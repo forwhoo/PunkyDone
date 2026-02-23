@@ -1067,7 +1067,7 @@ function App() {
 
         <div className="hidden lg:block">
             {/* Desktop Layout */}
-            <div className="mb-8 mt-8">
+            <div className="mb-8 mt-8 max-w-4xl mx-auto">
                 <AISearchBar
                     token={token}
                     history={safeRecent}

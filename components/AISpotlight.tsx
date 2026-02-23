@@ -6,7 +6,7 @@ import {
     BarChart3, ChartPie, Trophy, Music2, Gift, ChevronLeft, ArrowUp, Palette,
     Music, Mic2, Disc, Clock, Orbit, Flame, Radio, TrendingUp, Moon,
     SkipForward, BarChart2, Search, SlidersHorizontal, Image, Grid3x3,
-    Network, History, ArrowLeftRight, ImageIcon, Timer,
+    Network, History, ArrowLeftRight, ImageIcon, Timer, Globe,
     ArrowUpDown, Heart, PieChart as PieChartIcon, Calendar, Play, Star, CheckCircle, Repeat,
     Briefcase, CloudSun, CalendarClock, Car, Sparkles as SparklesIcon, LineChart,
     FastForward, DoorOpen, Users, Target, ChevronDown, type LucideIcon
@@ -48,6 +48,43 @@ const ToolIcon = ({ iconName, size = 12 }: { iconName: string; size?: number }) 
     }
     // Fallback to Zap for unknown icon names
     return <Zap size={size} />;
+};
+
+const CollapsibleTools = ({ tools }: { tools: ToolPart[] }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    if (!tools || tools.length === 0) return null;
+
+    return (
+        <div className="w-full max-w-md my-4 border border-white/5 rounded-xl overflow-hidden bg-white/[0.02]">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/[0.03] transition-colors text-[12px] font-medium text-white/50"
+            >
+                <div className="flex items-center gap-2">
+                    <Zap size={12} className="text-[#FF9F0A]" />
+                    <span>Tools ({tools.length} calls)</span>
+                </div>
+                {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </button>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="px-3 pb-3 space-y-2 border-t border-white/5 pt-3 bg-black/20">
+                            {tools.map((tool, idx) => (
+                                <Tool key={idx} toolPart={tool} className="my-0 border-white/5 bg-transparent" />
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
 };
 
 interface TopAIProps {
@@ -169,10 +206,8 @@ interface ChatMessage {
     timestamp: Date;
     canvas?: CanvasComponent;
     toolCalls?: ToolCallInfo[];
-    thoughts?: { title: string; content: string[] }[];
     tools?: ToolPart[];
     sources?: any;
-    isThinking?: boolean;
 }
 
 export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history = [], user, initialQuery }) => {
@@ -198,6 +233,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
     // Canvas Mode State
     const [canvasMode, setCanvasMode] = useState(false);
+
+    // Web Search State
+    const [webSearchEnabled, setWebSearchEnabled] = useState(false);
 
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [chatResponse, setChatResponse] = useState<string | null>(null);
@@ -663,14 +701,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                 // Parsing State - Managed locally in closure
                 let currentText = "";
-                let currentThoughtTitle = "";
-                let currentThoughtContent = "";
-                let isThinking = false;
-                let isExplicitThinking = false;
-                let buffer = "";
 
                 // Local accumulators
-                let thoughts: { title: string; content: string[] }[] = [];
                 let tools: any[] = [];
                 let sources: any = null;
 
@@ -680,135 +712,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     (chunk) => {
                         // 1. UPDATE LOCAL STATE (Side effects on closure vars ONLY)
 
-                        // Handle explicit thinking chunks (Mistral reasoning models)
-                        if (chunk.type === 'thinking' && chunk.content) {
-                            if (!isThinking) {
-                                isThinking = true;
-                                isExplicitThinking = true;
-                                currentThoughtTitle = "Reasoning";
-                                currentThoughtContent = "";
-                            }
-                            currentThoughtContent += chunk.content;
-
-                            // Update thoughts array
-                            if (thoughts.length === 0 || thoughts[thoughts.length - 1].title !== currentThoughtTitle) {
-                                thoughts.push({
-                                    title: currentThoughtTitle,
-                                    content: [currentThoughtContent]
-                                });
-                            } else {
-                                // Clone and update last thought
-                                const lastThought = thoughts[thoughts.length - 1];
-                                thoughts[thoughts.length - 1] = {
-                                    ...lastThought,
-                                    content: [currentThoughtContent]
-                                };
-                            }
-                        }
-
                         if (chunk.type === 'text' && chunk.content) {
-                            // If we were in explicit thinking mode, close it
-                            if (isExplicitThinking) {
-                                isThinking = false;
-                                isExplicitThinking = false;
-                                currentThoughtContent = "";
-                            }
-
-                            buffer += chunk.content;
-
-                            // Process buffer for markers (Legacy or Interleaved)
-                            while (true) {
-                                if (isThinking) {
-                                    // Look for end of thinking (&) or start of new thought ($)
-                                    const endThinkIndex = buffer.indexOf('&');
-                                    const newThinkIndex = buffer.indexOf('$');
-
-                                    if (endThinkIndex !== -1 && (newThinkIndex === -1 || endThinkIndex < newThinkIndex)) {
-                                        // End thinking
-                                        currentThoughtContent += buffer.substring(0, endThinkIndex);
-                                        buffer = buffer.substring(endThinkIndex + 1);
-
-                                        // Push current thought
-                                        if (currentThoughtTitle || currentThoughtContent.trim()) {
-                                            if (thoughts.length === 0 || thoughts[thoughts.length - 1].title !== currentThoughtTitle) {
-                                                thoughts.push({
-                                                    title: currentThoughtTitle.trim() || "Thinking",
-                                                    content: [currentThoughtContent.trim()]
-                                                });
-                                            } else {
-                                                const lastThought = thoughts[thoughts.length - 1];
-                                                thoughts[thoughts.length - 1] = {
-                                                    ...lastThought,
-                                                    content: [currentThoughtContent.trim()]
-                                                };
-                                            }
-                                        }
-                                        currentThoughtTitle = "";
-                                        currentThoughtContent = "";
-                                        isThinking = false;
-                                    } else if (newThinkIndex !== -1) {
-                                        // New thought starts (nested or sequential)
-                                        currentThoughtContent += buffer.substring(0, newThinkIndex);
-                                        buffer = buffer.substring(newThinkIndex + 1);
-
-                                        // Push previous thought
-                                        if (currentThoughtTitle || currentThoughtContent.trim()) {
-                                            if (thoughts.length === 0 || thoughts[thoughts.length - 1].title !== currentThoughtTitle) {
-                                                thoughts.push({
-                                                    title: currentThoughtTitle.trim() || "Thinking",
-                                                    content: [currentThoughtContent.trim()]
-                                                });
-                                            } else {
-                                                const lastThought = thoughts[thoughts.length - 1];
-                                                thoughts[thoughts.length - 1] = {
-                                                    ...lastThought,
-                                                    content: [currentThoughtContent.trim()]
-                                                };
-                                            }
-                                        }
-
-                                        // Start new thought
-                                        currentThoughtTitle = "";
-                                        currentThoughtContent = "";
-                                        isThinking = true;
-
-                                        // Check for title
-                                        const titleMatch = buffer.match(/^\s*\/text\{(.+?)\}/) || buffer.match(/^\s*\/(.+?)(\n|$)/);
-                                        if (titleMatch) {
-                                            currentThoughtTitle = titleMatch[1];
-                                            buffer = buffer.substring(titleMatch[0].length);
-                                        }
-                                    } else {
-                                        // No markers, just content
-                                        currentThoughtContent += buffer;
-                                        buffer = "";
-                                        break;
-                                    }
-                                } else {
-                                    // User mode (Text)
-                                    // Look for start of thinking ($)
-                                    const startThinkIndex = buffer.indexOf('$');
-
-                                    if (startThinkIndex !== -1) {
-                                        // Found thinking start
-                                        currentText += buffer.substring(0, startThinkIndex);
-                                        buffer = buffer.substring(startThinkIndex + 1);
-                                        isThinking = true;
-
-                                        // Check for title
-                                        const titleMatch = buffer.match(/^\s*\/text\{(.+?)\}/) || buffer.match(/^\s*\/(.+?)(\n|$)/);
-                                        if (titleMatch) {
-                                            currentThoughtTitle = titleMatch[1];
-                                            buffer = buffer.substring(titleMatch[0].length);
-                                        }
-                                    } else {
-                                        // Just text
-                                        currentText += buffer;
-                                        buffer = "";
-                                        break;
-                                    }
-                                }
-                            }
+                            currentText += chunk.content;
                         }
 
                         if (chunk.type === 'tool-call' && chunk.toolCall) {
@@ -845,8 +750,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             newMessages[lastMsgIndex] = {
                                 ...newMessages[lastMsgIndex],
                                 text: currentText,
-                                isThinking: isThinking,
-                                thoughts: [...thoughts], // Shallow copy array
                                 tools: [...tools],       // Shallow copy array
                                 sources: sources
                             };
@@ -855,31 +758,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                         });
                     },
                     token,
-                    selectedModel
+                    selectedModel,
+                    webSearchEnabled
                 );
-
-                // Final Cleanup
-                setChatMessages(prev => {
-                    const newMessages = [...prev];
-                    const lastMsgIndex = newMessages.length - 1;
-                    if (lastMsgIndex >= 0 && newMessages[lastMsgIndex].role === 'ai' && isThinking) {
-                        // Close pending thought if any
-                        const updatedThoughts = [...thoughts];
-                        if (currentThoughtTitle || currentThoughtContent.trim()) {
-                            updatedThoughts.push({
-                                title: currentThoughtTitle.trim() || "Thinking",
-                                content: [currentThoughtContent.trim()]
-                            });
-                        }
-
-                        newMessages[lastMsgIndex] = {
-                            ...newMessages[lastMsgIndex],
-                            thoughts: updatedThoughts,
-                            isThinking: false
-                        };
-                    }
-                    return newMessages;
-                });
             }
         } catch (err: any) {
             setErrorMsg(`Error: ${err.message || 'Unknown'}`);
@@ -915,7 +796,18 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     </button>
                 </div>
 
-                {/* Model Selector */}
+                <div className="flex items-center gap-2">
+                    {/* Web Search Toggle */}
+                    <button
+                        onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all backdrop-blur-md text-[11px] font-semibold ${webSearchEnabled ? 'bg-[#FA2D48]/10 border-[#FA2D48]/30 text-[#FA2D48]' : 'bg-white/5 border-white/10 text-[#8E8E93] hover:text-white hover:border-white/20'}`}
+                        title="Enable Web Search"
+                    >
+                        <Globe size={11} />
+                        Search
+                    </button>
+
+                    {/* Model Selector */}
                 <div className="relative">
                     <button
                         onClick={(e) => { e.stopPropagation(); setModelDropdownOpen(prev => !prev); }}
@@ -944,13 +836,14 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             ))}
                         </div>
                     )}
+                    </div>
                 </div>
             </div>
 
             {/* Scrollable Messages Area */}
             <ChatContainerContent className="flex-1">
                 {/* Chat Messages */}
-                <div className="max-w-2xl mx-auto space-y-6">
+                <div className="max-w-4xl mx-auto space-y-6">
                     {chatMessages.length === 0 && !loading && categoryResults.length === 0 && !insightMode && !wrappedMode && (
                         <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
                             {canvasMode ? (
@@ -1008,38 +901,33 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                     </div>
                                 ) : msg.role === 'ai' ? (
                                     <>
-                                        {/* Chain of Thought Visualization */}
-                                        {msg.thoughts && msg.thoughts.length > 0 && (
-                                            <ChainOfThought>
-                                                {msg.thoughts.map((thought, tIdx) => (
-                                                    <ChainOfThoughtStep key={tIdx}>
-                                                        <ChainOfThoughtTrigger>{thought.title}</ChainOfThoughtTrigger>
-                                                        <ChainOfThoughtContent>
-                                                            {thought.content.map((c, cIdx) => (
-                                                                <ChainOfThoughtItem key={cIdx}>{c}</ChainOfThoughtItem>
-                                                            ))}
-                                                        </ChainOfThoughtContent>
-                                                    </ChainOfThoughtStep>
-                                                ))}
-                                            </ChainOfThought>
-                                        )}
-
                                         {/* Tool Logs */}
-                                        {msg.tools && msg.tools.map((tool, tIdx) => (
-                                            <Tool key={tIdx} toolPart={tool} className="w-full max-w-md" />
-                                        ))}
-
-                                        {/* Thinking Indicator */}
-                                        {msg.isThinking && (
-                                            <div className="flex items-center gap-2 py-2 text-muted-foreground animate-pulse">
-                                                <Loader variant="text-shimmer" text="Thinking..." />
-                                            </div>
+                                        {msg.tools && msg.tools.length > 0 && (
+                                            <CollapsibleTools tools={msg.tools} />
                                         )}
 
                                         {/* Main Content */}
                                         {msg.text && (
-                                            <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container mt-2">
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                                            <div className="text-[15px] leading-relaxed markdown-container mt-2 prose prose-invert prose-zinc max-w-none prose-table:border prose-table:border-white/10 prose-th:border prose-th:border-white/10 prose-td:border prose-td:border-white/10 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-img:rounded-xl">
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkGfm]}
+                                                    components={{
+                                                        img: ({node, ...props}) => (
+                                                            <img
+                                                                {...props}
+                                                                className="max-w-full md:max-w-md h-auto rounded-xl border border-white/10 mx-auto"
+                                                                loading="lazy"
+                                                            />
+                                                        ),
+                                                        table: ({node, ...props}) => (
+                                                            <div className="overflow-x-auto my-4 rounded-xl border border-white/10">
+                                                                <table {...props} className="min-w-full divide-y divide-white/10" />
+                                                            </div>
+                                                        )
+                                                    }}
+                                                >
+                                                    {msg.text}
+                                                </ReactMarkdown>
                                             </div>
                                         )}
 
@@ -1536,7 +1424,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
             {/* Discovery Results - Multiple Categories Support */}
             {mode === 'discover' && categoryResults.length > 0 && (
-                <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                <div className="max-w-4xl mx-auto space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
                     <style>
                         {`
                         @keyframes shine-red {
@@ -1642,7 +1530,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     className="hidden"
                     accept=".json"
                 />
-                <div className="max-w-2xl mx-auto">
+                <div className="max-w-4xl mx-auto">
                     <PromptInput
                         value={userPrompt}
                         onValueChange={setUserPrompt}
