@@ -20,6 +20,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // ─── Lucide Icon Map for Tool Call Pills ────────────────────────
 const TOOL_LUCIDE_MAP: Record<string, LucideIcon> = {
@@ -769,82 +772,98 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3 }}
-                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                            className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                         >
-                            <div className={`${msg.canvas ? 'w-full max-w-full' : 'max-w-[80%]'} ${msg.role === 'user'
-                                ? 'bg-white/15 text-white rounded-2xl rounded-br-md px-4 py-3 border border-white/10'
-                                : msg.canvas ? '' : 'bg-[#1C1C1E] text-white rounded-2xl rounded-bl-md px-4 py-3 border border-white/5'
-                            }`}>
-                                {msg.role === 'ai' && msg.canvas && msg.canvas.html ? (
-                                    <div className="space-y-3">
-                                        <div className="bg-[#1C1C1E] text-white rounded-2xl rounded-bl-md px-4 py-3 border border-white/5 inline-block">
-                                            <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
-                                            </div>
-                                        </div>
-                                        <CanvasRenderer
-                                            html={msg.canvas.html}
-                                            title={msg.canvas.title}
-                                            description={msg.canvas.description}
-                                            retryCount={msg.canvas.retryCount}
-                                            error={msg.canvas.error}
-                                            onRetry={async () => {
-                                                setLoading(true);
-                                                setChatResponse("🔄 Regenerating component...");
-                                                const result = await generateCanvasComponent(
-                                                    chatMessages.filter(m => m.role === 'user').slice(-1)[0]?.text || 'Retry the last component',
-                                                    contextData,
-                                                    [],
-                                                    (attempt, err) => setChatResponse(`🔄 Retry ${attempt}/5... ${err}`)
-                                                );
-                                                if (result && !result.error) {
-                                                    setChatMessages(prev => {
-                                                        const updated = [...prev];
-                                                        updated[idx] = { ...updated[idx], canvas: result, text: `Here's your **${result.title}** — ${result.description}` };
-                                                        return updated;
-                                                    });
-                                                }
-                                                setChatResponse(null);
-                                                setLoading(false);
-                                            }}
-                                        />
-                                        <p className="text-[11px] text-[#666666] px-1">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                    </div>
-                                ) : msg.role === 'ai' ? (
+                            {/* Avatar */}
+                            <Avatar className="h-8 w-8 mt-1 border border-white/10">
+                                {msg.role === 'user' ? (
                                     <>
-                                        {/* Tool Call Pills */}
-                                        {msg.toolCalls && msg.toolCalls.length > 0 && (
-                                            <div className="flex flex-wrap gap-1.5 mb-2">
-                                                {msg.toolCalls.map((tc, tcIdx) => (
-                                                    <span
-                                                        key={tcIdx}
-                                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px] font-medium text-[#8E8E93]"
-                                                        title={`${tc.name}(${Object.entries(tc.arguments).map(([k,v]) => `${k}: ${v}`).join(', ')})`}
-                                                    >
-                                                        <ToolIcon iconName={tc.icon} size={11} />
-                                                        <span>{tc.label}</span>
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                        <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
-                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                {idx === chatMessages.length - 1 && typing
-                                                    ? displayedText
-                                                    : msg.text}
-                                            </ReactMarkdown>
-                                            {idx === chatMessages.length - 1 && typing && (
-                                                <span className="inline-block w-[2px] h-5 ml-0.5 bg-white/70 align-middle animate-pulse"></span>
-                                            )}
-                                        </div>
-                                        <p className="text-[11px] mt-1.5 text-[#666666]">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                        <AvatarImage src={user?.images?.[0]?.url} />
+                                        <AvatarFallback>{userName.substring(0, 2).toUpperCase()}</AvatarFallback>
                                     </>
                                 ) : (
                                     <>
-                                        <p className="text-[15px] leading-relaxed">{msg.text}</p>
-                                        <p className="text-[11px] mt-1.5 text-white/60">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                        <AvatarFallback className="bg-gradient-to-br from-[#FA2D48] to-[#FF0080] text-white">AI</AvatarFallback>
                                     </>
                                 )}
+                            </Avatar>
+
+                            <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} max-w-[85%]`}>
+                                <div className={`${msg.canvas ? 'w-full max-w-full' : ''} ${msg.role === 'user'
+                                    ? 'bg-[#27272a] text-white rounded-2xl rounded-tr-sm px-5 py-3 border border-white/10'
+                                    : msg.canvas ? '' : 'bg-transparent text-white/90 px-0 py-1'
+                                }`}>
+                                    {msg.role === 'ai' && msg.canvas && msg.canvas.html ? (
+                                        <div className="space-y-3">
+                                            <div className="bg-[#27272a] text-white rounded-2xl rounded-tl-sm px-5 py-3 border border-white/10 inline-block">
+                                                <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
+                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                                                </div>
+                                            </div>
+                                            <CanvasRenderer
+                                                html={msg.canvas.html}
+                                                title={msg.canvas.title}
+                                                description={msg.canvas.description}
+                                                retryCount={msg.canvas.retryCount}
+                                                error={msg.canvas.error}
+                                                onRetry={async () => {
+                                                    setLoading(true);
+                                                    setChatResponse("🔄 Regenerating component...");
+                                                    const result = await generateCanvasComponent(
+                                                        chatMessages.filter(m => m.role === 'user').slice(-1)[0]?.text || 'Retry the last component',
+                                                        contextData,
+                                                        [],
+                                                        (attempt, err) => setChatResponse(`🔄 Retry ${attempt}/5... ${err}`)
+                                                    );
+                                                    if (result && !result.error) {
+                                                        setChatMessages(prev => {
+                                                            const updated = [...prev];
+                                                            updated[idx] = { ...updated[idx], canvas: result, text: `Here's your **${result.title}** — ${result.description}` };
+                                                            return updated;
+                                                        });
+                                                    }
+                                                    setChatResponse(null);
+                                                    setLoading(false);
+                                                }}
+                                            />
+                                            <p className="text-[11px] text-[#666666] px-1">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                        </div>
+                                    ) : msg.role === 'ai' ? (
+                                        <>
+                                            {/* Tool Call Pills */}
+                                            {msg.toolCalls && msg.toolCalls.length > 0 && (
+                                                <div className="flex flex-wrap gap-2 mb-3">
+                                                    {msg.toolCalls.map((tc, tcIdx) => (
+                                                        <span
+                                                            key={tcIdx}
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-semibold text-white/60 hover:bg-white/10 hover:text-white transition-colors cursor-help"
+                                                            title={`${tc.name}(${Object.entries(tc.arguments).map(([k,v]) => `${k}: ${v}`).join(', ')})`}
+                                                        >
+                                                            <ToolIcon iconName={tc.icon} size={10} />
+                                                            <span>{tc.label}</span>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                    {idx === chatMessages.length - 1 && typing
+                                                        ? displayedText
+                                                        : msg.text}
+                                                </ReactMarkdown>
+                                                {idx === chatMessages.length - 1 && typing && (
+                                                    <span className="inline-block w-[2px] h-5 ml-0.5 bg-[#FA2D48] align-middle animate-pulse"></span>
+                                                )}
+                                            </div>
+                                            <p className="text-[11px] mt-2 text-white/30 font-medium">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="text-[15px] leading-relaxed">{msg.text}</p>
+                                            <p className="text-[11px] mt-1.5 text-white/40">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </motion.div>
                     ))}
@@ -1515,7 +1534,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             </div>
 
             {/* Input Box - Fixed at Bottom */}
-            <div className="flex-shrink-0 border-t border-white/5 bg-[#0a0a0a] px-4 py-3">
+            <div className="flex-shrink-0 border-t border-white/5 bg-[#09090b] px-4 py-4">
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -1524,8 +1543,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     accept=".json"
                 />
                 <div className="max-w-2xl mx-auto">
-                    <div className="relative flex items-center bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-2 focus-within:border-[#FA2D48]/50 focus-within:shadow-[0_0_12px_rgba(250,45,72,0.15)] transition-all">
-                        <input
+                    <div className="relative flex items-center gap-2">
+                        <Input
                             type="text"
                             value={userPrompt}
                             onChange={(e) => setUserPrompt(e.target.value)}
@@ -1536,17 +1555,18 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                 }
                             }}
                             placeholder={canvasMode ? "Describe a component to build..." : "Ask about your music..."}
-                            className="flex-1 bg-transparent py-1.5 text-[15px] text-white focus:outline-none placeholder:text-[#888888]"
+                            className="flex-1 bg-[#1a1a1a] border-white/10 text-white placeholder:text-white/30 h-12 rounded-xl focus-visible:ring-[#FA2D48]/50"
                         />
-                        <button
+                        <Button
                             onClick={() => handleQuery()}
                             disabled={loading || !userPrompt.trim()}
-                            className="ml-2 p-1.5 rounded-lg bg-[#FA2D48] disabled:bg-white/5 disabled:text-white/10 text-white transition-all hover:brightness-110 active:scale-95"
+                            size="icon"
+                            className="h-12 w-12 rounded-xl bg-[#FA2D48] hover:bg-[#ff4d6a] text-white shadow-lg shadow-rose-900/20"
                         >
-                            {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
-                        </button>
+                            {loading ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <ArrowUp className="w-5 h-5" />}
+                        </Button>
                     </div>
-                    <p className="text-[11px] text-[#666666] text-center mt-1.5">↵ to send</p>
+                    <p className="text-[10px] text-white/20 text-center mt-2 font-medium tracking-wide">Press Enter to send</p>
                 </div>
             </div>
         </div>

@@ -17,6 +17,12 @@ import { ChartSkeleton } from './components/LoadingSkeleton';
 import { EmptyState } from './components/EmptyState';
 import Particles from './components/reactbits/Particles';
 import { FullScreenModal } from './components/FullScreenModal';
+import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { EmptyAvatarGroup } from "@/components/EmptyAvatarGroup";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 // Extract dominant color from an image URL using canvas sampling
 const MIN_PIXEL_BRIGHTNESS = 40;
@@ -251,6 +257,60 @@ const CopyButton = ({ text }: { text: string }) => {
     );
 };
 
+const StatsCarousel = ({ stats, artist }: { stats: any, artist: Artist }) => {
+    const [page, setPage] = useState(0);
+
+    // Group stats
+    const slide1 = [
+        { icon: TrendingUp, value: artist.totalListens || 0, label: "Total Plays", color: "text-blue-400" },
+        { icon: Clock, value: artist.timeStr ? String(artist.timeStr).replace('m', '') : '0', label: "Minutes", color: "text-purple-400" },
+        { icon: Sparkles, value: `${stats?.popularityScore || 0}%`, label: "Of Time", color: "text-yellow-400" }
+    ];
+
+    const slide2 = [
+         { icon: Layers, value: stats?.varietyCount || 0, label: "Unique Songs", color: "text-green-400" },
+         { icon: Zap, value: stats?.dailyAverage || 0, label: "Avg / Day", color: "text-orange-400" },
+         { icon: Globe, value: stats?.peakTimeLabel || '-', label: "Peak Time", color: "text-cyan-400" }
+    ];
+
+    const slides = [slide1, slide2];
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setPage(prev => (prev + 1) % slides.length);
+        }, 4000);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="w-full max-w-lg mb-8 overflow-hidden relative">
+             <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${page * 100}%)` }}>
+                {slides.map((slide, i) => (
+                    <div key={i} className="min-w-full grid grid-cols-3 gap-3 px-1">
+                        {slide.map((stat, j) => (
+                            <div key={j} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                                <stat.icon size={16} className={`mb-1.5 opacity-80 ${stat.color}`} />
+                                <span className="text-xl font-black text-white">{stat.value}</span>
+                                <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">{stat.label}</span>
+                            </div>
+                        ))}
+                    </div>
+                ))}
+             </div>
+             {/* Indicators */}
+             <div className="flex justify-center gap-1.5 mt-3">
+                {slides.map((_, i) => (
+                    <button
+                        key={i}
+                        className={`w-1.5 h-1.5 rounded-full transition-colors ${i === page ? 'bg-white' : 'bg-white/20'}`}
+                        onClick={() => setPage(i)}
+                    />
+                ))}
+             </div>
+        </div>
+    );
+};
+
 function App() {
   const hasAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
   const authFlowHandledRef = useRef(false);
@@ -350,7 +410,8 @@ function App() {
 
   const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly' | 'All Time' | 'Custom'>('Weekly');
   const [customDateRange, setCustomDateRange] = useState<{ start: string; end: string } | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateRangePickerOpen, setDateRangePickerOpen] = useState(false);
+  const [calendarDate, setCalendarDate] = useState<any | undefined>();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const getGreeting = () => {
@@ -841,7 +902,7 @@ function App() {
 
             <div className="relative">
                 {/* Time Range Selector */}
-                <div className="flex gap-2 p-1.5 overflow-x-auto no-scrollbar rounded-2xl border border-white/10 bg-white/5 mb-2">
+                <div className="flex gap-2 p-1.5 overflow-x-auto no-scrollbar rounded-2xl border border-white/10 bg-white/5 mb-2 items-center">
                     {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
                         <button
                             key={range}
@@ -858,7 +919,46 @@ function App() {
                             {range}
                         </button>
                     ))}
-                    {/* ... Custom Range & Refresh Buttons ... */}
+
+                    <Popover open={dateRangePickerOpen} onOpenChange={setDateRangePickerOpen}>
+                        <PopoverTrigger asChild>
+                            <button
+                                className={cn(
+                                    "px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5",
+                                    timeRange === 'Custom' ? 'bg-white text-black' : 'text-white/70 hover:text-white hover:bg-white/10'
+                                )}
+                            >
+                                <Calendar size={12} />
+                                {timeRange === 'Custom' && customDateRange
+                                    ? `${new Date(customDateRange.start).toLocaleDateString()} - ${new Date(customDateRange.end).toLocaleDateString()}`
+                                    : 'Custom'}
+                            </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <ShadcnCalendar
+                                mode="range"
+                                selected={calendarDate}
+                                onSelect={(range) => {
+                                    setCalendarDate(range);
+                                    if (range?.from && range?.to) {
+                                        setCustomDateRange({
+                                            start: format(range.from, 'yyyy-MM-dd'),
+                                            end: format(range.to, 'yyyy-MM-dd')
+                                        });
+                                        setTimeRange('Custom');
+                                        // Trigger fetch after a slight delay to allow UI to close/update
+                                        setTimeout(() => {
+                                            fetchDashboardStats('Custom', {
+                                                start: format(range.from!, 'yyyy-MM-dd'),
+                                                end: format(range.to!, 'yyyy-MM-dd')
+                                            }).then(data => setDbUnifiedData(data));
+                                        }, 100);
+                                    }
+                                }}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
                 </div>
             </div>
 
@@ -884,7 +984,14 @@ function App() {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-[#8E8E93] text-sm italic px-1">Not enough data to rank artists yet.</p>
+                            <div className="px-1">
+                                <EmptyAvatarGroup
+                                    title="No Artists Found"
+                                    description="Start listening to some music to see your top artists here!"
+                                    onAction={handleConnect}
+                                    actionLabel="Connect Spotify"
+                                />
+                            </div>
                         )}
                     </section>
 
@@ -999,7 +1106,7 @@ function App() {
             
             {/* Desktop Date Range Selector */}
             <div className="flex items-center justify-between mb-12">
-                <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
+                <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10 items-center">
                     {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
                         <button
                             key={range}
@@ -1015,6 +1122,46 @@ function App() {
                             {range}
                         </button>
                     ))}
+
+                    <Popover open={dateRangePickerOpen} onOpenChange={setDateRangePickerOpen}>
+                        <PopoverTrigger asChild>
+                            <button
+                                className={cn(
+                                    "px-6 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2",
+                                    timeRange === 'Custom' ? 'bg-white text-black shadow-lg scale-105' : 'text-white/60 hover:text-white hover:bg-white/10'
+                                )}
+                            >
+                                <Calendar size={14} />
+                                {timeRange === 'Custom' && customDateRange
+                                    ? `${new Date(customDateRange.start).toLocaleDateString()} - ${new Date(customDateRange.end).toLocaleDateString()}`
+                                    : 'Custom Range'}
+                            </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="range"
+                                selected={calendarDate}
+                                onSelect={(range) => {
+                                    setCalendarDate(range);
+                                    if (range?.from && range?.to) {
+                                        setCustomDateRange({
+                                            start: format(range.from, 'yyyy-MM-dd'),
+                                            end: format(range.to, 'yyyy-MM-dd')
+                                        });
+                                        setTimeRange('Custom');
+                                        // Trigger fetch
+                                        setTimeout(() => {
+                                            fetchDashboardStats('Custom', {
+                                                start: format(range.from!, 'yyyy-MM-dd'),
+                                                end: format(range.to!, 'yyyy-MM-dd')
+                                            }).then(data => setDbUnifiedData(data));
+                                        }, 100);
+                                    }
+                                }}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
                 </div>
 
                 <button
@@ -1171,47 +1318,8 @@ function App() {
                     )}
                 </motion.div>
 
-                {/* Stats Grid */}
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
-                    className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-lg mb-8"
-                >
-                    {/* Existing Stats */}
-                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
-                        <TrendingUp size={16} className="mb-1.5 opacity-80 text-blue-400" />
-                        <span className="text-xl font-black text-white">{selectedTopArtist.totalListens || 0}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Total Plays</span>
-                    </div>
-                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
-                        <Clock size={16} className="mb-1.5 opacity-80 text-purple-400" />
-                        <span className="text-xl font-black text-white">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Minutes</span>
-                    </div>
-                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
-                        <Sparkles size={16} className="mb-1.5 opacity-80 text-yellow-400" />
-                        <span className="text-xl font-black text-white">{selectedArtistStats?.popularityScore || 0}%</span>
-                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Of Time</span>
-                    </div>
-
-                    {/* New Features */}
-                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
-                        <Layers size={16} className="mb-1.5 opacity-80 text-green-400" />
-                        <span className="text-xl font-black text-white">{selectedArtistStats?.varietyCount || 0}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Unique Songs</span>
-                    </div>
-                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
-                        <Zap size={16} className="mb-1.5 opacity-80 text-orange-400" />
-                        <span className="text-xl font-black text-white">{selectedArtistStats?.dailyAverage || 0}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Avg / Day</span>
-                    </div>
-                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
-                        <Globe size={16} className="mb-1.5 opacity-80 text-cyan-400" />
-                        <span className="text-lg font-bold text-white leading-tight mt-1 mb-0.5">{selectedArtistStats?.peakTimeLabel || '-'}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Peak Time</span>
-                    </div>
-                </motion.div>
+                {/* Stats Carousel (Auto-Rotating) */}
+                <StatsCarousel stats={selectedArtistStats} artist={selectedTopArtist} />
 
                 {/* Obsession Orbit */}
                 <motion.div
@@ -1225,8 +1333,14 @@ function App() {
                         orbitNodes={(dbUnifiedData?.songs || [])
                             .filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name)
                             .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
-                            .slice(0, 6)
-                            .map((s: any) => ({ id: s.id, name: s.track_name || s.title, image: s.cover || s.album_cover }))
+                            .slice(0, 24)
+                            .map((s: any) => ({
+                                id: s.id,
+                                name: s.track_name || s.title,
+                                image: s.cover || s.album_cover,
+                                plays: s.listens || s.plays,
+                                time: s.timeStr
+                            }))
                         }
                         color={auraColor}
                         history={safeRecent.filter((p: any) => p.artist_name === selectedTopArtist.name)}
