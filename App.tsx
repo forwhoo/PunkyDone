@@ -674,9 +674,9 @@ function App() {
   }, []);
 
   // Safe data extraction
-  const safeArtists = (dbUnifiedData?.artists?.length > 0) ? dbUnifiedData.artists : (data?.artists || []);
-  const safeAlbums = (dbUnifiedData?.albums?.length > 0) ? dbUnifiedData.albums : (data?.albums || []);
-  const safeSongs = (dbUnifiedData?.songs?.length > 0) ? dbUnifiedData.songs : (data?.songs || []);
+  const safeArtists = dbUnifiedData ? (dbUnifiedData.artists || []) : (data?.artists || []);
+  const safeAlbums = dbUnifiedData ? (dbUnifiedData.albums || []) : (data?.albums || []);
+  const safeSongs = dbUnifiedData ? (dbUnifiedData.songs || []) : (data?.songs || []);
   const safeRecent = dbUnifiedData?.recentPlays || data?.recentRaw || [];
   const hasDbData = safeArtists.length > 0 || safeSongs.length > 0 || safeAlbums.length > 0;
   const showEmptyState = !loading && dbUnifiedData && !hasDbData;
@@ -731,11 +731,6 @@ function App() {
           peakTimeLabel
       };
   }, [selectedTopArtist, safeArtists, safeRecent]);
-
-  const handleWrappedClick = () => {
-      setAiInitialQuery("Generate my music wrapped for the last month");
-      setAiModalOpen(true);
-  };
 
   if (!token && authenticating) {
       return (
@@ -862,7 +857,10 @@ function App() {
                         songs: safeSongs.map((s: Song) => s.title),
                         globalStats: dbStats
                     }}
-                    onWrappedClick={handleWrappedClick}
+                    onSearch={(query) => {
+                        setAiInitialQuery(query);
+                        setAiModalOpen(true);
+                    }}
                 />
                 
             </div>
@@ -1051,7 +1049,10 @@ function App() {
                         songs: safeSongs.map((s: Song) => s.title),
                         globalStats: dbStats
                     }}
-                    onWrappedClick={handleWrappedClick}
+                    onSearch={(query) => {
+                        setAiInitialQuery(query);
+                        setAiModalOpen(true);
+                    }}
                 />
             </div>
             
