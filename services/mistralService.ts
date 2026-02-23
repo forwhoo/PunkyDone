@@ -1058,7 +1058,6 @@ You have access to a SQL database of the user's Spotify history and can fetch li
 - **Discovery**: Upcoming artists (Radar), Rising Stars, Genre Breakdown.
 - **Fun Stats**: Late Night Anthem, Most Skipped, One-Hit Wonders, Earworms.
 - **Comparisons**: Compare two time periods or two artists.
-- **Search**: You can search Google for external information if needed (e.g., "Who won Euro 2024?").
 - **Spotify Search**: You can search for tracks on Spotify.
 
 **RULES:**
@@ -1066,7 +1065,7 @@ You have access to a SQL database of the user's Spotify history and can fetch li
 2.  If a tool returns no data, explain that to the user clearly.
 3.  Be concise and witty in your final response.
 4.  Use Markdown for the final response (bold, lists, etc.).
-5.  If the user asks a general question unrelated to their data, use your knowledge or Google Search.
+5.  If the user asks a general question unrelated to their data, use your knowledge.
 `;
 
 // ─── MAIN AGENT FUNCTION (Streamed) ──────────────────────────────
@@ -1118,7 +1117,7 @@ export const streamMusicQuestionWithTools = async (
                 model: selectedModelId,
                 messages: messages,
                 // @ts-ignore
-                tools: [...AGENT_TOOLS, { type: 'web_search' }],
+                tools: AGENT_TOOLS,
             });
 
             let toolCallsBuffer: any[] = [];
@@ -1296,7 +1295,7 @@ export const answerMusicQuestionWithTools = async (
                 model: selectedModelId,
                 messages: messages,
                 // @ts-ignore
-                tools: [...AGENT_TOOLS, { type: 'web_search' }],
+                tools: AGENT_TOOLS,
             });
 
             const choice = response.choices?.[0];
