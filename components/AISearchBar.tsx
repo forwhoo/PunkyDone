@@ -118,16 +118,7 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                             className="fixed inset-0 z-[10000] bg-[#09090b] flex flex-col h-[100dvh] w-screen"
                         >
                             {/* Header */}
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0 bg-black/20 backdrop-blur-xl">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FA2D48] to-[#FF0080] flex items-center justify-center shadow-lg shadow-rose-900/20">
-                                        <MessageSquare className="w-5 h-5 text-white" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg font-bold text-white tracking-tight">Lotus Chat</h2>
-                                        <p className="text-[11px] text-white/40 font-medium">Powered by Gemini</p>
-                                    </div>
-                                </div>
+                            <div className="flex items-center justify-end px-6 py-4 border-b border-white/5 flex-shrink-0 bg-black/20 backdrop-blur-xl">
                                 <Button
                                     variant="ghost"
                                     size="icon"
