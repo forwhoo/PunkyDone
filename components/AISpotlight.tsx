@@ -283,6 +283,13 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         return () => document.removeEventListener('click', handler);
     }, [modelDropdownOpen]);
 
+    // Handle initial query from parent
+    useEffect(() => {
+        if (initialQuery && initialQuery.trim()) {
+            handleQuery(initialQuery);
+        }
+    }, [initialQuery]);
+
     // Chat message history
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);

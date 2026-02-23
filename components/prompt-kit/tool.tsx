@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useState } from "react"
 import { cn } from "@/lib/utils"
 import {
   Loader2,
@@ -14,7 +15,9 @@ import {
   Mail,
   Zap,
   Globe,
-  Settings
+  Settings,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react"
 
 export interface ToolPart {
@@ -41,6 +44,7 @@ const ToolIconMap: Record<string, React.ComponentType<{ className?: string }>> =
 }
 
 export function Tool({ className, toolPart, ...props }: ToolProps) {
+  const [isOpen, setIsOpen] = useState(false)
   const Icon = ToolIconMap[toolPart.type] || Zap
   const isPending = toolPart.state === "input-streaming" || toolPart.state === "input-available"
   const isSuccess = toolPart.state === "output-available"
@@ -55,7 +59,10 @@ export function Tool({ className, toolPart, ...props }: ToolProps) {
       {...props}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 p-3 border-b bg-muted/30">
+      <div
+        className="flex items-center gap-2 p-3 border-b bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+        onClick={() => setIsOpen(!isOpen)}
+      >
         <div className={cn(
           "flex items-center justify-center h-6 w-6 rounded-md",
           isPending && "bg-blue-500/10 text-blue-500",
@@ -64,8 +71,9 @@ export function Tool({ className, toolPart, ...props }: ToolProps) {
         )}>
           <Icon className="h-4 w-4" />
         </div>
-        <div className="flex-1 font-medium truncate">
+        <div className="flex-1 font-medium truncate flex items-center gap-2">
           {toolPart.type}
+          {isOpen ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 text-muted-foreground" />}
         </div>
         <div className="text-muted-foreground">
           {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
@@ -75,7 +83,8 @@ export function Tool({ className, toolPart, ...props }: ToolProps) {
       </div>
 
       {/* Content */}
-      <div className="p-3 space-y-3 font-mono text-xs">
+      {isOpen && (
+        <div className="p-3 space-y-3 font-mono text-xs animate-in fade-in slide-in-from-top-1 duration-200">
         {/* Input */}
         {toolPart.input && (
           <div className="space-y-1">
@@ -112,6 +121,7 @@ export function Tool({ className, toolPart, ...props }: ToolProps) {
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }
