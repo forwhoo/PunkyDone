@@ -3,6 +3,8 @@ import { Search, Send, X, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AISpotlight } from './AISpotlight';
 import { createPortal } from 'react-dom';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface AISearchBarProps {
     token?: string | null;
@@ -72,11 +74,11 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                     className="w-full"
                 >
                     <form onSubmit={handleSubmit} className="relative">
-                        <div className="relative flex items-center bg-black/40 border border-white/15 rounded-2xl overflow-hidden transition-all hover:border-white/30 backdrop-blur-md">
-                            <div className="pl-4 flex items-center pointer-events-none">
-                                <Search className="w-5 h-5 text-[#8E8E93]" />
+                        <div className="relative flex items-center gap-2">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+                                <Search className="w-4 h-4 text-white/40" />
                             </div>
-                            <input
+                            <Input
                                 type="text"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
@@ -87,15 +89,16 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                                     }
                                 }}
                                 placeholder="Ask about your music..."
-                                className="flex-1 bg-transparent text-white placeholder-white/40 px-3 py-4 focus:outline-none text-[15px]"
+                                className="pl-9 h-12 rounded-xl bg-white/5 border-white/10 focus-visible:ring-1 focus-visible:ring-white/20 text-base shadow-lg backdrop-blur-md"
                             />
                             {query.trim() && (
-                                <button
+                                <Button
                                     type="submit"
-                                    className="pr-4 pl-2 py-2 text-[#FA2D48] hover:text-[#FF6B82] transition-colors"
+                                    size="icon"
+                                    className="absolute right-1 top-1 h-10 w-10 rounded-lg bg-white/10 hover:bg-white/20 text-white"
                                 >
-                                    <Send className="w-5 h-5" />
-                                </button>
+                                    <Send className="w-4 h-4" />
+                                </Button>
                             )}
                         </div>
                     </form>
@@ -112,26 +115,31 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.2 }}
-                            className="fixed inset-0 z-[10000] bg-[#0a0a0a] flex flex-col h-[100dvh] w-screen"
+                            className="fixed inset-0 z-[10000] bg-[#09090b] flex flex-col h-[100dvh] w-screen"
                         >
                             {/* Header */}
-                            <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0 bg-black/20 backdrop-blur-xl">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-[#FA2D48]/10 flex items-center justify-center">
-                                        <MessageSquare className="w-4 h-4 text-[#FA2D48]" />
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FA2D48] to-[#FF0080] flex items-center justify-center shadow-lg shadow-rose-900/20">
+                                        <MessageSquare className="w-5 h-5 text-white" />
                                     </div>
-                                    <h2 className="text-base font-bold text-white tracking-tight">Chat with Lotus</h2>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-white tracking-tight">Lotus Chat</h2>
+                                        <p className="text-[11px] text-white/40 font-medium">Powered by Gemini</p>
+                                    </div>
                                 </div>
-                                <button
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={handleClose}
-                                    className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/50 hover:text-white transition-all"
+                                    className="rounded-full hover:bg-white/10"
                                 >
-                                    <X size={18} />
-                                </button>
+                                    <X className="w-5 h-5" />
+                                </Button>
                             </div>
 
                             {/* Content */}
-                            <div className="flex-1 overflow-hidden">
+                            <div className="flex-1 overflow-hidden bg-[#09090b]">
                                 <AISpotlight
                                     token={token}
                                     history={history}
