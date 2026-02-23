@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { Mistral } from "@mistralai/mistralai";
 import {
     fetchDashboardStats,
     fetchSmartPlaylist,
@@ -37,13 +37,13 @@ import {
 } from './dbService';
 import { fetchArtistImages, searchSpotifyTracks } from './spotifyService';
 
-// Initialize Gemini lazily
+// Initialize Mistral lazily
 const getAiClient = () => {
     // @ts-ignore
     const apiKey = import.meta.env.VITE_GROQ_API_KEY || '';
     if (!apiKey) return null;
 
-    return new GoogleGenAI({ apiKey });
+    return new Mistral({ apiKey });
 };
 
 // ─── AI MODEL DEFINITIONS ────────────────────────────────────────
@@ -54,14 +54,14 @@ export interface AIModel {
 }
 
 export const AI_MODELS: AIModel[] = [
-    { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro", isReasoning: true },
-    { id: "gemini-3-pro-preview", label: "Gemini 3 Pro", isReasoning: true },
-    { id: "gemini-3-flash-preview", label: "Gemini 3 Flash", isReasoning: false },
-    { id: "gemini-flash-latest", label: "Gemini Flash Latest", isReasoning: false },
-    { id: "gemini-flash-lite-latest", label: "Gemini Flash Lite", isReasoning: false },
+    { id: "mistral-medium-latest", label: "Mistral Medium", isReasoning: false },
+    { id: "mistral-large-latest", label: "Mistral Large", isReasoning: false },
+    { id: "mistral-small-latest", label: "Mistral Small", isReasoning: false },
+    { id: "codestral-latest", label: "Codestral", isReasoning: false },
+    { id: "ministral-14b-latest", label: "Ministral 14B", isReasoning: false },
 ];
 
-export const DEFAULT_MODEL_ID = "gemini-3-flash-preview";
+export const DEFAULT_MODEL_ID = "mistral-medium-latest";
 
 const trimToolPayload = (payload: any): any => {
     if (!payload) return payload;
@@ -96,18 +96,17 @@ export interface ToolCallInfo {
     label: string;
 }
 
-// ─── AGENT TOOL DEFINITIONS (Gemini Format) ──────────────────────
-// Helper to define tools in a cleaner way, we will map them to OpenAI/Gemini format as needed
+// ─── AGENT TOOL DEFINITIONS (JSON Schema Format) ──────────────────────
 const TOOL_DEFINITIONS = [
     {
         name: "get_top_songs",
         description: "Get the user's top songs/tracks.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] },
-                limit: { type: Type.NUMBER },
-                artist_filter: { type: Type.STRING }
+                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] },
+                limit: { type: "number" },
+                artist_filter: { type: "string" }
             },
             required: ["period"]
         }
@@ -116,10 +115,10 @@ const TOOL_DEFINITIONS = [
         name: "get_top_artists",
         description: "Get the user's top artists.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] },
-                limit: { type: Type.NUMBER }
+                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] },
+                limit: { type: "number" }
             },
             required: ["period"]
         }
@@ -128,10 +127,10 @@ const TOOL_DEFINITIONS = [
         name: "get_top_albums",
         description: "Get the user's top albums.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] },
-                limit: { type: Type.NUMBER }
+                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] },
+                limit: { type: "number" }
             },
             required: ["period"]
         }
@@ -140,9 +139,9 @@ const TOOL_DEFINITIONS = [
         name: "get_listening_time",
         description: "Get the user's total listening time and stats.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] }
+                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] }
             },
             required: ["period"]
         }
@@ -151,10 +150,10 @@ const TOOL_DEFINITIONS = [
         name: "get_obsession_orbit",
         description: "Get the user's Obsession Orbit.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] },
-                artist_name: { type: Type.STRING }
+                period: { type: "string", enum: ["daily", "weekly", "monthly"] },
+                artist_name: { type: "string" }
             },
             required: ["period"]
         }
@@ -163,10 +162,10 @@ const TOOL_DEFINITIONS = [
         name: "get_artist_streak",
         description: "Get streak information for an artist.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                artist_name: { type: Type.STRING },
-                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] }
+                artist_name: { type: "string" },
+                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] }
             },
             required: ["artist_name", "period"]
         }
@@ -175,11 +174,11 @@ const TOOL_DEFINITIONS = [
         name: "get_listening_percentage",
         description: "Calculate what percentage of listening time a specific artist, song, or album takes up.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                entity_type: { type: Type.STRING, enum: ["artist", "song", "album"] },
-                entity_name: { type: Type.STRING },
-                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] }
+                entity_type: { type: "string", enum: ["artist", "song", "album"] },
+                entity_name: { type: "string" },
+                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] }
             },
             required: ["entity_type", "entity_name", "period"]
         }
@@ -188,9 +187,9 @@ const TOOL_DEFINITIONS = [
         name: "get_upcoming_artists",
         description: "Get radar/upcoming/new artists the user recently discovered.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
+                period: { type: "string", enum: ["daily", "weekly", "monthly"] }
             },
             required: ["period"]
         }
@@ -199,9 +198,9 @@ const TOOL_DEFINITIONS = [
         name: "get_peak_listening_hour",
         description: "Get the hour of day when the user listens to music the most.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
+                period: { type: "string", enum: ["daily", "weekly", "monthly"] }
             },
             required: ["period"]
         }
@@ -210,9 +209,9 @@ const TOOL_DEFINITIONS = [
         name: "get_rising_star",
         description: "Get the artist with the biggest increase in plays compared to previous period.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
+                period: { type: "string", enum: ["daily", "weekly", "monthly"] }
             },
             required: ["period"]
         }
@@ -221,9 +220,9 @@ const TOOL_DEFINITIONS = [
         name: "get_late_night_anthem",
         description: "Get the song the user plays most during late night hours (1AM-5AM).",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
+                period: { type: "string", enum: ["daily", "weekly", "monthly"] }
             },
             required: ["period"]
         }
@@ -232,9 +231,9 @@ const TOOL_DEFINITIONS = [
         name: "get_most_skipped",
         description: "Get the song the user skips the most.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
+                period: { type: "string", enum: ["daily", "weekly", "monthly"] }
             },
             required: ["period"]
         }
@@ -243,9 +242,9 @@ const TOOL_DEFINITIONS = [
         name: "get_charts",
         description: "Get the current music charts showing trending songs.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly", "all time"] }
+                period: { type: "string", enum: ["daily", "weekly", "monthly", "all time"] }
             },
             required: ["period"]
         }
@@ -254,9 +253,9 @@ const TOOL_DEFINITIONS = [
         name: "get_wrapped_overview",
         description: "Get a wrapped-style summary.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
+                period: { type: "string", enum: ["daily", "weekly", "monthly"] }
             },
             required: ["period"]
         }
@@ -265,10 +264,10 @@ const TOOL_DEFINITIONS = [
         name: "search_spotify_tracks",
         description: "Search Spotify tracks by keyword.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                query: { type: Type.STRING },
-                limit: { type: Type.NUMBER }
+                query: { type: "string" },
+                limit: { type: "number" }
             },
             required: ["query"]
         }
@@ -277,18 +276,18 @@ const TOOL_DEFINITIONS = [
         name: "filter_songs",
         description: "Filter songs by various criteria.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                type: { type: Type.STRING, enum: ["song", "artist", "album"] },
-                field: { type: Type.STRING, enum: ["artist_name", "album_name", "track_name"] },
-                value: { type: Type.STRING },
-                contains: { type: Type.STRING },
-                time_of_day: { type: Type.STRING, enum: ["morning", "afternoon", "evening", "night", "latenight"] },
-                day_of_week: { type: Type.STRING, enum: ["weekday", "weekend"] },
-                recent_days: { type: Type.NUMBER },
-                sort_by: { type: Type.STRING, enum: ["plays", "minutes", "recency", "duration"] },
-                sort_order: { type: Type.STRING, enum: ["highest", "lowest"] },
-                limit: { type: Type.NUMBER }
+                type: { type: "string", enum: ["song", "artist", "album"] },
+                field: { type: "string", enum: ["artist_name", "album_name", "track_name"] },
+                value: { type: "string" },
+                contains: { type: "string" },
+                time_of_day: { type: "string", enum: ["morning", "afternoon", "evening", "night", "latenight"] },
+                day_of_week: { type: "string", enum: ["weekday", "weekend"] },
+                recent_days: { type: "number" },
+                sort_by: { type: "string", enum: ["plays", "minutes", "recency", "duration"] },
+                sort_order: { type: "string", enum: ["highest", "lowest"] },
+                limit: { type: "number" }
             },
             required: ["type"]
         }
@@ -297,10 +296,10 @@ const TOOL_DEFINITIONS = [
         name: "fetch_image",
         description: "Fetch the image/artwork URL for an artist or album.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                name: { type: Type.STRING },
-                type: { type: Type.STRING, enum: ["artist", "album"] }
+                name: { type: "string" },
+                type: { type: "string", enum: ["artist", "album"] }
             },
             required: ["name"]
         }
@@ -309,9 +308,9 @@ const TOOL_DEFINITIONS = [
         name: "get_heatmap_data",
         description: "Get the user's listening activity heatmap data.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                days: { type: Type.NUMBER }
+                days: { type: "number" }
             },
             required: []
         }
@@ -320,9 +319,9 @@ const TOOL_DEFINITIONS = [
         name: "get_artist_network",
         description: "Get artist connection/network data.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                limit: { type: Type.NUMBER }
+                limit: { type: "number" }
             },
             required: []
         }
@@ -331,9 +330,9 @@ const TOOL_DEFINITIONS = [
         name: "get_genre_breakdown",
         description: "Get an estimated genre breakdown.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] }
+                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] }
             },
             required: []
         }
@@ -342,9 +341,9 @@ const TOOL_DEFINITIONS = [
         name: "get_recent_plays",
         description: "Get the user's most recently played tracks.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                limit: { type: Type.NUMBER }
+                limit: { type: "number" }
             },
             required: []
         }
@@ -353,10 +352,10 @@ const TOOL_DEFINITIONS = [
         name: "compare_periods",
         description: "Compare listening stats between two time periods.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                period_a: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] },
-                period_b: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] }
+                period_a: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] },
+                period_b: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] }
             },
             required: ["period_a", "period_b"]
         }
@@ -365,9 +364,9 @@ const TOOL_DEFINITIONS = [
         name: "get_album_covers",
         description: "Fetch album cover artwork URLs.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                names: { type: Type.ARRAY, items: { type: Type.STRING } }
+                names: { type: "array", items: { type: "string" } }
             },
             required: ["names"]
         }
@@ -376,11 +375,11 @@ const TOOL_DEFINITIONS = [
         name: "compare_artist_performance",
         description: "Compare an artist's stats across two periods.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                artist_name: { type: Type.STRING },
-                period_a: { type: Type.STRING },
-                period_b: { type: Type.STRING }
+                artist_name: { type: "string" },
+                period_a: { type: "string" },
+                period_b: { type: "string" }
             },
             required: ["artist_name", "period_a", "period_b"]
         }
@@ -389,11 +388,11 @@ const TOOL_DEFINITIONS = [
         name: "get_rank_shift",
         description: "Shows how many spots an artist/song climbed or fell.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                entity_name: { type: Type.STRING },
-                entity_type: { type: Type.STRING, enum: ["artist", "song"] },
-                time_range: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
+                entity_name: { type: "string" },
+                entity_type: { type: "string", enum: ["artist", "song"] },
+                time_range: { type: "string", enum: ["daily", "weekly", "monthly"] }
             },
             required: ["entity_name", "entity_type"]
         }
@@ -402,9 +401,9 @@ const TOOL_DEFINITIONS = [
         name: "get_loyalty_score",
         description: "Returns the ratio of this artist's plays vs. all other artists.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                artist_name: { type: Type.STRING }
+                artist_name: { type: "string" }
             },
             required: ["artist_name"]
         }
@@ -413,9 +412,9 @@ const TOOL_DEFINITIONS = [
         name: "get_market_share",
         description: "Returns a breakdown of what percentage of the 'total pie' an entity owns.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                entity_type: { type: Type.STRING, enum: ["artist", "genre"] }
+                entity_type: { type: "string", enum: ["artist", "genre"] }
             },
             required: ["entity_type"]
         }
@@ -424,9 +423,9 @@ const TOOL_DEFINITIONS = [
         name: "get_discovery_date",
         description: "Finds the exact timestamp and track of the user's very first interaction with an artist.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                artist_name: { type: Type.STRING }
+                artist_name: { type: "string" }
             },
             required: ["artist_name"]
         }
@@ -435,9 +434,9 @@ const TOOL_DEFINITIONS = [
         name: "get_binge_sessions",
         description: "Identifies 'binge' events where the user listened to one artist for a long continuous block.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                threshold_minutes: { type: Type.NUMBER }
+                threshold_minutes: { type: "number" }
             },
             required: []
         }
@@ -446,9 +445,9 @@ const TOOL_DEFINITIONS = [
         name: "get_one_hit_wonders",
         description: "Finds artists where the user loves exactly ONE song but never listens to the rest.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                min_plays: { type: Type.NUMBER }
+                min_plays: { type: "number" }
             },
             required: []
         }
@@ -457,9 +456,9 @@ const TOOL_DEFINITIONS = [
         name: "get_album_completionist",
         description: "Checks if the user listens to full albums.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                album_name: { type: Type.STRING }
+                album_name: { type: "string" }
             },
             required: ["album_name"]
         }
@@ -468,9 +467,9 @@ const TOOL_DEFINITIONS = [
         name: "get_earworm_report",
         description: "Finds the song the user has 'looped' the most in a short window.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                days_back: { type: Type.NUMBER }
+                days_back: { type: "number" }
             },
             required: []
         }
@@ -478,15 +477,15 @@ const TOOL_DEFINITIONS = [
     {
         name: "get_work_vs_play_stats",
         description: "Compares top genres/artists during weekdays vs. weekends.",
-        parameters: { type: Type.OBJECT, properties: {}, required: [] }
+        parameters: { type: "object", properties: {}, required: [] }
     },
     {
         name: "get_seasonal_vibe",
         description: "Analyzes if the user's music taste changes based on the season.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                season: { type: Type.STRING, enum: ["Summer", "Winter", "Spring", "Fall"] }
+                season: { type: "string", enum: ["Summer", "Winter", "Spring", "Fall"] }
             },
             required: ["season"]
         }
@@ -495,9 +494,9 @@ const TOOL_DEFINITIONS = [
         name: "get_anniversary_flashback",
         description: "Returns what the user was listening to exactly one year ago today.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                date: { type: Type.STRING }
+                date: { type: "string" }
             },
             required: []
         }
@@ -505,20 +504,20 @@ const TOOL_DEFINITIONS = [
     {
         name: "get_commute_soundtrack",
         description: "Analyzes specific activity during common commute hours.",
-        parameters: { type: Type.OBJECT, properties: {}, required: [] }
+        parameters: { type: "object", properties: {}, required: [] }
     },
     {
         name: "get_sleep_pattern",
         description: "Detects when the user stops listening at night and what 'sleep' music they use.",
-        parameters: { type: Type.OBJECT, properties: {}, required: [] }
+        parameters: { type: "object", properties: {}, required: [] }
     },
     {
         name: "get_diversity_index",
         description: "Measures how 'adventurous' the user is.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                time_range: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
+                time_range: { type: "string", enum: ["daily", "weekly", "monthly"] }
             },
             required: []
         }
@@ -527,9 +526,9 @@ const TOOL_DEFINITIONS = [
         name: "get_genre_evolution",
         description: "Shows how the user's favorite genre has changed month-over-month.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                months: { type: Type.NUMBER }
+                months: { type: "number" }
             },
             required: []
         }
@@ -538,9 +537,9 @@ const TOOL_DEFINITIONS = [
         name: "get_skip_rate_by_artist",
         description: "Specifically checks if a user skips an artist's songs more than others.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                artist_name: { type: Type.STRING }
+                artist_name: { type: "string" }
             },
             required: ["artist_name"]
         }
@@ -549,9 +548,9 @@ const TOOL_DEFINITIONS = [
         name: "get_gateway_tracks",
         description: "Identifies the specific song that 'hooked' the user.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                artist_name: { type: Type.STRING }
+                artist_name: { type: "string" }
             },
             required: ["artist_name"]
         }
@@ -559,16 +558,16 @@ const TOOL_DEFINITIONS = [
     {
         name: "get_top_collaborations",
         description: "Finds which artists are most frequently played in the same listening session.",
-        parameters: { type: Type.OBJECT, properties: {}, required: [] }
+        parameters: { type: "object", properties: {}, required: [] }
     },
     {
         name: "get_milestone_tracker",
         description: "Tracks progress toward a milestone.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                target_plays: { type: Type.NUMBER },
-                artist_name: { type: Type.STRING }
+                target_plays: { type: "number" },
+                artist_name: { type: "string" }
             },
             required: ["target_plays"]
         }
@@ -577,11 +576,11 @@ const TOOL_DEFINITIONS = [
         name: "get_obsession_score",
         description: "Get obsession score for an artist.",
         parameters: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-                artist_name: { type: Type.STRING },
-                start_date: { type: Type.STRING },
-                end_date: { type: Type.STRING }
+                artist_name: { type: "string" },
+                start_date: { type: "string" },
+                end_date: { type: "string" }
             },
             required: []
         }
@@ -589,9 +588,12 @@ const TOOL_DEFINITIONS = [
 ];
 
 const AGENT_TOOLS = TOOL_DEFINITIONS.map(tool => ({
-    name: tool.name,
-    description: tool.description,
-    parameters: tool.parameters
+    type: "function",
+    function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters
+    }
 }));
 
 // ─── TOOL ICON MAP ──────────────────────────────────────────────
@@ -674,11 +676,6 @@ async function executeAgentTool(
                     }))
                 };
             }
-            // ... (Other cases logic remains same, mapping funcArgs directly)
-            // I'll reuse the logic from the previous file content for brevity in the tool execution
-            // but ensure all cases are present in the final file.
-            // Since I am writing the full file, I need to include ALL cases.
-
             case 'get_top_artists': {
                 const period = funcArgs.period || 'Weekly';
                 const limit = Math.min(funcArgs.limit || 8, 20);
@@ -697,7 +694,6 @@ async function executeAgentTool(
                     }))
                 };
             }
-
             case 'get_top_albums': {
                 const period = funcArgs.period || 'Weekly';
                 const limit = Math.min(funcArgs.limit || 8, 20);
@@ -716,7 +712,6 @@ async function executeAgentTool(
                     }))
                 };
             }
-
             case 'get_listening_time': {
                 const period = funcArgs.period || 'Weekly';
                 const listeningStats = await fetchListeningStats();
@@ -736,7 +731,6 @@ async function executeAgentTool(
                     longestSession: listeningStats.extraStats?.longestSessionHours || 'Unknown'
                 };
             }
-
             case 'get_obsession_orbit': {
                 const period = funcArgs.period || 'weekly';
                 const obsession = await getObsessionArtist(period as any);
@@ -764,7 +758,6 @@ async function executeAgentTool(
                     period
                 };
             }
-
             case 'get_artist_streak': {
                 const period = funcArgs.period || 'Weekly';
                 const stats = await fetchDashboardStats(period as any);
@@ -783,7 +776,6 @@ async function executeAgentTool(
                     top_song: artistSongs[0] ? { title: artistSongs[0].title, plays: artistSongs[0].listens || 0 } : null
                 };
             }
-
             case 'get_listening_percentage': {
                 const period = funcArgs.period || 'Weekly';
                 const stats = await fetchDashboardStats(period as any);
@@ -826,37 +818,31 @@ async function executeAgentTool(
                     total_minutes: totalMinutes
                 };
             }
-
             case 'get_upcoming_artists': {
                 const period = funcArgs.period || 'weekly';
                 const radar = await getRadarArtists(period as any);
                 return { period, new_artists: radar || [] };
             }
-
             case 'get_peak_listening_hour': {
                 const period = funcArgs.period || 'weekly';
                 const peak = await getPeakListeningHour(period as any);
                 return peak || { hour: null, label: 'Unknown', plays: 0 };
             }
-
             case 'get_rising_star': {
                 const period = funcArgs.period || 'weekly';
                 const rising = await getRisingStar(period as any);
                 return rising || { name: 'No data', increase: 0 };
             }
-
             case 'get_late_night_anthem': {
                 const period = funcArgs.period || 'weekly';
                 const anthem = await getLateNightAnthem(period as any);
                 return anthem || { title: 'No late night plays found', artist: '', plays: 0 };
             }
-
             case 'get_most_skipped': {
                 const period = funcArgs.period || 'weekly';
                 const skipped = await getMostSkippedSong(period as any);
                 return skipped || { title: 'No data', artist: '', avgDuration: 0 };
             }
-
             case 'get_charts': {
                 const period = funcArgs.period || 'weekly';
                 const charts = await fetchCharts(period as any);
@@ -872,7 +858,6 @@ async function executeAgentTool(
                     }))
                 };
             }
-
             case 'get_wrapped_overview': {
                 const period = funcArgs.period || 'weekly';
                 const wrappedPeriod: 'daily' | 'weekly' | 'monthly' =
@@ -890,7 +875,6 @@ async function executeAgentTool(
                     top_album: wrapped.topAlbum || null
                 };
             }
-
             case 'search_spotify_tracks': {
                 if (!token) return { query: funcArgs.query || '', tracks: [], error: 'No Spotify token available' };
                 const query = (funcArgs.query || '').trim();
@@ -910,7 +894,6 @@ async function executeAgentTool(
                     }))
                 };
             }
-
             case 'filter_songs': {
                 const concept = {
                     title: 'Filtered Results',
@@ -941,7 +924,6 @@ async function executeAgentTool(
                     }))
                 };
             }
-
             case 'fetch_image': {
                 if (!token) return { image_url: null, error: 'No Spotify token available' };
                 const name = funcArgs.name || '';
@@ -952,7 +934,6 @@ async function executeAgentTool(
                     return { name, image_url: null, error: 'Failed to fetch image' };
                 }
             }
-
             case 'get_heatmap_data': {
                 const rawData = await fetchHeatmapData();
                 const days = Math.min(funcArgs.days || 30, 90);
@@ -980,7 +961,6 @@ async function executeAgentTool(
                     peak_day: peakDay ? { day: dayNames[Number(peakDay[0])], plays: peakDay[1] } : null,
                 };
             }
-
             case 'get_artist_network': {
                 const limit = Math.min(funcArgs.limit || 500, 1000);
                 const network = await fetchArtistNetwork(limit);
@@ -994,7 +974,6 @@ async function executeAgentTool(
                 pairList.sort((a, b) => b.strength - a.strength);
                 return { top_artists: artistList.map((a: any) => ({ name: a.name, plays: a.count })), top_connections: pairList.slice(0, 15), total_artists: Object.keys(network.artistInfo).length };
             }
-
             case 'get_genre_breakdown': {
                 const period = funcArgs.period || 'Weekly';
                 const stats = await fetchDashboardStats(period as any);
@@ -1010,14 +989,12 @@ async function executeAgentTool(
                 const genreList = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([genre, count]) => ({ genre, count, percentage: totalWeight > 0 ? Math.round((count / totalWeight) * 1000) / 10 : 0 }));
                 return { period, genres: genreList, total_artists_analyzed: artists.length };
             }
-
             case 'get_recent_plays': {
                 const limit = Math.min(funcArgs.limit || 8, 20);
                 const stats = await fetchDashboardStats('Daily');
                 const recentPlays = (stats.recentPlays || stats.songs || []).slice(0, limit);
                 return { count: recentPlays.length, plays: recentPlays.map((p: any, i: number) => ({ rank: i + 1, title: p.title || p.track_name || p.name, artist: p.artist || p.artist_name, album: p.album || p.album_name || null, cover: p.cover || p.album_cover || p.image || null, played_at: p.played_at || p.lastPlayed || null })) };
             }
-
             case 'compare_periods': {
                 const periodA = funcArgs.period_a || 'Weekly';
                 const periodB = funcArgs.period_b || 'Monthly';
@@ -1030,7 +1007,6 @@ async function executeAgentTool(
                     comparison: { minutes_diff: totalMinsA - totalMinsB, songs_diff: (statsA.songs || []).length - (statsB.songs || []).length, artists_diff: (statsA.artists || []).length - (statsB.artists || []).length }
                 };
             }
-
             case 'get_album_covers': {
                 if (!token) return { covers: [], error: 'No Spotify token available' };
                 const names = funcArgs.names || [];
@@ -1039,7 +1015,6 @@ async function executeAgentTool(
                     return { count: Object.keys(images).length, covers: Object.entries(images).map(([name, url]) => ({ name, image_url: url })) };
                 } catch { return { covers: [], error: 'Failed to fetch album covers' }; }
             }
-
             case 'compare_artist_performance': { return (await compareArtistPerformance(funcArgs.artist_name, funcArgs.period_a, funcArgs.period_b)) || { error: 'No data found' }; }
             case 'get_rank_shift': { return (await getRankShift(funcArgs.entity_name, funcArgs.entity_type, funcArgs.time_range || 'weekly')) || { error: 'No ranking data found' }; }
             case 'get_loyalty_score': { return (await getLoyaltyScore(funcArgs.artist_name)) || { error: 'No loyalty data found' }; }
@@ -1077,23 +1052,6 @@ const AGENT_SYSTEM_PROMPT = `You are **Lotus**, the AI music analytics agent.
 Answer user questions about their music listening habits using the provided tools.
 You have access to a SQL database of the user's Spotify history and can fetch live data from Spotify.
 
-**THINKING PROCESS & PROTOCOL:**
-To provide transparency, you MUST visualize your thinking process and tool usage using a specific protocol.
-- **Thinking/Action Phase**: Start a block with \`$\`. This indicates you are planning, thinking, or about to call a tool.
-- **Step Title**: Immediately after \`$\`, provide a title for the step starting with \`/\`. Example: \`$ /Analyzing Request\`.
-- **Content**: After the title, explain what you are doing.
-- **Tool Calls**: If you are calling a tool, explain it in the thinking block.
-- **User Response**: When you are ready to speak to the user (the final answer), start the block with \`&\`.
-
-**Example Protocol Usage:**
-\`$ /Analyzing Request\`
-The user wants to know their top song. I should check the 'get_top_songs' tool.
-\`$ /Calling Tool\`
-Calling get_top_songs(period='weekly')...
-\`$ /Processing Results\`
-I have the data. The top song is 'Blinding Lights'.
-\`& Your top song this week is **Blinding Lights** by The Weeknd.\`
-
 **CAPABILITIES:**
 - **Dashboard Stats**: Top artists, songs, albums, listening time (Daily/Weekly/Monthly/All Time).
 - **Deep Analysis**: Obsession Orbit, Artist Streaks, Listening Percentages, Heatmaps.
@@ -1106,7 +1064,7 @@ I have the data. The top song is 'Blinding Lights'.
 **RULES:**
 1.  **Always use tools** when the user asks for their data. Do not hallucinate stats.
 2.  If a tool returns no data, explain that to the user clearly.
-3.  Be concise and witty in your final response (\`&\` block).
+3.  Be concise and witty in your final response.
 4.  Use Markdown for the final response (bold, lists, etc.).
 5.  If the user asks a general question unrelated to their data, use your knowledge or Google Search.
 `;
@@ -1138,148 +1096,128 @@ export const streamMusicQuestionWithTools = async (
         const selectedModelId = modelId || DEFAULT_MODEL_ID;
 
         // Conversation history
-        const contents: any[] = [
+        const messages: any[] = [
             {
-                role: "user",
-                parts: [{ text: AGENT_SYSTEM_PROMPT }]
+                role: "system",
+                content: AGENT_SYSTEM_PROMPT
             },
             {
-                role: "model",
-                parts: [{ text: "I understand. I am Lotus, ready to analyze music data." }]
+                role: "assistant",
+                content: "I understand. I am Lotus, ready to analyze music data."
             },
             {
                 role: "user",
-                parts: [{ text: `User: ${context.userName || 'Unknown'} | Date: ${new Date().toLocaleString()} | Quick context: Top artists include ${context.artists.slice(0, 5).join(', ')}. Weekly time: ${context.globalStats?.weeklyTime || '?'}. \n\nQuestion: ${question}` }]
+                content: `User: ${context.userName || 'Unknown'} | Date: ${new Date().toLocaleString()} | Quick context: Top artists include ${context.artists.slice(0, 5).join(', ')}. Weekly time: ${context.globalStats?.weeklyTime || '?'}. \n\nQuestion: ${question}`
             }
         ];
 
-        const toolsConfig = [
-            { functionDeclarations: TOOL_DEFINITIONS as any },
-            { googleSearch: {} }
-        ];
+        let continueLoop = true;
 
-        // Initial generation
-        let currentResponseStream = await client.models.generateContentStream({
-            model: selectedModelId,
-            contents,
-            config: {
-                tools: toolsConfig as any
-            }
-        });
+        while (continueLoop) {
+            const stream = await client.chat.stream({
+                model: selectedModelId,
+                messages: messages,
+                // @ts-ignore
+                tools: AGENT_TOOLS,
+            });
 
-        // Helper to process a stream
-        const processStream = async (stream: any) => {
-            let collectedText = "";
-            let collectedFunctionCalls: any[] = [];
-            let groundingMetadata: any = null;
+            let toolCallsBuffer: any[] = [];
+            let currentContent = "";
 
             for await (const chunk of stream) {
-                // Text content
-                const text = chunk.text;
-                if (text) {
-                    collectedText += text;
-                    onChunk({ type: 'text', content: text });
+                const choice = chunk.choices?.[0];
+                if (!choice) continue;
+
+                const delta = choice.delta;
+
+                // Handle text content
+                if (delta.content) {
+                    currentContent += delta.content;
+                    onChunk({ type: 'text', content: delta.content as string });
                 }
 
-                // Function calls (might be partial in some SDKs, but typically aggregated in 'functionCalls' property of chunk or candidates)
-                // In @google/genai, chunk.functionCalls is the array of calls
-                if (chunk.functionCalls && chunk.functionCalls.length > 0) {
-                     collectedFunctionCalls.push(...chunk.functionCalls);
-                }
-
-                // Grounding Metadata
-                if (chunk.candidates && chunk.candidates[0]?.groundingMetadata) {
-                    groundingMetadata = chunk.candidates[0].groundingMetadata;
-                }
-            }
-
-            if (groundingMetadata) {
-                onChunk({ type: 'grounding', groundingMetadata });
-            }
-
-            return { collectedText, collectedFunctionCalls };
-        };
-
-        // Main Loop
-        while (true) {
-            const { collectedText, collectedFunctionCalls } = await processStream(currentResponseStream);
-
-            // Add model's turn to history
-            const modelParts: any[] = [];
-            if (collectedText) modelParts.push({ text: collectedText });
-            if (collectedFunctionCalls.length > 0) {
-                // Construct function call parts correctly
-                collectedFunctionCalls.forEach(fc => {
-                    modelParts.push({ functionCall: fc });
-                });
-            }
-
-            if (modelParts.length > 0) {
-                contents.push({ role: "model", parts: modelParts });
-            }
-
-            // If no function calls, we are done
-            if (collectedFunctionCalls.length === 0) {
-                break;
-            }
-
-            // Execute Tools
-            const functionResponses: any[] = [];
-            for (const call of collectedFunctionCalls) {
-                const funcName = call.name;
-                const funcArgs = call.args as Record<string, any>;
-                const iconInfo = TOOL_ICON_MAP[funcName] || { icon: 'Zap', label: funcName };
-
-                // Notify UI about tool call (start)
-                onChunk({
-                    type: 'tool-call',
-                    toolCall: {
-                        id: funcName + Date.now(),
-                        name: funcName,
-                        arguments: funcArgs,
-                        icon: iconInfo.icon,
-                        label: iconInfo.label
+                // Handle tool calls
+                if (delta.toolCalls) {
+                    const toolCalls = delta.toolCalls;
+                    if (Array.isArray(toolCalls)) {
+                       toolCalls.forEach((toolCall: any) => {
+                           const index = toolCall.index || 0;
+                           if (!toolCallsBuffer[index]) {
+                               toolCallsBuffer[index] = {
+                                   id: toolCall.id,
+                                   function: {
+                                       name: toolCall.function?.name || "",
+                                       arguments: toolCall.function?.arguments || ""
+                                   },
+                                   type: "function"
+                               };
+                           } else {
+                               if (toolCall.function?.name) toolCallsBuffer[index].function.name += toolCall.function.name;
+                               if (toolCall.function?.arguments) toolCallsBuffer[index].function.arguments += toolCall.function.arguments;
+                           }
+                       });
                     }
-                });
-
-                const rawResult = await executeAgentTool(funcName, funcArgs, token);
-                const toolResult = trimToolPayload(rawResult);
-
-                 // Notify UI about tool result (end)
-                 onChunk({
-                    type: 'tool-result',
-                    toolCall: {
-                        id: funcName + Date.now(), // ID might not match perfectly if not tracking, but simplified for now
-                        name: funcName,
-                        arguments: funcArgs,
-                        result: toolResult,
-                        icon: iconInfo.icon,
-                        label: iconInfo.label
-                    }
-                });
-
-                functionResponses.push({
-                    functionResponse: {
-                        name: funcName,
-                        response: toolResult
-                    }
-                });
+                }
             }
 
-            // Add function responses to history
-            contents.push({
-                role: "user",
-                parts: functionResponses
-            });
+            // Append assistant message to history
+            const assistantMessage: any = { role: "assistant", content: currentContent || null };
+            if (toolCallsBuffer.length > 0) {
+                assistantMessage.toolCalls = toolCallsBuffer;
+            }
+            messages.push(assistantMessage);
 
-            // Generate next turn
-            currentResponseStream = await client.models.generateContentStream({
-                model: selectedModelId,
-                contents,
-                config: {
-                    tools: toolsConfig as any
+            if (toolCallsBuffer.length > 0) {
+                // Execute tools
+                for (const toolCall of toolCallsBuffer) {
+                    const funcName = toolCall.function.name;
+                    let funcArgs = {};
+                    try {
+                        funcArgs = JSON.parse(toolCall.function.arguments);
+                    } catch (e) {
+                        console.error("Failed to parse arguments", e);
+                    }
+
+                    const iconInfo = TOOL_ICON_MAP[funcName] || { icon: 'Zap', label: funcName };
+
+                    // Notify UI about tool call
+                    onChunk({
+                        type: 'tool-call',
+                        toolCall: {
+                            id: toolCall.id || funcName + Date.now(),
+                            name: funcName,
+                            arguments: funcArgs,
+                            icon: iconInfo.icon,
+                            label: iconInfo.label
+                        }
+                    });
+
+                    const rawResult = await executeAgentTool(funcName, funcArgs, token);
+                    const toolResult = trimToolPayload(rawResult);
+
+                    // Notify UI about tool result
+                    onChunk({
+                        type: 'tool-result',
+                        toolCall: {
+                            id: toolCall.id || funcName + Date.now(),
+                            name: funcName,
+                            arguments: funcArgs,
+                            result: toolResult,
+                            icon: iconInfo.icon,
+                            label: iconInfo.label
+                        }
+                    });
+
+                    messages.push({
+                        role: "tool",
+                        content: JSON.stringify(toolResult),
+                        name: funcName,
+                        toolCallId: toolCall.id
+                    });
                 }
-            });
+            } else {
+                continueLoop = false;
+            }
         }
 
     } catch (error: any) {
@@ -1288,19 +1226,15 @@ export const streamMusicQuestionWithTools = async (
     }
 };
 
-// ... (Rest of the file exports like answerMusicQuestionWithTools can stay for backward compatibility or be deprecated)
-// I will keep answerMusicQuestionWithTools as is, but it won't be used by the new UI.
-
 export const answerMusicQuestionWithTools = async (
     question: string,
     context: any,
     token?: string | null,
     modelId?: string
-): Promise<AgentResponse> => {
-    // ... (Keep existing implementation for safety)
+): Promise<{ text: string; toolCalls: ToolCallInfo[] }> => {
     console.log('[agentTools] answerMusicQuestionWithTools called', { question, modelId });
 
-    const fallbackResponse: AgentResponse = { text: "Unable to answer right now. Try again!", toolCalls: [] };
+    const fallbackResponse = { text: "Unable to answer right now. Try again!", toolCalls: [] };
 
     try {
         const client = getAiClient();
@@ -1308,84 +1242,81 @@ export const answerMusicQuestionWithTools = async (
 
         const selectedModelId = modelId || DEFAULT_MODEL_ID;
 
-        // Use contents array to manage conversation history
-        const contents: any[] = [
+        const messages: any[] = [
             {
-                role: "user",
-                parts: [{ text: AGENT_SYSTEM_PROMPT }]
+                role: "system",
+                content: AGENT_SYSTEM_PROMPT
             },
             {
-                role: "model",
-                parts: [{ text: "I understand. I am Lotus, ready to analyze music data." }]
+                role: "assistant",
+                content: "I understand. I am Lotus, ready to analyze music data."
             },
             {
                 role: "user",
-                parts: [{ text: `User: ${context.userName || 'Unknown'} | Date: ${new Date().toLocaleString()} | Quick context: Top artists include ${context.artists.slice(0, 5).join(', ')}. Weekly time: ${context.globalStats?.weeklyTime || '?'}. \n\nQuestion: ${question}` }]
+                content: `User: ${context.userName || 'Unknown'} | Date: ${new Date().toLocaleString()} | Quick context: Top artists include ${context.artists.slice(0, 5).join(', ')}. Weekly time: ${context.globalStats?.weeklyTime || '?'}. \n\nQuestion: ${question}`
             }
         ];
 
-        let response = await client.models.generateContent({
-            model: selectedModelId,
-            contents,
-            config: {
-                tools: [{ functionDeclarations: TOOL_DEFINITIONS as any }]
-            }
-        });
-
+        let finalResponseText = "";
         const collectedToolCalls: ToolCallInfo[] = [];
+        let continueLoop = true;
 
-        // Loop to handle potential multiple rounds of tool calls
-        while (response.functionCalls && response.functionCalls.length > 0) {
-            // Add the model's turn with function calls to history
-            contents.push({
-                role: "model",
-                parts: response.candidates?.[0]?.content?.parts || []
+        while (continueLoop) {
+            const response = await client.chat.complete({
+                model: selectedModelId,
+                messages: messages,
+                // @ts-ignore
+                tools: AGENT_TOOLS,
             });
 
-            const functionResponses = [];
-            for (const call of response.functionCalls) {
-                const funcName = call.name;
-                const funcArgs = call.args as Record<string, any>;
-                const iconInfo = TOOL_ICON_MAP[funcName] || { icon: 'Zap', label: funcName };
+            const choice = response.choices?.[0];
+            const message = choice?.message;
 
-                const rawResult = await executeAgentTool(funcName, funcArgs, token);
-                const toolResult = trimToolPayload(rawResult);
+            if (!message) break;
 
-                collectedToolCalls.push({
-                    id: funcName,
-                    name: funcName,
-                    arguments: funcArgs,
-                    result: toolResult,
-                    icon: iconInfo.icon,
-                    label: iconInfo.label
-                });
+            messages.push(message);
 
-                functionResponses.push({
-                    functionResponse: {
-                        name: funcName,
-                        response: toolResult
-                    }
-                });
+            if (message.content) {
+                finalResponseText += message.content;
             }
 
-            // Add the user's turn with tool results to history
-            contents.push({
-                role: "user",
-                parts: functionResponses
-            });
+            if (message.toolCalls && message.toolCalls.length > 0) {
+                for (const toolCall of message.toolCalls) {
+                    const funcName = toolCall.function.name;
+                    let funcArgs = {};
+                    try {
+                        funcArgs = JSON.parse(toolCall.function.arguments as string);
+                    } catch (e) {
+                        console.error("Failed to parse args", e);
+                    }
+                    const iconInfo = TOOL_ICON_MAP[funcName] || { icon: 'Zap', label: funcName };
 
-            // Call model again with function results
-            response = await client.models.generateContent({
-                model: selectedModelId,
-                contents,
-                config: {
-                    tools: [{ functionDeclarations: TOOL_DEFINITIONS as any }]
+                    const rawResult = await executeAgentTool(funcName, funcArgs, token);
+                    const toolResult = trimToolPayload(rawResult);
+
+                    collectedToolCalls.push({
+                        id: toolCall.id,
+                        name: funcName,
+                        arguments: funcArgs,
+                        result: toolResult,
+                        icon: iconInfo.icon,
+                        label: iconInfo.label
+                    });
+
+                    messages.push({
+                        role: "tool",
+                        content: JSON.stringify(toolResult),
+                        name: funcName,
+                        toolCallId: toolCall.id
+                    });
                 }
-            });
+            } else {
+                continueLoop = false;
+            }
         }
 
         return {
-            text: response.text || "I processed your request.",
+            text: finalResponseText || "I processed your request.",
             toolCalls: collectedToolCalls
         };
 
@@ -1401,14 +1332,14 @@ export const generateMusicInsights = async (contextData: string): Promise<string
         if (!client) return "Configure VITE_GROQ_API_KEY to see insights.";
 
         const prompt = `You are a music analytics expert. Analyze: ${contextData}`;
-        const result = await client.models.generateContent({
+        const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,
-            contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            messages: [{ role: 'user', content: prompt }]
         });
 
-        return result.text;
+        return result.choices?.[0]?.message?.content as string || "";
     } catch (error) {
-        console.error("Gemini API Error:", error);
+        console.error("Mistral API Error:", error);
         return "Unable to generate insights right now.";
     }
 };
@@ -1419,12 +1350,12 @@ export const answerMusicQuestion = async (question: string, context: any): Promi
         if (!client) return "Configure VITE_GROQ_API_KEY.";
 
         const prompt = `User: ${context.userName}. Question: ${question}. Context: ${JSON.stringify(context.globalStats)}`;
-        const result = await client.models.generateContent({
+        const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,
-            contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            messages: [{ role: 'user', content: prompt }]
         });
 
-        return result.text;
+        return result.choices?.[0]?.message?.content as string || "";
     } catch (e) {
         return "Error answering question.";
     }
@@ -1435,11 +1366,11 @@ export const generateMusicInsight = async (query: string, stats: any): Promise<s
         const client = getAiClient();
         if (!client) return "Configure VITE_GROQ_API_KEY.";
         const prompt = `Data: ${JSON.stringify(stats)}. User: ${query}`;
-        const result = await client.models.generateContent({
+        const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,
-            contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            messages: [{ role: 'user', content: prompt }]
         });
-        return result.text;
+        return result.choices?.[0]?.message?.content as string || "";
     } catch (e) { return "Insight error."; }
 };
 
@@ -1448,12 +1379,13 @@ export const generateRankingInsights = async (items: string[]): Promise<Record<s
         const client = getAiClient();
         if (!client) return {};
         const prompt = `Items: ${items.join(',')}. Return JSON { item: "insight" }`;
-        const result = await client.models.generateContent({
+        const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            config: { responseMimeType: "application/json" }
+            messages: [{ role: 'user', content: prompt }],
+            responseFormat: { type: "json_object" }
         });
-        return JSON.parse(result.text);
+        const content = result.choices?.[0]?.message?.content;
+        return content ? JSON.parse(content as string) : {};
     } catch (e) { return {}; }
 }
 
@@ -1462,12 +1394,13 @@ export const navigateConnectionGraph = async (params: any, graphContext: any): P
         const client = getAiClient();
         if (!client) return { summary: 'No API Key' };
         const prompt = `Graph: ${JSON.stringify(graphContext)}. Request: ${JSON.stringify(params)}. Return JSON.`;
-        const result = await client.models.generateContent({
+        const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            config: { responseMimeType: "application/json" }
+            messages: [{ role: 'user', content: prompt }],
+            responseFormat: { type: "json_object" }
         });
-        return JSON.parse(result.text);
+        const content = result.choices?.[0]?.message?.content;
+        return content ? JSON.parse(content as string) : {};
     } catch (e) { return { summary: 'Error' }; }
 };
 
@@ -1476,13 +1409,14 @@ export const generateWeeklyInsightStory = async (context: any): Promise<any[]> =
         const client = getAiClient();
         if (!client) return [];
         const prompt = `Generate weekly insight story JSON for: ${JSON.stringify(context)}`;
-        const result = await client.models.generateContent({
+        const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            config: { responseMimeType: "application/json" }
+            messages: [{ role: 'user', content: prompt }],
+            responseFormat: { type: "json_object" }
         });
-        const text = result.text;
-        const parsed = JSON.parse(text);
+        const content = result.choices?.[0]?.message?.content;
+        if (!content) return [];
+        const parsed = JSON.parse(content as string);
         return Array.isArray(parsed) ? parsed : (parsed.slides || []);
     } catch (e) { return []; }
 };
@@ -1492,12 +1426,14 @@ export const generateDynamicCategoryQuery = async (context: any, userPrompt?: st
         const client = getAiClient();
         if (!client) return [];
         const prompt = `Generate music category filters JSON. Context: ${JSON.stringify(context)}. Prompt: ${userPrompt || 'random'}`;
-        const result = await client.models.generateContent({
+        const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            config: { responseMimeType: "application/json" }
+            messages: [{ role: 'user', content: prompt }],
+            responseFormat: { type: "json_object" }
         });
-        const parsed = JSON.parse(result.text);
+        const content = result.choices?.[0]?.message?.content;
+        if (!content) return [];
+        const parsed = JSON.parse(content as string);
         return Array.isArray(parsed) ? parsed : [parsed];
     } catch (e) { return []; }
 }
@@ -1506,12 +1442,13 @@ export const generateWrappedStory = async (period: string): Promise<any> => {
     try {
         const client = getAiClient();
         if (!client) return {};
-        const result = await client.models.generateContent({
+        const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,
-            contents: [{ role: 'user', parts: [{ text: `Generate wrapped story JSON for ${period}` }] }],
-            config: { responseMimeType: "application/json" }
+            messages: [{ role: 'user', content: `Generate wrapped story JSON for ${period}` }],
+            responseFormat: { type: "json_object" }
         });
-        return JSON.parse(result.text);
+        const content = result.choices?.[0]?.message?.content;
+        return content ? JSON.parse(content as string) : {};
     } catch (e) { return {}; }
 }
 
@@ -1519,12 +1456,13 @@ export const generateWrappedVibe = async (tracks: any[]): Promise<any> => {
     try {
         const client = getAiClient();
         if (!client) return {};
-        const result = await client.models.generateContent({
+        const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,
-            contents: [{ role: 'user', parts: [{ text: `Generate vibe check JSON for tracks: ${tracks.map(t => t.title).join(',')}` }] }],
-            config: { responseMimeType: "application/json" }
+            messages: [{ role: 'user', content: `Generate vibe check JSON for tracks: ${tracks.map(t => t.title).join(',')}` }],
+            responseFormat: { type: "json_object" }
         });
-        return JSON.parse(result.text);
+        const content = result.choices?.[0]?.message?.content;
+        return content ? JSON.parse(content as string) : {};
     } catch (e) { return {}; }
 }
 
@@ -1532,12 +1470,13 @@ export const generateWrappedQuiz = async (stats: any): Promise<any> => {
     try {
         const client = getAiClient();
         if (!client) return {};
-        const result = await client.models.generateContent({
+        const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,
-            contents: [{ role: 'user', parts: [{ text: `Generate music quiz JSON from stats: ${JSON.stringify(stats)}` }] }],
-            config: { responseMimeType: "application/json" }
+            messages: [{ role: 'user', content: `Generate music quiz JSON from stats: ${JSON.stringify(stats)}` }],
+            responseFormat: { type: "json_object" }
         });
-        return JSON.parse(result.text);
+        const content = result.choices?.[0]?.message?.content;
+        return content ? JSON.parse(content as string) : {};
     } catch (e) { return {}; }
 }
 
@@ -1545,13 +1484,24 @@ export const generateFruitVibe = async (tracks: any[]): Promise<any> => {
     try {
         const client = getAiClient();
         if (!client) return {};
-        const result = await client.models.generateContent({
+        const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,
-            contents: [{ role: 'user', parts: [{ text: `Generate fruit vibe JSON for tracks: ${tracks.map(t => t.title).join(',')}` }] }],
-            config: { responseMimeType: "application/json" }
+            messages: [{ role: 'user', content: `Generate fruit vibe JSON for tracks: ${tracks.map(t => t.title).join(',')}` }],
+            responseFormat: { type: "json_object" }
         });
-        return JSON.parse(result.text);
+        const content = result.choices?.[0]?.message?.content;
+        return content ? JSON.parse(content as string) : {};
     } catch (e) { return {}; }
+}
+
+export interface WrappedSlide {
+    type: 'text' | 'stat' | 'chart' | 'top_artist' | 'top_song' | 'top_album';
+    title?: string;
+    subtitle?: string;
+    value?: string;
+    image?: string;
+    gradient?: string;
+    data?: any;
 }
 
 export const generateWrappedWithTools = async (period: string, fetchStats: any): Promise<any> => {
@@ -1576,10 +1526,10 @@ export const generateTopAlbumFunFact = async (album: any): Promise<string> => {
     try {
         const client = getAiClient();
         if (!client) return "";
-        const result = await client.models.generateContent({
+        const result = await client.chat.complete({
             model: DEFAULT_MODEL_ID,
-            contents: [{ role: 'user', parts: [{ text: `Fun fact about album ${album.title}` }] }]
+            messages: [{ role: 'user', content: `Fun fact about album ${album.title}` }]
         });
-        return result.text;
+        return result.choices?.[0]?.message?.content as string || "";
     } catch (e) { return ""; }
 };

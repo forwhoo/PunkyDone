@@ -79,7 +79,7 @@ import {
     fetchArtistImages
 } from './services/spotifyService';
 import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts, getDiscoveryDate } from './services/dbService';
-import { generateMusicInsight, generateRankingInsights } from './services/geminiService';
+import { generateMusicInsight, generateRankingInsights } from './services/mistralService';
 import { supabase } from './services/supabaseClient';
 import { logger } from './services/logger';
 
