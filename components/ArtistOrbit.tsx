@@ -34,7 +34,21 @@ export const ArtistOrbit: React.FC<ArtistOrbitProps> = ({
   color = '#CCFF00',
   className = ''
 }) => {
-  const [selectedNode, setSelectedNode] = useState<OrbitNode | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<OrbitNode | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  const handleMouseEnter = (node: OrbitNode, e: React.MouseEvent) => {
+    setHoveredNode(node);
+    setMousePos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredNode(null);
+  };
 
   // Split nodes into rings
   const innerRing = orbitNodes.slice(0, 8);
@@ -79,7 +93,7 @@ export const ArtistOrbit: React.FC<ArtistOrbitProps> = ({
       />
 
       <motion.div
-        className="relative w-full max-w-[480px] aspect-square select-none scale-[0.65] sm:scale-75 md:scale-90 origin-center"
+        className="relative w-full max-w-[480px] aspect-square select-none scale-[0.55] sm:scale-75 md:scale-90 origin-center"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
@@ -88,12 +102,14 @@ export const ArtistOrbit: React.FC<ArtistOrbitProps> = ({
         {/* Central Node */}
         <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 cursor-pointer group"
-            onClick={() => setSelectedNode(centralNode)}
+            onMouseEnter={(e) => handleMouseEnter(centralNode, e)}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
         >
             <div className="relative w-28 h-28 md:w-36 md:h-36">
                 <div
                   className="w-full h-full rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-[#1C1C1E] transition-transform duration-500 group-hover:scale-105"
-                  style={{ borderColor: selectedNode?.id === centralNode.id ? color : '#1C1C1E' }}
+                  style={{ borderColor: '#1C1C1E' }}
                 >
                     <img src={centralNode.image || `https://ui-avatars.com/api/?name=${centralNode.name}`} className="w-full h-full object-cover" alt={centralNode.name} />
                 </div>
@@ -130,9 +146,10 @@ export const ArtistOrbit: React.FC<ArtistOrbitProps> = ({
                                 <OrbitNodeItem
                                     item={item}
                                     size={56}
-                                    isActive={selectedNode?.id === item.id}
                                     color={color}
-                                    onClick={() => setSelectedNode(item)}
+                                    onMouseEnter={(e) => handleMouseEnter(item, e)}
+                                    onMouseMove={handleMouseMove}
+                                    onMouseLeave={handleMouseLeave}
                                 />
                             </div>
                         </div>
@@ -164,9 +181,10 @@ export const ArtistOrbit: React.FC<ArtistOrbitProps> = ({
                                 <OrbitNodeItem
                                     item={item}
                                     size={40}
-                                    isActive={selectedNode?.id === item.id}
                                     color={color}
-                                    onClick={() => setSelectedNode(item)}
+                                    onMouseEnter={(e) => handleMouseEnter(item, e)}
+                                    onMouseMove={handleMouseMove}
+                                    onMouseLeave={handleMouseLeave}
                                 />
                             </div>
                         </div>
@@ -181,65 +199,17 @@ export const ArtistOrbit: React.FC<ArtistOrbitProps> = ({
 
       </motion.div>
 
-      {/* POPUP / SIDE PANEL */}
-      {createPortal(
-        <AnimatePresence>
-          {selectedNode && (
-            <>
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150]"
-                onClick={() => setSelectedNode(null)}
-              />
-
-              {/* Card */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm bg-[#1C1C1E] border border-white/10 rounded-3xl shadow-2xl z-[200] overflow-hidden"
-              >
-                 <button
-                    onClick={() => setSelectedNode(null)}
-                    className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 rounded-full text-white/70 hover:text-white transition-colors z-20 backdrop-blur-md"
-                 >
-                    <X size={18} />
-                 </button>
-
-                 <div className="relative h-64 w-full">
-                    <img src={selectedNode.image} className="w-full h-full object-cover" alt={selectedNode.name} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#1C1C1E] via-transparent to-transparent" />
-
-                    <div className="absolute bottom-4 left-6 right-6">
-                        <h3 className="text-2xl font-bold text-white leading-tight drop-shadow-lg line-clamp-2">{selectedNode.name}</h3>
-                        {selectedNode.sub && <p className="text-white/70 font-medium text-sm mt-1">{selectedNode.sub}</p>}
-                    </div>
-                 </div>
-
-                 <div className="p-6 space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
-                            <div className="text-2xl font-bold text-white">{selectedNode.plays || 0}</div>
-                            <div className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Plays</div>
-                        </div>
-                         <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
-                            <div className="text-xl font-bold text-white">{selectedNode.time || '—'}</div>
-                            <div className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Time</div>
-                        </div>
-                    </div>
-
-                    <button className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
-                        <Music size={16} /> Open in Spotify
-                    </button>
-                 </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>,
+      {hoveredNode && createPortal(
+        <div
+            className="fixed z-[9999] pointer-events-none"
+            style={{
+                left: mousePos.x,
+                top: mousePos.y,
+                transform: 'translate(16px, 16px)'
+            }}
+        >
+            <TooltipCard node={hoveredNode} />
+        </div>,
         document.body
       )}
 
@@ -247,19 +217,56 @@ export const ArtistOrbit: React.FC<ArtistOrbitProps> = ({
   );
 };
 
-const OrbitNodeItem = ({ item, size, isActive, color, onClick }: { item: OrbitNode, size: number, isActive: boolean, color: string, onClick: () => void }) => {
+const TooltipCard = ({ node }: { node: OrbitNode }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.9, y: 5 }}
+    animate={{ opacity: 1, scale: 1, y: 0 }}
+    exit={{ opacity: 0, scale: 0.9, y: 5 }}
+    transition={{ duration: 0.1 }}
+    className="bg-[#1C1C1E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl flex items-center gap-3 w-max max-w-[240px]"
+  >
+    <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-white/5 border border-white/5">
+      <img src={node.image || `https://ui-avatars.com/api/?name=${node.name}`} alt={node.name} className="w-full h-full object-cover" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <h4 className="text-sm font-bold text-white truncate leading-tight">{node.name}</h4>
+      <div className="flex items-center gap-2 mt-0.5">
+          {node.plays !== undefined && <span className="text-[10px] text-white/50 font-medium uppercase tracking-wider">{node.plays} plays</span>}
+          {node.time && <span className="text-[10px] text-white/50 font-medium uppercase tracking-wider">• {node.time.replace('m', ' min')}</span>}
+      </div>
+    </div>
+  </motion.div>
+);
+
+const OrbitNodeItem = ({
+    item,
+    size,
+    color,
+    onMouseEnter,
+    onMouseMove,
+    onMouseLeave
+}: {
+    item: OrbitNode,
+    size: number,
+    color: string,
+    onMouseEnter: (e: React.MouseEvent) => void,
+    onMouseMove: (e: React.MouseEvent) => void,
+    onMouseLeave: () => void
+}) => {
     return (
         <div
-            className={`group absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 ${isActive ? 'scale-110 z-50' : 'hover:scale-110'}`}
-            onClick={(e) => { e.stopPropagation(); onClick(); }}
+            className={`group absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 hover:scale-110`}
+            onMouseEnter={onMouseEnter}
+            onMouseMove={onMouseMove}
+            onMouseLeave={onMouseLeave}
         >
             <div
                 className={`relative rounded-full overflow-hidden border transition-all duration-300 bg-[#1C1C1E] shadow-lg`}
                 style={{
                     width: size,
                     height: size,
-                    borderColor: isActive ? color : 'rgba(255,255,255,0.1)',
-                    boxShadow: isActive ? `0 0 20px ${color}60` : 'none'
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    boxShadow: 'none'
                 }}
             >
                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
