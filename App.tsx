@@ -1049,6 +1049,8 @@ function App() {
                                 recentPlays={safeRecent}
                                 artistImages={artistImages}
                                 timeRange={timeRange}
+                                onArtistClick={setSelectedTopArtist}
+                                onAlbumClick={setSelectedTopAlbum}
                             />
                         </div>
                     </section>
@@ -1235,7 +1237,16 @@ function App() {
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-20">
                 <div className="rounded-3xl p-6 relative overflow-hidden min-h-[600px] border-none bg-transparent">
-                    <TrendingArtists artists={safeArtists} albums={safeAlbums} songs={safeSongs} recentPlays={safeRecent} artistImages={artistImages} timeRange={timeRange} />
+                    <TrendingArtists
+                        artists={safeArtists}
+                        albums={safeAlbums}
+                        songs={safeSongs}
+                        recentPlays={safeRecent}
+                        artistImages={artistImages}
+                        timeRange={timeRange}
+                        onArtistClick={setSelectedTopArtist}
+                        onAlbumClick={setSelectedTopAlbum}
+                    />
                 </div>
             </div>
             

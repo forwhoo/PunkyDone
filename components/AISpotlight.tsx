@@ -978,7 +978,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     animate={{ opacity: 1, scale: 1 }}
                     className="mb-10 w-full max-w-3xl mx-auto"
                 >
-                    <div className="bg-gradient-to-br from-[#1C1C1E] via-[#2C2C2E] to-[#1C1C1E] border border-white/10 rounded-3xl p-10 min-h-[500px] flex flex-col justify-between shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                    <div className="bg-gradient-to-br from-[#1C1C1E] via-[#2C2C2E] to-[#1C1C1E] border border-white/10 rounded-3xl p-10 min-h-[500px] flex flex-col justify-between shadow-2xl relative overflow-hidden backdrop-blur-xl bg-noise">
                         
                         {/* Animated Background Gradient */}
                         <motion.div 
@@ -1015,7 +1015,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                 key={`title-${insightStep}`}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="text-3xl md:text-4xl font-black text-white mb-6 tracking-tight leading-tight max-w-xl"
+                                className="text-4xl md:text-5xl font-black text-white mb-6 tracking-tight leading-tight max-w-xl"
                             >
                                 {insightData[insightStep].title}
                             </motion.h3>
@@ -1024,7 +1024,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.2 }}
-                                className="text-white/70 text-lg md:text-xl mb-10 max-w-lg font-medium leading-relaxed"
+                                className="text-white/70 text-xl md:text-2xl mb-10 max-w-lg font-medium leading-relaxed"
                             >
                                 {insightData[insightStep].content}
                             </motion.p>
