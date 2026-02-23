@@ -225,8 +225,8 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history: propH
                             exit={{ x: isCompact ? 0 : 20, opacity: 0, height: isCompact ? 0 : 'auto' }}
                             className={`${
                                 !isCompact
-                                ? 'hidden lg:flex w-full lg:w-[380px] flex-shrink-0 bg-[#111] border border-white/10 rounded-3xl overflow-hidden shadow-2xl h-[600px] flex-col relative sticky top-24'
-                                : 'w-full flex flex-col bg-[#111] border border-white/10 rounded-3xl overflow-hidden shadow-2xl h-[400px] relative mt-2'
+                                ? 'hidden lg:flex w-full lg:w-[380px] flex-shrink-0 bg-[#111] border border-white/10 rounded-3xl overflow-hidden shadow-2xl h-[400px] flex-col relative sticky top-24'
+                                : 'w-full flex flex-col bg-[#111] border border-white/10 rounded-3xl overflow-hidden shadow-2xl h-[300px] relative mt-2'
                             }`}
                         >
                             <div className="relative flex-shrink-0 p-6 border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent">
@@ -289,7 +289,7 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history: propH
                                 animate={{ y: 0 }}
                                 exit={{ y: "100%" }}
                                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                className="fixed inset-x-0 bottom-0 z-[60] lg:hidden h-[75vh]"
+                                className="fixed inset-x-0 bottom-0 z-[60] lg:hidden h-[50vh]"
                             >
                                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm -z-10 h-[100vh] top-[-100vh]" onClick={() => setSelectedDate(null)} />
 
