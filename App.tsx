@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight, Shuffle, RefreshCw, ArrowUp, Zap, Layers, Globe, Database } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
@@ -459,9 +459,10 @@ function App() {
   
   // Ref to track current fetch to prevent race conditions
   const fetchIdRef = useRef(0);
+  const refreshDbStatsRef = useRef<() => Promise<void>>(null);
 
       // Function to refresh DB view
-      const refreshDbStats = async () => {
+      const refreshDbStats = useCallback(async () => {
           // Increment fetch ID to track this specific request
           const currentFetchId = ++fetchIdRef.current;
           const requestedRange = timeRange; // Capture current value
@@ -498,7 +499,12 @@ function App() {
           } catch (e) {
               logger.error("[App] refreshDbStats failed:", e);
           }
-      };
+      }, [timeRange, customDateRange]);
+
+  // Update the ref whenever refreshDbStats changes
+  useEffect(() => {
+    refreshDbStatsRef.current = refreshDbStats;
+  }, [refreshDbStats]);
 
   // Realtime Subscription for Instant Updates
   useEffect(() => {
@@ -513,7 +519,7 @@ function App() {
             },
             (payload) => {
                 logger.info('Realtime change detected:', payload);
-                refreshDbStats();
+                refreshDbStatsRef.current?.();
             }
         )
         .subscribe();
@@ -528,7 +534,7 @@ function App() {
       const syncAndFetchStats = async () => {
         if (data && data.recentRaw) {
              await syncRecentPlays(data.recentRaw, token); 
-             refreshDbStats();
+             refreshDbStatsRef.current?.();
         }
       };
       if (token && data) syncAndFetchStats();
@@ -536,7 +542,7 @@ function App() {
 
   // Refresh data when timeRange changes
   useEffect(() => {
-      if (token) refreshDbStats();
+      if (token) refreshDbStatsRef.current?.();
   }, [timeRange]);
 
 
@@ -577,7 +583,7 @@ function App() {
     }, 30000);
 
     const dbInterval = setInterval(() => {
-        if (token) refreshDbStats();
+        if (token) refreshDbStatsRef.current?.();
     }, 30000);
 
     return () => {
@@ -674,10 +680,10 @@ function App() {
   }, []);
 
   // Safe data extraction
-  const safeArtists = dbUnifiedData ? (dbUnifiedData.artists || []) : (data?.artists || []);
-  const safeAlbums = dbUnifiedData ? (dbUnifiedData.albums || []) : (data?.albums || []);
-  const safeSongs = dbUnifiedData ? (dbUnifiedData.songs || []) : (data?.songs || []);
-  const safeRecent = dbUnifiedData?.recentPlays || data?.recentRaw || [];
+  const safeArtists = (dbUnifiedData?.artists?.length > 0) ? dbUnifiedData.artists : (data?.artists || []);
+  const safeAlbums = (dbUnifiedData?.albums?.length > 0) ? dbUnifiedData.albums : (data?.albums || []);
+  const safeSongs = (dbUnifiedData?.songs?.length > 0) ? dbUnifiedData.songs : (data?.songs || []);
+  const safeRecent = (dbUnifiedData?.recentPlays?.length > 0) ? dbUnifiedData.recentPlays : (data?.recentRaw || []);
   const hasDbData = safeArtists.length > 0 || safeSongs.length > 0 || safeAlbums.length > 0;
   const showEmptyState = !loading && dbUnifiedData && !hasDbData;
 
@@ -874,7 +880,6 @@ function App() {
                             onClick={() => {
                                 setTimeRange(range);
                                 setCustomDateRange(null);
-                                fetchDashboardStats(range).then(data => setDbUnifiedData(data));
                             }}
                             aria-pressed={timeRange === range}
                             className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
@@ -911,14 +916,7 @@ function App() {
                                             end: format(range.to, 'yyyy-MM-dd')
                                         });
                                         setTimeRange('Custom');
-                                        // Trigger fetch after a slight delay to allow UI to close/update
-                                        setTimeout(() => {
-                                            fetchDashboardStats('Custom', {
-                                                start: format(range.from!, 'yyyy-MM-dd'),
-                                                end: format(range.to!, 'yyyy-MM-dd')
-                                            }).then(data => setDbUnifiedData(data));
-                                            setDateRangePickerOpen(false);
-                                        }, 100);
+                                        setDateRangePickerOpen(false);
                                     }
                                 }}
                                 initialFocus
@@ -1065,7 +1063,6 @@ function App() {
                             onClick={() => {
                                 setTimeRange(range);
                                 setCustomDateRange(null);
-                                fetchDashboardStats(range).then(data => setDbUnifiedData(data));
                             }}
                             className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                                 timeRange === range ? 'bg-white text-black shadow-lg scale-105' : 'text-white/60 hover:text-white hover:bg-white/10'
@@ -1101,14 +1098,7 @@ function App() {
                                             end: format(range.to, 'yyyy-MM-dd')
                                         });
                                         setTimeRange('Custom');
-                                        // Trigger fetch
-                                        setTimeout(() => {
-                                            fetchDashboardStats('Custom', {
-                                                start: format(range.from!, 'yyyy-MM-dd'),
-                                                end: format(range.to!, 'yyyy-MM-dd')
-                                            }).then(data => setDbUnifiedData(data));
-                                            setDateRangePickerOpen(false);
-                                        }, 100);
+                                        setDateRangePickerOpen(false);
                                     }
                                 }}
                                 initialFocus
