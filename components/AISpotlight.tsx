@@ -648,7 +648,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     role: 'ai',
                     text: '',
                     timestamp: new Date(),
-                    isThinking: true,
+                    isThinking: false,
                     thoughts: [],
                     tools: [],
                     sources: null
@@ -659,6 +659,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 let currentThoughtTitle = "";
                 let currentThoughtContent = "";
                 let isThinking = false;
+                let isExplicitThinking = false;
                 let buffer = "";
 
                 await streamMusicQuestionWithTools(
@@ -670,10 +671,44 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                             const lastMsg = newMessages[newMessages.length - 1];
                             if (!lastMsg || lastMsg.role !== 'ai') return prev;
 
+                            // Handle explicit thinking chunks (Mistral reasoning models)
+                            if (chunk.type === 'thinking' && chunk.content) {
+                                if (!isThinking) {
+                                    isThinking = true;
+                                    lastMsg.isThinking = true;
+                                    isExplicitThinking = true;
+                                    // Start a new thought group if explicit thinking starts
+                                    currentThoughtTitle = "Reasoning";
+                                    currentThoughtContent = "";
+                                }
+
+                                currentThoughtContent += chunk.content;
+
+                                // Update the last thought in the array
+                                const thoughts = lastMsg.thoughts || [];
+                                if (thoughts.length === 0 || thoughts[thoughts.length - 1].title !== currentThoughtTitle) {
+                                    thoughts.push({
+                                        title: currentThoughtTitle,
+                                        content: [currentThoughtContent]
+                                    });
+                                } else {
+                                    thoughts[thoughts.length - 1].content = [currentThoughtContent];
+                                }
+                                lastMsg.thoughts = thoughts;
+                            }
+
                             if (chunk.type === 'text' && chunk.content) {
+                                // If we were in explicit thinking mode, close it
+                                if (isExplicitThinking) {
+                                     isThinking = false;
+                                     lastMsg.isThinking = false;
+                                     isExplicitThinking = false;
+                                     currentThoughtContent = ""; // Reset for next time
+                                }
+
                                 buffer += chunk.content;
 
-                                // Process buffer for markers
+                                // Process buffer for markers (Legacy or Interleaved)
                                 while (true) {
                                     if (isThinking) {
                                         // Look for end of thinking (&) or start of new thought ($)

@@ -1071,7 +1071,7 @@ You have access to a SQL database of the user's Spotify history and can fetch li
 
 // ─── MAIN AGENT FUNCTION (Streamed) ──────────────────────────────
 export interface StreamChunk {
-    type: 'text' | 'tool-call' | 'tool-result' | 'grounding';
+    type: 'text' | 'tool-call' | 'tool-result' | 'grounding' | 'thinking';
     content?: string;
     toolCall?: ToolCallInfo;
     groundingMetadata?: any;
@@ -1125,15 +1125,45 @@ export const streamMusicQuestionWithTools = async (
             let currentContent = "";
 
             for await (const chunk of stream) {
+                // Log chunk for debugging
+                console.log('[Mistral Stream Chunk]', JSON.stringify(chunk, null, 2));
+
                 const choice = chunk.choices?.[0];
                 if (!choice) continue;
 
                 const delta = choice.delta;
 
-                // Handle text content
+                // Handle thinking content (new Mistral models)
+                if ((delta as any).thinking) {
+                    onChunk({ type: 'thinking', content: (delta as any).thinking as string });
+                }
+
+                // Handle text/content
                 if (delta.content) {
-                    currentContent += delta.content;
-                    onChunk({ type: 'text', content: delta.content as string });
+                    if (typeof delta.content === 'string') {
+                        currentContent += delta.content;
+                        onChunk({ type: 'text', content: delta.content });
+                    } else if (Array.isArray(delta.content)) {
+                        // Handle array content (structured output for reasoning models)
+                        for (const part of delta.content) {
+                            if (part.type === 'text' && part.text) {
+                                currentContent += part.text;
+                                onChunk({ type: 'text', content: part.text });
+                            } else if (part.type === 'thinking') {
+                                // Handle thinking part
+                                // Based on user doc: "thinking": [ { "type": "text", "text": "..." } ]
+                                if (Array.isArray(part.thinking)) {
+                                    for (const p of part.thinking) {
+                                        if (p.type === 'text' && p.text) {
+                                            onChunk({ type: 'thinking', content: p.text });
+                                        }
+                                    }
+                                } else if (typeof part.thinking === 'string') {
+                                    onChunk({ type: 'thinking', content: part.thinking });
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Handle tool calls
