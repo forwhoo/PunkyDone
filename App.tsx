@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight, Shuffle, Copy, RefreshCw, ArrowUp, ExternalLink, Zap, Layers, Globe } from 'lucide-react';
+import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight, Shuffle, RefreshCw, ArrowUp, Zap, Layers, Globe } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
 import { BackToTop } from './components/BackToTop';
@@ -236,41 +236,20 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 import { SeeAllModal } from './components/SeeAllModal';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
 
-const CopyButton = ({ text }: { text: string }) => {
-    const [copied, setCopied] = useState(false);
-
-    const handleCopy = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    return (
-        <button
-            onClick={handleCopy}
-            className="p-2 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-all flex items-center gap-1.5"
-            title="Copy to clipboard"
-        >
-            {copied ? <span className="text-[10px] font-bold text-green-400 uppercase tracking-wider">Copied</span> : <Copy size={16} />}
-        </button>
-    );
-};
-
 const StatsCarousel = ({ stats, artist }: { stats: any, artist: Artist }) => {
     const [page, setPage] = useState(0);
 
     // Group stats
     const slide1 = [
-        { icon: TrendingUp, value: artist.totalListens || 0, label: "Total Plays", color: "text-blue-400" },
-        { icon: Clock, value: artist.timeStr ? String(artist.timeStr).replace('m', '') : '0', label: "Minutes", color: "text-purple-400" },
-        { icon: Sparkles, value: `${stats?.popularityScore || 0}%`, label: "Of Time", color: "text-yellow-400" }
+        { icon: TrendingUp, value: artist.totalListens || 0, label: "Total Plays", color: "text-white" },
+        { icon: Clock, value: artist.timeStr ? String(artist.timeStr).replace('m', '') : '0', label: "Minutes", color: "text-white" },
+        { icon: Sparkles, value: `${stats?.popularityScore || 0}%`, label: "Of Time", color: "text-white" }
     ];
 
     const slide2 = [
-         { icon: Layers, value: stats?.varietyCount || 0, label: "Unique Songs", color: "text-green-400" },
-         { icon: Zap, value: stats?.dailyAverage || 0, label: "Avg / Day", color: "text-orange-400" },
-         { icon: Globe, value: stats?.peakTimeLabel || '-', label: "Peak Time", color: "text-cyan-400" }
+         { icon: Layers, value: stats?.varietyCount || 0, label: "Unique Songs", color: "text-white" },
+         { icon: Zap, value: stats?.dailyAverage || 0, label: "Avg / Day", color: "text-white" },
+         { icon: Globe, value: stats?.peakTimeLabel || '-', label: "Peak Time", color: "text-white" }
     ];
 
     const slides = [slide1, slide2];
@@ -1261,6 +1240,7 @@ function App() {
         isOpen={!!selectedTopArtist}
         onClose={() => setSelectedTopArtist(null)}
         image={selectedTopArtist ? (artistImages[selectedTopArtist.name] || selectedTopArtist.image) : undefined}
+        color={auraColor}
     >
         {selectedTopArtist && (
             <div className="flex flex-col items-center max-w-2xl mx-auto">
@@ -1294,16 +1274,6 @@ function App() {
                         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight">
                             {selectedTopArtist.name}
                         </h1>
-                        <CopyButton text={selectedTopArtist.name} />
-                        <a
-                            href={`https://open.spotify.com/search/${encodeURIComponent(selectedTopArtist.name)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 rounded-full hover:bg-white/10 text-[#1DB954] hover:text-[#1ed760] transition-all"
-                            title="Open in Spotify"
-                        >
-                            <ExternalLink size={20} />
-                        </a>
                     </div>
 
                     <p className="text-lg text-white/70">
@@ -1394,6 +1364,7 @@ function App() {
         isOpen={!!selectedTopAlbum}
         onClose={() => setSelectedTopAlbum(null)}
         image={selectedTopAlbum?.cover}
+        color={auraColor}
     >
         {selectedTopAlbum && (
             <div className="flex flex-col items-center max-w-2xl mx-auto">
@@ -1424,7 +1395,6 @@ function App() {
                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight">
                         {selectedTopAlbum.title}
                     </h1>
-                    <CopyButton text={selectedTopAlbum.title} />
                 </motion.div>
                 <motion.p
                     initial={{ opacity: 0 }}
@@ -1476,6 +1446,7 @@ function App() {
         isOpen={!!selectedTopSong}
         onClose={() => setSelectedTopSong(null)}
         image={selectedTopSong?.cover}
+        color={auraColor}
     >
         {selectedTopSong && (
             <div className="flex flex-col items-center max-w-2xl mx-auto">
@@ -1506,7 +1477,6 @@ function App() {
                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight">
                         {selectedTopSong.title}
                     </h1>
-                    <CopyButton text={selectedTopSong.title} />
                 </motion.div>
                 <motion.p
                     initial={{ opacity: 0 }}
