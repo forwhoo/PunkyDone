@@ -10,17 +10,13 @@ import { AISpotlight } from './components/AISpotlight';
 import { AISearchBar } from './components/AISearchBar';
 import { TrendingArtists } from './components/TrendingArtists';
 import { UpcomingArtists } from './components/UpcomingArtists';
-import { rankingMockData } from './mockData';
 import { ActivityHeatmap } from './components/ActivityHeatmap';
 import { ArtistOrbit } from './components/ArtistOrbit';
-import { ChartSkeleton } from './components/LoadingSkeleton';
 import { EmptyState } from './components/EmptyState';
 import Particles from './components/reactbits/Particles';
 import { FullScreenModal } from './components/FullScreenModal';
 import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { EmptyAvatarGroup } from "@/components/EmptyAvatarGroup";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -70,7 +66,6 @@ function extractDominantColor(imageUrl: string): Promise<string> {
 }
 
 import { 
-    getAuthUrl, 
     getTokenFromUrl, 
     fetchSpotifyData, 
     redirectToAuthCodeFlow, 
@@ -78,8 +73,7 @@ import {
     refreshAccessToken,
     fetchArtistImages
 } from './services/spotifyService';
-import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts, getDiscoveryDate } from './services/dbService';
-import { generateMusicInsight, generateRankingInsights } from './services/mistralService';
+import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, fetchCharts, getDiscoveryDate } from './services/dbService';
 import { supabase } from './services/supabaseClient';
 import { logger } from './services/logger';
 
@@ -235,7 +229,6 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 
 import { SeeAllModal } from './components/SeeAllModal';
 import { DatabaseViewer } from './components/DatabaseViewer';
-import PrismaticBurst from './components/reactbits/PrismaticBurst';
 
 const StatsCarousel = ({ stats, artist }: { stats: any, artist: Artist }) => {
     const [page, setPage] = useState(0);
@@ -260,7 +253,7 @@ const StatsCarousel = ({ stats, artist }: { stats: any, artist: Artist }) => {
             setPage(prev => (prev + 1) % slides.length);
         }, 4000);
         return () => clearInterval(interval);
-    }, []);
+    }, [slides.length]);
 
     return (
         <div className="w-full max-w-lg mb-8 overflow-hidden relative">
@@ -325,6 +318,7 @@ function App() {
 
   // AI Discovery Modal State
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiInitialQuery, setAiInitialQuery] = useState<string | undefined>(undefined);
   const [databaseViewerOpen, setDatabaseViewerOpen] = useState(false);
 
   // Dynamic aura colors extracted from item images
@@ -350,7 +344,6 @@ function App() {
     }
   }, [selectedTopArtist, selectedTopAlbum, selectedTopSong, artistImages]);
 
-  // ... (Rest of useEffects and fetches same as before) ...
   // Fetch Artist Images when data loads
   useEffect(() => {
     const loadImages = async () => {
@@ -387,7 +380,7 @@ function App() {
     if (dbUnifiedData || (data && data.artists && data.artists.length > 0)) {
         loadImages();
     }
-  }, [dbUnifiedData, data, token]);
+  }, [dbUnifiedData, data, token, artistImages]);
 
   const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly' | 'All Time' | 'Custom'>('Weekly');
   const [customDateRange, setCustomDateRange] = useState<{ start: string; end: string } | null>(null);
@@ -463,9 +456,6 @@ function App() {
       end: end.toISOString(),
     };
   }, [timeRange, customDateRange]);
-  
-  const [insight, setInsight] = useState<string | null>(null);
-  const [loadingInsight, setLoadingInsight] = useState(false);
   
   // Ref to track current fetch to prevent race conditions
   const fetchIdRef = useRef(0);
@@ -610,7 +600,7 @@ function App() {
         // Cmd/Ctrl + K - Focus AI search
         if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
             e.preventDefault();
-            const searchInput = document.querySelector('[placeholder*="ask me something"]') as HTMLInputElement;
+            const searchInput = document.querySelector('[placeholder*="Ask Lotus"]') as HTMLInputElement;
             if (searchInput) {
                 searchInput.focus();
                 searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -683,8 +673,6 @@ function App() {
     handleAuth();
   }, []);
 
-  // ... (Favicon logic same as before) ...
-
   // Safe data extraction
   const safeArtists = (dbUnifiedData?.artists?.length > 0) ? dbUnifiedData.artists : (data?.artists || []);
   const safeAlbums = (dbUnifiedData?.albums?.length > 0) ? dbUnifiedData.albums : (data?.albums || []);
@@ -715,7 +703,6 @@ function App() {
       });
 
       const activeDays = uniqueDays.size;
-      const peakDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
 
       // New Stats
       const dailyAverage = activeDays > 0 ? Math.round((selectedTopArtist.totalListens || 0) / activeDays) : 0;
@@ -739,14 +726,17 @@ function App() {
       return {
           popularityScore,
           activeDays,
-          peakDay,
           dailyAverage,
           varietyCount,
           peakTimeLabel
       };
   }, [selectedTopArtist, safeArtists, safeRecent]);
 
-  // ... (Auth render same as before) ...
+  const handleWrappedClick = () => {
+      setAiInitialQuery("Generate my music wrapped for the last month");
+      setAiModalOpen(true);
+  };
+
   if (!token && authenticating) {
       return (
           <Layout user={null} currentTrack={null}>
@@ -857,7 +847,6 @@ function App() {
                     <div>
                         <h2 className="text-[34px] font-bold text-white leading-none tracking-tight">{getGreeting()}, {data.user?.display_name?.split(' ')[0] || 'friend'}</h2>
                     </div>
-                    {/* ... Brutalist Toggle ... */}
                 </div>
             </div>
 
@@ -868,23 +857,12 @@ function App() {
                     user={data.user}
                     contextData={{
                         userName: data.user?.display_name,
-                        artists: safeArtists.map((a: Artist, idx: number) => {
-                            const time = String(a.timeStr || '');
-                            const mins = time.replace('m', '');
-                            return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
-                        }),
-                        albums: safeAlbums.map((a: Album, idx: number) => {
-                            const time = String(a.timeStr || '');
-                            const mins = time.replace('m', '');
-                            return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
-                        }),
-                        songs: safeSongs.map((s: Song, idx: number) => {
-                            const time = String(s.timeStr || '');
-                            const mins = time.replace('m', '');
-                            return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
-                        }),
+                        artists: safeArtists.map((a: Artist) => a.name),
+                        albums: safeAlbums.map((a: Album) => a.title),
+                        songs: safeSongs.map((s: Song) => s.title),
                         globalStats: dbStats
                     }}
+                    onWrappedClick={handleWrappedClick}
                 />
                 
             </div>
@@ -975,17 +953,11 @@ function App() {
                             </div>
                         ) : (
                             <div className="px-1">
-                                <EmptyAvatarGroup
-                                    title="No Artists Found"
-                                    description="Start listening to some music to see your top artists here!"
-                                    onAction={handleConnect}
-                                    actionLabel="Connect Spotify"
-                                />
+                                <p className="text-[#8E8E93] text-sm py-8 text-center italic">No artists found.</p>
                             </div>
                         )}
                     </section>
 
-                    {/* ... Songs, Upcoming, Albums, Orbit, Heatmap ... */}
                     <section className="space-y-4">
                         <div className="flex items-center justify-between px-1">
                             <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
@@ -1074,23 +1046,12 @@ function App() {
                     user={data.user}
                     contextData={{
                         userName: data.user?.display_name,
-                        artists: safeArtists.map((a: Artist, idx: number) => {
-                            const time = String(a.timeStr || '');
-                            const mins = time.replace('m', '');
-                            return `Rank #${idx + 1}: ${a.name} (${mins} minutes listened, ${a.totalListens || 0} plays)`;
-                        }),
-                        albums: safeAlbums.map((a: Album, idx: number) => {
-                            const time = String(a.timeStr || '');
-                            const mins = time.replace('m', '');
-                            return `Rank #${idx + 1}: ${a.title} by ${a.artist} (${mins} minutes, ${a.totalListens || 0} plays)`;
-                        }),
-                        songs: safeSongs.map((s: Song, idx: number) => {
-                            const time = String(s.timeStr || '');
-                            const mins = time.replace('m', '');
-                            return `Rank #${idx + 1}: ${s.title} by ${s.artist} (${mins} minutes, ${s.listens || 0} plays)`;
-                        }),
+                        artists: safeArtists.map((a: Artist) => a.name),
+                        albums: safeAlbums.map((a: Album) => a.title),
+                        songs: safeSongs.map((s: Song) => s.title),
                         globalStats: dbStats
                     }}
+                    onWrappedClick={handleWrappedClick}
                 />
             </div>
             
@@ -1259,7 +1220,7 @@ function App() {
         onClose={() => setDatabaseViewerOpen(false)}
     />
 
-    {/* ARTIST DETAIL MODAL - REPLACED WITH FULLSCREEN MODAL */}
+    {/* ARTIST DETAIL MODAL */}
     <FullScreenModal
         isOpen={!!selectedTopArtist}
         onClose={() => setSelectedTopArtist(null)}
@@ -1315,7 +1276,7 @@ function App() {
                 {/* Stats Carousel (Auto-Rotating) */}
                 <StatsCarousel stats={selectedArtistStats} artist={selectedTopArtist} />
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full mb-6">
+                <div className="w-full mb-6">
                     {/* Obsession Orbit */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -1341,45 +1302,6 @@ function App() {
                             history={safeRecent.filter((p: any) => p.artist_name === selectedTopArtist.name)}
                         />
                     </motion.div>
-
-
-                    {/* Top Tracks Section */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="w-full bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 h-full"
-                    >
-                        <h3 className="text-xs font-bold text-white/70 mb-3 flex items-center gap-2 uppercase tracking-wider">
-                        <Disc size={12} className="opacity-80" /> Top Tracks
-                        </h3>
-
-                        <div className="space-y-0.5">
-                        {(dbUnifiedData?.songs || [])
-                            .filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name)
-                            .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
-                            .slice(0, 5)
-                            .map((song: any, idx: number) => (
-                                <div key={idx} className="flex items-center gap-2.5 p-2 hover:bg-white/5 rounded-xl transition-all group active:scale-[0.98]">
-                                    <div className="text-white/25 font-mono text-[10px] w-4 font-bold text-right">{idx + 1}</div>
-                                    <div className="w-8 h-8 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 border border-white/5">
-                                        <img src={song.cover || song.album_cover} className="w-full h-full object-cover" alt={song.title} />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="text-xs font-semibold text-white truncate">
-                                            {song.track_name || song.title}
-                                        </div>
-                                        <div className="text-[10px] text-white/30 font-medium">
-                                                {song.listens || song.plays || 0} plays
-                                        </div>
-                                    </div>
-                                </div>
-                        ))}
-                        {(dbUnifiedData?.songs || []).filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name).length === 0 && (
-                            <p className="text-[#8E8E93] text-xs text-center py-4 italic">No track data available</p>
-                        )}
-                    </div>
-                </motion.div>
                 </div>
             </div>
         )}
@@ -1551,7 +1473,7 @@ function App() {
         )}
     </FullScreenModal>
 
-    {/* AI Discovery Modal - Kept as is or can be upgraded later */}
+    {/* AI Discovery Modal */}
     <AnimatePresence>
         {aiModalOpen && (
             <motion.div
@@ -1561,7 +1483,6 @@ function App() {
                 className="fixed inset-0 z-[9999] bg-[#0a0a0a]"
                 style={{ height: '100dvh' }}
             >
-                {/* ... AI Modal Content ... */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -1578,7 +1499,7 @@ function App() {
                             <h2 className="text-base font-bold text-white tracking-tight">AI Discovery</h2>
                         </div>
                         <button
-                            onClick={() => setAiModalOpen(false)}
+                            onClick={() => { setAiModalOpen(false); setAiInitialQuery(undefined); }}
                             className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/50 hover:text-white transition-all"
                         >
                             <X size={18} />
@@ -1589,14 +1510,20 @@ function App() {
                             token={token}
                             history={safeRecent}
                             user={data.user}
-                            contextData={{/*...*/}}
+                            contextData={{
+                                userName: data.user?.display_name,
+                                artists: safeArtists.map((a: Artist) => a.name),
+                                albums: safeAlbums.map((a: Album) => a.title),
+                                songs: safeSongs.map((s: Song) => s.title),
+                                globalStats: dbStats
+                            }}
+                            initialQuery={aiInitialQuery}
                         />
                     </div>
                 </motion.div>
             </motion.div>
         )}
     </AnimatePresence>
-
 
         <BackToTop />
     </>

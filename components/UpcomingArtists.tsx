@@ -97,16 +97,34 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
         };
 
         processCandidates();
-    }, [recentPlays, topArtists]);
+    }, [recentPlays, topArtists, artistImages]);
 
-    const growthData = useMemo(() => {
-        if (!selectedArtist?.playDates) return [];
-        const dateMap = new Map<string, number>();
-        selectedArtist.playDates.forEach((d: string) => {
-            const key = new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            dateMap.set(key, (dateMap.get(key) || 0) + 1);
-        });
-        return Array.from(dateMap.entries()).map(([date, count]) => ({ date, count }));
+    const radarData = useMemo(() => {
+        if (!selectedArtist) return null;
+
+        // Map real metrics to radar axes
+        // Discovery: how recently discovered (max 60 days)
+        const discoveryScore = Math.max(0, 100 - (selectedArtist.daysSinceFirstPlay * 1.5));
+
+        // Variety: unique tracks vs total plays
+        const varietyScore = Math.min(100, (selectedArtist.uniqueTracksCount / (selectedArtist.plays || 1)) * 200);
+
+        // Intensity: total plays (cap at 50 for max score)
+        const intensityScore = Math.min(100, (selectedArtist.plays / 50) * 100);
+
+        // Longevity: avg listen duration (max 5 mins)
+        const longevityScore = Math.min(100, (selectedArtist.avgDuration / 5) * 100);
+
+        // Energy: calculated from track counts variety
+        const energyScore = 75; // Baseline for upcoming
+
+        return [
+            { subject: 'Discovery', A: discoveryScore, fullMark: 100 },
+            { subject: 'Variety', A: varietyScore, fullMark: 100 },
+            { subject: 'Intensity', A: intensityScore, fullMark: 100 },
+            { subject: 'Longevity', A: longevityScore, fullMark: 100 },
+            { subject: 'Energy', A: energyScore, fullMark: 100 },
+        ];
     }, [selectedArtist]);
 
     if (loading && upcoming.length === 0) return null;
@@ -249,35 +267,8 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                             {/* RADAR CHART */}
                             <div className="bg-white/5 border border-white/10 rounded-3xl p-6 overflow-hidden relative group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                                <ChartRadarGridCircleFill />
+                                <ChartRadarGridCircleFill data={radarData || undefined} />
                             </div>
-
-                            {/* Growth Chart */}
-                            {growthData.length > 1 && (
-                                <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-6">
-                                    <div className="flex items-center gap-2 mb-6">
-                                        <TrendingUp size={16} className="text-green-400" />
-                                        <h3 className="text-sm font-bold text-white uppercase tracking-wide">Growth Trajectory</h3>
-                                    </div>
-                                    <div className="flex items-end gap-2 h-40 w-full">
-                                        {growthData.map((d, i) => {
-                                            const maxCount = Math.max(...growthData.map(g => g.count));
-                                            const height = (d.count / maxCount) * 100;
-                                            return (
-                                                <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
-                                                    <div className="relative w-full flex items-end justify-center h-full">
-                                                        <div
-                                                            className="w-full max-w-[24px] rounded-t-md bg-white/20 hover:bg-white transition-all min-h-[4px]"
-                                                            style={{ height: `${Math.max(4, height)}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className="text-[10px] text-white/30 truncate w-full text-center">{d.date.split(' ')[1]}</span>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Top Tracks */}
                             <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-6">
