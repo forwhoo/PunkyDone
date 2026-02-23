@@ -864,7 +864,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     {chatMessages.map((msg, idx) => (
                         <Message key={idx} role={msg.role === 'user' ? 'user' : 'ai'}>
                             <MessageContent className="text-sm">
-                                {msg.role === 'ai' && msg.canvas && msg.canvas.html ? (
+                                {msg.role === 'ai' && msg.canvas && msg.canvas.code ? (
                                     <div className="space-y-3">
                                         <div className="bg-[#27272a] text-white rounded-2xl rounded-tl-sm px-5 py-3 border border-white/10 inline-block">
                                             <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
@@ -872,7 +872,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                             </div>
                                         </div>
                                         <CanvasRenderer
-                                            html={msg.canvas.html}
+                                            code={msg.canvas.code}
                                             title={msg.canvas.title}
                                             description={msg.canvas.description}
                                             retryCount={msg.canvas.retryCount}
