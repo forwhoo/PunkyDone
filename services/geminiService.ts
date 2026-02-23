@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import {
     fetchDashboardStats,
     fetchSmartPlaylist,
@@ -54,13 +54,14 @@ export interface AIModel {
 }
 
 export const AI_MODELS: AIModel[] = [
-    { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash", isReasoning: false },
-    { id: "gemini-2.0-flash-lite-preview-02-05", label: "Gemini 2.0 Flash Lite", isReasoning: false },
-    { id: "gemini-2.0-pro-exp-02-05", label: "Gemini 2.0 Pro", isReasoning: true },
-    { id: "gemini-2.0-flash-thinking-exp-01-21", label: "Gemini 2.0 Flash Thinking", isReasoning: true },
+    { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro", isReasoning: true },
+    { id: "gemini-3-pro-preview", label: "Gemini 3 Pro", isReasoning: true },
+    { id: "gemini-3-flash-preview", label: "Gemini 3 Flash", isReasoning: false },
+    { id: "gemini-flash-latest", label: "Gemini Flash Latest", isReasoning: false },
+    { id: "gemini-flash-lite-latest", label: "Gemini Flash Lite", isReasoning: false },
 ];
 
-export const DEFAULT_MODEL_ID = "gemini-2.0-flash";
+export const DEFAULT_MODEL_ID = "gemini-3-flash-preview";
 
 const trimToolPayload = (payload: any): any => {
     if (!payload) return payload;
@@ -102,11 +103,11 @@ const TOOL_DEFINITIONS = [
         name: "get_top_songs",
         description: "Get the user's top songs/tracks.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] },
-                limit: { type: "number" },
-                artist_filter: { type: "string" }
+                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] },
+                limit: { type: Type.NUMBER },
+                artist_filter: { type: Type.STRING }
             },
             required: ["period"]
         }
@@ -115,10 +116,10 @@ const TOOL_DEFINITIONS = [
         name: "get_top_artists",
         description: "Get the user's top artists.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] },
-                limit: { type: "number" }
+                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] },
+                limit: { type: Type.NUMBER }
             },
             required: ["period"]
         }
@@ -127,10 +128,10 @@ const TOOL_DEFINITIONS = [
         name: "get_top_albums",
         description: "Get the user's top albums.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] },
-                limit: { type: "number" }
+                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] },
+                limit: { type: Type.NUMBER }
             },
             required: ["period"]
         }
@@ -139,9 +140,9 @@ const TOOL_DEFINITIONS = [
         name: "get_listening_time",
         description: "Get the user's total listening time and stats.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] }
+                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] }
             },
             required: ["period"]
         }
@@ -150,10 +151,10 @@ const TOOL_DEFINITIONS = [
         name: "get_obsession_orbit",
         description: "Get the user's Obsession Orbit.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["daily", "weekly", "monthly"] },
-                artist_name: { type: "string" }
+                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] },
+                artist_name: { type: Type.STRING }
             },
             required: ["period"]
         }
@@ -162,10 +163,10 @@ const TOOL_DEFINITIONS = [
         name: "get_artist_streak",
         description: "Get streak information for an artist.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                artist_name: { type: "string" },
-                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] }
+                artist_name: { type: Type.STRING },
+                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] }
             },
             required: ["artist_name", "period"]
         }
@@ -174,11 +175,11 @@ const TOOL_DEFINITIONS = [
         name: "get_listening_percentage",
         description: "Calculate what percentage of listening time a specific artist, song, or album takes up.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                entity_type: { type: "string", enum: ["artist", "song", "album"] },
-                entity_name: { type: "string" },
-                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] }
+                entity_type: { type: Type.STRING, enum: ["artist", "song", "album"] },
+                entity_name: { type: Type.STRING },
+                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] }
             },
             required: ["entity_type", "entity_name", "period"]
         }
@@ -187,9 +188,9 @@ const TOOL_DEFINITIONS = [
         name: "get_upcoming_artists",
         description: "Get radar/upcoming/new artists the user recently discovered.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["daily", "weekly", "monthly"] }
+                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
             },
             required: ["period"]
         }
@@ -198,9 +199,9 @@ const TOOL_DEFINITIONS = [
         name: "get_peak_listening_hour",
         description: "Get the hour of day when the user listens to music the most.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["daily", "weekly", "monthly"] }
+                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
             },
             required: ["period"]
         }
@@ -209,9 +210,9 @@ const TOOL_DEFINITIONS = [
         name: "get_rising_star",
         description: "Get the artist with the biggest increase in plays compared to previous period.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["daily", "weekly", "monthly"] }
+                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
             },
             required: ["period"]
         }
@@ -220,9 +221,9 @@ const TOOL_DEFINITIONS = [
         name: "get_late_night_anthem",
         description: "Get the song the user plays most during late night hours (1AM-5AM).",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["daily", "weekly", "monthly"] }
+                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
             },
             required: ["period"]
         }
@@ -231,9 +232,9 @@ const TOOL_DEFINITIONS = [
         name: "get_most_skipped",
         description: "Get the song the user skips the most.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["daily", "weekly", "monthly"] }
+                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
             },
             required: ["period"]
         }
@@ -242,9 +243,9 @@ const TOOL_DEFINITIONS = [
         name: "get_charts",
         description: "Get the current music charts showing trending songs.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["daily", "weekly", "monthly", "all time"] }
+                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly", "all time"] }
             },
             required: ["period"]
         }
@@ -253,9 +254,9 @@ const TOOL_DEFINITIONS = [
         name: "get_wrapped_overview",
         description: "Get a wrapped-style summary.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["daily", "weekly", "monthly"] }
+                period: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
             },
             required: ["period"]
         }
@@ -264,10 +265,10 @@ const TOOL_DEFINITIONS = [
         name: "search_spotify_tracks",
         description: "Search Spotify tracks by keyword.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                query: { type: "string" },
-                limit: { type: "number" }
+                query: { type: Type.STRING },
+                limit: { type: Type.NUMBER }
             },
             required: ["query"]
         }
@@ -276,18 +277,18 @@ const TOOL_DEFINITIONS = [
         name: "filter_songs",
         description: "Filter songs by various criteria.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                type: { type: "string", enum: ["song", "artist", "album"] },
-                field: { type: "string", enum: ["artist_name", "album_name", "track_name"] },
-                value: { type: "string" },
-                contains: { type: "string" },
-                time_of_day: { type: "string", enum: ["morning", "afternoon", "evening", "night", "latenight"] },
-                day_of_week: { type: "string", enum: ["weekday", "weekend"] },
-                recent_days: { type: "number" },
-                sort_by: { type: "string", enum: ["plays", "minutes", "recency", "duration"] },
-                sort_order: { type: "string", enum: ["highest", "lowest"] },
-                limit: { type: "number" }
+                type: { type: Type.STRING, enum: ["song", "artist", "album"] },
+                field: { type: Type.STRING, enum: ["artist_name", "album_name", "track_name"] },
+                value: { type: Type.STRING },
+                contains: { type: Type.STRING },
+                time_of_day: { type: Type.STRING, enum: ["morning", "afternoon", "evening", "night", "latenight"] },
+                day_of_week: { type: Type.STRING, enum: ["weekday", "weekend"] },
+                recent_days: { type: Type.NUMBER },
+                sort_by: { type: Type.STRING, enum: ["plays", "minutes", "recency", "duration"] },
+                sort_order: { type: Type.STRING, enum: ["highest", "lowest"] },
+                limit: { type: Type.NUMBER }
             },
             required: ["type"]
         }
@@ -296,10 +297,10 @@ const TOOL_DEFINITIONS = [
         name: "fetch_image",
         description: "Fetch the image/artwork URL for an artist or album.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                name: { type: "string" },
-                type: { type: "string", enum: ["artist", "album"] }
+                name: { type: Type.STRING },
+                type: { type: Type.STRING, enum: ["artist", "album"] }
             },
             required: ["name"]
         }
@@ -308,9 +309,9 @@ const TOOL_DEFINITIONS = [
         name: "get_heatmap_data",
         description: "Get the user's listening activity heatmap data.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                days: { type: "number" }
+                days: { type: Type.NUMBER }
             },
             required: []
         }
@@ -319,9 +320,9 @@ const TOOL_DEFINITIONS = [
         name: "get_artist_network",
         description: "Get artist connection/network data.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                limit: { type: "number" }
+                limit: { type: Type.NUMBER }
             },
             required: []
         }
@@ -330,9 +331,9 @@ const TOOL_DEFINITIONS = [
         name: "get_genre_breakdown",
         description: "Get an estimated genre breakdown.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] }
+                period: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] }
             },
             required: []
         }
@@ -341,9 +342,9 @@ const TOOL_DEFINITIONS = [
         name: "get_recent_plays",
         description: "Get the user's most recently played tracks.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                limit: { type: "number" }
+                limit: { type: Type.NUMBER }
             },
             required: []
         }
@@ -352,10 +353,10 @@ const TOOL_DEFINITIONS = [
         name: "compare_periods",
         description: "Compare listening stats between two time periods.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                period_a: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] },
-                period_b: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] }
+                period_a: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] },
+                period_b: { type: Type.STRING, enum: ["Daily", "Weekly", "Monthly", "All Time"] }
             },
             required: ["period_a", "period_b"]
         }
@@ -364,9 +365,9 @@ const TOOL_DEFINITIONS = [
         name: "get_album_covers",
         description: "Fetch album cover artwork URLs.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                names: { type: "array", items: { type: "string" } }
+                names: { type: Type.ARRAY, items: { type: Type.STRING } }
             },
             required: ["names"]
         }
@@ -375,11 +376,11 @@ const TOOL_DEFINITIONS = [
         name: "compare_artist_performance",
         description: "Compare an artist's stats across two periods.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                artist_name: { type: "string" },
-                period_a: { type: "string" },
-                period_b: { type: "string" }
+                artist_name: { type: Type.STRING },
+                period_a: { type: Type.STRING },
+                period_b: { type: Type.STRING }
             },
             required: ["artist_name", "period_a", "period_b"]
         }
@@ -388,11 +389,11 @@ const TOOL_DEFINITIONS = [
         name: "get_rank_shift",
         description: "Shows how many spots an artist/song climbed or fell.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                entity_name: { type: "string" },
-                entity_type: { type: "string", enum: ["artist", "song"] },
-                time_range: { type: "string", enum: ["daily", "weekly", "monthly"] }
+                entity_name: { type: Type.STRING },
+                entity_type: { type: Type.STRING, enum: ["artist", "song"] },
+                time_range: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
             },
             required: ["entity_name", "entity_type"]
         }
@@ -401,9 +402,9 @@ const TOOL_DEFINITIONS = [
         name: "get_loyalty_score",
         description: "Returns the ratio of this artist's plays vs. all other artists.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                artist_name: { type: "string" }
+                artist_name: { type: Type.STRING }
             },
             required: ["artist_name"]
         }
@@ -412,9 +413,9 @@ const TOOL_DEFINITIONS = [
         name: "get_market_share",
         description: "Returns a breakdown of what percentage of the 'total pie' an entity owns.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                entity_type: { type: "string", enum: ["artist", "genre"] }
+                entity_type: { type: Type.STRING, enum: ["artist", "genre"] }
             },
             required: ["entity_type"]
         }
@@ -423,9 +424,9 @@ const TOOL_DEFINITIONS = [
         name: "get_discovery_date",
         description: "Finds the exact timestamp and track of the user's very first interaction with an artist.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                artist_name: { type: "string" }
+                artist_name: { type: Type.STRING }
             },
             required: ["artist_name"]
         }
@@ -434,9 +435,9 @@ const TOOL_DEFINITIONS = [
         name: "get_binge_sessions",
         description: "Identifies 'binge' events where the user listened to one artist for a long continuous block.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                threshold_minutes: { type: "number" }
+                threshold_minutes: { type: Type.NUMBER }
             },
             required: []
         }
@@ -445,9 +446,9 @@ const TOOL_DEFINITIONS = [
         name: "get_one_hit_wonders",
         description: "Finds artists where the user loves exactly ONE song but never listens to the rest.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                min_plays: { type: "number" }
+                min_plays: { type: Type.NUMBER }
             },
             required: []
         }
@@ -456,9 +457,9 @@ const TOOL_DEFINITIONS = [
         name: "get_album_completionist",
         description: "Checks if the user listens to full albums.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                album_name: { type: "string" }
+                album_name: { type: Type.STRING }
             },
             required: ["album_name"]
         }
@@ -467,9 +468,9 @@ const TOOL_DEFINITIONS = [
         name: "get_earworm_report",
         description: "Finds the song the user has 'looped' the most in a short window.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                days_back: { type: "number" }
+                days_back: { type: Type.NUMBER }
             },
             required: []
         }
@@ -477,15 +478,15 @@ const TOOL_DEFINITIONS = [
     {
         name: "get_work_vs_play_stats",
         description: "Compares top genres/artists during weekdays vs. weekends.",
-        parameters: { type: "object", properties: {}, required: [] }
+        parameters: { type: Type.OBJECT, properties: {}, required: [] }
     },
     {
         name: "get_seasonal_vibe",
         description: "Analyzes if the user's music taste changes based on the season.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                season: { type: "string", enum: ["Summer", "Winter", "Spring", "Fall"] }
+                season: { type: Type.STRING, enum: ["Summer", "Winter", "Spring", "Fall"] }
             },
             required: ["season"]
         }
@@ -494,9 +495,9 @@ const TOOL_DEFINITIONS = [
         name: "get_anniversary_flashback",
         description: "Returns what the user was listening to exactly one year ago today.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                date: { type: "string" }
+                date: { type: Type.STRING }
             },
             required: []
         }
@@ -504,20 +505,20 @@ const TOOL_DEFINITIONS = [
     {
         name: "get_commute_soundtrack",
         description: "Analyzes specific activity during common commute hours.",
-        parameters: { type: "object", properties: {}, required: [] }
+        parameters: { type: Type.OBJECT, properties: {}, required: [] }
     },
     {
         name: "get_sleep_pattern",
         description: "Detects when the user stops listening at night and what 'sleep' music they use.",
-        parameters: { type: "object", properties: {}, required: [] }
+        parameters: { type: Type.OBJECT, properties: {}, required: [] }
     },
     {
         name: "get_diversity_index",
         description: "Measures how 'adventurous' the user is.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                time_range: { type: "string", enum: ["daily", "weekly", "monthly"] }
+                time_range: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
             },
             required: []
         }
@@ -526,9 +527,9 @@ const TOOL_DEFINITIONS = [
         name: "get_genre_evolution",
         description: "Shows how the user's favorite genre has changed month-over-month.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                months: { type: "number" }
+                months: { type: Type.NUMBER }
             },
             required: []
         }
@@ -537,9 +538,9 @@ const TOOL_DEFINITIONS = [
         name: "get_skip_rate_by_artist",
         description: "Specifically checks if a user skips an artist's songs more than others.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                artist_name: { type: "string" }
+                artist_name: { type: Type.STRING }
             },
             required: ["artist_name"]
         }
@@ -548,9 +549,9 @@ const TOOL_DEFINITIONS = [
         name: "get_gateway_tracks",
         description: "Identifies the specific song that 'hooked' the user.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                artist_name: { type: "string" }
+                artist_name: { type: Type.STRING }
             },
             required: ["artist_name"]
         }
@@ -558,16 +559,16 @@ const TOOL_DEFINITIONS = [
     {
         name: "get_top_collaborations",
         description: "Finds which artists are most frequently played in the same listening session.",
-        parameters: { type: "object", properties: {}, required: [] }
+        parameters: { type: Type.OBJECT, properties: {}, required: [] }
     },
     {
         name: "get_milestone_tracker",
         description: "Tracks progress toward a milestone.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                target_plays: { type: "number" },
-                artist_name: { type: "string" }
+                target_plays: { type: Type.NUMBER },
+                artist_name: { type: Type.STRING }
             },
             required: ["target_plays"]
         }
@@ -576,11 +577,11 @@ const TOOL_DEFINITIONS = [
         name: "get_obsession_score",
         description: "Get obsession score for an artist.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
-                artist_name: { type: "string" },
-                start_date: { type: "string" },
-                end_date: { type: "string" }
+                artist_name: { type: Type.STRING },
+                start_date: { type: Type.STRING },
+                end_date: { type: Type.STRING }
             },
             required: []
         }
@@ -1096,8 +1097,8 @@ export const answerMusicQuestionWithTools = async (
 
         const selectedModelId = modelId || DEFAULT_MODEL_ID;
 
-        // Gemini Chat History Format
-        const history = [
+        // Use contents array to manage conversation history
+        const contents: any[] = [
             {
                 role: "user",
                 parts: [{ text: AGENT_SYSTEM_PROMPT }]
@@ -1112,23 +1113,26 @@ export const answerMusicQuestionWithTools = async (
             }
         ];
 
-        const chat = client.generativeModel(selectedModelId).startChat({
-            history: history.slice(0, -1), // Previous messages
-            tools: [{ functionDeclarations: TOOL_DEFINITIONS as any }]
+        let response = await client.models.generateContent({
+            model: selectedModelId,
+            contents,
+            config: {
+                tools: [{ functionDeclarations: TOOL_DEFINITIONS as any }]
+            }
         });
 
-        const result = await chat.sendMessage(history[history.length - 1].parts[0].text);
-        const response = result.response;
-
-        let textResponse = response.text() || "";
-        const toolCalls = response.functionCalls();
         const collectedToolCalls: ToolCallInfo[] = [];
 
-        if (toolCalls && toolCalls.length > 0) {
-            // Execute tools
-            // Note: Gemini returns functionCalls in the response object
+        // Loop to handle potential multiple rounds of tool calls
+        while (response.functionCalls && response.functionCalls.length > 0) {
+            // Add the model's turn with function calls to history
+            contents.push({
+                role: "model",
+                parts: response.candidates?.[0]?.content?.parts || []
+            });
 
-            for (const call of toolCalls) {
+            const functionResponses = [];
+            for (const call of response.functionCalls) {
                 const funcName = call.name;
                 const funcArgs = call.args as Record<string, any>;
                 const iconInfo = TOOL_ICON_MAP[funcName] || { icon: 'Zap', label: funcName };
@@ -1137,7 +1141,7 @@ export const answerMusicQuestionWithTools = async (
                 const toolResult = trimToolPayload(rawResult);
 
                 collectedToolCalls.push({
-                    id: funcName, // Gemini doesn't have call IDs like OpenAI
+                    id: funcName,
                     name: funcName,
                     arguments: funcArgs,
                     result: toolResult,
@@ -1145,22 +1149,32 @@ export const answerMusicQuestionWithTools = async (
                     label: iconInfo.label
                 });
 
-                // Send result back to model
-                const nextResult = await chat.sendMessage([{
+                functionResponses.push({
                     functionResponse: {
                         name: funcName,
                         response: toolResult
                     }
-                }]);
-
-                // Get final text response
-                const nextText = nextResult.response.text();
-                if (nextText) textResponse = nextText;
+                });
             }
+
+            // Add the user's turn with tool results to history
+            contents.push({
+                role: "user",
+                parts: functionResponses
+            });
+
+            // Call model again with function results
+            response = await client.models.generateContent({
+                model: selectedModelId,
+                contents,
+                config: {
+                    tools: [{ functionDeclarations: TOOL_DEFINITIONS as any }]
+                }
+            });
         }
 
         return {
-            text: textResponse || "I processed your request.",
+            text: response.text || "I processed your request.",
             toolCalls: collectedToolCalls
         };
 
@@ -1181,7 +1195,7 @@ export const generateMusicInsights = async (contextData: string): Promise<string
             contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
-        return result.response.text();
+        return result.text;
     } catch (error) {
         console.error("Gemini API Error:", error);
         return "Unable to generate insights right now.";
@@ -1199,7 +1213,7 @@ export const answerMusicQuestion = async (question: string, context: any): Promi
             contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
-        return result.response.text();
+        return result.text;
     } catch (e) {
         return "Error answering question.";
     }
@@ -1214,7 +1228,7 @@ export const generateMusicInsight = async (query: string, stats: any): Promise<s
             model: DEFAULT_MODEL_ID,
             contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
-        return result.response.text();
+        return result.text;
     } catch (e) { return "Insight error."; }
 };
 
@@ -1228,7 +1242,7 @@ export const generateRankingInsights = async (items: string[]): Promise<Record<s
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: { responseMimeType: "application/json" }
         });
-        return JSON.parse(result.response.text());
+        return JSON.parse(result.text);
     } catch (e) { return {}; }
 }
 
@@ -1242,7 +1256,7 @@ export const navigateConnectionGraph = async (params: any, graphContext: any): P
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: { responseMimeType: "application/json" }
         });
-        return JSON.parse(result.response.text());
+        return JSON.parse(result.text);
     } catch (e) { return { summary: 'Error' }; }
 };
 
@@ -1256,7 +1270,7 @@ export const generateWeeklyInsightStory = async (context: any): Promise<any[]> =
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: { responseMimeType: "application/json" }
         });
-        const text = result.response.text();
+        const text = result.text;
         const parsed = JSON.parse(text);
         return Array.isArray(parsed) ? parsed : (parsed.slides || []);
     } catch (e) { return []; }
@@ -1272,7 +1286,7 @@ export const generateDynamicCategoryQuery = async (context: any, userPrompt?: st
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: { responseMimeType: "application/json" }
         });
-        const parsed = JSON.parse(result.response.text());
+        const parsed = JSON.parse(result.text);
         return Array.isArray(parsed) ? parsed : [parsed];
     } catch (e) { return []; }
 }
@@ -1286,7 +1300,7 @@ export const generateWrappedStory = async (period: string): Promise<any> => {
             contents: [{ role: 'user', parts: [{ text: `Generate wrapped story JSON for ${period}` }] }],
             config: { responseMimeType: "application/json" }
         });
-        return JSON.parse(result.response.text());
+        return JSON.parse(result.text);
     } catch (e) { return {}; }
 }
 
@@ -1299,7 +1313,7 @@ export const generateWrappedVibe = async (tracks: any[]): Promise<any> => {
             contents: [{ role: 'user', parts: [{ text: `Generate vibe check JSON for tracks: ${tracks.map(t => t.title).join(',')}` }] }],
             config: { responseMimeType: "application/json" }
         });
-        return JSON.parse(result.response.text());
+        return JSON.parse(result.text);
     } catch (e) { return {}; }
 }
 
@@ -1312,7 +1326,7 @@ export const generateWrappedQuiz = async (stats: any): Promise<any> => {
             contents: [{ role: 'user', parts: [{ text: `Generate music quiz JSON from stats: ${JSON.stringify(stats)}` }] }],
             config: { responseMimeType: "application/json" }
         });
-        return JSON.parse(result.response.text());
+        return JSON.parse(result.text);
     } catch (e) { return {}; }
 }
 
@@ -1325,7 +1339,7 @@ export const generateFruitVibe = async (tracks: any[]): Promise<any> => {
             contents: [{ role: 'user', parts: [{ text: `Generate fruit vibe JSON for tracks: ${tracks.map(t => t.title).join(',')}` }] }],
             config: { responseMimeType: "application/json" }
         });
-        return JSON.parse(result.response.text());
+        return JSON.parse(result.text);
     } catch (e) { return {}; }
 }
 
@@ -1355,6 +1369,6 @@ export const generateTopAlbumFunFact = async (album: any): Promise<string> => {
             model: DEFAULT_MODEL_ID,
             contents: [{ role: 'user', parts: [{ text: `Fun fact about album ${album.title}` }] }]
         });
-        return result.response.text();
+        return result.text;
     } catch (e) { return ""; }
 };
