@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight, Shuffle, RefreshCw, ArrowUp, Zap, Layers, Globe } from 'lucide-react';
+import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight, Shuffle, RefreshCw, ArrowUp, Zap, Layers, Globe, Database } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
 import { BackToTop } from './components/BackToTop';
@@ -234,6 +234,7 @@ const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; c
 );
 
 import { SeeAllModal } from './components/SeeAllModal';
+import { DatabaseViewer } from './components/DatabaseViewer';
 import PrismaticBurst from './components/reactbits/PrismaticBurst';
 
 const StatsCarousel = ({ stats, artist }: { stats: any, artist: Artist }) => {
@@ -324,6 +325,7 @@ function App() {
 
   // AI Discovery Modal State
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [databaseViewerOpen, setDatabaseViewerOpen] = useState(false);
 
   // Dynamic aura colors extracted from item images
   const [auraColor, setAuraColor] = useState<string>('#FA2D48');
@@ -812,27 +814,35 @@ function App() {
 
   if (loading || !data) {
       return (
-          <Layout user={null} currentTrack={null}>
-              <div className="flex h-[80vh] flex-col items-center justify-center gap-6 relative overflow-hidden">
-                  <div className="relative z-10 flex flex-col items-center">
-                      <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-6 animate-pulse">
-                          <Music className="w-8 h-8 text-white opacity-50" />
-                      </div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight mb-2">Syncing Library</h3>
-                      <p className="text-[#8E8E93] text-sm animate-pulse">Analyzing your listening history...</p>
+          <div className="fixed inset-0 bg-black text-white flex flex-col items-center justify-center p-6 overflow-hidden font-sans z-50">
+              <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-30">
+                  <Particles
+                      particleCount={200}
+                      particleSpread={10}
+                      speed={0.1}
+                      particleColors={['#ffffff', '#808080']}
+                      moveParticlesOnHover={false}
+                      particleHoverFactor={1}
+                      alphaParticles={false}
+                      particleBaseSize={100}
+                      sizeRandomness={0.5}
+                      cameraDistance={20}
+                  />
+              </div>
+              <div className="relative z-10 flex flex-col items-center animate-fade-in">
+                  <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-6 border border-white/10 shadow-2xl backdrop-blur-md">
+                      <RefreshCw className="w-8 h-8 text-white opacity-80 animate-spin" style={{ animationDuration: '3s' }} />
                   </div>
-                  <div className="flex gap-1 mt-4">
-                      <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                      <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                      <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></div>
-                  </div>
+                  <h3 className="text-3xl font-bold text-white tracking-tight mb-2 text-center drop-shadow-xl">Syncing Library</h3>
+                  <p className="text-white/50 text-sm font-medium tracking-wide">Analyzing your listening history...</p>
+
                   {loading === false && !data && (
-                      <button onClick={handleConnect} disabled={connecting} className="mt-8 px-8 py-3 bg-white text-black text-sm font-bold rounded-full hover:bg-gray-200 transition-colors z-10">
+                      <button onClick={handleConnect} disabled={connecting} className="mt-8 px-8 py-3 bg-white text-black text-sm font-bold rounded-full hover:bg-gray-200 transition-colors z-10 shadow-xl">
                         {connecting ? 'Connecting...' : 'Retry Connection'}
                       </button>
                   )}
               </div>
-          </Layout>
+          </div>
       );
   }
 
@@ -931,6 +941,7 @@ function App() {
                                                 start: format(range.from!, 'yyyy-MM-dd'),
                                                 end: format(range.to!, 'yyyy-MM-dd')
                                             }).then(data => setDbUnifiedData(data));
+                                            setDateRangePickerOpen(false);
                                         }, 100);
                                     }
                                 }}
@@ -1134,6 +1145,7 @@ function App() {
                                                 start: format(range.from!, 'yyyy-MM-dd'),
                                                 end: format(range.to!, 'yyyy-MM-dd')
                                             }).then(data => setDbUnifiedData(data));
+                                            setDateRangePickerOpen(false);
                                         }, 100);
                                     }
                                 }}
@@ -1143,6 +1155,13 @@ function App() {
                     </Popover>
                 </div>
 
+                <button
+                    onClick={() => setDatabaseViewerOpen(true)}
+                    className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all mr-2"
+                    title="View Database"
+                >
+                    <Database size={20} className="text-white/70" />
+                </button>
                 <button
                     onClick={handleManualRefresh}
                     className={`p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all ${isRefreshing ? 'animate-spin' : 'hover:rotate-180 duration-500'}`}
@@ -1235,6 +1254,11 @@ function App() {
         type={seeAllModal.type}
     />
 
+    <DatabaseViewer
+        isOpen={databaseViewerOpen}
+        onClose={() => setDatabaseViewerOpen(false)}
+    />
+
     {/* ARTIST DETAIL MODAL - REPLACED WITH FULLSCREEN MODAL */}
     <FullScreenModal
         isOpen={!!selectedTopArtist}
@@ -1291,40 +1315,41 @@ function App() {
                 {/* Stats Carousel (Auto-Rotating) */}
                 <StatsCarousel stats={selectedArtistStats} artist={selectedTopArtist} />
 
-                {/* Obsession Orbit */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="w-full mb-6"
-                >
-                    <ArtistOrbit
-                        centralNode={{ id: selectedTopArtist.id, name: selectedTopArtist.name, image: artistImages[selectedTopArtist.name] || selectedTopArtist.image || '' }}
-                        orbitNodes={(dbUnifiedData?.songs || [])
-                            .filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name)
-                            .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
-                            .slice(0, 24)
-                            .map((s: any) => ({
-                                id: s.id,
-                                name: s.track_name || s.title,
-                                image: s.cover || s.album_cover,
-                                plays: s.listens || s.plays,
-                                time: s.timeStr
-                            }))
-                        }
-                        color={auraColor}
-                        history={safeRecent.filter((p: any) => p.artist_name === selectedTopArtist.name)}
-                    />
-                </motion.div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full mb-6">
+                    {/* Obsession Orbit */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="w-full"
+                    >
+                        <ArtistOrbit
+                            centralNode={{ id: selectedTopArtist.id, name: selectedTopArtist.name, image: artistImages[selectedTopArtist.name] || selectedTopArtist.image || '' }}
+                            orbitNodes={(dbUnifiedData?.songs || [])
+                                .filter((s: any) => s.artist_name === selectedTopArtist.name || s.artist === selectedTopArtist.name)
+                                .sort((a: any, b: any) => (b.plays || b.listens || 0) - (a.plays || a.listens || 0))
+                                .slice(0, 24)
+                                .map((s: any) => ({
+                                    id: s.id,
+                                    name: s.track_name || s.title,
+                                    image: s.cover || s.album_cover,
+                                    plays: s.listens || s.plays,
+                                    time: s.timeStr
+                                }))
+                            }
+                            color={auraColor}
+                            history={safeRecent.filter((p: any) => p.artist_name === selectedTopArtist.name)}
+                        />
+                    </motion.div>
 
 
-                {/* Top Tracks Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="w-full bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4"
-                >
+                    {/* Top Tracks Section */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="w-full bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 h-full"
+                    >
                         <h3 className="text-xs font-bold text-white/70 mb-3 flex items-center gap-2 uppercase tracking-wider">
                         <Disc size={12} className="opacity-80" /> Top Tracks
                         </h3>
@@ -1355,6 +1380,7 @@ function App() {
                         )}
                     </div>
                 </motion.div>
+                </div>
             </div>
         )}
     </FullScreenModal>

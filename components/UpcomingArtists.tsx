@@ -4,6 +4,7 @@ import { Artist } from '../types';
 import { motion } from 'framer-motion';
 import { getDiscoveryDate } from '../services/dbService';
 import { FullScreenModal } from './FullScreenModal';
+import { ChartRadarGridCircleFill } from './ChartRadarGridCircleFill';
 
 interface UpcomingArtistsProps {
     recentPlays: any[];
@@ -179,113 +180,127 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({ recentPlays, t
                 title="Rising Star"
             >
                 {selectedArtist && (
-                    <div className="flex flex-col items-center w-full">
-                         {/* Artist Hero */}
-                         <div className="flex flex-col items-center mb-8">
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                className="w-48 h-48 sm:w-64 sm:h-64 rounded-full overflow-hidden shadow-2xl border-4 border-white/10 mb-6"
-                            >
-                                <img
-                                    src={selectedArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtist.name)}&background=1DB954&color=fff`}
-                                    className="w-full h-full object-cover"
-                                />
-                            </motion.div>
-                            <h1 className="text-3xl sm:text-5xl font-bold text-white text-center tracking-tight mb-2">
-                                {selectedArtist.name}
-                            </h1>
-                            <div className="flex items-center gap-2 bg-blue-500/20 px-4 py-1.5 rounded-full border border-blue-500/30">
-                                <TrendingUp size={14} className="text-blue-400" />
-                                <span className="text-sm font-bold text-blue-100">Discovered {selectedArtist.daysSinceFirstPlay} days ago</span>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-6xl mx-auto items-start pb-20">
+                        {/* LEFT COLUMN */}
+                        <div className="flex flex-col gap-6">
+                            {/* Artist Hero */}
+                            <div className="flex flex-col items-center bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-md">
+                                <motion.div
+                                    initial={{ scale: 0.9, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    className="w-48 h-48 sm:w-64 sm:h-64 rounded-full overflow-hidden shadow-2xl border-4 border-white/10 mb-6 relative"
+                                >
+                                    <div className="absolute inset-0 bg-black/20" />
+                                    <img
+                                        src={selectedArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedArtist.name)}&background=1DB954&color=fff`}
+                                        className="w-full h-full object-cover"
+                                        alt={selectedArtist.name}
+                                    />
+                                </motion.div>
+                                <h1 className="text-3xl sm:text-5xl font-bold text-white text-center tracking-tight mb-4">
+                                    {selectedArtist.name}
+                                </h1>
+                                <div className="flex items-center gap-2 bg-blue-500/20 px-4 py-1.5 rounded-full border border-blue-500/30">
+                                    <TrendingUp size={14} className="text-blue-400" />
+                                    <span className="text-sm font-bold text-blue-100">Discovered {selectedArtist.daysSinceFirstPlay} days ago</span>
+                                </div>
+                            </div>
+
+                            {/* Stats Grid */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
+                                    <Play size={20} className="text-white/50 mb-2" />
+                                    <span className="text-2xl font-bold text-white">{selectedArtist.plays}</span>
+                                    <span className="text-xs uppercase tracking-wider text-white/40 font-bold mt-1">Total Plays</span>
+                                </div>
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
+                                    <Disc size={20} className="text-white/50 mb-2" />
+                                    <span className="text-2xl font-bold text-white">{selectedArtist.uniqueTracksCount || 1}</span>
+                                    <span className="text-xs uppercase tracking-wider text-white/40 font-bold mt-1">Unique Tracks</span>
+                                </div>
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
+                                    <Clock size={20} className="text-white/50 mb-2" />
+                                    <span className="text-2xl font-bold text-white">{selectedArtist.avgDuration || 3}m</span>
+                                    <span className="text-xs uppercase tracking-wider text-white/40 font-bold mt-1">Avg Listen</span>
+                                </div>
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
+                                    <BarChart3 size={20} className="text-white/50 mb-2" />
+                                    <span className="text-lg font-bold text-white mt-1 leading-tight">
+                                        {new Date(selectedArtist.firstPlay).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    </span>
+                                    <span className="text-xs uppercase tracking-wider text-white/40 font-bold mt-1">First Heard</span>
+                                </div>
+                            </div>
+
+                             {/* Recent Track Info */}
+                             <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 flex items-center gap-4 hover:bg-white/10 transition-colors">
+                                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                                    <Clock size={24} className="text-white" />
+                                </div>
+                                <div>
+                                    <h4 className="text-lg font-bold text-white">{selectedArtist.trackSample}</h4>
+                                    <p className="text-sm text-white/50">Most recent track in rotation</p>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full mb-10">
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center text-center">
-                                <Play size={20} className="text-white/50 mb-2" />
-                                <span className="text-2xl font-bold text-white">{selectedArtist.plays}</span>
-                                <span className="text-xs uppercase tracking-wider text-white/40 font-bold mt-1">Total Plays</span>
+                        {/* RIGHT COLUMN */}
+                        <div className="flex flex-col gap-6">
+                            {/* RADAR CHART */}
+                            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 overflow-hidden relative group">
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                                <ChartRadarGridCircleFill />
                             </div>
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center text-center">
-                                <Disc size={20} className="text-white/50 mb-2" />
-                                <span className="text-2xl font-bold text-white">{selectedArtist.uniqueTracksCount || 1}</span>
-                                <span className="text-xs uppercase tracking-wider text-white/40 font-bold mt-1">Unique Tracks</span>
-                            </div>
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center text-center">
-                                <Clock size={20} className="text-white/50 mb-2" />
-                                <span className="text-2xl font-bold text-white">{selectedArtist.avgDuration || 3}m</span>
-                                <span className="text-xs uppercase tracking-wider text-white/40 font-bold mt-1">Avg Listen</span>
-                            </div>
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center text-center">
-                                <BarChart3 size={20} className="text-white/50 mb-2" />
-                                <span className="text-lg font-bold text-white mt-1 leading-tight">
-                                    {new Date(selectedArtist.firstPlay).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                </span>
-                                <span className="text-xs uppercase tracking-wider text-white/40 font-bold mt-1">First Heard</span>
-                            </div>
-                        </div>
 
-                        {/* Growth Chart */}
-                        {growthData.length > 1 && (
-                            <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 mb-8">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <TrendingUp size={16} className="text-green-400" />
-                                    <h3 className="text-sm font-bold text-white uppercase tracking-wide">Growth Trajectory</h3>
-                                </div>
-                                <div className="flex items-end gap-2 h-40 w-full">
-                                    {growthData.map((d, i) => {
-                                        const maxCount = Math.max(...growthData.map(g => g.count));
-                                        const height = (d.count / maxCount) * 100;
-                                        return (
-                                            <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
-                                                <div className="relative w-full flex items-end justify-center h-full">
-                                                    <div
-                                                        className="w-full max-w-[24px] rounded-t-md bg-white/20 hover:bg-white transition-all min-h-[4px]"
-                                                        style={{ height: `${Math.max(4, height)}%` }}
-                                                    />
-                                                </div>
-                                                <span className="text-[10px] text-white/30 truncate w-full text-center">{d.date.split(' ')[1]}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Top Tracks */}
-                        <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 mb-8">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Disc size={16} className="text-[#FA2D48]" />
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wide">Top Tracks</h3>
-                            </div>
-                            <div className="space-y-3">
-                                {Object.entries(selectedArtist.trackCounts || {})
-                                    .sort(([, a], [, b]) => (b as number) - (a as number))
-                                    .slice(0, 3)
-                                    .map(([track, count], idx) => (
-                                    <div key={idx} className="flex items-center justify-between group">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-white/20 font-bold text-sm w-4">{idx + 1}</span>
-                                            <span className="text-white font-medium text-sm">{track}</span>
-                                        </div>
-                                        <div className="text-white/40 text-xs font-bold bg-white/5 px-2 py-1 rounded-md group-hover:bg-white/10 transition-colors">
-                                            {count as number} plays
-                                        </div>
+                            {/* Growth Chart */}
+                            {growthData.length > 1 && (
+                                <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-6">
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <TrendingUp size={16} className="text-green-400" />
+                                        <h3 className="text-sm font-bold text-white uppercase tracking-wide">Growth Trajectory</h3>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+                                    <div className="flex items-end gap-2 h-40 w-full">
+                                        {growthData.map((d, i) => {
+                                            const maxCount = Math.max(...growthData.map(g => g.count));
+                                            const height = (d.count / maxCount) * 100;
+                                            return (
+                                                <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
+                                                    <div className="relative w-full flex items-end justify-center h-full">
+                                                        <div
+                                                            className="w-full max-w-[24px] rounded-t-md bg-white/20 hover:bg-white transition-all min-h-[4px]"
+                                                            style={{ height: `${Math.max(4, height)}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-[10px] text-white/30 truncate w-full text-center">{d.date.split(' ')[1]}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
 
-                        {/* Recent Track Info */}
-                        <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                                <Clock size={24} className="text-white" />
-                            </div>
-                            <div>
-                                <h4 className="text-lg font-bold text-white">{selectedArtist.trackSample}</h4>
-                                <p className="text-sm text-white/50">Most recent track in rotation</p>
+                            {/* Top Tracks */}
+                            <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-6">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Disc size={16} className="text-[#FA2D48]" />
+                                    <h3 className="text-sm font-bold text-white uppercase tracking-wide">Top Tracks</h3>
+                                </div>
+                                <div className="space-y-3">
+                                    {Object.entries(selectedArtist.trackCounts || {})
+                                        .sort(([, a], [, b]) => (b as number) - (a as number))
+                                        .slice(0, 3)
+                                        .map(([track, count], idx) => (
+                                        <div key={idx} className="flex items-center justify-between group p-2 hover:bg-white/5 rounded-lg transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-white/20 font-bold text-sm w-4">{idx + 1}</span>
+                                                <span className="text-white font-medium text-sm">{track}</span>
+                                            </div>
+                                            <div className="text-white/40 text-xs font-bold bg-white/5 px-2 py-1 rounded-md group-hover:bg-white/10 transition-colors">
+                                                {count as number} plays
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
