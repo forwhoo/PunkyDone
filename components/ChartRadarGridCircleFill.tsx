@@ -1,32 +1,26 @@
-"use client"
-
-import { TrendingUp } from "lucide-react"
+import React from "react"
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts"
 
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import {
+  ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  type ChartConfig,
 } from "@/components/ui/chart"
 
-export const description = "A radar chart with a grid and circle fill"
-
 const chartData = [
-  { month: "January", desktop: 186 },
-  { month: "February", desktop: 285 },
-  { month: "March", desktop: 237 },
-  { month: "April", desktop: 203 },
-  { month: "May", desktop: 209 },
-  { month: "June", desktop: 264 },
+  { subject: "Discovery", A: 120, fullMark: 150 },
+  { subject: "Variety", A: 98, fullMark: 150 },
+  { subject: "Intensity", A: 86, fullMark: 150 },
+  { subject: "Longevity", A: 99, fullMark: 150 },
+  { subject: "Energy", A: 85, fullMark: 150 },
 ]
 
 const chartConfig = {
@@ -36,13 +30,13 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function ChartRadarGridCircleFill() {
+export function ChartRadarGridCircleFill({ data = chartData }: { data?: any[] }) {
   return (
-    <Card className="bg-transparent border-none shadow-none">
+    <Card className="bg-transparent border-none shadow-none text-white">
       <CardHeader className="items-center pb-4">
-        <CardTitle className="text-white">Radar Chart</CardTitle>
-        <CardDescription className="text-white/50">
-          Showing recent activity
+        <CardTitle className="text-xl font-bold">Artist DNA</CardTitle>
+        <CardDescription className="text-white/40">
+          Metric breakdown for this rising star
         </CardDescription>
       </CardHeader>
       <CardContent className="pb-0">
@@ -50,29 +44,20 @@ export function ChartRadarGridCircleFill() {
           config={chartConfig}
           className="mx-auto aspect-square max-h-[250px]"
         >
-          <RadarChart data={chartData}>
+          <RadarChart data={data}>
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-            <PolarGrid
-              className="fill-[var(--color-desktop)] opacity-20"
-              gridType="circle"
-            />
-            <PolarAngleAxis dataKey="month" tick={{ fill: 'white', fontSize: 10 }} />
+            <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} />
+            <PolarGrid radialLines={false} stroke="rgba(255,255,255,0.1)" />
             <Radar
-              dataKey="desktop"
-              fill="var(--color-desktop)"
-              fillOpacity={0.5}
+              dataKey="A"
+              fill="rgba(59, 130, 246, 0.5)"
+              fillOpacity={0.6}
+              stroke="#3b82f6"
+              strokeWidth={2}
             />
           </RadarChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col gap-2 text-sm">
-        <div className="flex items-center gap-2 leading-none font-medium text-white">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="text-white/50 flex items-center gap-2 leading-none">
-          January - June 2024
-        </div>
-      </CardFooter>
     </Card>
   )
 }

@@ -645,6 +645,23 @@ const TOOL_DEFINITIONS = [
             },
             required: []
         }
+    },
+    {
+        name: "vote",
+        description: "Create a poll or multi-select for the user to help decide or provide more information.",
+        parameters: {
+            type: "object",
+            properties: {
+                title: { type: "string", description: "The title of the poll." },
+                options: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "The list of options for the user to choose from."
+                },
+                multi_select: { type: "boolean", description: "Whether the user can select multiple options." }
+            },
+            required: ["title", "options"]
+        }
     }
 ];
 
@@ -703,6 +720,7 @@ const TOOL_ICON_MAP: Record<string, { icon: string; label: string }> = {
     get_top_collaborations: { icon: 'Users', label: 'Collaborations' },
     get_milestone_tracker: { icon: 'Target', label: 'Milestones' },
     get_obsession_score: { icon: 'Flame', label: 'Obsession Score' },
+    vote: { icon: 'CheckSquare', label: 'Poll' },
 };
 
 // ─── TOOL EXECUTION HANDLER ─────────────────────────────────────
@@ -1101,6 +1119,15 @@ async function executeAgentTool(
             case 'get_top_collaborations': { return (await getTopCollaborations()) || { error: 'No collaboration data available' }; }
             case 'get_milestone_tracker': { return (await getMilestoneTracker(funcArgs.target_plays, funcArgs.artist_name)) || { error: 'No milestone tracking data available' }; }
             case 'get_obsession_score': { return (await getObsessionScore(funcArgs.artist_name, funcArgs.start_date, funcArgs.end_date)) || { error: 'No obsession score data found' }; }
+            case 'vote': {
+                return {
+                    title: funcArgs.title,
+                    options: funcArgs.options,
+                    multi_select: !!funcArgs.multi_select,
+                    status: 'poll_created',
+                    message: 'Please select an option to continue.'
+                };
+            }
 
             default: return { error: `Unknown tool: ${funcName}` };
         }
@@ -1149,9 +1176,10 @@ export const streamMusicQuestionWithTools = async (
     onChunk: (chunk: StreamChunk) => void,
     token?: string | null,
     modelId?: string,
-    webSearchEnabled?: boolean
+    webSearchEnabled?: boolean,
+    history: any[] = []
 ) => {
-    console.log('[agentTools] streamMusicQuestionWithTools called', { question, modelId, webSearchEnabled });
+    console.log('[agentTools] streamMusicQuestionWithTools called', { question, modelId, webSearchEnabled, historyLength: history.length });
 
     try {
         const client = getAiClient();
@@ -1160,23 +1188,35 @@ export const streamMusicQuestionWithTools = async (
             return;
         }
 
-        const selectedModelId = modelId || DEFAULT_MODEL_ID;
+        const modelToUse = modelId || DEFAULT_MODEL_ID;
 
         // Conversation history
         const messages: any[] = [
             {
                 role: "system",
                 content: AGENT_SYSTEM_PROMPT
-            },
-            {
-                role: "assistant",
-                content: "I understand. I am Lotus, ready to analyze music data."
-            },
-            {
-                role: "user",
-                content: `User: ${context.userName || 'Unknown'} | Date: ${new Date().toLocaleString()} | Quick context: Top artists include ${context.artists.slice(0, 5).join(', ')}. Weekly time: ${context.globalStats?.weeklyTime || '?'}. \n\nQuestion: ${question}`
             }
         ];
+
+        // Add history if provided
+        if (history.length > 0) {
+            history.forEach(msg => {
+                messages.push({
+                    role: msg.role === 'ai' ? 'assistant' : 'user',
+                    content: msg.text
+                });
+            });
+        } else {
+            messages.push({
+                role: "assistant",
+                content: "I understand. I am Lotus, ready to analyze music data."
+            });
+        }
+
+        messages.push({
+            role: "user",
+            content: `User: ${context.userName || 'Unknown'} | Date: ${new Date().toLocaleString()} | Quick context: Top artists include ${context.artists.slice(0, 5).join(', ')}. Weekly time: ${context.globalStats?.weeklyTime || '?'}. \n\nQuestion: ${question}`
+        });
 
         let continueLoop = true;
         const mcpTools = await fetchMcpTools();
@@ -1184,15 +1224,56 @@ export const streamMusicQuestionWithTools = async (
         while (continueLoop) {
             const tools: any[] = [...AGENT_TOOLS, ...mcpTools.map(t => ({ type: t.type, function: t.function }))];
             if (webSearchEnabled) {
-                tools.push({ type: 'web_search' });
-            }
+                // Bypass SDK validation for web_search which might fail Zod checks in some SDK versions
+                const apiKey = (import.meta as any).env.VITE_MISTRAL_API_KEY || (import.meta as any).env.VITE_GROQ_API_KEY || '';
+                const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: modelToUse,
+                        messages: messages,
+                        tools: tools,
+                        stream: true
+                    })
+                });
 
-            const stream = await client.chat.stream({
-                model: selectedModelId,
-                messages: messages,
-                // @ts-ignore
-                tools: tools,
-            });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || 'API request failed');
+                }
+
+                // Helper to convert fetch body to async iterable
+                const reader = response.body?.getReader();
+                const decoder = new TextDecoder();
+
+                stream = (async function* () {
+                    while (true) {
+                        const { done, value } = await reader!.read();
+                        if (done) break;
+                        const chunk = decoder.decode(value, { stream: true });
+                        const lines = chunk.split('\n').filter(line => line.trim().startsWith('data: '));
+                        for (const line of lines) {
+                            const data = line.replace('data: ', '');
+                            if (data === '[DONE]') return;
+                            try {
+                                yield JSON.parse(data);
+                            } catch (e) {
+                                console.error('Failed to parse stream chunk', e);
+                            }
+                        }
+                    }
+                })();
+            } else {
+                stream = await client.chat.stream({
+                    model: modelToUse,
+                    messages: messages,
+                    // @ts-ignore
+                    tools: tools,
+                });
+            }
 
             let toolCallsBuffer: any[] = [];
             let currentContent = "";
@@ -1341,9 +1422,10 @@ export const answerMusicQuestionWithTools = async (
     context: any,
     token?: string | null,
     modelId?: string,
-    webSearchEnabled?: boolean
+    webSearchEnabled?: boolean,
+    history: any[] = []
 ): Promise<{ text: string; toolCalls: ToolCallInfo[] }> => {
-    console.log('[agentTools] answerMusicQuestionWithTools called', { question, modelId, webSearchEnabled });
+    console.log('[agentTools] answerMusicQuestionWithTools called', { question, modelId, webSearchEnabled, historyLength: history.length });
 
     const fallbackResponse = { text: "Unable to answer right now. Try again!", toolCalls: [] };
 
@@ -1351,22 +1433,34 @@ export const answerMusicQuestionWithTools = async (
         const client = getAiClient();
         if (!client) return { text: "Configure VITE_MISTRAL_API_KEY to use chat features.", toolCalls: [] };
 
-        const selectedModelId = modelId || DEFAULT_MODEL_ID;
+        const modelToUse = modelId || DEFAULT_MODEL_ID;
 
         const messages: any[] = [
             {
                 role: "system",
                 content: AGENT_SYSTEM_PROMPT
-            },
-            {
-                role: "assistant",
-                content: "I understand. I am Lotus, ready to analyze music data."
-            },
-            {
-                role: "user",
-                content: `User: ${context.userName || 'Unknown'} | Date: ${new Date().toLocaleString()} | Quick context: Top artists include ${context.artists.slice(0, 5).join(', ')}. Weekly time: ${context.globalStats?.weeklyTime || '?'}. \n\nQuestion: ${question}`
             }
         ];
+
+        // Add history if provided
+        if (history.length > 0) {
+            history.forEach(msg => {
+                messages.push({
+                    role: msg.role === 'ai' ? 'assistant' : 'user',
+                    content: msg.text
+                });
+            });
+        } else {
+            messages.push({
+                role: "assistant",
+                content: "I understand. I am Lotus, ready to analyze music data."
+            });
+        }
+
+        messages.push({
+            role: "user",
+            content: `User: ${context.userName || 'Unknown'} | Date: ${new Date().toLocaleString()} | Quick context: Top artists include ${context.artists.slice(0, 5).join(', ')}. Weekly time: ${context.globalStats?.weeklyTime || '?'}. \n\nQuestion: ${question}`
+        });
 
         let finalResponseText = "";
         const collectedToolCalls: ToolCallInfo[] = [];
@@ -1376,15 +1470,36 @@ export const answerMusicQuestionWithTools = async (
         while (continueLoop) {
             const tools: any[] = [...AGENT_TOOLS, ...mcpTools.map(t => ({ type: t.type, function: t.function }))];
             if (webSearchEnabled) {
-                tools.push({ type: 'web_search' });
-            }
+                // Bypass SDK validation
+                const apiKey = (import.meta as any).env.VITE_MISTRAL_API_KEY || (import.meta as any).env.VITE_GROQ_API_KEY || '';
+                const fetchRes = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: modelToUse,
+                        messages: messages,
+                        tools: tools,
+                        stream: false
+                    })
+                });
 
-            const response = await client.chat.complete({
-                model: selectedModelId,
-                messages: messages,
-                // @ts-ignore
-                tools: tools,
-            });
+                if (!fetchRes.ok) {
+                    const errorData = await fetchRes.json();
+                    throw new Error(errorData.error?.message || 'API request failed');
+                }
+
+                response = await fetchRes.json();
+            } else {
+                response = await client.chat.complete({
+                    model: modelToUse,
+                    messages: messages,
+                    // @ts-ignore
+                    tools: tools,
+                });
+            }
 
             const choice = response.choices?.[0];
             const message = choice?.message;
