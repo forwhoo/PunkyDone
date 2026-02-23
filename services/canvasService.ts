@@ -18,6 +18,67 @@ const getAiClient = () => {
     return new Mistral({ apiKey });
 };
 
+// ─── MCP CONFIGURATION ───────────────────────────────────────────
+const MCP_SERVERS = [
+    { name: 'shoogle', url: 'https://mcp.shoogle.dev/mcp', icon: 'Search', label: 'Shoogle' }
+];
+
+async function fetchMcpTools() {
+    const allTools: any[] = [];
+    for (const server of MCP_SERVERS) {
+        try {
+            const response = await fetch(server.url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jsonrpc: '2.0', id: 'list', method: 'tools/list' })
+            });
+            const data = await response.json();
+            if (data.result?.tools) {
+                data.result.tools.forEach((tool: any) => {
+                    allTools.push({
+                        serverName: server.name,
+                        type: "function",
+                        function: {
+                            name: `mcp_${server.name}_${tool.name}`,
+                            description: `[MCP: ${server.label}] ${tool.description}`,
+                            parameters: tool.inputSchema
+                        },
+                        originalName: tool.name
+                    });
+                });
+            }
+        } catch (e) {
+            console.error(`Failed to fetch tools from MCP server ${server.name}:`, e);
+        }
+    }
+    return allTools;
+}
+
+async function executeMcpTool(funcName: string, args: any) {
+    const match = funcName.match(/^mcp_([^_]+)_(.+)$/);
+    if (!match) return { error: "Invalid MCP tool name" };
+    const [, serverName, originalName] = match;
+    const server = MCP_SERVERS.find(s => s.name === serverName);
+    if (!server) return { error: `MCP server ${serverName} not found` };
+
+    try {
+        const response = await fetch(server.url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: Date.now(),
+                method: 'tools/call',
+                params: { name: originalName, arguments: args }
+            })
+        });
+        const data = await response.json();
+        return data.result || data.error || { error: "Failed to execute MCP tool" };
+    } catch (e: any) {
+        return { error: `MCP execution failed: ${e.message}` };
+    }
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────
 
 export interface CanvasComponent {
@@ -137,6 +198,7 @@ Your job is to build interactive, beautiful React components using TypeScript an
 4.  **Premium Vibe**: Use the app's dark theme (#0a0a0a bg, #1C1C1E cards, #FA2D48 accent).
 5.  **Interactive**: Add hover effects, animations with framer-motion, and micro-interactions.
 6.  **Real Data**: Call the data tools (get_top_artists, etc.) FIRST to get the user's actual history. NEVER use placeholder names or counts.
+7.  **External Content**: Use MCP tools (e.g., Shoogle search) to fetch external content or inspiration if requested.
 
 ## EXAMPLE STRUCTURE:
 \`\`\`tsx
@@ -241,6 +303,9 @@ export const generateCanvasComponent = async (
             let canvasResult: CanvasComponent | null = null;
             let iterations = 0;
 
+            const mcpTools = await fetchMcpTools();
+            const tools = [...CANVAS_TOOLS, ...mcpTools.map(t => ({ type: t.type, function: t.function }))];
+
             while (iterations < MAX_TOOL_ITERATIONS) {
                 iterations++;
 
@@ -248,7 +313,7 @@ export const generateCanvasComponent = async (
                     model: "mistral-large-latest",
                     messages,
                     // @ts-ignore
-                    tools: CANVAS_TOOLS,
+                    tools: tools,
                     toolChoice: "auto",
                 });
 
@@ -265,21 +330,25 @@ export const generateCanvasComponent = async (
                             : toolCall.function?.arguments || {};
                         let toolResult: any = {};
 
-                        switch (funcName) {
-                            case "get_top_artists": toolResult = handleGetTopArtists(funcArgs, context); break;
-                            case "get_top_songs": toolResult = handleGetTopSongs(funcArgs, context); break;
-                            case "get_listening_stats": toolResult = handleGetListeningStats(context); break;
-                            case "render_canvas_component":
-                                canvasResult = {
-                                    id: `canvas-${Date.now()}`,
-                                    code: funcArgs.code || '',
-                                    title: funcArgs.title || 'Component',
-                                    description: funcArgs.description || '',
-                                    retryCount: retry,
-                                };
-                                toolResult = { success: true };
-                                break;
-                            default: toolResult = { error: `Unknown tool` };
+                        if (funcName?.startsWith('mcp_')) {
+                            toolResult = await executeMcpTool(funcName, funcArgs);
+                        } else {
+                            switch (funcName) {
+                                case "get_top_artists": toolResult = handleGetTopArtists(funcArgs, context); break;
+                                case "get_top_songs": toolResult = handleGetTopSongs(funcArgs, context); break;
+                                case "get_listening_stats": toolResult = handleGetListeningStats(context); break;
+                                case "render_canvas_component":
+                                    canvasResult = {
+                                        id: `canvas-${Date.now()}`,
+                                        code: funcArgs.code || '',
+                                        title: funcArgs.title || 'Component',
+                                        description: funcArgs.description || '',
+                                        retryCount: retry,
+                                    };
+                                    toolResult = { success: true };
+                                    break;
+                                default: toolResult = { error: `Unknown tool` };
+                            }
                         }
 
                         messages.push({
