@@ -11,7 +11,7 @@ import {
     Briefcase, CloudSun, CalendarClock, Car, Sparkles as SparklesIcon, LineChart,
     FastForward, DoorOpen, Users, Target, ChevronDown, type LucideIcon
 } from 'lucide-react';
-import { generateDynamicCategoryQuery, answerMusicQuestion, answerMusicQuestionWithTools, generateWeeklyInsightStory, generateWrappedVibe, generateWrappedWithTools, WrappedSlide, ToolCallInfo, AI_MODELS, DEFAULT_MODEL_ID } from '../services/geminiService';
+import { generateDynamicCategoryQuery, answerMusicQuestionWithTools, streamMusicQuestionWithTools, generateWeeklyInsightStory, generateWrappedVibe, WrappedSlide, ToolCallInfo, AI_MODELS, DEFAULT_MODEL_ID } from '../services/geminiService';
 import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import { generateCanvasComponent, CanvasComponent } from '../services/canvasService';
@@ -27,6 +27,9 @@ import { Loader } from '@/components/prompt-kit/loader';
 import { ChatContainerRoot, ChatContainerContent, ChatContainerScrollAnchor } from '@/components/prompt-kit/chat-container';
 import { Message, MessageContent } from '@/components/prompt-kit/message';
 import { PromptInput, PromptInputTextarea, PromptInputActions } from '@/components/prompt-kit/prompt-input';
+import { Source, SourceContent, SourceTrigger } from '@/components/prompt-kit/source';
+import { Tool, ToolPart } from '@/components/prompt-kit/tool';
+import { ChainOfThought, ChainOfThoughtStep, ChainOfThoughtTrigger, ChainOfThoughtContent, ChainOfThoughtItem } from '@/components/prompt-kit/chain-of-thought';
 
 // ─── Lucide Icon Map for Tool Call Pills ────────────────────────
 const TOOL_LUCIDE_MAP: Record<string, LucideIcon> = {
@@ -166,15 +169,11 @@ interface ChatMessage {
     timestamp: Date;
     canvas?: CanvasComponent;
     toolCalls?: ToolCallInfo[];
+    thoughts?: { title: string; content: string[] }[];
+    tools?: ToolPart[];
+    sources?: any;
+    isThinking?: boolean;
 }
-
-const LoadingDots = ({ color = 'bg-white/40', size = 'w-2 h-2' }: { color?: string; size?: string }) => (
-    <div className="flex items-center gap-1.5">
-        <span className={`${size} ${color} rounded-full animate-bounce`} style={{ animationDelay: '0ms' }}></span>
-        <span className={`${size} ${color} rounded-full animate-bounce`} style={{ animationDelay: '150ms' }}></span>
-        <span className={`${size} ${color} rounded-full animate-bounce`} style={{ animationDelay: '300ms' }}></span>
-    </div>
-);
 
 export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history = [], user, initialQuery }) => {
     console.log('[AISpotlight] Component mounted', { hasToken: !!token, hasUser: !!user, initialQuery, contextDataKeys: Object.keys(contextData) });
@@ -291,7 +290,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     // Scroll to bottom when new messages arrive
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [chatMessages, displayedText, loading]);
+    }, [chatMessages, displayedText, loading, categoryResults]);
 
     // Use First Name if available
     const userName = useMemo(() => {
@@ -328,11 +327,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     useEffect(() => {
         if (typing && chatResponse) {
             let i = 0;
-            // setDisplayedText(""); // Don't reset if we are appending chunks (simple typing here)
             const timer = setInterval(() => {
                 if (i < chatResponse.length) {
                     setDisplayedText((prev) => {
-                        // Simple protection against double-typing if effect re-runs
                         if (prev.length >= chatResponse.length) return prev;
                         return chatResponse.slice(0, prev.length + 1);
                     });
@@ -341,18 +338,14 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     clearInterval(timer);
                     setTyping(false);
                 }
-            }, 10); // Faster typing
+            }, 10);
             return () => clearInterval(timer);
         }
     }, [typing, chatResponse]);
 
     const handleQuery = async (manualPrompt?: string) => {
         const promptToUse = manualPrompt || userPrompt;
-        console.log('[AISpotlight] handleQuery called', { promptToUse, discoveryMode, hasToken: !!token });
-        if (!promptToUse.trim()) {
-            console.warn('[AISpotlight] Empty prompt, skipping query');
-            return;
-        }
+        if (!promptToUse.trim()) return;
 
         if (promptToUse.trim().toLowerCase() === '@json') {
             fileInputRef.current?.click();
@@ -386,19 +379,17 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             return;
         }
 
-        // Update input if manual
-        if (manualPrompt) setUserPrompt(manualPrompt);
-
-        // Add user message to chat history
+        // Add user message
         setChatMessages(prev => [...prev, { role: 'user', text: promptToUse, timestamp: new Date() }]);
 
         setLoading(true);
         setErrorMsg(null);
         setChatResponse(null);
         setDisplayedText("");
-        setCategoryResults([]); // clear previous
-        setInsightMode(false); // Reset insight mode
-        setWrappedMode(false); // Reset wrapped mode
+        setCategoryResults([]);
+        setInsightMode(false);
+        setWrappedMode(false);
+        setUserPrompt("");
 
         try {
             const lower = promptToUse.toLowerCase();
@@ -631,64 +622,203 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     }
                 }
 
-                // Sort by title or original order (concepts order matches index)
-                // But simplified: just use pushed order or sort by idx if needed.
-                // Since Promise.all runs in parallel, order might jumble slightly if not careful,
-                // but usually fine. For strict order we could map then filter.
-
-                if (newResults.length === 0) {
-                    setErrorMsg(`No results found for "${userPrompt}". Try a different query.`);
-                } else {
+                if (newResults.length > 0) {
+                    setCategoryResults(newResults);
+                    setViewMode('ranked'); // Default to ranked view for discover results
                     // Update sorting/view mode based on first concept to show relevant stats
                     const firstConcept = concepts.find(c => c && c.filter);
                     if (firstConcept) {
-                        setViewMode('ranked'); // Default to ranked view for discover results
                         const sortBy = firstConcept.filter.sortBy;
                         if (sortBy === 'minutes') setSortMode('mins');
                         else if (sortBy === 'plays') setSortMode('plays');
                         else if (sortBy === 'recency') setSortMode('date');
                         else if (sortBy === 'duration') setSortMode('length');
                     }
-
-                    setCategoryResults(newResults);
+                } else {
+                    setErrorMsg(`No results found for "${userPrompt}". Try a different query.`);
                 }
 
             } else {
-                // Chat Mode — Agent with Tool Calls
-                console.log('[AISpotlight] Entering Agent Chat Mode for:', promptToUse);
+                // CHAT MODE with Streaming & Tools
                 setMode('chat');
-                const agentResult = await answerMusicQuestionWithTools(promptToUse, contextData, token, selectedModel);
-                console.log('[AISpotlight] Agent response received, tools used:', agentResult.toolCalls.length);
-                setChatResponse(agentResult.text);
+
+                // Create a placeholder message for the AI response
+                const aiMessageId = Date.now();
                 setChatMessages(prev => [...prev, {
                     role: 'ai',
-                    text: agentResult.text,
+                    text: '',
                     timestamp: new Date(),
-                    toolCalls: agentResult.toolCalls.length > 0 ? agentResult.toolCalls : undefined
+                    isThinking: true,
+                    thoughts: [],
+                    tools: [],
+                    sources: null
                 }]);
-                setDisplayedText(""); // Reset text for typing
-                setTyping(true);
+
+                // Parsing State
+                let currentText = "";
+                let currentThoughtTitle = "";
+                let currentThoughtContent = "";
+                let isThinking = false;
+                let buffer = "";
+
+                await streamMusicQuestionWithTools(
+                    promptToUse,
+                    contextData,
+                    (chunk) => {
+                        setChatMessages(prev => {
+                            const newMessages = [...prev];
+                            const lastMsg = newMessages[newMessages.length - 1];
+                            if (!lastMsg || lastMsg.role !== 'ai') return prev;
+
+                            if (chunk.type === 'text' && chunk.content) {
+                                buffer += chunk.content;
+
+                                // Process buffer for markers
+                                while (true) {
+                                    if (isThinking) {
+                                        // Look for end of thinking (&) or start of new thought ($)
+                                        const endThinkIndex = buffer.indexOf('&');
+                                        const newThinkIndex = buffer.indexOf('$');
+
+                                        if (endThinkIndex !== -1 && (newThinkIndex === -1 || endThinkIndex < newThinkIndex)) {
+                                            // End thinking
+                                            currentThoughtContent += buffer.substring(0, endThinkIndex);
+                                            buffer = buffer.substring(endThinkIndex + 1);
+
+                                            // Push current thought
+                                            if (currentThoughtTitle || currentThoughtContent.trim()) {
+                                                const thoughts = lastMsg.thoughts || [];
+                                                thoughts.push({
+                                                    title: currentThoughtTitle.trim() || "Thinking",
+                                                    content: [currentThoughtContent.trim()]
+                                                });
+                                                lastMsg.thoughts = thoughts;
+                                            }
+                                            currentThoughtTitle = "";
+                                            currentThoughtContent = "";
+                                            isThinking = false;
+                                            lastMsg.isThinking = false; // Start showing text
+                                        } else if (newThinkIndex !== -1) {
+                                            // New thought starts (nested or sequential)
+                                            currentThoughtContent += buffer.substring(0, newThinkIndex);
+                                            buffer = buffer.substring(newThinkIndex + 1);
+
+                                            // Push previous thought
+                                            if (currentThoughtTitle || currentThoughtContent.trim()) {
+                                                const thoughts = lastMsg.thoughts || [];
+                                                thoughts.push({
+                                                    title: currentThoughtTitle.trim() || "Thinking",
+                                                    content: [currentThoughtContent.trim()]
+                                                });
+                                                lastMsg.thoughts = thoughts;
+                                            }
+
+                                            // Start new thought
+                                            currentThoughtTitle = "";
+                                            currentThoughtContent = "";
+                                            isThinking = true;
+                                            lastMsg.isThinking = true;
+
+                                            // Check for title
+                                            const titleMatch = buffer.match(/^\s*\/(.+?)(\n|$)/);
+                                            if (titleMatch) {
+                                                currentThoughtTitle = titleMatch[1];
+                                                buffer = buffer.substring(titleMatch[0].length);
+                                            }
+                                        } else {
+                                            // No markers, just content
+                                            currentThoughtContent += buffer;
+                                            buffer = "";
+                                            break;
+                                        }
+                                    } else {
+                                        // User mode (Text)
+                                        // Look for start of thinking ($)
+                                        const startThinkIndex = buffer.indexOf('$');
+
+                                        if (startThinkIndex !== -1) {
+                                            // Found thinking start
+                                            currentText += buffer.substring(0, startThinkIndex);
+                                            buffer = buffer.substring(startThinkIndex + 1);
+                                            isThinking = true;
+                                            lastMsg.isThinking = true;
+
+                                            // Check for title
+                                            const titleMatch = buffer.match(/^\s*\/(.+?)(\n|$)/);
+                                            if (titleMatch) {
+                                                currentThoughtTitle = titleMatch[1];
+                                                buffer = buffer.substring(titleMatch[0].length);
+                                            }
+                                        } else {
+                                            // Just text
+                                            currentText += buffer;
+                                            buffer = "";
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                lastMsg.text = currentText;
+                            }
+
+                            if (chunk.type === 'tool-call' && chunk.toolCall) {
+                                const tools = lastMsg.tools || [];
+                                tools.push({
+                                    type: chunk.toolCall.name,
+                                    state: 'input-available',
+                                    input: chunk.toolCall.arguments
+                                });
+                                lastMsg.tools = tools;
+                                lastMsg.isThinking = true;
+                            }
+
+                            if (chunk.type === 'tool-result' && chunk.toolCall) {
+                                const tools = lastMsg.tools || [];
+                                const toolIndex = tools.findIndex(t => t.type === chunk.toolCall!.name && t.state === 'input-available');
+                                if (toolIndex !== -1) {
+                                    tools[toolIndex] = {
+                                        ...tools[toolIndex],
+                                        state: 'output-available',
+                                        output: chunk.toolCall.result
+                                    };
+                                }
+                                lastMsg.tools = tools;
+                            }
+
+                            if (chunk.type === 'grounding' && chunk.groundingMetadata) {
+                                lastMsg.sources = chunk.groundingMetadata;
+                            }
+
+                            return newMessages;
+                        });
+                    },
+                    token,
+                    selectedModel
+                );
+
+                // Final Cleanup
+                setChatMessages(prev => {
+                    const newMessages = [...prev];
+                    const lastMsg = newMessages[newMessages.length - 1];
+                    if (lastMsg && isThinking) {
+                        // Close pending thought
+                         const thoughts = lastMsg.thoughts || [];
+                         thoughts.push({
+                            title: currentThoughtTitle.trim() || "Thinking",
+                            content: [currentThoughtContent.trim()]
+                         });
+                         lastMsg.thoughts = thoughts;
+                         lastMsg.isThinking = false;
+                    }
+                    return newMessages;
+                });
             }
         } catch (err: any) {
             setErrorMsg(`Error: ${err.message || 'Unknown'}`);
         }
 
         setLoading(false);
-        if (!manualPrompt) setUserPrompt("");
     };
-
-    // Auto-send initial query from search bar
-    const initialQuerySentRef = useRef(false);
-    const handleQueryRef = useRef(handleQuery);
-    handleQueryRef.current = handleQuery;
-    useEffect(() => {
-        console.log('[AISpotlight] initialQuery effect', { initialQuery, alreadySent: initialQuerySentRef.current });
-        if (initialQuery && initialQuery.trim() && !initialQuerySentRef.current) {
-            initialQuerySentRef.current = true;
-            console.log('[AISpotlight] Auto-sending initial query:', initialQuery.trim());
-            handleQueryRef.current(initialQuery.trim());
-        }
-    }, [initialQuery]);
 
     return (
         <ChatContainerRoot id="ai-spotlight" ref={sectionRef}>
@@ -810,31 +940,58 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                     </div>
                                 ) : msg.role === 'ai' ? (
                                     <>
-                                        {/* Tool Call Pills */}
-                                        {msg.toolCalls && msg.toolCalls.length > 0 && (
-                                            <div className="flex flex-wrap gap-2 mb-3">
-                                                {msg.toolCalls.map((tc, tcIdx) => (
-                                                    <span
-                                                        key={tcIdx}
-                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-semibold text-white/60 hover:bg-white/10 hover:text-white transition-colors cursor-help"
-                                                        title={`${tc.name}(${Object.entries(tc.arguments).map(([k,v]) => `${k}: ${v}`).join(', ')})`}
-                                                    >
-                                                        <ToolIcon iconName={tc.icon} size={10} />
-                                                        <span>{tc.label}</span>
-                                                    </span>
+                                        {/* Chain of Thought Visualization */}
+                                        {msg.thoughts && msg.thoughts.length > 0 && (
+                                            <ChainOfThought>
+                                                {msg.thoughts.map((thought, tIdx) => (
+                                                    <ChainOfThoughtStep key={tIdx}>
+                                                        <ChainOfThoughtTrigger>{thought.title}</ChainOfThoughtTrigger>
+                                                        <ChainOfThoughtContent>
+                                                            {thought.content.map((c, cIdx) => (
+                                                                <ChainOfThoughtItem key={cIdx}>{c}</ChainOfThoughtItem>
+                                                            ))}
+                                                        </ChainOfThoughtContent>
+                                                    </ChainOfThoughtStep>
                                                 ))}
+                                            </ChainOfThought>
+                                        )}
+
+                                        {/* Tool Logs */}
+                                        {msg.tools && msg.tools.map((tool, tIdx) => (
+                                            <Tool key={tIdx} toolPart={tool} />
+                                        ))}
+
+                                        {/* Thinking Indicator */}
+                                        {msg.isThinking && (
+                                            <div className="flex items-center gap-2 py-2 text-muted-foreground animate-pulse">
+                                                <Loader variant="text-shimmer" text="Thinking..." />
                                             </div>
                                         )}
-                                        <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
-                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                {idx === chatMessages.length - 1 && typing
-                                                    ? displayedText
-                                                    : msg.text}
-                                            </ReactMarkdown>
-                                            {idx === chatMessages.length - 1 && typing && (
-                                                <span className="inline-block w-[2px] h-5 ml-0.5 bg-white/50 align-middle animate-pulse"></span>
-                                            )}
-                                        </div>
+
+                                        {/* Main Content */}
+                                        {msg.text && (
+                                            <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container mt-2">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                                            </div>
+                                        )}
+
+                                        {/* Grounding Sources */}
+                                        {msg.sources && msg.sources.groundingChunks && (
+                                            <div className="mt-4 pt-4 border-t border-white/10">
+                                                <p className="text-xs text-white/40 mb-2 font-semibold">Sources</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {msg.sources.groundingChunks.map((chunk: any, cIdx: number) =>
+                                                        chunk.web?.uri ? (
+                                                            <Source key={cIdx} href={chunk.web.uri} showFavicon={true}>
+                                                                <SourceTrigger label={chunk.web.title || "Source"} />
+                                                                <SourceContent title={chunk.web.title} description={chunk.web.uri} />
+                                                            </Source>
+                                                        ) : null
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <p className="text-[11px] mt-2 text-white/30 font-medium">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                     </>
                                 ) : (
@@ -847,91 +1004,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                         </Message>
                     ))}
 
-                    {/* Typing Indicator */}
-                    {loading && mode === 'chat' && (
-                         <div className="flex justify-start px-4">
-                             <Loader variant="text-shimmer" text="Thinking..." />
-                         </div>
-                    )}
-
-                    {/* AI Suggestion Button */}
-                    {mode === 'chat' && !typing && !loading && chatMessages.length > 0 && categoryResults.length === 0 && (
-                        <div className="flex justify-start">
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.3 }}
-                            >
-                                <button
-                                    onClick={async () => {
-                                        setLoading(true);
-                                        const concepts = await generateDynamicCategoryQuery(contextData, `Create discovery categories based on: ${chatResponse}`);
-
-                                        const newResults: CategoryResult[] = [];
-                                        await Promise.all(concepts.map(async (concept, idx) => {
-                                            if (concept.filter) {
-                                                const data = await fetchSmartPlaylist(concept);
-                                                if (data.length > 0) {
-                                                    newResults.push({
-                                                        id: `cat-${Date.now()}-${idx}`,
-                                                        title: concept.title,
-                                                        description: concept.description,
-                                                        stats: `${data.length} items`,
-                                                        tracks: data
-                                                    });
-                                                }
-                                            }
-                                        }));
-
-                                        if (token && newResults.length > 0) {
-                                            const artistNames = new Set<string>();
-                                            newResults.forEach(cat => {
-                                                cat.tracks.forEach(t => {
-                                                    const hasCover = t.cover || t.image || t.album_cover;
-                                                    if (!hasCover && (t.artist || t.artist_name || t.title)) {
-                                                        artistNames.add(t.type === 'artist' ? t.title : (t.artist || t.artist_name || ''));
-                                                    }
-                                                });
-                                            });
-
-                                            if (artistNames.size > 0) {
-                                                try {
-                                                    const images = await fetchArtistImages(token, Array.from(artistNames).filter(Boolean));
-                                                    newResults.forEach(cat => {
-                                                        cat.tracks.forEach(t => {
-                                                            const hasCover = t.cover || t.image || t.album_cover;
-                                                            if (!hasCover) {
-                                                                const artistKey = t.type === 'artist' ? t.title : (t.artist || t.artist_name || '');
-                                                                if (images[artistKey]) {
-                                                                    t.cover = images[artistKey];
-                                                                    t.image = images[artistKey];
-                                                                } else {
-                                                                    t.cover = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.title || t.name || artistKey)}&background=1C1C1E&color=fff&length=1`;
-                                                                }
-                                                            }
-                                                        });
-                                                    });
-                                                } catch (e) {
-                                                    console.error("Failed to load artist images", e);
-                                                }
-                                            }
-                                        }
-
-                                        if (newResults.length > 0) {
-                                            setCategoryResults(newResults);
-                                            setMode('discover');
-                                        }
-                                        setLoading(false);
-                                    }}
-                                    className="px-5 py-2 rounded-full bg-[#1C1C1E] border border-white/10 text-white text-[12px] font-semibold hover:bg-zinc-800 hover:border-zinc-700 transition-all flex items-center gap-2 active:scale-95 group"
-                                >
-                                    <Sparkles className="w-3.5 h-3.5 text-zinc-500 group-hover:text-white transition-colors" />
-                                    Visualize Collection
-                                </button>
-                            </motion.div>
-                        </div>
-                    )}
-
                     <div ref={messagesEndRef} />
                 </div>
 
@@ -942,7 +1014,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                         {errorMsg}
                     </div>
                 )}
-
 
             {/* WEEKLY INSIGHT STORY MODE - Apple Wrapped Style */}
             {insightMode && insightData.length > 0 && (
@@ -1492,12 +1563,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 </div>
             )}
 
-                {/* Loading Overlay for Discovery - Minimal */}
-                {loading && mode === 'discover' && categoryResults.length === 0 && (
-                    <div className="relative h-[200px] flex flex-col items-center justify-center">
-                        <Loader variant="text-shimmer" text="Discovering..." />
-                    </div>
-                )}
             </ChatContainerContent>
 
             {/* Input Box - Fixed at Bottom */}
