@@ -23,6 +23,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Loader } from '@/components/prompt-kit/loader';
+import { ChatContainerRoot, ChatContainerContent, ChatContainerScrollAnchor } from '@/components/prompt-kit/chat-container';
+import { Message, MessageContent } from '@/components/prompt-kit/message';
+import { PromptInput, PromptInputTextarea, PromptInputActions } from '@/components/prompt-kit/prompt-input';
 
 // ─── Lucide Icon Map for Tool Call Pills ────────────────────────
 const TOOL_LUCIDE_MAP: Record<string, LucideIcon> = {
@@ -134,7 +138,7 @@ const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: 
 
                 {/* Text Details */}
                 <div className="mt-3 relative z-20">
-                    <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-[#FA2D48] transition-colors">{item.name || item.title}</h3>
+                    <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-white transition-colors">{item.name || item.title}</h3>
                     {(item.artist || item.desc) && (
                         <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">
                             {item.artist || item.desc}
@@ -687,7 +691,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     }, [initialQuery]);
 
     return (
-        <div className="flex flex-col h-full" id="ai-spotlight" ref={sectionRef}>
+        <ChatContainerRoot id="ai-spotlight" ref={sectionRef}>
             {/* Header with Discovery Toggle */}
             <div className="flex-shrink-0 flex items-center justify-between py-3 px-4 border-b border-white/5">
                 <div className="flex items-center gap-0 border border-white/10 bg-white/5 rounded-xl p-1 backdrop-blur-md">
@@ -736,7 +740,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                         <span className="text-[10px] font-semibold text-[#FF9F0A] bg-[#FF9F0A]/10 px-1.5 py-0.5 rounded-md">Reasoning</span>
                                     )}
                                     {selectedModel === model.id && (
-                                        <span className="w-1.5 h-1.5 rounded-full bg-[#FA2D48] flex-shrink-0" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />
                                     )}
                                 </button>
                             ))}
@@ -746,20 +750,20 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             </div>
 
             {/* Scrollable Messages Area */}
-            <div className="flex-1 overflow-y-auto px-4 py-4">
+            <ChatContainerContent className="flex-1">
                 {/* Chat Messages */}
-                <div className="max-w-2xl mx-auto space-y-4">
+                <div className="max-w-2xl mx-auto space-y-6">
                     {chatMessages.length === 0 && !loading && categoryResults.length === 0 && !insightMode && !wrappedMode && (
                         <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
                             {canvasMode ? (
                                 <>
-                                    <Palette className="w-8 h-8 text-[#FA2D48]/40 mb-3" />
+                                    <Palette className="w-8 h-8 text-white/20 mb-3" />
                                     <p className="text-[#8E8E93] text-sm">Describe a component to build...</p>
                                     <p className="text-[#666] text-xs mt-1">e.g. "Make a table of my top 10 artists" or "Build a pie chart of my genres"</p>
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles className="w-8 h-8 text-[#FA2D48]/40 mb-3" />
+                                    <Sparkles className="w-8 h-8 text-white/20 mb-3" />
                                     <p className="text-[#8E8E93] text-sm">Ask about your music...</p>
                                 </>
                             )}
@@ -767,124 +771,87 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     )}
 
                     {chatMessages.map((msg, idx) => (
-                        <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-                        >
-                            {/* Avatar */}
-                            <Avatar className="h-8 w-8 mt-1 border border-white/10">
-                                {msg.role === 'user' ? (
+                        <Message key={idx} role={msg.role === 'user' ? 'user' : 'ai'}>
+                            <MessageContent className="text-sm">
+                                {msg.role === 'ai' && msg.canvas && msg.canvas.html ? (
+                                    <div className="space-y-3">
+                                        <div className="bg-[#27272a] text-white rounded-2xl rounded-tl-sm px-5 py-3 border border-white/10 inline-block">
+                                            <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                                            </div>
+                                        </div>
+                                        <CanvasRenderer
+                                            html={msg.canvas.html}
+                                            title={msg.canvas.title}
+                                            description={msg.canvas.description}
+                                            retryCount={msg.canvas.retryCount}
+                                            error={msg.canvas.error}
+                                            onRetry={async () => {
+                                                setLoading(true);
+                                                setChatResponse("🔄 Regenerating component...");
+                                                const result = await generateCanvasComponent(
+                                                    chatMessages.filter(m => m.role === 'user').slice(-1)[0]?.text || 'Retry the last component',
+                                                    contextData,
+                                                    [],
+                                                    (attempt, err) => setChatResponse(`🔄 Retry ${attempt}/5... ${err}`)
+                                                );
+                                                if (result && !result.error) {
+                                                    setChatMessages(prev => {
+                                                        const updated = [...prev];
+                                                        updated[idx] = { ...updated[idx], canvas: result, text: `Here's your **${result.title}** — ${result.description}` };
+                                                        return updated;
+                                                    });
+                                                }
+                                                setChatResponse(null);
+                                                setLoading(false);
+                                            }}
+                                        />
+                                        <p className="text-[11px] text-[#666666] px-1">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                    </div>
+                                ) : msg.role === 'ai' ? (
                                     <>
-                                        <AvatarImage src={user?.images?.[0]?.url} />
-                                        <AvatarFallback>{userName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                        {/* Tool Call Pills */}
+                                        {msg.toolCalls && msg.toolCalls.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mb-3">
+                                                {msg.toolCalls.map((tc, tcIdx) => (
+                                                    <span
+                                                        key={tcIdx}
+                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-semibold text-white/60 hover:bg-white/10 hover:text-white transition-colors cursor-help"
+                                                        title={`${tc.name}(${Object.entries(tc.arguments).map(([k,v]) => `${k}: ${v}`).join(', ')})`}
+                                                    >
+                                                        <ToolIcon iconName={tc.icon} size={10} />
+                                                        <span>{tc.label}</span>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                {idx === chatMessages.length - 1 && typing
+                                                    ? displayedText
+                                                    : msg.text}
+                                            </ReactMarkdown>
+                                            {idx === chatMessages.length - 1 && typing && (
+                                                <span className="inline-block w-[2px] h-5 ml-0.5 bg-white/50 align-middle animate-pulse"></span>
+                                            )}
+                                        </div>
+                                        <p className="text-[11px] mt-2 text-white/30 font-medium">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                     </>
                                 ) : (
                                     <>
-                                        <AvatarFallback className="bg-gradient-to-br from-[#FA2D48] to-[#FF0080] text-white">AI</AvatarFallback>
+                                        <p className="text-[15px] leading-relaxed">{msg.text}</p>
+                                        <p className="text-[11px] mt-1.5 text-white/40">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                     </>
                                 )}
-                            </Avatar>
-
-                            <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} max-w-[85%]`}>
-                                <div className={`${msg.canvas ? 'w-full max-w-full' : ''} ${msg.role === 'user'
-                                    ? 'bg-[#27272a] text-white rounded-2xl rounded-tr-sm px-5 py-3 border border-white/10'
-                                    : msg.canvas ? '' : 'bg-transparent text-white/90 px-0 py-1'
-                                }`}>
-                                    {msg.role === 'ai' && msg.canvas && msg.canvas.html ? (
-                                        <div className="space-y-3">
-                                            <div className="bg-[#27272a] text-white rounded-2xl rounded-tl-sm px-5 py-3 border border-white/10 inline-block">
-                                                <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
-                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
-                                                </div>
-                                            </div>
-                                            <CanvasRenderer
-                                                html={msg.canvas.html}
-                                                title={msg.canvas.title}
-                                                description={msg.canvas.description}
-                                                retryCount={msg.canvas.retryCount}
-                                                error={msg.canvas.error}
-                                                onRetry={async () => {
-                                                    setLoading(true);
-                                                    setChatResponse("🔄 Regenerating component...");
-                                                    const result = await generateCanvasComponent(
-                                                        chatMessages.filter(m => m.role === 'user').slice(-1)[0]?.text || 'Retry the last component',
-                                                        contextData,
-                                                        [],
-                                                        (attempt, err) => setChatResponse(`🔄 Retry ${attempt}/5... ${err}`)
-                                                    );
-                                                    if (result && !result.error) {
-                                                        setChatMessages(prev => {
-                                                            const updated = [...prev];
-                                                            updated[idx] = { ...updated[idx], canvas: result, text: `Here's your **${result.title}** — ${result.description}` };
-                                                            return updated;
-                                                        });
-                                                    }
-                                                    setChatResponse(null);
-                                                    setLoading(false);
-                                                }}
-                                            />
-                                            <p className="text-[11px] text-[#666666] px-1">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                        </div>
-                                    ) : msg.role === 'ai' ? (
-                                        <>
-                                            {/* Tool Call Pills */}
-                                            {msg.toolCalls && msg.toolCalls.length > 0 && (
-                                                <div className="flex flex-wrap gap-2 mb-3">
-                                                    {msg.toolCalls.map((tc, tcIdx) => (
-                                                        <span
-                                                            key={tcIdx}
-                                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-semibold text-white/60 hover:bg-white/10 hover:text-white transition-colors cursor-help"
-                                                            title={`${tc.name}(${Object.entries(tc.arguments).map(([k,v]) => `${k}: ${v}`).join(', ')})`}
-                                                        >
-                                                            <ToolIcon iconName={tc.icon} size={10} />
-                                                            <span>{tc.label}</span>
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                    {idx === chatMessages.length - 1 && typing
-                                                        ? displayedText
-                                                        : msg.text}
-                                                </ReactMarkdown>
-                                                {idx === chatMessages.length - 1 && typing && (
-                                                    <span className="inline-block w-[2px] h-5 ml-0.5 bg-[#FA2D48] align-middle animate-pulse"></span>
-                                                )}
-                                            </div>
-                                            <p className="text-[11px] mt-2 text-white/30 font-medium">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <p className="text-[15px] leading-relaxed">{msg.text}</p>
-                                            <p className="text-[11px] mt-1.5 text-white/40">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
+                            </MessageContent>
+                        </Message>
                     ))}
 
                     {/* Typing Indicator */}
                     {loading && mode === 'chat' && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex justify-start"
-                        >
-                            <div className="bg-[#1C1C1E] border border-white/5 rounded-2xl rounded-bl-md px-5 py-4">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[11px] text-[#8E8E93] font-medium flex items-center gap-1.5">
-                                        <Zap size={12} className="text-[#8E8E93]" />
-                                        Running tools
-                                    </span>
-                                    <LoadingDots />
-                                </div>
-                            </div>
-                        </motion.div>
+                         <div className="flex justify-start px-4">
+                             <Loader variant="text-shimmer" text="Thinking..." />
+                         </div>
                     )}
 
                     {/* AI Suggestion Button */}
@@ -956,9 +923,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                         }
                                         setLoading(false);
                                     }}
-                                    className="px-5 py-2 rounded-full bg-[#1C1C1E] border border-white/10 text-white text-[12px] font-semibold hover:bg-[#FA2D48] hover:border-[#FA2D48] transition-all flex items-center gap-2 active:scale-95 group"
+                                    className="px-5 py-2 rounded-full bg-[#1C1C1E] border border-white/10 text-white text-[12px] font-semibold hover:bg-zinc-800 hover:border-zinc-700 transition-all flex items-center gap-2 active:scale-95 group"
                                 >
-                                    <Sparkles className="w-3.5 h-3.5 text-[#FA2D48] group-hover:text-white transition-colors" />
+                                    <Sparkles className="w-3.5 h-3.5 text-zinc-500 group-hover:text-white transition-colors" />
                                     Visualize Collection
                                 </button>
                             </motion.div>
@@ -1528,10 +1495,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 {/* Loading Overlay for Discovery - Minimal */}
                 {loading && mode === 'discover' && categoryResults.length === 0 && (
                     <div className="relative h-[200px] flex flex-col items-center justify-center">
-                        <LoadingDots color="bg-[#FA2D48]" size="w-2.5 h-2.5" />
+                        <Loader variant="text-shimmer" text="Discovering..." />
                     </div>
                 )}
-            </div>
+            </ChatContainerContent>
 
             {/* Input Box - Fixed at Bottom */}
             <div className="flex-shrink-0 border-t border-white/5 bg-[#09090b] px-4 py-4">
@@ -1543,32 +1510,31 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     accept=".json"
                 />
                 <div className="max-w-2xl mx-auto">
-                    <div className="relative flex items-center gap-2">
-                        <Input
-                            type="text"
-                            value={userPrompt}
-                            onChange={(e) => setUserPrompt(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    handleQuery();
-                                }
-                            }}
+                    <PromptInput
+                        value={userPrompt}
+                        onValueChange={setUserPrompt}
+                        onSubmit={() => handleQuery()}
+                        isLoading={loading}
+                        className="bg-[#1a1a1a] border-white/10"
+                    >
+                        <PromptInputTextarea
                             placeholder={canvasMode ? "Describe a component to build..." : "Ask about your music..."}
-                            className="flex-1 bg-[#1a1a1a] border-white/10 text-white placeholder:text-white/30 h-12 rounded-xl focus-visible:ring-[#FA2D48]/50"
+                            className="text-white placeholder:text-white/30 min-h-[44px]"
                         />
-                        <Button
-                            onClick={() => handleQuery()}
-                            disabled={loading || !userPrompt.trim()}
-                            size="icon"
-                            className="h-12 w-12 rounded-xl bg-[#FA2D48] hover:bg-[#ff4d6a] text-white shadow-lg shadow-rose-900/20"
-                        >
-                            {loading ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <ArrowUp className="w-5 h-5" />}
-                        </Button>
-                    </div>
+                        <PromptInputActions className="justify-end pt-0 pb-2 pr-2">
+                             <Button
+                                onClick={() => handleQuery()}
+                                disabled={loading || !userPrompt.trim()}
+                                size="icon"
+                                className={`h-8 w-8 rounded-lg transition-all ${loading || !userPrompt.trim() ? 'bg-zinc-800 text-zinc-500' : 'bg-white text-black hover:bg-zinc-200'}`}
+                            >
+                                {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
+                            </Button>
+                        </PromptInputActions>
+                    </PromptInput>
                     <p className="text-[10px] text-white/20 text-center mt-2 font-medium tracking-wide">Press Enter to send</p>
                 </div>
             </div>
-        </div>
+        </ChatContainerRoot>
     );
 };
