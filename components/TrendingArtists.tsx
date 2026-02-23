@@ -25,9 +25,20 @@ interface TrendingArtistsProps {
     recentPlays: any[];
     artistImages?: Record<string, string>;
     timeRange?: 'Daily' | 'Weekly' | 'Monthly'; 
+    onArtistClick?: (artist: any) => void;
+    onAlbumClick?: (album: any) => void;
 }
 
-export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, albums, songs, recentPlays, artistImages, timeRange = 'Weekly' }) => {
+export const TrendingArtists: React.FC<TrendingArtistsProps> = ({
+    artists,
+    albums,
+    songs,
+    recentPlays,
+    artistImages,
+    timeRange = 'Weekly',
+    onArtistClick,
+    onAlbumClick
+}) => {
     const [activeTab, setActiveTab] = useState<'artist' | 'album'>('artist');
     const [trendingItems, setTrendingItems] = useState<TrendingItem[]>([]);
     const [selectedItem, setSelectedItem] = useState<TrendingItem | null>(null);
@@ -662,12 +673,44 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                     alt={selectedItem.name} 
                                     className="w-full h-full object-cover"
                                 />
-                                <div className="absolute bottom-4 left-6 z-20">
+                                <div className="absolute bottom-4 left-6 right-6 z-20">
                                     <h2 className="text-2xl font-black text-white leading-none tracking-tight mb-1 drop-shadow-lg line-clamp-2">{selectedItem.name}</h2>
                                     {selectedItem.subName && <p className="text-white/60 text-xs font-medium tracking-wide drop-shadow-md">{selectedItem.subName}</p>}
-                                    <div className="inline-flex items-center gap-1.5 mt-2 bg-white/10 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/5">
-                                        <Sparkles size={10} className="text-white" />
-                                        <span className="text-[10px] uppercase font-bold text-white tracking-wider">Obsession Score: {selectedItem.trendScore}</span>
+                                    <div className="flex items-center justify-between mt-3">
+                                        <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/5">
+                                            <Sparkles size={10} className="text-white" />
+                                            <span className="text-[10px] uppercase font-bold text-white tracking-wider">{selectedItem.trendScore}</span>
+                                        </div>
+
+                                        {(onArtistClick || onAlbumClick) && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (selectedItem.type === 'artist' && onArtistClick) {
+                                                        const originalArtist = artists.find(a => a.name === selectedItem.name);
+                                                        onArtistClick(originalArtist || {
+                                                            id: selectedItem.id,
+                                                            name: selectedItem.name,
+                                                            image: selectedItem.image,
+                                                            totalListens: selectedItem.recentPlays,
+                                                            timeStr: selectedItem.trendScore.toString()
+                                                        });
+                                                    } else if (selectedItem.type === 'album' && onAlbumClick) {
+                                                        const originalAlbum = (albums || []).find(a => a.title === selectedItem.name && a.artist === selectedItem.subName);
+                                                        onAlbumClick(originalAlbum || {
+                                                            id: selectedItem.id,
+                                                            title: selectedItem.name,
+                                                            artist: selectedItem.subName || '',
+                                                            cover: selectedItem.image,
+                                                            totalListens: selectedItem.recentPlays
+                                                        });
+                                                    }
+                                                }}
+                                                className="text-[10px] uppercase font-bold text-[#FA2D48] bg-[#FA2D48]/10 hover:bg-[#FA2D48]/20 px-3 py-1 rounded-full border border-[#FA2D48]/20 transition-all flex items-center gap-1 group"
+                                            >
+                                                Full Stats <ArrowUpDown size={10} className="group-hover:translate-y-[-1px] transition-transform" />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
