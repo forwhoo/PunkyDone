@@ -1128,7 +1128,7 @@ export const streamMusicQuestionWithTools = async (
                 // Log chunk for debugging
                 console.log('[Mistral Stream Chunk]', JSON.stringify(chunk, null, 2));
 
-                const choice = chunk.choices?.[0];
+                const choice = (chunk as any).data?.choices?.[0] || chunk.choices?.[0];
                 if (!choice) continue;
 
                 const delta = choice.delta;

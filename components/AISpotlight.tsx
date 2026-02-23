@@ -654,7 +654,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     sources: null
                 }]);
 
-                // Parsing State
+                // Parsing State - Managed locally in closure
                 let currentText = "";
                 let currentThoughtTitle = "";
                 let currentThoughtContent = "";
@@ -662,167 +662,187 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 let isExplicitThinking = false;
                 let buffer = "";
 
+                // Local accumulators
+                let thoughts: { title: string; content: string[] }[] = [];
+                let tools: any[] = [];
+                let sources: any = null;
+
                 await streamMusicQuestionWithTools(
                     promptToUse,
                     contextData,
                     (chunk) => {
-                        setChatMessages(prev => {
-                            const newMessages = [...prev];
-                            const lastMsg = newMessages[newMessages.length - 1];
-                            if (!lastMsg || lastMsg.role !== 'ai') return prev;
+                        // 1. UPDATE LOCAL STATE (Side effects on closure vars ONLY)
 
-                            // Handle explicit thinking chunks (Mistral reasoning models)
-                            if (chunk.type === 'thinking' && chunk.content) {
-                                if (!isThinking) {
-                                    isThinking = true;
-                                    lastMsg.isThinking = true;
-                                    isExplicitThinking = true;
-                                    // Start a new thought group if explicit thinking starts
-                                    currentThoughtTitle = "Reasoning";
-                                    currentThoughtContent = "";
-                                }
+                        // Handle explicit thinking chunks (Mistral reasoning models)
+                        if (chunk.type === 'thinking' && chunk.content) {
+                            if (!isThinking) {
+                                isThinking = true;
+                                isExplicitThinking = true;
+                                currentThoughtTitle = "Reasoning";
+                                currentThoughtContent = "";
+                            }
+                            currentThoughtContent += chunk.content;
 
-                                currentThoughtContent += chunk.content;
+                            // Update thoughts array
+                            if (thoughts.length === 0 || thoughts[thoughts.length - 1].title !== currentThoughtTitle) {
+                                thoughts.push({
+                                    title: currentThoughtTitle,
+                                    content: [currentThoughtContent]
+                                });
+                            } else {
+                                // Clone and update last thought
+                                const lastThought = thoughts[thoughts.length - 1];
+                                thoughts[thoughts.length - 1] = {
+                                    ...lastThought,
+                                    content: [currentThoughtContent]
+                                };
+                            }
+                        }
 
-                                // Update the last thought in the array
-                                const thoughts = lastMsg.thoughts || [];
-                                if (thoughts.length === 0 || thoughts[thoughts.length - 1].title !== currentThoughtTitle) {
-                                    thoughts.push({
-                                        title: currentThoughtTitle,
-                                        content: [currentThoughtContent]
-                                    });
-                                } else {
-                                    thoughts[thoughts.length - 1].content = [currentThoughtContent];
-                                }
-                                lastMsg.thoughts = thoughts;
+                        if (chunk.type === 'text' && chunk.content) {
+                            // If we were in explicit thinking mode, close it
+                            if (isExplicitThinking) {
+                                isThinking = false;
+                                isExplicitThinking = false;
+                                currentThoughtContent = "";
                             }
 
-                            if (chunk.type === 'text' && chunk.content) {
-                                // If we were in explicit thinking mode, close it
-                                if (isExplicitThinking) {
-                                     isThinking = false;
-                                     lastMsg.isThinking = false;
-                                     isExplicitThinking = false;
-                                     currentThoughtContent = ""; // Reset for next time
-                                }
+                            buffer += chunk.content;
 
-                                buffer += chunk.content;
+                            // Process buffer for markers (Legacy or Interleaved)
+                            while (true) {
+                                if (isThinking) {
+                                    // Look for end of thinking (&) or start of new thought ($)
+                                    const endThinkIndex = buffer.indexOf('&');
+                                    const newThinkIndex = buffer.indexOf('$');
 
-                                // Process buffer for markers (Legacy or Interleaved)
-                                while (true) {
-                                    if (isThinking) {
-                                        // Look for end of thinking (&) or start of new thought ($)
-                                        const endThinkIndex = buffer.indexOf('&');
-                                        const newThinkIndex = buffer.indexOf('$');
+                                    if (endThinkIndex !== -1 && (newThinkIndex === -1 || endThinkIndex < newThinkIndex)) {
+                                        // End thinking
+                                        currentThoughtContent += buffer.substring(0, endThinkIndex);
+                                        buffer = buffer.substring(endThinkIndex + 1);
 
-                                        if (endThinkIndex !== -1 && (newThinkIndex === -1 || endThinkIndex < newThinkIndex)) {
-                                            // End thinking
-                                            currentThoughtContent += buffer.substring(0, endThinkIndex);
-                                            buffer = buffer.substring(endThinkIndex + 1);
-
-                                            // Push current thought
-                                            if (currentThoughtTitle || currentThoughtContent.trim()) {
-                                                const thoughts = lastMsg.thoughts || [];
+                                        // Push current thought
+                                        if (currentThoughtTitle || currentThoughtContent.trim()) {
+                                            if (thoughts.length === 0 || thoughts[thoughts.length - 1].title !== currentThoughtTitle) {
                                                 thoughts.push({
                                                     title: currentThoughtTitle.trim() || "Thinking",
                                                     content: [currentThoughtContent.trim()]
                                                 });
-                                                lastMsg.thoughts = thoughts;
+                                            } else {
+                                                const lastThought = thoughts[thoughts.length - 1];
+                                                thoughts[thoughts.length - 1] = {
+                                                    ...lastThought,
+                                                    content: [currentThoughtContent.trim()]
+                                                };
                                             }
-                                            currentThoughtTitle = "";
-                                            currentThoughtContent = "";
-                                            isThinking = false;
-                                            lastMsg.isThinking = false; // Start showing text
-                                        } else if (newThinkIndex !== -1) {
-                                            // New thought starts (nested or sequential)
-                                            currentThoughtContent += buffer.substring(0, newThinkIndex);
-                                            buffer = buffer.substring(newThinkIndex + 1);
+                                        }
+                                        currentThoughtTitle = "";
+                                        currentThoughtContent = "";
+                                        isThinking = false;
+                                    } else if (newThinkIndex !== -1) {
+                                        // New thought starts (nested or sequential)
+                                        currentThoughtContent += buffer.substring(0, newThinkIndex);
+                                        buffer = buffer.substring(newThinkIndex + 1);
 
-                                            // Push previous thought
-                                            if (currentThoughtTitle || currentThoughtContent.trim()) {
-                                                const thoughts = lastMsg.thoughts || [];
+                                        // Push previous thought
+                                        if (currentThoughtTitle || currentThoughtContent.trim()) {
+                                            if (thoughts.length === 0 || thoughts[thoughts.length - 1].title !== currentThoughtTitle) {
                                                 thoughts.push({
                                                     title: currentThoughtTitle.trim() || "Thinking",
                                                     content: [currentThoughtContent.trim()]
                                                 });
-                                                lastMsg.thoughts = thoughts;
+                                            } else {
+                                                const lastThought = thoughts[thoughts.length - 1];
+                                                thoughts[thoughts.length - 1] = {
+                                                    ...lastThought,
+                                                    content: [currentThoughtContent.trim()]
+                                                };
                                             }
+                                        }
 
-                                            // Start new thought
-                                            currentThoughtTitle = "";
-                                            currentThoughtContent = "";
-                                            isThinking = true;
-                                            lastMsg.isThinking = true;
+                                        // Start new thought
+                                        currentThoughtTitle = "";
+                                        currentThoughtContent = "";
+                                        isThinking = true;
 
-                                            // Check for title
-                                            const titleMatch = buffer.match(/^\s*\/(.+?)(\n|$)/);
-                                            if (titleMatch) {
-                                                currentThoughtTitle = titleMatch[1];
-                                                buffer = buffer.substring(titleMatch[0].length);
-                                            }
-                                        } else {
-                                            // No markers, just content
-                                            currentThoughtContent += buffer;
-                                            buffer = "";
-                                            break;
+                                        // Check for title
+                                        const titleMatch = buffer.match(/^\s*\/(.+?)(\n|$)/);
+                                        if (titleMatch) {
+                                            currentThoughtTitle = titleMatch[1];
+                                            buffer = buffer.substring(titleMatch[0].length);
                                         }
                                     } else {
-                                        // User mode (Text)
-                                        // Look for start of thinking ($)
-                                        const startThinkIndex = buffer.indexOf('$');
+                                        // No markers, just content
+                                        currentThoughtContent += buffer;
+                                        buffer = "";
+                                        break;
+                                    }
+                                } else {
+                                    // User mode (Text)
+                                    // Look for start of thinking ($)
+                                    const startThinkIndex = buffer.indexOf('$');
 
-                                        if (startThinkIndex !== -1) {
-                                            // Found thinking start
-                                            currentText += buffer.substring(0, startThinkIndex);
-                                            buffer = buffer.substring(startThinkIndex + 1);
-                                            isThinking = true;
-                                            lastMsg.isThinking = true;
+                                    if (startThinkIndex !== -1) {
+                                        // Found thinking start
+                                        currentText += buffer.substring(0, startThinkIndex);
+                                        buffer = buffer.substring(startThinkIndex + 1);
+                                        isThinking = true;
 
-                                            // Check for title
-                                            const titleMatch = buffer.match(/^\s*\/(.+?)(\n|$)/);
-                                            if (titleMatch) {
-                                                currentThoughtTitle = titleMatch[1];
-                                                buffer = buffer.substring(titleMatch[0].length);
-                                            }
-                                        } else {
-                                            // Just text
-                                            currentText += buffer;
-                                            buffer = "";
-                                            break;
+                                        // Check for title
+                                        const titleMatch = buffer.match(/^\s*\/(.+?)(\n|$)/);
+                                        if (titleMatch) {
+                                            currentThoughtTitle = titleMatch[1];
+                                            buffer = buffer.substring(titleMatch[0].length);
                                         }
+                                    } else {
+                                        // Just text
+                                        currentText += buffer;
+                                        buffer = "";
+                                        break;
                                     }
                                 }
-
-                                lastMsg.text = currentText;
                             }
+                        }
 
-                            if (chunk.type === 'tool-call' && chunk.toolCall) {
-                                const tools = lastMsg.tools || [];
-                                tools.push({
-                                    type: chunk.toolCall.name,
-                                    state: 'input-available',
-                                    input: chunk.toolCall.arguments
-                                });
-                                lastMsg.tools = tools;
-                                lastMsg.isThinking = true;
-                            }
+                        if (chunk.type === 'tool-call' && chunk.toolCall) {
+                            tools.push({
+                                type: chunk.toolCall.name,
+                                state: 'input-available',
+                                input: chunk.toolCall.arguments
+                            });
+                            isThinking = true;
+                        }
 
-                            if (chunk.type === 'tool-result' && chunk.toolCall) {
-                                const tools = lastMsg.tools || [];
-                                const toolIndex = tools.findIndex(t => t.type === chunk.toolCall!.name && t.state === 'input-available');
-                                if (toolIndex !== -1) {
-                                    tools[toolIndex] = {
-                                        ...tools[toolIndex],
-                                        state: 'output-available',
-                                        output: chunk.toolCall.result
-                                    };
-                                }
-                                lastMsg.tools = tools;
+                        if (chunk.type === 'tool-result' && chunk.toolCall) {
+                            const toolIndex = tools.findIndex(t => t.type === chunk.toolCall!.name && t.state === 'input-available');
+                            if (toolIndex !== -1) {
+                                tools[toolIndex] = {
+                                    ...tools[toolIndex],
+                                    state: 'output-available',
+                                    output: chunk.toolCall.result
+                                };
                             }
+                        }
 
-                            if (chunk.type === 'grounding' && chunk.groundingMetadata) {
-                                lastMsg.sources = chunk.groundingMetadata;
-                            }
+                        if (chunk.type === 'grounding' && chunk.groundingMetadata) {
+                            sources = chunk.groundingMetadata;
+                        }
+
+                        // 2. UPDATE REACT STATE (Pure update)
+                        setChatMessages(prev => {
+                            const newMessages = [...prev];
+                            const lastMsgIndex = newMessages.length - 1;
+                            if (lastMsgIndex < 0 || newMessages[lastMsgIndex].role !== 'ai') return prev;
+
+                            // Create a NEW object for the last message
+                            newMessages[lastMsgIndex] = {
+                                ...newMessages[lastMsgIndex],
+                                text: currentText,
+                                isThinking: isThinking,
+                                thoughts: [...thoughts], // Shallow copy array
+                                tools: [...tools],       // Shallow copy array
+                                sources: sources
+                            };
 
                             return newMessages;
                         });
@@ -834,16 +854,22 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 // Final Cleanup
                 setChatMessages(prev => {
                     const newMessages = [...prev];
-                    const lastMsg = newMessages[newMessages.length - 1];
-                    if (lastMsg && isThinking) {
-                        // Close pending thought
-                         const thoughts = lastMsg.thoughts || [];
-                         thoughts.push({
-                            title: currentThoughtTitle.trim() || "Thinking",
-                            content: [currentThoughtContent.trim()]
-                         });
-                         lastMsg.thoughts = thoughts;
-                         lastMsg.isThinking = false;
+                    const lastMsgIndex = newMessages.length - 1;
+                    if (lastMsgIndex >= 0 && newMessages[lastMsgIndex].role === 'ai' && isThinking) {
+                        // Close pending thought if any
+                        const updatedThoughts = [...thoughts];
+                        if (currentThoughtTitle || currentThoughtContent.trim()) {
+                            updatedThoughts.push({
+                                title: currentThoughtTitle.trim() || "Thinking",
+                                content: [currentThoughtContent.trim()]
+                            });
+                        }
+
+                        newMessages[lastMsgIndex] = {
+                            ...newMessages[lastMsgIndex],
+                            thoughts: updatedThoughts,
+                            isThinking: false
+                        };
                     }
                     return newMessages;
                 });
