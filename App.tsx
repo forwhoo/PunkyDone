@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight, Shuffle, Copy, RefreshCw, ArrowUp } from 'lucide-react';
+import { Music, X, TrendingUp, Clock, Calendar, Sparkles, Disc, Info, ChevronRight, Shuffle, Copy, RefreshCw, ArrowUp, ExternalLink, Zap, Layers, Globe } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layout } from './components/Layout';
 import { BackToTop } from './components/BackToTop';
@@ -72,7 +72,7 @@ import {
     refreshAccessToken,
     fetchArtistImages
 } from './services/spotifyService';
-import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts } from './services/dbService';
+import { syncRecentPlays, fetchListeningStats, fetchDashboardStats, logSinglePlay, fetchCharts, getDiscoveryDate } from './services/dbService';
 import { generateMusicInsight, generateRankingInsights } from './services/geminiService';
 import { supabase } from './services/supabaseClient';
 import { logger } from './services/logger';
@@ -271,6 +271,7 @@ function App() {
 
   // Top Artist/Album/Song Modal States
   const [selectedTopArtist, setSelectedTopArtist] = useState<Artist | null>(null);
+  const [artistDiscoveryDate, setArtistDiscoveryDate] = useState<string | null>(null);
   const [selectedTopAlbum, setSelectedTopAlbum] = useState<Album | null>(null);
   const [selectedTopSong, setSelectedTopSong] = useState<Song | null>(null);
 
@@ -293,6 +294,12 @@ function App() {
     if (selectedTopArtist) {
       const imgUrl = artistImages[selectedTopArtist.name] || selectedTopArtist.image || '';
       extractDominantColor(imgUrl).then(setAuraColor);
+
+      // Fetch discovery date
+      getDiscoveryDate(selectedTopArtist.name).then(res => {
+         if (res) setArtistDiscoveryDate(res.first_played);
+         else setArtistDiscoveryDate(null);
+      });
     } else if (selectedTopAlbum) {
       extractDominantColor(selectedTopAlbum.cover || '').then(setAuraColor);
     } else if (selectedTopSong) {
@@ -668,10 +675,32 @@ function App() {
       const activeDays = uniqueDays.size;
       const peakDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
 
+      // New Stats
+      const dailyAverage = activeDays > 0 ? Math.round((selectedTopArtist.totalListens || 0) / activeDays) : 0;
+
+      const uniqueSongs = new Set(artistPlays.map((p: any) => p.track_name || p.title));
+      const varietyCount = uniqueSongs.size;
+
+      const hourCounts: Record<number, number> = {};
+      artistPlays.forEach((play: any) => {
+          if (!play.played_at) return;
+          const hour = new Date(play.played_at).getHours();
+          hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+      });
+      const peakHour = parseInt(Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '12');
+      let peakTimeLabel = 'Day';
+      if (peakHour >= 5 && peakHour < 12) peakTimeLabel = 'Morning';
+      else if (peakHour >= 12 && peakHour < 17) peakTimeLabel = 'Afternoon';
+      else if (peakHour >= 17 && peakHour < 21) peakTimeLabel = 'Evening';
+      else peakTimeLabel = 'Night';
+
       return {
           popularityScore,
           activeDays,
-          peakDay
+          peakDay,
+          dailyAverage,
+          varietyCount,
+          peakTimeLabel
       };
   }, [selectedTopArtist, safeArtists, safeRecent]);
 
@@ -1112,43 +1141,75 @@ function App() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15 }}
-                    className="flex items-center justify-center gap-3 mb-1"
+                    className="flex flex-col items-center gap-1 mb-6"
                 >
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight">
-                        {selectedTopArtist.name}
-                    </h1>
-                    <CopyButton text={selectedTopArtist.name} />
-                </motion.div>
-                <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-lg text-white/70 mb-8 text-center"
-                >
-                    {selectedTopArtist.timeStr || '0m'} listened
-                </motion.p>
+                    <div className="flex items-center justify-center gap-3">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center tracking-tight">
+                            {selectedTopArtist.name}
+                        </h1>
+                        <CopyButton text={selectedTopArtist.name} />
+                        <a
+                            href={`https://open.spotify.com/search/${encodeURIComponent(selectedTopArtist.name)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-full hover:bg-white/10 text-[#1DB954] hover:text-[#1ed760] transition-all"
+                            title="Open in Spotify"
+                        >
+                            <ExternalLink size={20} />
+                        </a>
+                    </div>
 
-                {/* Stats Row */}
+                    <p className="text-lg text-white/70">
+                        {selectedTopArtist.timeStr || '0m'} listened
+                    </p>
+
+                    {artistDiscoveryDate && (
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white/60 mt-2">
+                            <Calendar size={12} />
+                            <span>First discovered on {new Date(artistDiscoveryDate).toLocaleDateString()}</span>
+                        </div>
+                    )}
+                </motion.div>
+
+                {/* Stats Grid */}
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.25 }}
-                    className="grid grid-cols-3 gap-3 w-full max-w-lg mb-8"
+                    className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-lg mb-8"
                 >
-                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
-                        <TrendingUp size={16} className="mb-1.5 opacity-80" />
+                    {/* Existing Stats */}
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
+                        <TrendingUp size={16} className="mb-1.5 opacity-80 text-blue-400" />
                         <span className="text-xl font-black text-white">{selectedTopArtist.totalListens || 0}</span>
-                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Plays</span>
+                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Total Plays</span>
                     </div>
-                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
-                        <Clock size={16} className="mb-1.5 opacity-80" />
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
+                        <Clock size={16} className="mb-1.5 opacity-80 text-purple-400" />
                         <span className="text-xl font-black text-white">{selectedTopArtist.timeStr ? String(selectedTopArtist.timeStr).replace('m', '') : '0'}</span>
                         <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Minutes</span>
                     </div>
-                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
-                        <Sparkles size={16} className="mb-1.5 opacity-80" />
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
+                        <Sparkles size={16} className="mb-1.5 opacity-80 text-yellow-400" />
                         <span className="text-xl font-black text-white">{selectedArtistStats?.popularityScore || 0}%</span>
                         <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Of Time</span>
+                    </div>
+
+                    {/* New Features */}
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
+                        <Layers size={16} className="mb-1.5 opacity-80 text-green-400" />
+                        <span className="text-xl font-black text-white">{selectedArtistStats?.varietyCount || 0}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Unique Songs</span>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
+                        <Zap size={16} className="mb-1.5 opacity-80 text-orange-400" />
+                        <span className="text-xl font-black text-white">{selectedArtistStats?.dailyAverage || 0}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Avg / Day</span>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-white/10 transition-colors">
+                        <Globe size={16} className="mb-1.5 opacity-80 text-cyan-400" />
+                        <span className="text-lg font-bold text-white leading-tight mt-1 mb-0.5">{selectedArtistStats?.peakTimeLabel || '-'}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Peak Time</span>
                     </div>
                 </motion.div>
 
