@@ -37,6 +37,67 @@ import {
 } from './dbService';
 import { fetchArtistImages, searchSpotifyTracks } from './spotifyService';
 
+// ─── MCP CONFIGURATION ───────────────────────────────────────────
+const MCP_SERVERS = [
+    { name: 'shoogle', url: 'https://mcp.shoogle.dev/mcp', icon: 'Search', label: 'Shoogle' }
+];
+
+async function fetchMcpTools() {
+    const allTools: any[] = [];
+    for (const server of MCP_SERVERS) {
+        try {
+            const response = await fetch(server.url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jsonrpc: '2.0', id: 'list', method: 'tools/list' })
+            });
+            const data = await response.json();
+            if (data.result?.tools) {
+                data.result.tools.forEach((tool: any) => {
+                    allTools.push({
+                        serverName: server.name,
+                        type: "function",
+                        function: {
+                            name: `mcp_${server.name}_${tool.name}`,
+                            description: `[MCP: ${server.label}] ${tool.description}`,
+                            parameters: tool.inputSchema
+                        },
+                        originalName: tool.name
+                    });
+                });
+            }
+        } catch (e) {
+            console.error(`Failed to fetch tools from MCP server ${server.name}:`, e);
+        }
+    }
+    return allTools;
+}
+
+async function executeMcpTool(funcName: string, args: any) {
+    const match = funcName.match(/^mcp_([^_]+)_(.+)$/);
+    if (!match) return { error: "Invalid MCP tool name" };
+    const [, serverName, originalName] = match;
+    const server = MCP_SERVERS.find(s => s.name === serverName);
+    if (!server) return { error: `MCP server ${serverName} not found` };
+
+    try {
+        const response = await fetch(server.url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: Date.now(),
+                method: 'tools/call',
+                params: { name: originalName, arguments: args }
+            })
+        });
+        const data = await response.json();
+        return data.result || data.error || { error: "Failed to execute MCP tool" };
+    } catch (e: any) {
+        return { error: `MCP execution failed: ${e.message}` };
+    }
+}
+
 // Initialize Mistral lazily
 const getAiClient = () => {
     // @ts-ignore
@@ -671,6 +732,10 @@ async function executeAgentTool(
     console.log(`[agentTools] Executing: ${funcName}`, funcArgs);
 
     try {
+        if (funcName.startsWith('mcp_')) {
+            return await executeMcpTool(funcName, funcArgs);
+        }
+
         switch (funcName) {
             case 'get_top_songs': {
                 const period = funcArgs.period || 'Weekly';
@@ -1086,6 +1151,8 @@ You have access to a SQL database of the user's Spotify history and can fetch li
 - **Fun Stats**: Late Night Anthem, Most Skipped, One-Hit Wonders, Earworms.
 - **Comparisons**: Compare two time periods or two artists.
 - **Spotify Search**: You can search for tracks on Spotify.
+- **Advanced UI**: You can build interactive React components using TypeScript and Shadcn UI via the Canvas engine.
+- **MCP Tools**: You have access to external MCP servers (like Shoogle) to search for UI components and more.
 
 **RULES:**
 1.  **Always use tools** when the user asks for their data. Do not hallucinate stats.
@@ -1152,14 +1219,10 @@ export const streamMusicQuestionWithTools = async (
         });
 
         let continueLoop = true;
+        const mcpTools = await fetchMcpTools();
 
         while (continueLoop) {
-            const tools: any[] = webSearchEnabled
-                ? [{ type: 'web_search' }, ...AGENT_TOOLS]
-                : [...AGENT_TOOLS];
-
-            let stream;
-
+            const tools: any[] = [...AGENT_TOOLS, ...mcpTools.map(t => ({ type: t.type, function: t.function }))];
             if (webSearchEnabled) {
                 // Bypass SDK validation for web_search which might fail Zod checks in some SDK versions
                 const apiKey = (import.meta as any).env.VITE_MISTRAL_API_KEY || (import.meta as any).env.VITE_GROQ_API_KEY || '';
@@ -1299,7 +1362,14 @@ export const streamMusicQuestionWithTools = async (
                         console.error("Failed to parse arguments", e);
                     }
 
-                    const iconInfo = TOOL_ICON_MAP[funcName] || { icon: 'Zap', label: funcName };
+                    let iconInfo = TOOL_ICON_MAP[funcName];
+                    if (!iconInfo && funcName.startsWith('mcp_')) {
+                        const match = funcName.match(/^mcp_([^_]+)_(.+)$/);
+                        const serverName = match?.[1] || '';
+                        const server = MCP_SERVERS.find(s => s.name === serverName);
+                        iconInfo = { icon: server?.icon || 'Zap', label: `${server?.label || serverName}: ${match?.[2] || ''}` };
+                    }
+                    if (!iconInfo) iconInfo = { icon: 'Zap', label: funcName };
 
                     // Notify UI about tool call
                     onChunk({
@@ -1395,14 +1465,10 @@ export const answerMusicQuestionWithTools = async (
         let finalResponseText = "";
         const collectedToolCalls: ToolCallInfo[] = [];
         let continueLoop = true;
+        const mcpTools = await fetchMcpTools();
 
         while (continueLoop) {
-            const tools: any[] = webSearchEnabled
-                ? [{ type: 'web_search' }, ...AGENT_TOOLS]
-                : [...AGENT_TOOLS];
-
-            let response;
-
+            const tools: any[] = [...AGENT_TOOLS, ...mcpTools.map(t => ({ type: t.type, function: t.function }))];
             if (webSearchEnabled) {
                 // Bypass SDK validation
                 const apiKey = (import.meta as any).env.VITE_MISTRAL_API_KEY || (import.meta as any).env.VITE_GROQ_API_KEY || '';
@@ -1455,7 +1521,14 @@ export const answerMusicQuestionWithTools = async (
                     } catch (e) {
                         console.error("Failed to parse args", e);
                     }
-                    const iconInfo = TOOL_ICON_MAP[funcName] || { icon: 'Zap', label: funcName };
+                    let iconInfo = TOOL_ICON_MAP[funcName];
+                    if (!iconInfo && funcName.startsWith('mcp_')) {
+                        const match = funcName.match(/^mcp_([^_]+)_(.+)$/);
+                        const serverName = match?.[1] || '';
+                        const server = MCP_SERVERS.find(s => s.name === serverName);
+                        iconInfo = { icon: server?.icon || 'Zap', label: `${server?.label || serverName}: ${match?.[2] || ''}` };
+                    }
+                    if (!iconInfo) iconInfo = { icon: 'Zap', label: funcName };
 
                     const rawResult = await executeAgentTool(funcName, funcArgs, token);
                     const toolResult = trimToolPayload(rawResult);

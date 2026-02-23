@@ -603,10 +603,40 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     {chatMessages.map((msg, idx) => (
                         <Message key={idx} role={msg.role === 'user' ? 'user' : 'ai'}>
                             <MessageContent className="text-sm">
-                                {msg.role === 'ai' && msg.canvas && msg.canvas.html ? (
+                                {msg.role === 'ai' && msg.canvas && msg.canvas.code ? (
                                     <div className="space-y-3">
-                                        <div className="bg-[#27272a] text-white rounded-2xl rounded-tl-sm px-5 py-3 border border-white/10 inline-block"><div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container"><ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown></div></div>
-                                        <CanvasRenderer html={msg.canvas.html} title={msg.canvas.title} description={msg.canvas.description} retryCount={msg.canvas.retryCount} error={msg.canvas.error} onRetry={async () => { setLoading(true); setChatResponse("🔄 Regenerating..."); const result = await generateCanvasComponent(chatMessages.filter(m => m.role === 'user').slice(-1)[0]?.text || 'Retry', contextData, [], (a, e) => setChatResponse(`🔄 Retry ${a}/5... ${e}`)); if (result && !result.error) setChatMessages(prev => { const upd = [...prev]; upd[idx] = { ...upd[idx], canvas: result, text: `Here's your **${result.title}**` }; return upd; }); setChatResponse(null); setLoading(false); }} />
+                                        <div className="bg-[#27272a] text-white rounded-2xl rounded-tl-sm px-5 py-3 border border-white/10 inline-block">
+                                            <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                                            </div>
+                                        </div>
+                                        <CanvasRenderer
+                                            code={msg.canvas.code}
+                                            title={msg.canvas.title}
+                                            description={msg.canvas.description}
+                                            retryCount={msg.canvas.retryCount}
+                                            error={msg.canvas.error}
+                                            onRetry={async () => {
+                                                setLoading(true);
+                                                setChatResponse("🔄 Regenerating component...");
+                                                const result = await generateCanvasComponent(
+                                                    chatMessages.filter(m => m.role === 'user').slice(-1)[0]?.text || 'Retry the last component',
+                                                    contextData,
+                                                    [],
+                                                    (attempt, err) => setChatResponse(`🔄 Retry ${attempt}/5... ${err}`)
+                                                );
+                                                if (result && !result.error) {
+                                                    setChatMessages(prev => {
+                                                        const updated = [...prev];
+                                                        updated[idx] = { ...updated[idx], canvas: result, text: `Here's your **${result.title}** — ${result.description}` };
+                                                        return updated;
+                                                    });
+                                                }
+                                                setChatResponse(null);
+                                                setLoading(false);
+                                            }}
+                                        />
+                                        <p className="text-[11px] text-[#666666] px-1">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                     </div>
                                 ) : msg.role === 'ai' ? (
                                     <>
