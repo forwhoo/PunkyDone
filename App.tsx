@@ -1138,7 +1138,7 @@ function App() {
                             </button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
+                            <ShadcnCalendar
                                 mode="range"
                                 selected={calendarDate}
                                 onSelect={(range) => {
