@@ -1081,14 +1081,15 @@ export const streamMusicQuestionWithTools = async (
     context: any,
     onChunk: (chunk: StreamChunk) => void,
     token?: string | null,
-    modelId?: string
+    modelId?: string,
+    webSearchEnabled?: boolean
 ) => {
-    console.log('[agentTools] streamMusicQuestionWithTools called', { question, modelId });
+    console.log('[agentTools] streamMusicQuestionWithTools called', { question, modelId, webSearchEnabled });
 
     try {
         const client = getAiClient();
         if (!client) {
-            onChunk({ type: 'text', content: "& Configure VITE_MISTRAL_API_KEY to use chat features." });
+            onChunk({ type: 'text', content: "Configure VITE_MISTRAL_API_KEY to use chat features." });
             return;
         }
 
@@ -1113,11 +1114,16 @@ export const streamMusicQuestionWithTools = async (
         let continueLoop = true;
 
         while (continueLoop) {
+            const tools: any[] = [...AGENT_TOOLS];
+            if (webSearchEnabled) {
+                tools.push({ type: 'web_search' });
+            }
+
             const stream = await client.chat.stream({
                 model: selectedModelId,
                 messages: messages,
                 // @ts-ignore
-                tools: AGENT_TOOLS,
+                tools: tools,
             });
 
             let toolCallsBuffer: any[] = [];
@@ -1251,7 +1257,7 @@ export const streamMusicQuestionWithTools = async (
 
     } catch (error: any) {
         console.error("[agentTools] Stream Error:", error);
-        onChunk({ type: 'text', content: `\n\n$ /Error\nAn error occurred: ${error.message}\n& Sorry, something went wrong.` });
+        onChunk({ type: 'text', content: `An error occurred: ${error.message}` });
     }
 };
 
@@ -1259,9 +1265,10 @@ export const answerMusicQuestionWithTools = async (
     question: string,
     context: any,
     token?: string | null,
-    modelId?: string
+    modelId?: string,
+    webSearchEnabled?: boolean
 ): Promise<{ text: string; toolCalls: ToolCallInfo[] }> => {
-    console.log('[agentTools] answerMusicQuestionWithTools called', { question, modelId });
+    console.log('[agentTools] answerMusicQuestionWithTools called', { question, modelId, webSearchEnabled });
 
     const fallbackResponse = { text: "Unable to answer right now. Try again!", toolCalls: [] };
 
@@ -1291,11 +1298,16 @@ export const answerMusicQuestionWithTools = async (
         let continueLoop = true;
 
         while (continueLoop) {
+            const tools: any[] = [...AGENT_TOOLS];
+            if (webSearchEnabled) {
+                tools.push({ type: 'web_search' });
+            }
+
             const response = await client.chat.complete({
                 model: selectedModelId,
                 messages: messages,
                 // @ts-ignore
-                tools: AGENT_TOOLS,
+                tools: tools,
             });
 
             const choice = response.choices?.[0];

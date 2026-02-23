@@ -118,18 +118,24 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history, contex
                             className="fixed inset-0 z-[10000] bg-[#09090b] flex flex-col h-[100dvh] w-screen"
                         >
                             {/* Header */}
-                            <div className="flex items-center justify-end px-6 py-4 border-b border-white/5 flex-shrink-0 bg-black/20 backdrop-blur-xl">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleClose}
-                                    className="rounded-full hover:bg-white/10"
-                                >
-                                    <X className="w-5 h-5" />
-                                </Button>
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0 bg-black/20 backdrop-blur-xl">
+                                <div className="max-w-4xl mx-auto w-full flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                                            <Search className="w-4 h-4 text-white/50" />
+                                        </div>
+                                        <span className="text-sm font-semibold text-white/70">Lotus AI</span>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleClose}
+                                        className="rounded-full hover:bg-white/10"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </Button>
+                                </div>
                             </div>
-
-                            {/* Content */}
                             <div className="flex-1 overflow-hidden bg-[#09090b]">
                                 <AISpotlight
                                     token={token}

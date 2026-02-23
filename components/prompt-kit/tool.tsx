@@ -60,7 +60,7 @@ export function Tool({ className, toolPart, ...props }: ToolProps) {
     >
       {/* Header */}
       <div
-        className="flex items-center gap-2 p-3 border-b bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+        className="flex items-center gap-2 p-3 bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className={cn(
