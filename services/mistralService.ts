@@ -1316,7 +1316,7 @@ export const streamMusicQuestionWithTools = async (
         const messages: any[] = [
             {
                 role: "system",
-                content: AGENT_SYSTEM_PROMPT + (persona ? \`\\n\\n**CURRENT PERSONA:** \${persona}\` : "")
+                content: AGENT_SYSTEM_PROMPT + (persona ? `\n\n**CURRENT PERSONA:** ${persona}` : "")
             }
         ];
 
