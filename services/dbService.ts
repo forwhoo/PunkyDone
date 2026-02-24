@@ -92,29 +92,9 @@ let lastSyncedTime: string | null = null;
 export const syncRecentPlays = async (recentItems: any[], token?: string) => {
     if (!recentItems || recentItems.length === 0) return;
 
-    // If we haven't synced yet this session, look up the latest song in DB
-    if (!lastSyncedTime) {
-        const { data } = await supabase
-            .from('listening_history')
-            .select('played_at')
-            .order('played_at', { ascending: false })
-            .limit(1)
-            .single();
-
-        if (data) {
-            lastSyncedTime = data.played_at;
-        }
-    }
-
-    // Filter out songs we've already synced
-    // If lastSyncedTime is set, only keep items newer than it
-    const newItems = lastSyncedTime
-        ? recentItems.filter(item => new Date(item.played_at) > new Date(lastSyncedTime!))
-        : recentItems;
-
-    if (newItems.length === 0) return;
-
-    const historyItems: HistoryItem[] = newItems.map(item => ({
+    // Use all recent items and let the database handle duplicates via ON CONFLICT DO NOTHING
+    // This ensures we don't miss items if local state gets out of sync or if we restart the app
+    const historyItems: HistoryItem[] = recentItems.map(item => ({
         spotify_id: item.track.id,
         played_at: item.played_at,
         track_name: item.track.name,
@@ -129,13 +109,12 @@ export const syncRecentPlays = async (recentItems: any[], token?: string) => {
         .upsert(historyItems, { onConflict: 'spotify_id,played_at', ignoreDuplicates: true });
 
     if (error) {
-        console.error('Error syncing history:', error);
+        console.error('Error syncing history (supabase upsert failed):', error);
     } else {
-        // Update local cache of latest time
-        // Sort new items to find the latest
-        const latest = newItems.reduce((max, item) =>
+        // Update local cache of latest time (best effort tracking)
+        const latest = recentItems.reduce((max, item) =>
             new Date(item.played_at) > new Date(max.played_at) ? item : max
-            , newItems[0]);
+            , recentItems[0]);
 
         lastSyncedTime = latest.played_at;
 
@@ -167,8 +146,6 @@ export const syncRecentPlays = async (recentItems: any[], token?: string) => {
                 }
             }
         }
-
-        // console.log(`Synced ${historyItems.length} NEW items to Supabase`);
     }
 };
 

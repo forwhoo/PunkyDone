@@ -220,12 +220,12 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history: propH
                     <>
                         {/* Desktop / Compact Inline Panel - Clean & Dark */}
                         <motion.div
-                            initial={{ x: isCompact ? 0 : 20, opacity: 0, height: isCompact ? 0 : 'auto' }}
-                            animate={{ x: 0, opacity: 1, height: isCompact ? 400 : 'auto' }}
-                            exit={{ x: isCompact ? 0 : 20, opacity: 0, height: isCompact ? 0 : 'auto' }}
+                            initial={{ x: isCompact ? 0 : 20, opacity: 0, height: isCompact ? 0 : 500 }}
+                            animate={{ x: 0, opacity: 1, height: isCompact ? 400 : 500 }}
+                            exit={{ x: isCompact ? 0 : 20, opacity: 0, height: isCompact ? 0 : 0 }}
                             className={`${
                                 !isCompact
-                                ? 'hidden lg:flex w-full lg:w-[380px] flex-shrink-0 bg-[#111] border border-white/10 rounded-3xl overflow-hidden shadow-2xl h-[400px] flex-col relative sticky top-24'
+                                ? 'hidden lg:flex w-full lg:w-[380px] flex-shrink-0 bg-[#111] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex-col relative sticky top-24'
                                 : 'w-full flex flex-col bg-[#111] border border-white/10 rounded-3xl overflow-hidden shadow-2xl h-[300px] relative mt-2'
                             }`}
                         >

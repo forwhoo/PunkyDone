@@ -9,13 +9,14 @@ import {
     Network, History, ArrowLeftRight, ImageIcon, Timer, Globe,
     ArrowUpDown, Heart, PieChart as PieChartIcon, Calendar, Play, Star, CheckCircle, Repeat,
     Briefcase, CloudSun, CalendarClock, Car, Sparkles as SparklesIcon, LineChart,
-    FastForward, DoorOpen, Users, Target, ChevronDown, CheckSquare, type LucideIcon
+    FastForward, DoorOpen, Users, Target, ChevronDown, CheckSquare, UserCog, type LucideIcon
 } from 'lucide-react';
 import { generateDynamicCategoryQuery, answerMusicQuestionWithTools, streamMusicQuestionWithTools, generateWeeklyInsightStory, generateWrappedVibe, WrappedSlide, ToolCallInfo, AI_MODELS, DEFAULT_MODEL_ID } from '../services/mistralService';
 import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
 import { generateCanvasComponent, CanvasComponent } from '../services/canvasService';
 import { CanvasRenderer } from './CanvasRenderer';
+import { ToolsModal } from './ToolsModal';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -23,6 +24,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Loader } from '@/components/prompt-kit/loader';
 import { ChatContainerRoot, ChatContainerContent, ChatContainerScrollAnchor } from '@/components/prompt-kit/chat-container';
 import { Message, MessageContent } from '@/components/prompt-kit/message';
@@ -155,6 +157,7 @@ const CollapsibleTools = ({ tools, onVote }: { tools: ToolPart[], onVote: (selec
     );
 };
 
+// ... existing interfaces ...
 interface TopAIProps {
     token?: string | null;
     history?: any[];
@@ -175,88 +178,13 @@ interface TopAIProps {
     initialQuery?: string;
 }
 
-// Reusable Ranked Item Component (Internal)
-const formatDuration = (durationMs?: number) => {
-    if (!durationMs || Number.isNaN(durationMs)) return null;
-    const totalSeconds = Math.round(durationMs / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')} `;
-};
-
-const AI_RankedItem = ({ item, rank, displayMode = 'mins' }: { item: any, rank: number, displayMode?: 'mins' | 'plays' | 'date' | 'length' }) => {
-    const getDisplayValue = () => {
-        if (displayMode === 'mins') {
-            const val = item.mins ?? item.totalMinutes ?? (item.timeStr ? parseInt(item.timeStr.replace(/[^0-9]/g, ''), 10) : null);
-            return val != null ? `${val} m` : null;
-        }
-        if (displayMode === 'plays') {
-            const val = item.plays ?? item.listens ?? item.totalListens ?? null;
-            return val != null ? `${val} p` : null;
-        }
-        if (displayMode === 'date') {
-            const dateValue = item.date || item.played_at || item.lastPlayed;
-            if (dateValue) {
-                const d = new Date(dateValue);
-                return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-            }
-            if (item.year) return item.year;
-        }
-        if (displayMode === 'length') {
-            const durationValue = item.avgDurationMs ?? item.duration_ms ?? item.durationMs ?? null;
-            return formatDuration(durationValue);
-        }
-
-        // Smart Fallback hierarchy
-        const mins = item.mins ?? item.totalMinutes ?? (item.timeStr ? parseInt(item.timeStr.replace(/[^0-9]/g, ''), 10) : null);
-        if (mins) return `${mins} m`;
-        const plays = item.plays ?? item.listens ?? item.totalListens ?? null;
-        if (plays) return `${plays} p`;
-        return `#${rank} `;
-    };
-
-    return (
-        <div className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]">
-            {/* Big Number Ranking */}
-            <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40">
-                {rank}
-            </span>
-
-            <div className="relative z-10 ml-10 md:ml-12">
-                {/* Image Container */}
-                <div className={`w-32 h-32 md:w-40 md:h-40 overflow-hidden bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative ${item.type === 'artist' ? 'rounded-full' : 'rounded-xl'}`}>
-                    {/* Fallback & Image */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-[#1C1C1E]">
-                        <Music2 className="text-white/20" size={48} />
-                    </div>
-                    <img
-                        src={item.cover || item.image || item.album_cover}
-                        alt={item.title || item.name}
-                        className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm"
-                        onError={(e) => e.currentTarget.style.opacity = '0'}
-                    />
-
-                    {/* Hover Overlay with Stats - Now Dynamic */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40 backdrop-blur-sm">
-                        <span className="text-white font-bold text-xl drop-shadow-md">
-                            {getDisplayValue() || `#${rank} `}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Text Details */}
-                <div className="mt-3 relative z-20">
-                    <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-white transition-colors">{item.name || item.title}</h3>
-                    {(item.artist || item.desc) && (
-                        <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">
-                            {item.artist || item.desc}
-                        </p>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-};
+const PERSONAS = [
+    { id: 'default', label: 'Default', icon: Sparkles },
+    { id: 'Music Critic', label: 'Music Critic', icon: AlertTriangle },
+    { id: 'Stan', label: 'Stan', icon: Heart },
+    { id: 'Data Scientist', label: 'Data Scientist', icon: BarChart3 },
+    { id: 'Roaster', label: 'Roaster', icon: Flame },
+];
 
 interface CategoryResult {
     id: string;
@@ -299,21 +227,18 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [mode, setMode] = useState<'discover' | 'chat'>('discover');
+    const [mode, setMode] = useState<'discover' | 'chat'>('chat'); // Default to chat
     const [typing, setTyping] = useState(false);
-    const [discoveryMode, setDiscoveryMode] = useState(false);
     const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
-    const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+    const [selectedPersona, setSelectedPersona] = useState('default');
+    const [toolsModalOpen, setToolsModalOpen] = useState(false);
+    const [discoveryMode, setDiscoveryMode] = useState(false); // Kept for compatibility if needed, but UI removed
+
     const sectionRef = useRef<HTMLDivElement>(null);
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        if (!modelDropdownOpen) return;
-        const handler = () => setModelDropdownOpen(false);
-        document.addEventListener('click', handler);
-        return () => document.removeEventListener('click', handler);
-    }, [modelDropdownOpen]);
+    // Removed manual modelDropdownOpen handling in favor of Popover
 
     useEffect(() => {
         if (initialQuery && initialQuery.trim()) {
@@ -325,32 +250,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [chatMessages, displayedText, loading, categoryResults]);
 
-    const sortTracks = (tracks: any[]) => {
-        const sorted = [...tracks];
-        const getPlays = (track: any) => track.listens ?? track.plays ?? track.totalListens ?? 0;
-        const getMinutes = (track: any) => {
-            if (track.totalMinutes !== undefined) return Number(track.totalMinutes) || 0;
-            if (track.timeStr) return parseInt(track.timeStr.replace(/[^0-9]/g, ''), 10) || 0;
-            return 0;
-        };
-        const getDate = (track: any) => {
-            const dateValue = track.lastPlayed || track.played_at || track.date;
-            const time = dateValue ? new Date(dateValue).getTime() : 0;
-            return Number.isNaN(time) ? 0 : time;
-        };
-        const getLength = (track: any) => track.avgDurationMs ?? track.duration_ms ?? track.durationMs ?? 0;
-
-        sorted.sort((a, b) => {
-            if (sortMode === 'plays') return getPlays(b) - getPlays(a);
-            if (sortMode === 'date') return getDate(b) - getDate(a);
-            if (sortMode === 'length') return getLength(b) - getLength(a);
-            return getMinutes(b) - getMinutes(a);
-        });
-
-        return sorted;
-    };
-
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        // ... (existing upload logic) ...
         const file = e.target.files?.[0];
         if (!file) return;
         setUploading(true);
@@ -428,53 +329,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
         setUserPrompt("");
 
         try {
+            // Simplified handling - mostly focusing on Chat now
             const lower = promptToUse.toLowerCase();
-            if (lower.includes('wrapped') || lower.includes('recap')) {
-                let period: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'weekly';
-                if (lower.includes('day') || lower.includes('today')) period = 'daily';
-                if (lower.includes('month')) period = 'monthly';
-                if (lower.includes('year')) period = 'yearly';
-                setChatResponse("✨ Generating your Wrapped experience...");
-                setMode('discover');
-                const stats = await getWrappedStats(period === 'yearly' ? 'monthly' : period);
-                if (!stats || !stats.topTracks || stats.topTracks.length === 0) {
-                    setErrorMsg(`No ${period} stats found.`);
-                    setLoading(false);
-                    return;
-                }
-                const concepts = await generateDynamicCategoryQuery(contextData, `Create themed music categories for ${period} wrapped.`);
-                const newResults: CategoryResult[] = [];
-                await Promise.all(concepts.map(async (concept, idx) => {
-                    if (concept && concept.filter) {
-                        const data = await fetchSmartPlaylist(concept);
-                        if (data.length > 0) {
-                            const vibe = await generateWrappedVibe(data.slice(0, 10));
-                            newResults.push({ id: `wrapped-${Date.now()}-${idx}`, title: vibe.title || concept.title, description: vibe.description || concept.description, stats: `${data.length} tracks`, tracks: data });
-                        }
-                    }
-                }));
-                if (token && newResults.length > 0) {
-                    const names = new Set<string>();
-                    newResults.forEach(c => c.tracks.forEach(t => { if (!(t.cover || t.image || t.album_cover)) names.add(t.type === 'artist' ? t.title : (t.artist || t.artist_name || '')); }));
-                    if (names.size > 0) {
-                        const images = await fetchArtistImages(token, Array.from(names).filter(Boolean));
-                        newResults.forEach(c => c.tracks.forEach(t => { if (!(t.cover || t.image || t.album_cover)) { const k = t.type === 'artist' ? t.title : (t.artist || t.artist_name || ''); if (images[k]) { t.cover = images[k]; t.image = images[k]; } } }));
-                    }
-                }
-                if (newResults.length > 0) { setCategoryResults(newResults); setViewMode('ranked'); setSortMode('plays'); }
-                else setErrorMsg("Could not generate wrapped categories.");
-                setLoading(false);
-                return;
-            }
-
-            if (lower.includes('weekly insight') || lower.includes('insight story')) {
-                setInsightMode(true);
-                setInsightStep(0);
-                const slides = await generateWeeklyInsightStory(contextData);
-                setInsightData(slides);
-                setLoading(false);
-                return;
-            }
 
             if (canvasMode) {
                 setMode('chat');
@@ -486,65 +342,38 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 return;
             }
 
-            const analysisKeywords = ['find', 'show', 'filter', 'playlist', 'query', 'sql', 'tracks', 'songs', 'analyze', 'pattern', 'discover', 'top', 'best', 'most', 'rank', 'chart', 'favorite', 'least', 'wrapped', 'gems', 'rewind', 'vibes', 'mix', 'weekly', 'insight', 'stats'];
-            const isAnalysisQuery = discoveryMode && analysisKeywords.some(k => promptToUse.toLowerCase().includes(k));
+            setMode('chat');
+            const aiMessageId = Date.now();
+            setChatMessages(prev => [...prev, { role: 'ai', text: '', timestamp: new Date(), isThinking: false, thoughts: [], tools: [], sources: null }]);
+            let currentText = "";
+            let tools: any[] = [];
+            let sources: any = null;
+            let isThinking = false;
 
-            if (isAnalysisQuery || discoveryMode) {
-                setMode('discover');
-                const concepts = await generateDynamicCategoryQuery(contextData, discoveryMode ? `${promptToUse} (Mode: DISCOVERY)` : promptToUse);
-                const newResults: CategoryResult[] = [];
-                await Promise.all(concepts.map(async (concept, idx) => {
-                    if (concept && concept.filter) {
-                        let data = [];
-                        if ((concept.filter.useSpotify || discoveryMode) && token) {
-                            if (concept.filter.spotifyQuery) data = await searchSpotifyTracks(token, concept.filter.spotifyQuery);
-                            else data = await fetchSpotifyRecommendations(token, { seed_artists: contextData.artists.slice(0, 2).map(a => a.split(' (')[0]), seed_genres: [] });
-                        } else data = await fetchSmartPlaylist(concept);
-                        if (data.length > 0) newResults.push({ id: `cat-${Date.now()}-${idx}`, title: concept.title, description: concept.description, stats: `${data.length} items`, tracks: data });
-                    }
-                }));
-                if (token && newResults.length > 0) {
-                    const names = new Set<string>();
-                    newResults.forEach(c => c.tracks.forEach(t => { if (!(t.cover || t.image || t.album_cover)) names.add(t.type === 'artist' ? t.title : (t.artist || t.artist_name || '')); }));
-                    if (names.size > 0) {
-                        const images = await fetchArtistImages(token, Array.from(names).filter(Boolean));
-                        newResults.forEach(c => c.tracks.forEach(t => { if (!(t.cover || t.image || t.album_cover)) { const k = t.type === 'artist' ? t.title : (t.artist || t.artist_name || ''); if (images[k]) { t.cover = images[k]; t.image = images[k]; } else t.cover = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.title || t.name || k)}&background=1C1C1E&color=fff&length=1`; } }));
-                    }
-                }
-                if (newResults.length > 0) { setCategoryResults(newResults); setViewMode('ranked'); const first = concepts.find(c => c && c.filter); if (first) { const s = first.filter.sortBy; if (s === 'minutes') setSortMode('mins'); else if (s === 'plays') setSortMode('plays'); else if (s === 'recency') setSortMode('date'); else if (s === 'duration') setSortMode('length'); } }
-                else setErrorMsg(`No results for "${userPrompt}".`);
-            } else {
-                setMode('chat');
-                const aiMessageId = Date.now();
-                setChatMessages(prev => [...prev, { role: 'ai', text: '', timestamp: new Date(), isThinking: false, thoughts: [], tools: [], sources: null }]);
-                let currentText = "";
-                let tools: any[] = [];
-                let sources: any = null;
-                let isThinking = false;
+            await streamMusicQuestionWithTools(
+                promptToUse,
+                contextData,
+                (chunk) => {
+                    if (chunk.type === 'thinking') isThinking = true;
+                    if (chunk.type === 'text' && chunk.content) { currentText += chunk.content; isThinking = false; }
+                    if (chunk.type === 'tool-call' && chunk.toolCall) { tools.push({ type: chunk.toolCall.name, state: 'input-available', input: chunk.toolCall.arguments }); isThinking = true; }
+                    if (chunk.type === 'tool-result' && chunk.toolCall) { const ti = tools.findIndex(t => t.type === chunk.toolCall!.name && t.state === 'input-available'); if (ti !== -1) tools[ti] = { ...tools[ti], state: 'output-available', output: chunk.toolCall.result }; }
+                    if (chunk.type === 'grounding' && chunk.groundingMetadata) sources = chunk.groundingMetadata;
+                    setChatMessages(prev => {
+                        const next = [...prev];
+                        const last = next.length - 1;
+                        if (last < 0 || next[last].role !== 'ai') return prev;
+                        next[last] = { ...next[last], text: currentText, tools: [...tools], sources, isThinking };
+                        return next;
+                    });
+                },
+                token,
+                selectedModel,
+                webSearchEnabled,
+                chatMessages.slice(-10), // Chat Memory
+                selectedPersona !== 'default' ? selectedPersona : undefined
+            );
 
-                await streamMusicQuestionWithTools(
-                    promptToUse,
-                    contextData,
-                    (chunk) => {
-                        if (chunk.type === 'thinking') isThinking = true;
-                        if (chunk.type === 'text' && chunk.content) { currentText += chunk.content; isThinking = false; }
-                        if (chunk.type === 'tool-call' && chunk.toolCall) { tools.push({ type: chunk.toolCall.name, state: 'input-available', input: chunk.toolCall.arguments }); isThinking = true; }
-                        if (chunk.type === 'tool-result' && chunk.toolCall) { const ti = tools.findIndex(t => t.type === chunk.toolCall!.name && t.state === 'input-available'); if (ti !== -1) tools[ti] = { ...tools[ti], state: 'output-available', output: chunk.toolCall.result }; }
-                        if (chunk.type === 'grounding' && chunk.groundingMetadata) sources = chunk.groundingMetadata;
-                        setChatMessages(prev => {
-                            const next = [...prev];
-                            const last = next.length - 1;
-                            if (last < 0 || next[last].role !== 'ai') return prev;
-                            next[last] = { ...next[last], text: currentText, tools: [...tools], sources, isThinking };
-                            return next;
-                        });
-                    },
-                    token,
-                    selectedModel,
-                    webSearchEnabled,
-                    chatMessages.slice(-10) // Chat Memory: pass last 10 messages
-                );
-            }
         } catch (err: any) { setErrorMsg(`Error: ${err.message || 'Unknown'}`); }
         setLoading(false);
     };
@@ -552,18 +381,30 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     return (
         <ChatContainerRoot id="ai-spotlight" ref={sectionRef}>
             <div className="flex-shrink-0 flex items-center justify-between py-3 px-4 border-b border-white/5">
-                <div className="flex items-center gap-0 border border-white/10 bg-white/5 rounded-xl p-1 backdrop-blur-md">
-                    {([{id:'chat',label:'Chat'},{id:'discover',label:'Discovery',icon:Zap},{id:'canvas',label:'Canvas',icon:Palette}] as const).map(m => (
-                        <button
-                            key={m.id}
-                            onClick={() => { if(m.id==='chat'){setDiscoveryMode(false);setCanvasMode(false);}else if(m.id==='discover'){setDiscoveryMode(true);setCanvasMode(false);}else{setCanvasMode(true);setDiscoveryMode(false);} }}
-                            className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all flex items-center gap-1.5 ${((m.id==='chat'&&!discoveryMode&&!canvasMode)||(m.id==='discover'&&discoveryMode&&!canvasMode)||(m.id==='canvas'&&canvasMode)) ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
-                        >
-                            {m.icon && <m.icon size={12} />}
-                            {m.label}
-                        </button>
-                    ))}
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-0 border border-white/10 bg-white/5 rounded-xl p-1 backdrop-blur-md">
+                        {([{id:'chat',label:'Chat'},{id:'canvas',label:'Canvas',icon:Palette}] as const).map(m => (
+                            <button
+                                key={m.id}
+                                onClick={() => { if(m.id==='chat'){setCanvasMode(false);}else{setCanvasMode(true);} }}
+                                className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all flex items-center gap-1.5 ${((m.id==='chat'&&!canvasMode)||(m.id==='canvas'&&canvasMode)) ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
+                            >
+                                {m.icon && <m.icon size={12} />}
+                                {m.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setToolsModalOpen(true)}
+                        className="text-xs font-semibold text-[#8E8E93] hover:text-white hover:bg-white/10 h-9 rounded-xl border border-white/10 bg-white/5 px-4"
+                    >
+                        <Zap size={14} className="mr-2" /> Tools
+                    </Button>
                 </div>
+
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setWebSearchEnabled(!webSearchEnabled)}
@@ -572,24 +413,64 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     >
                         <Globe size={11} /> Search
                     </button>
-                    <div className="relative">
-                        <button onClick={(e) => { e.stopPropagation(); setModelDropdownOpen(prev => !prev); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-semibold text-[#8E8E93] hover:text-white hover:border-white/20 transition-all backdrop-blur-md">
-                            <Zap size={11} className={AI_MODELS.find(m => m.id === selectedModel)?.isReasoning ? 'text-[#FF9F0A]' : 'text-[#8E8E93]'} />
-                            <span className="max-w-[90px] truncate">{AI_MODELS.find(m => m.id === selectedModel)?.label || 'Model'}</span>
-                            <ChevronDown size={11} />
-                        </button>
-                        {modelDropdownOpen && (
-                            <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[200px] bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl">
-                                {AI_MODELS.map(m => (
-                                    <button key={m.id} onClick={(e) => { e.stopPropagation(); setSelectedModel(m.id); setModelDropdownOpen(false); }} className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-left text-[12px] font-medium transition-colors hover:bg-white/5 ${selectedModel === m.id ? 'text-white bg-white/5' : 'text-[#8E8E93]'}`}>
-                                        <span>{m.label}</span>
-                                        {m.isReasoning && <span className="text-[10px] font-semibold text-[#FF9F0A] bg-[#FF9F0A]/10 px-1.5 py-0.5 rounded-md">Reasoning</span>}
-                                        {selectedModel === m.id && <span className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" />}
+
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-semibold text-[#8E8E93] hover:text-white hover:border-white/20 transition-all backdrop-blur-md min-w-[100px] justify-between">
+                                <span className="flex items-center gap-2 truncate">
+                                    <UserCog size={11} />
+                                    {PERSONAS.find(p => p.id === selectedPersona)?.label || 'Persona'}
+                                </span>
+                                <ChevronDown size={11} />
+                            </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[200px] p-1 bg-[#1a1a1a] border-white/10" align="end">
+                            <div className="flex flex-col gap-0.5">
+                                {PERSONAS.map(p => (
+                                    <button
+                                        key={p.id}
+                                        onClick={() => setSelectedPersona(p.id)}
+                                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-[12px] font-medium rounded-lg transition-colors hover:bg-white/5 ${selectedPersona === p.id ? 'text-white bg-white/5' : 'text-[#8E8E93]'}`}
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <p.icon size={12} />
+                                            {p.label}
+                                        </span>
+                                        {selectedPersona === p.id && <CheckCircle size={12} className="text-[#FA2D48]" />}
                                     </button>
                                 ))}
                             </div>
-                        )}
-                    </div>
+                        </PopoverContent>
+                    </Popover>
+
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-semibold text-[#8E8E93] hover:text-white hover:border-white/20 transition-all backdrop-blur-md min-w-[140px] justify-between">
+                                <span className="truncate flex items-center gap-2">
+                                    <Zap size={11} className={AI_MODELS.find(m => m.id === selectedModel)?.isReasoning ? 'text-[#FF9F0A]' : 'text-[#8E8E93]'} />
+                                    {AI_MODELS.find(m => m.id === selectedModel)?.label || 'Model'}
+                                </span>
+                                <ChevronDown size={11} />
+                            </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[240px] p-1 bg-[#1a1a1a] border-white/10" align="end">
+                            <div className="flex flex-col gap-0.5 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                {AI_MODELS.map(m => (
+                                    <button
+                                        key={m.id}
+                                        onClick={() => setSelectedModel(m.id)}
+                                        className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left text-[12px] font-medium rounded-lg transition-colors hover:bg-white/5 ${selectedModel === m.id ? 'text-white bg-white/5' : 'text-[#8E8E93]'}`}
+                                    >
+                                        <span>{m.label}</span>
+                                        <div className="flex items-center gap-2">
+                                            {m.isReasoning && <span className="text-[9px] font-bold text-[#FF9F0A] bg-[#FF9F0A]/10 px-1.5 py-0.5 rounded-md">THINK</span>}
+                                            {selectedModel === m.id && <CheckCircle size={12} className="text-white" />}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                 </div>
             </div>
 
@@ -677,6 +558,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     <p className="text-[10px] text-white/20 text-center mt-2 font-medium tracking-wide">Press Enter to send</p>
                 </div>
             </div>
+
+            <ToolsModal
+                isOpen={toolsModalOpen}
+                onClose={() => setToolsModalOpen(false)}
+                onSelectTool={(toolName) => setUserPrompt(`@tool ${toolName} `)}
+            />
         </ChatContainerRoot>
     );
 };

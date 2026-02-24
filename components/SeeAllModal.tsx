@@ -273,7 +273,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({ isOpen, onClose, title
                                                     />
                                                     {/* Play Overlay */}
                                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
-                                                        <Mic2 className="text-white drop-shadow-md" size={viewMode === 'grid' ? 24 : 18} />
+                                                        {/* Icon removed per request */}
                                                     </div>
                                                 </div>
 
