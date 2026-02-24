@@ -21,10 +21,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input, Button, Avatar, AvatarFallback, AvatarImage, Popover, PopoverContent, PopoverTrigger } from "@/components/ui";
 import { Loader } from '@/components/prompt-kit/loader';
 import { ChatContainerRoot, ChatContainerContent, ChatContainerScrollAnchor } from '@/components/prompt-kit/chat-container';
 import { Message, MessageContent } from '@/components/prompt-kit/message';
@@ -424,7 +421,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                 <ChevronDown size={11} />
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[200px] p-1 bg-[#1a1a1a] border-white/10" align="end">
+                        <PopoverContent className="w-[200px] p-1 bg-[#1a1a1a] border-white/10 z-[10002]" align="end">
                             <div className="flex flex-col gap-0.5">
                                 {PERSONAS.map(p => (
                                     <button
@@ -453,7 +450,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                 <ChevronDown size={11} />
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[240px] p-1 bg-[#1a1a1a] border-white/10" align="end">
+                        <PopoverContent className="w-[240px] p-1 bg-[#1a1a1a] border-white/10 z-[10002]" align="end">
                             <div className="flex flex-col gap-0.5 max-h-[300px] overflow-y-auto custom-scrollbar">
                                 {AI_MODELS.map(m => (
                                     <button
