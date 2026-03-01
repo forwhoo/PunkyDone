@@ -100,6 +100,13 @@ export interface ToolCallInfo {
 }
 
 // ─── AGENT TOOL DEFINITIONS (JSON Schema Format) ──────────────────────
+const PERSONA_DESCRIPTIONS: Record<string, string> = {
+    'Music Critic': 'You are a pretentious, snobby music critic. Use complex vocabulary, critique artistic merit harshly, and act like you know better than everyone else. Be very judgmental.',
+    'Stan': 'You are an overly enthusiastic superfan (a "stan"). Use internet slang (slay, iconic, mother, ate that up), be obsessed with pop culture, and type with lots of energy and exclamation marks!',
+    'Data Scientist': 'You are a cold, calculated data scientist. Speak entirely in numbers, trends, statistical significance, and analytical terms. Be extremely precise and avoid any emotional fluff.',
+    'Roaster': 'You are a sarcastic, ruthless roaster. Your goal is to make fun of the user\'s music taste. Be witty, sarcastic, and do not hold back on playfully insulting their listening habits.',
+};
+
 export const TOOL_DEFINITIONS = [
     {
         name: "get_top_songs",
@@ -612,121 +619,23 @@ export const TOOL_DEFINITIONS = [
         }
     },
     {
-        name: "analyze_mood",
-        description: "Analyze the mood of recent listening history or a specific artist.",
+        name: "get_forgotten_favorites",
+        description: "Finds songs the user used to listen to heavily but hasn't played in the last 30 days.",
         parameters: {
             type: "object",
             properties: {
-                artist_name: { type: "string" },
-                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] }
-            },
-            required: []
-        }
-    },
-    {
-        name: "get_concert_recommendations",
-        description: "Get concert recommendations based on top artists.",
-        parameters: {
-            type: "object",
-            properties: {
-                location: { type: "string" }
-            },
-            required: ["location"]
-        }
-    },
-    {
-        name: "predict_favorites",
-        description: "Predict the user's future favorite songs or artists.",
-        parameters: {
-            type: "object",
-            properties: {
-                timeframe: { type: "string", description: "e.g., 'next month', 'this summer'" }
-            },
-            required: []
-        }
-    },
-    {
-        name: "get_lyric_themes",
-        description: "Identify common themes or words in the lyrics of top songs.",
-        parameters: {
-            type: "object",
-            properties: {
-                artist_name: { type: "string" }
-            },
-            required: []
-        }
-    },
-    {
-        name: "compare_users",
-        description: "Compare the user's stats with a global average or another user persona.",
-        parameters: {
-            type: "object",
-            properties: {
-                persona: { type: "string", description: "e.g., 'Average Listener', 'Super Fan'" }
-            },
-            required: []
-        }
-    },
-    {
-        name: "get_listening_clock",
-        description: "Visualize listening habits by time of day.",
-        parameters: {
-            type: "object",
-            properties: {},
-            required: []
-        }
-    },
-    {
-        name: "get_genre_mix",
-        description: "Get a detailed breakdown of genre percentages.",
-        parameters: {
-            type: "object",
-            properties: {
-                period: { type: "string", enum: ["Daily", "Weekly", "Monthly", "All Time"] }
-            },
-            required: []
-        }
-    },
-    {
-        name: "analyze_playlist",
-        description: "Analyze the stats and vibe of a specific playlist.",
-        parameters: {
-            type: "object",
-            properties: {
-                playlist_name: { type: "string" }
-            },
-            required: ["playlist_name"]
-        }
-    },
-    {
-        name: "get_artist_fun_fact",
-        description: "Get a fun fact or trivia about an artist.",
-        parameters: {
-            type: "object",
-            properties: {
-                artist_name: { type: "string" }
-            },
-            required: ["artist_name"]
-        }
-    },
-    {
-        name: "generate_festival_lineup",
-        description: "Generate a dream festival lineup based on listening history.",
-        parameters: {
-            type: "object",
-            properties: {
-                name: { type: "string", description: "Name of the festival" }
+                min_plays: { type: "number", description: "Minimum number of plays to be considered a favorite (default 5)" }
             },
             required: []
         }
     },
     {
         name: "set_persona",
-        description: "Set the AI persona for future interactions.",
+        description: "Set the AI persona for future interactions. The persona should be one of: 'Music Critic', 'Stan', 'Data Scientist', 'Roaster', or 'Default'.",
         parameters: {
             type: "object",
             properties: {
-                persona: { type: "string", description: "e.g., 'Music Critic', 'Data Scientist', 'Stan'" }
+                persona: { type: "string", enum: ["Music Critic", "Stan", "Data Scientist", "Roaster", "Default"] }
             },
             required: ["persona"]
         }
@@ -745,6 +654,7 @@ const AGENT_TOOLS = TOOL_DEFINITIONS.map(tool => ({
 // ─── TOOL ICON MAP ──────────────────────────────────────────────
 export const TOOL_ICON_MAP: Record<string, { icon: string; label: string }> = {
     get_top_songs: { icon: 'Music', label: 'Top Songs' },
+    get_forgotten_favorites: { icon: 'History', label: 'Forgotten Favorites' },
     get_top_artists: { icon: 'Mic2', label: 'Top Artists' },
     get_top_albums: { icon: 'Disc', label: 'Top Albums' },
     get_listening_time: { icon: 'Clock', label: 'Listening Time' },
@@ -789,16 +699,6 @@ export const TOOL_ICON_MAP: Record<string, { icon: string; label: string }> = {
     get_milestone_tracker: { icon: 'Target', label: 'Milestones' },
     get_obsession_score: { icon: 'Flame', label: 'Obsession Score' },
     vote: { icon: 'CheckSquare', label: 'Poll' },
-    analyze_mood: { icon: 'Smile', label: 'Mood Analysis' },
-    get_concert_recommendations: { icon: 'Ticket', label: 'Concerts' },
-    predict_favorites: { icon: 'CrystalBall', label: 'Predictions' },
-    get_lyric_themes: { icon: 'BookOpen', label: 'Lyric Themes' },
-    compare_users: { icon: 'Users', label: 'Compare Users' },
-    get_listening_clock: { icon: 'Clock', label: 'Listening Clock' },
-    get_genre_mix: { icon: 'PieChart', label: 'Genre Mix' },
-    analyze_playlist: { icon: 'ListMusic', label: 'Playlist Analysis' },
-    get_artist_fun_fact: { icon: 'Lightbulb', label: 'Fun Fact' },
-    generate_festival_lineup: { icon: 'Tent', label: 'Festival Lineup' },
     set_persona: { icon: 'UserCog', label: 'Set Persona' }
 };
 
@@ -1218,6 +1118,10 @@ async function executeAgentTool(
             case 'get_gateway_tracks': { return (await getGatewayTracks(funcArgs.artist_name)) || { error: 'No gateway tracks found' }; }
             case 'get_top_collaborations': { return (await getTopCollaborations()) || { error: 'No collaboration data available' }; }
             case 'get_milestone_tracker': { return (await getMilestoneTracker(funcArgs.target_plays, funcArgs.artist_name)) || { error: 'No milestone tracking data available' }; }
+            case 'get_forgotten_favorites': {
+                const { getForgottenFavorites } = await import('./dbService');
+                return (await getForgottenFavorites(funcArgs.min_plays || 5)) || { error: 'No forgotten favorites found' };
+            }
             case 'get_obsession_score': { return (await getObsessionScore(funcArgs.artist_name, funcArgs.start_date, funcArgs.end_date)) || { error: 'No obsession score data found' }; }
             case 'vote': {
                 return {
@@ -1228,16 +1132,6 @@ async function executeAgentTool(
                     message: 'Please select an option to continue.'
                 };
             }
-            case 'analyze_mood': { return { status: "simulated", mood: "Upbeat and energetic based on recent tracks.", sentiment: "Positive" }; }
-            case 'get_concert_recommendations': { return { recommendations: [{ artist: "The Weeknd", location: funcArgs.location || "Los Angeles", date: "2024-12-12" }] }; }
-            case 'predict_favorites': { return { prediction: "You're likely to get into more synth-pop based on recent trends." }; }
-            case 'get_lyric_themes': { return { themes: ["Love", "Night", "City", "Heartbreak"] }; }
-            case 'compare_users': { return { comparison: "You listen to 20% more music than the average user." }; }
-            case 'get_listening_clock': { return { peak_times: ["8 AM", "6 PM", "11 PM"] }; }
-            case 'get_genre_mix': { return { mix: { "Pop": "40%", "Rock": "30%", "Indie": "20%", "Other": "10%" } }; }
-            case 'analyze_playlist': { return { analysis: "This playlist is high energy and suitable for workouts." }; }
-            case 'get_artist_fun_fact': { return { fact: `Did you know ${funcArgs.artist_name} has over 1 billion streams?` }; }
-            case 'generate_festival_lineup': { return { lineup: ["Headliner: The Weeknd", "Sub-headliner: Tame Impala", "Opener: Daft Punk"] }; }
             case 'set_persona': { return { status: "persona_set", persona: funcArgs.persona }; }
 
             default: return { error: `Unknown tool: ${funcName}` };
@@ -1254,14 +1148,6 @@ const AGENT_SYSTEM_PROMPT = `You are **Lotus**, the AI music analytics agent.
 **CORE DIRECTIVE:**
 Answer user questions about their music listening habits using the provided tools.
 You have access to a SQL database of the user's Spotify history and can fetch live data from Spotify.
-
-**PERSONA INSTRUCTION:**
-If a specific persona is provided in the context, you MUST adopt that persona.
-- **Music Critic**: Be snobby, use complex vocabulary, analyze artistic merit.
-- **Stan**: Be overly enthusiastic, use slang (slay, iconic, mother), focus on fandom.
-- **Data Scientist**: Be analytical, precise, focus on numbers and trends, no fluff.
-- **Roaster**: Gently roast the user's taste, be sarcastic but funny.
-- **Casual**: Be chill, friendly, and brief.
 
 **CAPABILITIES:**
 - **Dashboard Stats**: Top artists, songs, albums, listening time (Daily/Weekly/Monthly/All Time).
@@ -1312,11 +1198,15 @@ export const streamMusicQuestionWithTools = async (
 
         const modelToUse = modelId || DEFAULT_MODEL_ID;
 
+        const personaInstruction = persona && PERSONA_DESCRIPTIONS[persona]
+            ? `\n\n**CRITICAL ROLEPLAY INSTRUCTION:** You MUST strictly adopt the following persona: ${PERSONA_DESCRIPTIONS[persona]} Do NOT break character under any circumstances. Adjust your tone, vocabulary, and attitude to match this persona completely.`
+            : "";
+
         // Conversation history
         const messages: any[] = [
             {
                 role: "system",
-                content: AGENT_SYSTEM_PROMPT + (persona ? `\n\n**CURRENT PERSONA:** ${persona}` : "")
+                content: AGENT_SYSTEM_PROMPT + personaInstruction
             }
         ];
 
@@ -1551,6 +1441,7 @@ export const answerMusicQuestionWithTools = async (
 
         const modelToUse = modelId || DEFAULT_MODEL_ID;
 
+        // answerMusicQuestionWithTools is rarely used now, but we apply persona here just in case if added later
         const messages: any[] = [
             {
                 role: "system",

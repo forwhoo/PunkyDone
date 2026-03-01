@@ -844,9 +844,25 @@ function App() {
         <div className="lg:hidden space-y-8 safe-area-bottom safe-area-top safe-area-x px-4 sm:px-5 pb-20">
             {/* Mobile Content */}
             <div className="space-y-4 pt-4">
-                <div className="flex items-end justify-between">
+                <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-[34px] font-bold text-white leading-none tracking-tight">{getGreeting()}, {data.user?.display_name?.split(' ')[0] || 'friend'}</h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setDatabaseViewerOpen(true)}
+                            className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                            title="View Database"
+                        >
+                            <Database size={16} className="text-white/70" />
+                        </button>
+                        <button
+                            onClick={handleManualRefresh}
+                            className={`p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all ${isRefreshing ? 'animate-spin' : ''}`}
+                            title="Refresh Data"
+                        >
+                            <RefreshCw size={16} className="text-white/70" />
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1107,20 +1123,22 @@ function App() {
                     </Popover>
                 </div>
 
-                <button
-                    onClick={() => setDatabaseViewerOpen(true)}
-                    className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all mr-2"
-                    title="View Database"
-                >
-                    <Database size={20} className="text-white/70" />
-                </button>
-                <button
-                    onClick={handleManualRefresh}
-                    className={`p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all ${isRefreshing ? 'animate-spin' : 'hover:rotate-180 duration-500'}`}
-                    title="Refresh Data"
-                >
-                    <RefreshCw size={20} className="text-white/70" />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setDatabaseViewerOpen(true)}
+                        className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                        title="View Database"
+                    >
+                        <Database size={20} className="text-white/70" />
+                    </button>
+                    <button
+                        onClick={handleManualRefresh}
+                        className={`p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all ${isRefreshing ? 'animate-spin' : 'hover:rotate-180 duration-500'}`}
+                        title="Refresh Data"
+                    >
+                        <RefreshCw size={20} className="text-white/70" />
+                    </button>
+                </div>
             </div>
 
             <div className="mb-20">
