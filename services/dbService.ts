@@ -25,13 +25,8 @@ export const fetchCharts = async (
   try {
     console.log("Fetching charts for", period);
 
-    // DISABLE RPC CALL due to "ambiguous column" error on server side
-
-    // OLD:
-    //
-    const { data, error } = await supabase.rpc("get_dynamic_chart");
-
-    // ALWAYS USE FALLBACK (Manual Calc) UNTIL RPC IS FIXED
+    // RPC call disabled due to "ambiguous column" error on server side.
+    // Using manual calculation fallback instead.
     const dashboardStats = await fetchDashboardStats(
       (period === "all time"
         ? "All Time"
@@ -289,8 +284,7 @@ export const fetchDashboardStats = async (
   customRange?: { start: string; end: string },
 ) => {
   console.log(
-    `[dbService] 📊 fetchDashboardStats called with timeRange: ${timeRange}`,
-    customRange,
+    `[dbService] 📊 fetchDashboardStats called with timeRange: ${timeRange}${customRange ? ` customRange: ${JSON.stringify(customRange)}` : ""}`,
   );
   const functionStart = performance.now();
 
