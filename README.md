@@ -1,11 +1,11 @@
-# Lotus Stats (MuseAnalytics) 🎧
+# Harvey Stats (MuseAnalytics) 🎧
 
-**Lotus Stats** is a sleek, Apple-style music analytics dashboard that tracks your listening habits, provides AI-powered insights, and generates immersive "Wrapped" stories.
+**Harvey Stats** is a sleek, Apple-style music analytics dashboard that tracks your listening habits, provides AI-powered insights, and generates immersive "Wrapped" stories.
 
 ## Features ✨
 
 *   **Real-time Dashboard**: Track your top artists, songs, and albums across daily, weekly, monthly, and all-time ranges.
-*   **Lotus Wrapped**: An immersive, animated story experience that summarizes your music journey using advanced WebGL effects (LightRays, GridScan, ColorBends).
+*   **Harvey Wrapped**: An immersive, animated story experience that summarizes your music journey using advanced WebGL effects (LightRays, GridScan, ColorBends).
 *   **AI Insights**: Ask questions about your music taste and get intelligent responses powered by Gemini and Groq.
 *   **Brutalist Mode**: Switch to a raw, data-heavy interface for a different perspective on your stats.
 *   **Interactive Visuals**: Features glassmorphism, smooth Framer Motion animations, and 3D elements powered by Three.js and OGL.

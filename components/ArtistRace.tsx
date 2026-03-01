@@ -66,11 +66,11 @@ export const ArtistRace: React.FC<ArtistRaceProps> = ({
         <div className="relative w-full">
             {/* Header */}
             <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-white mb-2 flex items-center justify-center gap-2">
-                    <Trophy className="text-[#FA2D48]" size={28} />
+                <h3 className="text-2xl font-bold text-[#141413] mb-2 flex items-center justify-center gap-2">
+                    <Trophy className="text-[#d97757]" size={28} />
                     {title}
                 </h3>
-                <p className="text-[#8E8E93] text-sm">{subtitle}</p>
+                <p className="text-[#b0aea5] text-sm">{subtitle}</p>
             </div>
 
             {/* Race Track */}
@@ -82,7 +82,7 @@ export const ArtistRace: React.FC<ArtistRaceProps> = ({
                     return (
                         <div key={competitor.name} className="relative">
                             {/* Track Background */}
-                            <div className="h-16 bg-white/5 rounded-full border border-white/10 overflow-hidden relative">
+                            <div className="h-16 bg-[#e8e6dc]/50 rounded-full border border-[#e8e6dc] overflow-hidden relative">
                                 {/* Progress Bar */}
                                 <motion.div
                                     initial={{ width: 0 }}
@@ -122,8 +122,8 @@ export const ArtistRace: React.FC<ArtistRaceProps> = ({
                                         }}
                                         className={`relative w-14 h-14 rounded-full overflow-hidden border-4 shadow-2xl ${
                                             isWinner 
-                                                ? 'border-[#FA2D48] shadow-[#FA2D48]/50' 
-                                                : 'border-white/20'
+                                                ? 'border-[#d97757] shadow-[#FA2D48]/50'
+                                                : 'border-[#b0aea5]/30'
                                         }`}
                                     >
                                         {competitor.image ? (
@@ -134,7 +134,7 @@ export const ArtistRace: React.FC<ArtistRaceProps> = ({
                                             />
                                         ) : (
                                             <div className="w-full h-full bg-gradient-to-br from-[#FA2D48] to-[#1C1C1E] flex items-center justify-center">
-                                                <Music2 className="text-white" size={24} />
+                                                <Music2 className="text-[#141413]" size={24} />
                                             </div>
                                         )}
                                         
@@ -143,9 +143,9 @@ export const ArtistRace: React.FC<ArtistRaceProps> = ({
                                             <motion.div
                                                 initial={{ scale: 0, rotate: -45 }}
                                                 animate={{ scale: 1, rotate: 0 }}
-                                                className="absolute -top-1 -right-1 bg-[#FA2D48] rounded-full p-1 shadow-lg"
+                                                className="absolute -top-1 -right-1 bg-[#d97757] rounded-full p-1 shadow-lg"
                                             >
-                                                <Crown size={14} className="text-white" fill="white" />
+                                                <Crown size={14} className="text-[#141413]" fill="white" />
                                             </motion.div>
                                         )}
                                     </motion.div>
@@ -158,7 +158,7 @@ export const ArtistRace: React.FC<ArtistRaceProps> = ({
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: 1.5 + idx * 0.1 }}
                                         className={`text-sm font-bold ${
-                                            isWinner ? 'text-white' : 'text-white/60'
+                                            isWinner ? 'text-[#141413]' : 'text-[#141413]/60'
                                         }`}
                                     >
                                         {competitor.score}
@@ -174,7 +174,7 @@ export const ArtistRace: React.FC<ArtistRaceProps> = ({
                                 className="mt-2 flex items-center gap-2"
                             >
                                 <span className={`text-sm font-semibold ${
-                                    isWinner ? 'text-white' : 'text-white/80'
+                                    isWinner ? 'text-[#141413]' : 'text-[#141413]/80'
                                 }`}>
                                     {competitor.name}
                                 </span>
@@ -182,7 +182,7 @@ export const ArtistRace: React.FC<ArtistRaceProps> = ({
                                     <motion.span
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
-                                        className="text-[#FA2D48]"
+                                        className="text-[#d97757]"
                                     >
                                         <Sparkles size={16} fill="#FA2D48" />
                                     </motion.span>
@@ -199,7 +199,7 @@ export const ArtistRace: React.FC<ArtistRaceProps> = ({
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-center p-6 bg-gradient-to-br from-[#FA2D48]/20 to-[#FF6B35]/20 border border-[#FA2D48]/30 rounded-2xl backdrop-blur-md"
+                        className="text-center p-6 bg-gradient-to-br from-[#FA2D48]/20 to-[#FF6B35]/20 border border-[#d97757]/30 rounded-2xl "
                     >
                         <motion.div
                             animate={{ 
@@ -211,12 +211,12 @@ export const ArtistRace: React.FC<ArtistRaceProps> = ({
                                 ease: "easeInOut"
                             }}
                         >
-                            <Trophy size={48} className="text-[#FA2D48] mx-auto mb-3" />
+                            <Trophy size={48} className="text-[#d97757] mx-auto mb-3" />
                         </motion.div>
-                        <h4 className="text-xl font-bold text-white mb-1">
+                        <h4 className="text-xl font-bold text-[#141413] mb-1">
                             👑 {winner.name} Takes the Crown!
                         </h4>
-                        <p className="text-[#8E8E93] text-sm">
+                        <p className="text-[#b0aea5] text-sm">
                             With {winner.score} plays, this {winner.type} dominated your listening
                         </p>
                     </motion.div>

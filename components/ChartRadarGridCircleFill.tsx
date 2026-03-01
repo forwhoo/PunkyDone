@@ -32,10 +32,10 @@ const chartConfig = {
 
 export function ChartRadarGridCircleFill({ data = chartData }: { data?: any[] }) {
   return (
-    <Card className="bg-transparent border-none shadow-none text-white">
+    <Card className="bg-transparent border-none shadow-none text-[#141413]">
       <CardHeader className="items-center pb-4">
         <CardTitle className="text-xl font-bold">Artist DNA</CardTitle>
-        <CardDescription className="text-white/40">
+        <CardDescription className="text-[#141413]/40">
           Metric breakdown for this rising star
         </CardDescription>
       </CardHeader>

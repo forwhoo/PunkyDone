@@ -495,7 +495,7 @@ export const TotalMinutesStory: React.FC<TotalMinutesStoryProps> = ({
             {phase !== 'final' ? (
               <>
                 <span
-                  className="text-white font-bold leading-none rainbow-glow pulse-glow"
+                  className="text-[#141413] font-bold leading-none rainbow-glow pulse-glow"
                   style={{
                     fontSize: 'clamp(120px, 15vw, 180px)',
                     fontVariantNumeric: 'tabular-nums',
@@ -516,7 +516,7 @@ export const TotalMinutesStory: React.FC<TotalMinutesStoryProps> = ({
             ) : (
               <>
                 <motion.span
-                  className="text-white font-bold leading-none rainbow-glow pulse-glow"
+                  className="text-[#141413] font-bold leading-none rainbow-glow pulse-glow"
                   style={{
                     fontSize: 'clamp(120px, 15vw, 180px)',
                     fontVariantNumeric: 'tabular-nums',

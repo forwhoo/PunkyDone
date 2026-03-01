@@ -68,7 +68,7 @@ export const FullScreenModal: React.FC<FullScreenModalProps> = ({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[100] flex flex-col bg-black text-white font-sans overflow-hidden"
+                    className="fixed inset-0 z-[100] flex flex-col bg-[#faf9f5] text-[#141413] font-body overflow-hidden"
                 >
                     {/* Dynamic Background Layer */}
                     <motion.div
@@ -101,13 +101,13 @@ export const FullScreenModal: React.FC<FullScreenModalProps> = ({
                         <div className="flex items-center justify-between p-6 md:p-8">
                             <button
                                 onClick={onClose}
-                                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center transition-all active:scale-95"
+                                className="w-10 h-10 rounded-full bg-[#e8e6dc] hover:bg-[#b0aea5]/30  flex items-center justify-center transition-all active:scale-95"
                             >
-                                <ChevronLeft className="w-6 h-6 text-white" />
+                                <ChevronLeft className="w-6 h-6 text-[#141413]" />
                             </button>
 
                             {title && (
-                                <h2 className="text-lg font-bold tracking-tight uppercase text-white/80">
+                                <h2 className="text-lg font-bold tracking-tight uppercase text-[#141413]/80">
                                     {title}
                                 </h2>
                             )}

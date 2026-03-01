@@ -73,9 +73,9 @@ const VoteTool = ({ tool, onVote }: { tool: ToolPart, onVote: (selections: strin
     };
 
     return (
-        <div className="w-full max-w-md my-4 border border-white/10 rounded-2xl overflow-hidden bg-white/[0.03] p-5 backdrop-blur-md">
-            <h4 className="text-[15px] font-bold text-white mb-4 flex items-center gap-2">
-                <CheckSquare size={16} className="text-[#FA2D48]" />
+        <div className="w-full max-w-md my-4 border border-[#e8e6dc] rounded-2xl overflow-hidden bg-white p-5 ">
+            <h4 className="text-[15px] font-bold text-[#141413] mb-4 flex items-center gap-2">
+                <CheckSquare size={16} className="text-[#d97757]" />
                 {title}
             </h4>
             <div className="space-y-2">
@@ -86,12 +86,12 @@ const VoteTool = ({ tool, onVote }: { tool: ToolPart, onVote: (selections: strin
                         onClick={() => toggleOption(opt)}
                         className={`w-full text-left px-4 py-3 rounded-xl border transition-all text-sm font-medium flex items-center justify-between ${
                             selections.includes(opt)
-                                ? 'bg-[#FA2D48]/10 border-[#FA2D48]/40 text-white'
-                                : 'bg-white/5 border-white/5 text-white/60 hover:border-white/20'
+                                ? 'bg-[#e8e6dc] border-[#d97757]/40 text-[#141413]'
+                                : 'bg-[#e8e6dc]/50 border-[#e8e6dc] text-[#141413]/60 hover:border-[#b0aea5]/30'
                         } ${submitted && !selections.includes(opt) ? 'opacity-40' : ''}`}
                     >
                         <span>{opt}</span>
-                        {selections.includes(opt) && <CheckCircle size={14} className="text-[#FA2D48]" />}
+                        {selections.includes(opt) && <CheckCircle size={14} className="text-[#d97757]" />}
                     </button>
                 ))}
             </div>
@@ -105,7 +105,7 @@ const VoteTool = ({ tool, onVote }: { tool: ToolPart, onVote: (selections: strin
                 </Button>
             )}
             {submitted && (
-                <p className="text-[11px] text-white/40 text-center mt-3 font-medium italic">Vote submitted</p>
+                <p className="text-[11px] text-[#141413]/40 text-center mt-3 font-medium italic">Vote submitted</p>
             )}
         </div>
     );
@@ -119,10 +119,10 @@ const CollapsibleTools = ({ tools, onVote }: { tools: ToolPart[], onVote: (selec
     const voteTool = tools.find(t => t.type === 'vote');
 
     return (
-        <div className="w-full max-w-md my-4 border border-white/5 rounded-xl overflow-hidden bg-white/[0.02]">
+        <div className="w-full max-w-md my-4 border border-[#e8e6dc] rounded-xl overflow-hidden bg-white">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/[0.03] transition-colors text-[12px] font-medium text-white/50"
+                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white transition-colors text-[12px] font-medium text-[#141413]/50"
             >
                 <div className="flex items-center gap-2">
                     <Zap size={12} className="text-[#FF9F0A]" />
@@ -139,9 +139,9 @@ const CollapsibleTools = ({ tools, onVote }: { tools: ToolPart[], onVote: (selec
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                     >
-                        <div className="px-3 pb-3 space-y-2 border-t border-white/5 pt-3 bg-black/20">
+                        <div className="px-3 pb-3 space-y-2 border-t border-[#e8e6dc] pt-3 bg-[#faf9f5]/20">
                             {tools.map((tool, idx) => (
-                                <Tool key={idx} toolPart={tool} className="my-0 border-white/5 bg-transparent" />
+                                <Tool key={idx} toolPart={tool} className="my-0 border-[#e8e6dc] bg-transparent" />
                             ))}
                         </div>
                     </motion.div>
@@ -377,14 +377,14 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     };
 
     return (
-        <ChatContainerRoot id="ai-spotlight" ref={sectionRef} className="bg-black relative h-full">
-            <div className="flex-shrink-0 flex items-center justify-between py-3 px-4 border-b border-white/5 relative z-10 bg-black/40 backdrop-blur-md">
+        <ChatContainerRoot id="ai-spotlight" ref={sectionRef} className="bg-[#faf9f5] relative h-full font-body">
+            <div className="flex-shrink-0 flex items-center justify-between py-3 px-4 border-b border-[#e8e6dc] relative z-10 bg-[#faf9f5] ">
                 <div className="flex items-center gap-2">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setToolsModalOpen(true)}
-                        className="text-xs font-semibold text-[#8E8E93] hover:text-white hover:bg-white/10 h-9 rounded-xl border border-white/10 bg-white/5 px-4"
+                        className="text-xs font-semibold text-[#b0aea5] hover:text-[#141413] hover:bg-[#e8e6dc] h-9 rounded-xl border border-[#e8e6dc] bg-white px-4"
                     >
                         <Zap size={14} className="mr-2" /> Tools
                     </Button>
@@ -393,7 +393,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setWebSearchEnabled(!webSearchEnabled)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all backdrop-blur-md text-[11px] font-semibold ${webSearchEnabled ? 'bg-[#FA2D48]/10 border-[#FA2D48]/30 text-[#FA2D48]' : 'bg-white/5 border-white/10 text-[#8E8E93] hover:text-white hover:border-white/20'}`}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all  text-[11px] font-semibold ${webSearchEnabled ? 'bg-[#e8e6dc] border-[#d97757]/30 text-[#d97757]' : 'bg-[#e8e6dc]/50 border-[#e8e6dc] text-[#b0aea5] hover:text-[#141413] hover:border-[#b0aea5]/30'}`}
                         title="Enable Web Search"
                     >
                         <Globe size={11} /> Search
@@ -401,7 +401,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                     <Popover>
                         <PopoverTrigger asChild>
-                            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-semibold text-[#8E8E93] hover:text-white hover:border-white/20 transition-all backdrop-blur-md min-w-[100px] justify-between">
+                            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#e8e6dc]/50 border border-[#e8e6dc] text-[11px] font-semibold text-[#b0aea5] hover:text-[#141413] hover:border-[#b0aea5]/30 transition-all  min-w-[100px] justify-between">
                                 <span className="flex items-center gap-2 truncate">
                                     <UserCog size={11} />
                                     {PERSONAS.find(p => p.id === selectedPersona)?.label || 'Persona'}
@@ -409,19 +409,19 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                                 <ChevronDown size={11} />
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[200px] p-1 bg-[#1a1a1a] border-white/10 z-[10002]" align="end">
+                        <PopoverContent className="w-[200px] p-1 bg-white border-[#e8e6dc] border-[#e8e6dc] z-[10002]" align="end">
                             <div className="flex flex-col gap-0.5">
                                 {PERSONAS.map(p => (
                                     <button
                                         key={p.id}
                                         onClick={() => setSelectedPersona(p.id)}
-                                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-[12px] font-medium rounded-lg transition-colors hover:bg-white/5 ${selectedPersona === p.id ? 'text-white bg-white/5' : 'text-[#8E8E93]'}`}
+                                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-[12px] font-medium rounded-lg transition-colors hover:bg-[#e8e6dc]/50 ${selectedPersona === p.id ? 'text-[#141413] bg-[#e8e6dc]/50' : 'text-[#b0aea5]'}`}
                                     >
                                         <span className="flex items-center gap-2">
                                             <p.icon size={12} />
                                             {p.label}
                                         </span>
-                                        {selectedPersona === p.id && <CheckCircle size={12} className="text-[#FA2D48]" />}
+                                        {selectedPersona === p.id && <CheckCircle size={12} className="text-[#d97757]" />}
                                     </button>
                                 ))}
                             </div>
@@ -430,26 +430,26 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
 
                     <Popover>
                         <PopoverTrigger asChild>
-                            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-semibold text-[#8E8E93] hover:text-white hover:border-white/20 transition-all backdrop-blur-md min-w-[140px] justify-between">
+                            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#e8e6dc]/50 border border-[#e8e6dc] text-[11px] font-semibold text-[#b0aea5] hover:text-[#141413] hover:border-[#b0aea5]/30 transition-all  min-w-[140px] justify-between">
                                 <span className="truncate flex items-center gap-2">
-                                    <Zap size={11} className={AI_MODELS.find(m => m.id === selectedModel)?.isReasoning ? 'text-[#FF9F0A]' : 'text-[#8E8E93]'} />
+                                    <Zap size={11} className={AI_MODELS.find(m => m.id === selectedModel)?.isReasoning ? 'text-[#FF9F0A]' : 'text-[#b0aea5]'} />
                                     {AI_MODELS.find(m => m.id === selectedModel)?.label || 'Model'}
                                 </span>
                                 <ChevronDown size={11} />
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[240px] p-1 bg-[#1a1a1a] border-white/10 z-[10002]" align="end">
+                        <PopoverContent className="w-[240px] p-1 bg-white border-[#e8e6dc] border-[#e8e6dc] z-[10002]" align="end">
                             <div className="flex flex-col gap-0.5 max-h-[300px] overflow-y-auto custom-scrollbar">
                                 {AI_MODELS.map(m => (
                                     <button
                                         key={m.id}
                                         onClick={() => setSelectedModel(m.id)}
-                                        className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left text-[12px] font-medium rounded-lg transition-colors hover:bg-white/5 ${selectedModel === m.id ? 'text-white bg-white/5' : 'text-[#8E8E93]'}`}
+                                        className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left text-[12px] font-medium rounded-lg transition-colors hover:bg-[#e8e6dc]/50 ${selectedModel === m.id ? 'text-[#141413] bg-[#e8e6dc]/50' : 'text-[#b0aea5]'}`}
                                     >
                                         <span>{m.label}</span>
                                         <div className="flex items-center gap-2">
                                             {m.isReasoning && <span className="text-[9px] font-bold text-[#FF9F0A] bg-[#FF9F0A]/10 px-1.5 py-0.5 rounded-md">THINK</span>}
-                                            {selectedModel === m.id && <CheckCircle size={12} className="text-white" />}
+                                            {selectedModel === m.id && <CheckCircle size={12} className="text-[#141413]" />}
                                         </div>
                                     </button>
                                 ))}
@@ -462,37 +462,34 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             <ChatContainerContent className="flex-1 relative z-10 px-4 pt-6">
                 <div className="max-w-4xl mx-auto space-y-6">
                     {chatMessages.length === 0 && !loading && categoryResults.length === 0 && !insightMode && !wrappedMode && (
-                        <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center bg-black">
-                            <div className="w-16 h-16 rounded-2xl bg-[#FA2D48]/10 flex items-center justify-center mb-6">
-                                <Sparkles className="w-8 h-8 text-[#FA2D48]" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-white tracking-tight mb-2">Welcome to Lotus</h3>
-                            <p className="text-[#8E8E93] text-[15px] max-w-sm">Ask anything about your music listening habits, dive into your history, or discover new stats.</p>
+                        <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center bg-[#faf9f5]">
+                            <h3 className="text-4xl font-heading font-medium text-[#141413] tracking-tight mb-2">Good morning, I'm Harvey.</h3>
+                            <p className="text-[#b0aea5] text-lg font-body max-w-md mt-2">How can I help you analyze your music today?</p>
                         </div>
                     )}
                     {chatMessages.map((msg, idx) => (
                         <Message key={idx} role={msg.role === 'user' ? 'user' : 'ai'} className="mb-6">
-                            <MessageContent className={`text-[15px] leading-relaxed ${msg.role === 'user' ? 'bg-white/10 text-white rounded-3xl rounded-tr-sm px-6 py-4' : 'text-zinc-200'}`}>
+                            <MessageContent className={`text-[15px] leading-relaxed ${msg.role === 'user' ? 'bg-[#e8e6dc] text-[#141413] rounded-3xl rounded-tr-sm px-6 py-4 font-body' : 'text-[#141413] font-body'}`}>
                                 {msg.role === 'ai' ? (
                                     <>
                                         {msg.isThinking && !msg.text && (
-                                            <div className="bg-white/5 rounded-2xl p-4 max-w-sm">
+                                            <div className="bg-[#e8e6dc]/50 rounded-2xl p-4 max-w-sm">
                                                 <Loader variant="text-shimmer">Analyzing history...</Loader>
                                             </div>
                                         )}
                                         {msg.tools && msg.tools.length > 0 && <CollapsibleTools tools={msg.tools} onVote={(sels) => handleQuery(`User selected: ${sels.join(', ')}`)} />}
                                         {msg.text && (
-                                            <div className="text-[16px] leading-relaxed markdown-container mt-2 prose prose-invert prose-zinc max-w-none prose-table:border prose-table:border-white/10 prose-th:border prose-th:border-white/10 prose-td:border prose-td:border-white/10 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-img:rounded-xl">
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ img: ({node, ...props}) => <img {...props} className="max-w-full md:max-w-md h-auto rounded-xl shadow-xl border border-white/10 mx-auto" loading="lazy" />, table: ({node, ...props}) => <div className="overflow-x-auto my-4 rounded-xl border border-white/10 bg-white/5"><table {...props} className="min-w-full divide-y divide-white/10" /></div> }}>{msg.text}</ReactMarkdown>
+                                            <div className="text-[16px] leading-relaxed markdown-container mt-2 prose prose-zinc max-w-none prose-table:border prose-table:border-[#e8e6dc] prose-th:border prose-th:border-[#e8e6dc] prose-td:border prose-td:border-[#e8e6dc] prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-img:rounded-xl">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ img: ({node, ...props}) => <img {...props} className="max-w-full md:max-w-md h-auto rounded-xl shadow-xl border border-[#e8e6dc] mx-auto" loading="lazy" />, table: ({node, ...props}) => <div className="overflow-x-auto my-4 rounded-xl border border-[#e8e6dc] bg-white"><table {...props} className="min-w-full divide-y divide-[#e8e6dc]" /></div> }}>{msg.text}</ReactMarkdown>
                                             </div>
                                         )}
                                         {msg.sources && msg.sources.groundingChunks && (
-                                            <div className="mt-4 pt-4 border-t border-white/10"><p className="text-xs text-white/40 mb-2 font-semibold">Sources</p><div className="flex flex-wrap gap-2">{msg.sources.groundingChunks.map((c: any, ci: number) => c.web?.uri ? <Source key={ci} href={c.web.uri} showFavicon={true}><SourceTrigger label={c.web.title || "Source"} /><SourceContent title={c.web.title} description={c.web.uri} /></Source> : null)}</div></div>
+                                            <div className="mt-4 pt-4 border-t border-[#e8e6dc]"><p className="text-xs text-[#b0aea5] mb-2 font-semibold">Sources</p><div className="flex flex-wrap gap-2">{msg.sources.groundingChunks.map((c: any, ci: number) => c.web?.uri ? <Source key={ci} href={c.web.uri} showFavicon={true}><SourceTrigger label={c.web.title || "Source"} /><SourceContent title={c.web.title} description={c.web.uri} /></Source> : null)}</div></div>
                                         )}
-                                        <p className="text-[11px] mt-2 text-white/30 font-medium">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                        <p className="text-[11px] mt-2 text-[#141413]/30 font-medium">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                     </>
                                 ) : (
-                                    <><p className="text-[15px] leading-relaxed">{msg.text}</p><p className="text-[11px] mt-1.5 text-white/40">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></>
+                                    <><p className="text-[15px] leading-relaxed">{msg.text}</p><p className="text-[11px] mt-1.5 text-[#141413]/40">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></>
                                 )}
                             </MessageContent>
                         </Message>
@@ -505,10 +502,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             <div className="flex-shrink-0 bg-transparent px-4 py-6 relative z-10">
                 <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".json" />
                 <div className="max-w-3xl mx-auto">
-                    <PromptInput value={userPrompt} onValueChange={setUserPrompt} onSubmit={() => handleQuery()} isLoading={loading} className="bg-white/10 border border-white/20 backdrop-blur-xl rounded-[32px] shadow-2xl">
-                        <PromptInputTextarea placeholder="Ask about your music..." className="text-white placeholder:text-white/50 min-h-[52px] px-6 py-4 text-[16px]" />
+                    <PromptInput value={userPrompt} onValueChange={setUserPrompt} onSubmit={() => handleQuery()} isLoading={loading} className="bg-[#e8e6dc] border border-[#b0aea5]/30  rounded-[32px] shadow-2xl">
+                        <PromptInputTextarea placeholder="How can I help you analyze your music?" className="text-[#141413] placeholder:text-[#141413]/50 min-h-[52px] px-6 py-4 text-[16px]" />
                         <PromptInputActions className="justify-end pt-0 pb-2 pr-2">
-                             <Button onClick={() => handleQuery()} disabled={loading || !userPrompt.trim()} size="icon" className={`h-10 w-10 rounded-full transition-all ${loading || !userPrompt.trim() ? 'bg-white/10 text-white/40' : 'bg-[#FA2D48] text-white hover:bg-[#ff4f66] shadow-lg shadow-[#FA2D48]/30'}`}>
+                             <Button onClick={() => handleQuery()} disabled={loading || !userPrompt.trim()} size="icon" className={`h-10 w-10 rounded-full transition-all ${loading || !userPrompt.trim() ? 'bg-[#e8e6dc] text-[#141413]/40' : 'bg-[#d97757] text-[#141413] hover:bg-[#ff4f66] shadow-lg shadow-[#FA2D48]/30'}`}>
                                 {loading ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <ArrowUp className="w-5 h-5" />}
                             </Button>
                         </PromptInputActions>

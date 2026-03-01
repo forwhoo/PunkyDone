@@ -47,44 +47,44 @@ export const DatabaseViewer: React.FC<DatabaseViewerProps> = ({ isOpen, onClose 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 md:p-10"
+                    className="fixed inset-0 z-[100] bg-[#faf9f5]  flex items-center justify-center p-4 md:p-10"
                 >
-                    <div className="bg-[#111] w-full max-w-7xl h-full max-h-[90vh] rounded-3xl border border-white/10 flex flex-col overflow-hidden shadow-2xl relative">
+                    <div className="bg-[#111] w-full max-w-7xl h-full max-h-[90vh] rounded-3xl border border-[#e8e6dc] flex flex-col overflow-hidden shadow-2xl relative">
                         {/* Header */}
-                        <div className="p-6 border-b border-white/10 flex items-center justify-between bg-[#161618]">
+                        <div className="p-6 border-b border-[#e8e6dc] flex items-center justify-between bg-[#161618]">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20">
                                     <Database size={24} className="text-blue-400" />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-bold text-white tracking-tight">Database Viewer</h2>
-                                    <p className="text-white/50 text-sm">Real-time view of your listening history</p>
+                                    <h2 className="text-2xl font-bold text-[#141413] tracking-tight">Database Viewer</h2>
+                                    <p className="text-[#141413]/50 text-sm">Real-time view of your listening history</p>
                                 </div>
                             </div>
-                            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white">
+                            <button onClick={onClose} className="p-2 hover:bg-[#e8e6dc] rounded-full transition-colors text-[#141413]/50 hover:text-[#141413]">
                                 <X size={24} />
                             </button>
                         </div>
 
                         {/* Toolbar */}
-                        <div className="p-4 border-b border-white/10 flex items-center gap-4 bg-[#111]">
+                        <div className="p-4 border-b border-[#e8e6dc] flex items-center gap-4 bg-[#111]">
                             <div className="relative flex-1 max-w-md">
-                                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#141413]/30" />
                                 <input
                                     type="text"
                                     placeholder="Search artists, songs, albums..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-colors"
+                                    className="w-full bg-[#e8e6dc]/50 border border-[#e8e6dc] rounded-xl py-2.5 pl-10 pr-4 text-[#141413] placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-colors"
                                 />
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-white/50 ml-auto">
+                            <div className="flex items-center gap-2 text-sm text-[#141413]/50 ml-auto">
                                 <span>Showing {filteredData.length} records</span>
-                                <div className="h-4 w-[1px] bg-white/10 mx-2" />
+                                <div className="h-4 w-[1px] bg-[#e8e6dc] mx-2" />
                                 <select
                                     value={limit}
                                     onChange={(e) => setLimit(Number(e.target.value))}
-                                    className="bg-transparent text-white/70 focus:outline-none cursor-pointer hover:text-white"
+                                    className="bg-transparent text-[#141413]/70 focus:outline-none cursor-pointer hover:text-[#141413]"
                                 >
                                     <option value={100}>Last 100</option>
                                     <option value={500}>Last 500</option>
@@ -98,19 +98,19 @@ export const DatabaseViewer: React.FC<DatabaseViewerProps> = ({ isOpen, onClose 
                             <table className="w-full text-left border-collapse">
                                 <thead className="sticky top-0 z-10 bg-[#161618] shadow-md">
                                     <tr>
-                                        <th className="p-4 text-xs font-bold text-white/40 uppercase tracking-wider border-b border-white/10 w-[200px]">
+                                        <th className="p-4 text-xs font-bold text-[#141413]/40 uppercase tracking-wider border-b border-[#e8e6dc] w-[200px]">
                                             <div className="flex items-center gap-2"><Calendar size={14} /> Played At</div>
                                         </th>
-                                        <th className="p-4 text-xs font-bold text-white/40 uppercase tracking-wider border-b border-white/10">
+                                        <th className="p-4 text-xs font-bold text-[#141413]/40 uppercase tracking-wider border-b border-[#e8e6dc]">
                                             <div className="flex items-center gap-2"><Music size={14} /> Song</div>
                                         </th>
-                                        <th className="p-4 text-xs font-bold text-white/40 uppercase tracking-wider border-b border-white/10">
+                                        <th className="p-4 text-xs font-bold text-[#141413]/40 uppercase tracking-wider border-b border-[#e8e6dc]">
                                             <div className="flex items-center gap-2"><User size={14} /> Artist</div>
                                         </th>
-                                        <th className="p-4 text-xs font-bold text-white/40 uppercase tracking-wider border-b border-white/10 hidden md:table-cell">
+                                        <th className="p-4 text-xs font-bold text-[#141413]/40 uppercase tracking-wider border-b border-[#e8e6dc] hidden md:table-cell">
                                             <div className="flex items-center gap-2"><Disc size={14} /> Album</div>
                                         </th>
-                                        <th className="p-4 text-xs font-bold text-white/40 uppercase tracking-wider border-b border-white/10 text-right w-[100px]">
+                                        <th className="p-4 text-xs font-bold text-[#141413]/40 uppercase tracking-wider border-b border-[#e8e6dc] text-right w-[100px]">
                                             <div className="flex items-center justify-end gap-2"><Clock size={14} /> Duration</div>
                                         </th>
                                     </tr>
@@ -118,37 +118,37 @@ export const DatabaseViewer: React.FC<DatabaseViewerProps> = ({ isOpen, onClose 
                                 <tbody className="divide-y divide-white/5">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan={5} className="p-8 text-center text-white/30">Loading data...</td>
+                                            <td colSpan={5} className="p-8 text-center text-[#141413]/30">Loading data...</td>
                                         </tr>
                                     ) : filteredData.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className="p-8 text-center text-white/30">No records found matching "{searchTerm}"</td>
+                                            <td colSpan={5} className="p-8 text-center text-[#141413]/30">No records found matching "{searchTerm}"</td>
                                         </tr>
                                     ) : (
                                         filteredData.map((item) => (
-                                            <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
-                                                <td className="p-4 text-sm text-white/60 font-mono whitespace-nowrap">
+                                            <tr key={item.id} className="hover:bg-white transition-colors group">
+                                                <td className="p-4 text-sm text-[#141413]/60 font-mono whitespace-nowrap">
                                                     {new Date(item.played_at).toLocaleString()}
                                                 </td>
-                                                <td className="p-4 text-sm text-white font-medium">
+                                                <td className="p-4 text-sm text-[#141413] font-medium">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded bg-[#222] overflow-hidden flex-shrink-0 border border-white/5">
+                                                        <div className="w-8 h-8 rounded bg-[#222] overflow-hidden flex-shrink-0 border border-[#e8e6dc]">
                                                             {item.cover || item.album_cover ? (
                                                                 <img src={item.cover || item.album_cover} className="w-full h-full object-cover" />
                                                             ) : (
-                                                                <div className="w-full h-full flex items-center justify-center text-white/20"><Music size={12} /></div>
+                                                                <div className="w-full h-full flex items-center justify-center text-[#141413]/20"><Music size={12} /></div>
                                                             )}
                                                         </div>
                                                         <span className="truncate max-w-[200px]">{item.track_name || 'Unknown Track'}</span>
                                                     </div>
                                                 </td>
-                                                <td className="p-4 text-sm text-white/80">
+                                                <td className="p-4 text-sm text-[#141413]/80">
                                                     {item.artist_name || 'Unknown Artist'}
                                                 </td>
-                                                <td className="p-4 text-sm text-white/50 hidden md:table-cell">
+                                                <td className="p-4 text-sm text-[#141413]/50 hidden md:table-cell">
                                                     {item.album_name || 'Unknown Album'}
                                                 </td>
-                                                <td className="p-4 text-sm text-white/40 font-mono text-right">
+                                                <td className="p-4 text-sm text-[#141413]/40 font-mono text-right">
                                                     {item.duration_ms ? `${Math.floor(item.duration_ms / 60000)}:${String(Math.floor((item.duration_ms % 60000) / 1000)).padStart(2, '0')}` : '--:--'}
                                                 </td>
                                             </tr>

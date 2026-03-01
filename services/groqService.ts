@@ -29,7 +29,7 @@ export const generateMusicInsight = async (query: string, stats: any) => {
     };
 
     const systemPrompt = `
-You are Lotus, a music analytics assistant.
+You are Harvey, a music analytics assistant.
 Your goal is to answer their questions about their listening habits using the provided data.
 
 Tools/Capabilities:

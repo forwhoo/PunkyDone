@@ -37,7 +37,7 @@ export const BrutalistCard: React.FC<BrutalistCardProps> = ({ artist, rank, imag
       });
 
       const link = document.createElement('a');
-      link.download = `lotus-card-${artist.name.replace(/\s+/g, '-').toLowerCase()}.png`;
+      link.download = `harvey-card-${artist.name.replace(/\s+/g, '-').toLowerCase()}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (err) {
@@ -72,7 +72,7 @@ export const BrutalistCard: React.FC<BrutalistCardProps> = ({ artist, rank, imag
             </div>
 
             {/* Image Container */}
-            <div className="relative mx-3 mt-3 border-[4px] border-black aspect-square bg-black overflow-hidden">
+            <div className="relative mx-3 mt-3 border-[4px] border-black aspect-square bg-[#faf9f5] overflow-hidden">
                 <img
                     src={image || artist.image}
                     alt={artist.name}
@@ -87,7 +87,7 @@ export const BrutalistCard: React.FC<BrutalistCardProps> = ({ artist, rank, imag
             </div>
 
             {/* Info Bar */}
-            <div className="bg-[#FF0080] text-white font-black text-center text-xs py-1 border-y-[4px] border-black mt-3 mx-3 uppercase tracking-widest shadow-[2px_2px_0px_0px_#000]">
+            <div className="bg-[#FF0080] text-[#141413] font-black text-center text-xs py-1 border-y-[4px] border-black mt-3 mx-3 uppercase tracking-widest shadow-[2px_2px_0px_0px_#000]">
                 {artist.genres?.[0] || "Musician"} Type
             </div>
 
@@ -111,21 +111,21 @@ export const BrutalistCard: React.FC<BrutalistCardProps> = ({ artist, rank, imag
                         {artist.name}
                     </h3>
                     <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-full bg-black"></div>
+                        <div className="w-3 h-3 rounded-full bg-[#faf9f5]"></div>
                         <div className="w-3 h-3 rounded-full bg-gray-400"></div>
                     </div>
                 </div>
             </div>
 
             {/* Footer */}
-            <div className="bg-black text-white text-[9px] p-1 text-center font-mono uppercase tracking-widest">
-                Lotus TCG • 2024 Edition
+            <div className="bg-[#faf9f5] text-[#141413] text-[9px] p-1 text-center font-mono uppercase tracking-widest">
+                Harvey TCG • 2024 Edition
             </div>
 
             {/* Download Button (Hidden by default, visible on hover) */}
             <button
                 onClick={downloadCard}
-                className="absolute top-2 right-2 bg-black text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:scale-110 active:scale-95 border-2 border-white shadow-lg"
+                className="absolute top-2 right-2 bg-[#faf9f5] text-[#141413] p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:scale-110 active:scale-95 border-2 border-white shadow-lg"
                 title="Save Card"
             >
                 <Download size={14} />
