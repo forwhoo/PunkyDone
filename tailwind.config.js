@@ -11,45 +11,45 @@ export default {
   theme: {
     extend: {
       colors: {
-        border: "#e8e6dc",
-        input: "#e8e6dc",
-        ring: "#d97757",
-        background: "#faf9f5",
-        foreground: "#141413",
+        border: "#2E2E2C",
+        input: "#3A3A37",
+        ring: "#E8806A",
+        background: "#1C1C1A",
+        foreground: "#EDEAE2",
         primary: {
-          DEFAULT: "#d97757",
-          foreground: "#faf9f5",
+          DEFAULT: "#E8806A",
+          foreground: "#1C1C1A",
         },
         secondary: {
-          DEFAULT: "#e8e6dc",
-          foreground: "#141413",
+          DEFAULT: "#252523",
+          foreground: "#EDEAE2",
         },
         muted: {
-          DEFAULT: "#e8e6dc",
-          foreground: "#b0aea5",
+          DEFAULT: "#9E9C95",
+          foreground: "#9E9C95",
         },
         accent: {
-          DEFAULT: "#6a9bcc",
-          foreground: "#faf9f5",
+          DEFAULT: "#3BBFBF",
+          foreground: "#1C1C1A",
         },
         card: {
-          DEFAULT: "#ffffff",
-          foreground: "#141413",
+          DEFAULT: "#252523",
+          foreground: "#EDEAE2",
         },
         anthropic: {
-          dark: '#141413',
-          light: '#faf9f5',
-          mid: '#b0aea5',
-          lightGray: '#e8e6dc',
-          orange: '#d97757',
-          blue: '#6a9bcc',
-          green: '#788c5d'
+          dark: '#1C1C1A',
+          light: '#252523',
+          mid: '#9E9C95',
+          lightGray: '#3A3A37',
+          orange: '#E8806A',
+          blue: '#3BBFBF',
+          green: '#3BBFBF'
         }
       },
       fontFamily: {
-        sans: ['Lora', 'Georgia', 'serif'],
-        heading: ['Poppins', 'Arial', 'sans-serif'],
-        body: ['Lora', 'Georgia', 'serif'],
+        sans: ['"DM Sans"', 'sans-serif'],
+        heading: ['"Playfair Display"', 'serif'],
+        body: ['"DM Sans"', 'sans-serif'],
         barlow: ['Barlow', 'sans-serif'],
         'barlow-condensed': ['"Barlow Condensed"', 'sans-serif'],
       }

@@ -1,32 +1,32 @@
 :root {
-  --color-primary: #141413;
-  --color-primary-glow: rgba(20, 20, 19, 0.1);
-  --color-bg: #faf9f5;
-  --color-card: #ffffff;
-  --color-card-elevated: #e8e6dc;
-  --color-text-muted: #b0aea5;
-  --color-border: rgba(0, 0, 0, 0.1);
+  --color-primary: #EDEAE2;
+  --color-primary-glow: rgba(232, 128, 106, 0.1);
+  --color-bg: #1C1C1A;
+  --color-card: #252523;
+  --color-card-elevated: #2E2E2C;
+  --color-text-muted: #9E9C95;
+  --color-border: rgba(237, 234, 226, 0.1);
 }
 
 ::selection {
-  background: #d97757;
+  background: #E8806A;
   color: white;
 }
 
 body {
   margin: 0;
   background-color: var(--color-bg);
-  color: #141413;
-  font-family: 'Lora', Georgia, serif;
+  color: #EDEAE2;
+  font-family: 'DM Sans', sans-serif;
   overflow-x: hidden;
   width: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Poppins', Arial, sans-serif;
+  font-family: 'Playfair Display', serif;
 }
 
 #root {
@@ -57,23 +57,23 @@ html {
 
 .markdown-container th {
   text-align: left;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 2px solid rgba(28, 28, 26, 0.1);
   padding: 8px;
-  color: #141413;
+  color: #EDEAE2;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-family: 'Poppins', Arial, sans-serif;
+  font-family: 'Playfair Display', serif;
 }
 
 .markdown-container td {
   padding: 10px 8px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(28, 28, 26, 0.05);
 }
 
 .markdown-container strong {
-  color: #141413;
-  font-family: 'Poppins', Arial, sans-serif;
+  color: #EDEAE2;
+  font-family: 'Playfair Display', serif;
   font-weight: 600;
 }
 
@@ -102,12 +102,12 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #b0aea5;
+  background: #6B6964;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #d97757;
+  background: #E8806A;
 }
 
 /* Hide scrollbar for horizontal carousels */
@@ -140,7 +140,7 @@ html {
 
 .card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(28, 28, 26, 0.08);
 }
 
 /* Animate In Utilities */
@@ -196,15 +196,15 @@ html {
 
 /* Authentication Page Styles */
 .auth-button-primary {
-  background-color: #141413;
+  background-color: #EDEAE2;
   color: white;
   border-radius: 9999px; /* Pill shape */
   padding: 16px 32px;
-  font-family: 'Poppins', Arial, sans-serif;
+  font-family: 'Playfair Display', serif;
   font-weight: 600;
   width: 100%;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(28, 28, 26, 0.1);
 }
 
 .auth-button-primary:hover {
@@ -214,10 +214,10 @@ html {
 
 .auth-button-secondary {
   background-color: #ffffff;
-  color: #141413;
+  color: #EDEAE2;
   border-radius: 9999px;
   padding: 16px 32px;
-  font-family: 'Poppins', Arial, sans-serif;
+  font-family: 'Playfair Display', serif;
   font-weight: 600;
   width: 100%;
   display: flex;
@@ -225,7 +225,7 @@ html {
   justify-content: center;
   gap: 8px;
   transition: all 0.2s ease;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(28, 28, 26, 0.1);
 }
 
 .auth-button-secondary:hover {
