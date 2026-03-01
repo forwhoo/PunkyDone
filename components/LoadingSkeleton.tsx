@@ -20,7 +20,7 @@ export const ChartSkeleton = () => (
 );
 
 export const StatsCardSkeleton = () => (
-    <div className="bg-white border border-[#e8e6dc] rounded-2xl p-6 animate-pulse">
+    <div className="bg-[#252523] border border-[#3A3A37] rounded-2xl p-6 animate-pulse">
         <div className="flex items-center justify-between mb-4">
             <div className="h-6 bg-[#2C2C2E] rounded w-32" />
             <div className="h-8 w-8 bg-[#2C2C2E] rounded-full" />
