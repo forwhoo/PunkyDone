@@ -377,8 +377,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     };
 
     return (
-        <ChatContainerRoot id="ai-spotlight" ref={sectionRef} className="bg-[#09090b] bg-noise relative h-full">
-            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80 pointer-events-none z-0" />
+        <ChatContainerRoot id="ai-spotlight" ref={sectionRef} className="bg-black relative h-full">
             <div className="flex-shrink-0 flex items-center justify-between py-3 px-4 border-b border-white/5 relative z-10 bg-black/40 backdrop-blur-md">
                 <div className="flex items-center gap-2">
                     <Button
@@ -463,7 +462,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             <ChatContainerContent className="flex-1 relative z-10 px-4 pt-6">
                 <div className="max-w-4xl mx-auto space-y-6">
                     {chatMessages.length === 0 && !loading && categoryResults.length === 0 && !insightMode && !wrappedMode && (
-                        <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
+                        <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center bg-black">
                             <div className="w-16 h-16 rounded-2xl bg-[#FA2D48]/10 flex items-center justify-center mb-6">
                                 <Sparkles className="w-8 h-8 text-[#FA2D48]" />
                             </div>

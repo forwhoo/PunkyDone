@@ -1,8 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { ChevronDown, X, Music, Check, TrendingUp, Calendar as CalendarIcon } from 'lucide-react';
-import { fetchHeatmapData } from '../services/dbService';
+import { ChevronDown, X, Music, Check, TrendingUp } from 'lucide-react';
+import { fetchHeatmapData } from '../../services/dbService';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface ActivityHeatmapProps {
     history?: any[];
@@ -15,8 +14,10 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history: propH
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [selectedTracks, setSelectedTracks] = useState<any[]>([]);
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const [showYearDropdown, setShowYearDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
     const [fullHistory, setFullHistory] = useState<any[]>(propHistory || []);
-    const [dropdownOpen, setDropdownOpen] = useState(false);
 
     // FETCH FULL DATA ON MOUNT
     useEffect(() => {
@@ -27,6 +28,17 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history: propH
             }
         };
         load();
+    }, []);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowYearDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     const filteredHistory = useMemo(() => {
@@ -100,32 +112,6 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history: propH
         return weeksArr;
     }, [dailyData, selectedYear]);
 
-    // Data for Mobile List View (Grouped by Month)
-    const mobileMonthsData = useMemo(() => {
-        const monthsData: Record<number, { days: any[], totalPlays: number }> = {};
-        for (let m = 0; m < 12; m++) {
-            monthsData[m] = { days: [], totalPlays: 0 };
-            const daysInMonth = new Date(selectedYear, m + 1, 0).getDate();
-            for (let d = 1; d <= daysInMonth; d++) {
-                const current = new Date(selectedYear, m, d);
-                const dateStr = current.toLocaleDateString('en-CA');
-                const count = dailyData[dateStr] || 0;
-                monthsData[m].days.push({
-                    date: dateStr,
-                    dayOfMonth: d,
-                    count: count
-                });
-                monthsData[m].totalPlays += count;
-            }
-        }
-
-        // Return only months with activity, sorted backwards (most recent first)
-        return Object.entries(monthsData)
-            .map(([monthStr, data]) => ({ month: parseInt(monthStr), ...data }))
-            .filter(data => data.totalPlays > 0 || (new Date().getFullYear() === selectedYear && data.month <= new Date().getMonth()))
-            .reverse();
-    }, [dailyData, selectedYear]);
-
     const getThemeColor = (count: number, inYear: boolean) => {
         if (!inYear) return 'invisible';
         if (count === 0) return 'bg-[#161b22] border border-white/5';
@@ -160,110 +146,62 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ history: propH
                                 <span>{selectedYear}</span>
                             </p>
                         </div>
-
-                        {/* Year Dropdown using Shadcn Popover for reliable mobile interaction */}
-                        <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
-                            <PopoverTrigger asChild>
-                                <button
-                                    className="flex items-center gap-1.5 text-[12px] font-bold text-white bg-white/5 px-4 py-2 rounded-xl border border-white/10 hover:bg-white/10 active:scale-95 transition-all shadow-sm"
-                                >
-                                    <CalendarIcon size={14} className="text-[#FA2D48]" />
-                                    {selectedYear}
-                                    <ChevronDown size={14} className={`transition-transform duration-300 ml-1 opacity-50 ${dropdownOpen ? 'rotate-180' : ''}`} />
-                                </button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-32 p-1.5 rounded-xl border border-white/10 bg-[#1c1c1e]/95 backdrop-blur-xl shadow-2xl" align="end">
-                                <div className="flex flex-col gap-1">
+                        <div className="relative" ref={dropdownRef}>
+                            <button
+                                onClick={() => setShowYearDropdown(!showYearDropdown)}
+                                className="flex items-center gap-1 text-[12px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors"
+                            >
+                                {selectedYear} <ChevronDown size={14} className={`transition-transform ${showYearDropdown ? 'rotate-180' : ''}`} />
+                            </button>
+                            {showYearDropdown && (
+                                <div className="absolute right-0 top-full mt-1 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[100px] animate-in fade-in slide-in-from-top-2 duration-200">
                                     {AVAILABLE_YEARS.map(year => (
                                         <button
                                             key={year}
                                             onClick={() => {
                                                 setSelectedYear(year);
-                                                setDropdownOpen(false);
+                                                setShowYearDropdown(false);
                                                 setSelectedDate(null);
                                                 setSelectedTracks([]);
                                             }}
-                                            className={`w-full px-3 py-2 text-left text-[13px] font-semibold flex items-center justify-between gap-2 rounded-lg transition-colors ${year === selectedYear ? 'text-white bg-white/10' : 'text-[#8E8E93] hover:text-white hover:bg-white/5'}`}
+                                            className={`w-full px-4 py-2 text-left text-[12px] font-medium flex items-center justify-between gap-2 hover:bg-white/5 transition-colors ${year === selectedYear ? 'text-white bg-white/5' : 'text-[#8E8E93]'}`}
                                         >
                                             {year}
-                                            {year === selectedYear && <Check size={14} className="text-[#FA2D48]" />}
+                                            {year === selectedYear && <Check size={12} className="text-[#FA2D48]" />}
                                         </button>
                                     ))}
                                 </div>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-
-                    {/* Desktop View: Standard Github-style 53-week heatmap */}
-                    <div className="hidden lg:block">
-                        <div className="w-full overflow-x-auto pb-4 custom-scrollbar">
-                            <div className="flex gap-[3px] min-w-max">
-                                {weeks.map((week, idx) => (
-                                    <div key={idx} className="flex flex-col gap-[3px]">
-                                        {week.map((day, dIdx) => (
-                                            <div
-                                                key={`${idx}-${dIdx}`}
-                                                className={`w-[10px] h-[10px] rounded-[2px] transition-all hover:scale-125 hover:z-10 cursor-pointer ${getThemeColor(day.count, day.inYear)} ${selectedDate === day.date ? 'ring-2 ring-white ring-offset-1 ring-offset-[#0A0A0A]' : ''}`}
-                                                title={`${day.date}: ${day.count} plays`}
-                                                onClick={() => handleDayClick(day.date)}
-                                            />
-                                        ))}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="flex justify-between items-center mt-3 text-[10px] text-[#8E8E93] px-1">
-                            <span>Learn how we count contributions</span>
-                            <div className="flex items-center gap-1">
-                                <span>Less</span>
-                                <div className="w-[10px] h-[10px] bg-[#161b22] rounded-[2px] border border-white/5" />
-                                <div className="w-[10px] h-[10px] bg-[#404040] rounded-[2px]" />
-                                <div className="w-[10px] h-[10px] bg-[#808080] rounded-[2px]" />
-                                <div className="w-[10px] h-[10px] bg-[#bfbfbf] rounded-[2px]" />
-                                <div className="w-[10px] h-[10px] bg-white rounded-[2px]" />
-                                <span>More</span>
-                            </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Mobile View: Vertical scrolling month blocks */}
-                    <div className="lg:hidden space-y-6">
-                        {mobileMonthsData.map((monthData, idx) => (
-                            <div key={idx} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
-                                <div className="flex justify-between items-end mb-3 px-1">
-                                    <h4 className="text-sm font-bold text-white tracking-tight uppercase">
-                                        {new Date(selectedYear, monthData.month, 1).toLocaleString('default', { month: 'long' })}
-                                    </h4>
-                                    <span className="text-[10px] font-bold text-[#8E8E93] uppercase tracking-wider">
-                                        {monthData.totalPlays} plays
-                                    </span>
+                    <div className="w-full overflow-x-auto pb-4 custom-scrollbar lg:no-scrollbar">
+                        <div className="flex gap-[3px] min-w-max">
+                            {weeks.map((week, idx) => (
+                                <div key={idx} className="flex flex-col gap-[3px]">
+                                    {week.map((day, dIdx) => (
+                                        <div
+                                            key={`${idx}-${dIdx}`}
+                                            className={`w-[10px] h-[10px] rounded-[2px] transition-all hover:scale-125 hover:z-10 cursor-pointer ${getThemeColor(day.count, day.inYear)} ${selectedDate === day.date ? 'ring-2 ring-white ring-offset-1 ring-offset-[#0A0A0A]' : ''}`}
+                                            title={`${day.date}: ${day.count} plays`}
+                                            onClick={() => handleDayClick(day.date)}
+                                        />
+                                    ))}
                                 </div>
-                                <div className="flex flex-wrap gap-[4px]">
-                                    {monthData.days.map((day, dIdx) => {
-                                        const intensity = day.count / maxCount;
-                                        // Brighter colors for mobile visibility
-                                        let bgClass = 'bg-[#161b22] border border-white/5';
-                                        if (day.count > 0) {
-                                            if (intensity < 0.25) bgClass = 'bg-[#404040]';
-                                            else if (intensity < 0.5) bgClass = 'bg-[#808080]';
-                                            else if (intensity < 0.75) bgClass = 'bg-[#bfbfbf]';
-                                            else bgClass = 'bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]';
-                                        }
-
-                                        return (
-                                            <div
-                                                key={dIdx}
-                                                onClick={() => handleDayClick(day.date)}
-                                                className={`w-[calc(14.28%-4px)] aspect-square rounded-[4px] cursor-pointer transition-transform active:scale-90 flex items-center justify-center text-[8px] font-bold ${bgClass} ${selectedDate === day.date ? 'ring-2 ring-[#FA2D48] ring-offset-2 ring-offset-black z-10' : ''}`}
-                                            >
-                                                {/* Only show day number if it's the selected day or a high intensity day for visual flavor */}
-                                                {(selectedDate === day.date || intensity > 0.75) ? <span className="text-black/80">{day.dayOfMonth}</span> : null}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
+                    </div>
+                    <div className="flex justify-between items-center mt-3 text-[10px] text-[#8E8E93] px-1">
+                        <span>Learn how we count contributions</span>
+                        <div className="flex items-center gap-1">
+                            <span>Less</span>
+                            <div className="w-[10px] h-[10px] bg-[#161b22] rounded-[2px] border border-white/5" />
+                            <div className="w-[10px] h-[10px] bg-[#404040] rounded-[2px]" />
+                            <div className="w-[10px] h-[10px] bg-[#808080] rounded-[2px]" />
+                            <div className="w-[10px] h-[10px] bg-[#bfbfbf] rounded-[2px]" />
+                            <div className="w-[10px] h-[10px] bg-white rounded-[2px]" />
+                            <span>More</span>
+                        </div>
                     </div>
 
                     {totalPlays === 0 && fullHistory.length > 0 && (
