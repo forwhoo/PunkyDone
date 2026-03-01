@@ -24,9 +24,9 @@ This plan addresses component misalignment, chart display issues, and visual inc
 
 3. **Design tokens approach** — Should we create CSS custom properties (`:root` variables) for colors/spacing to make future theming easier?
 
-Remove the 
+Remove the
 DISCOVERY
 Powered by Gemini
 
 The Discovery
- text disocery make it on top I want it to be better the laoytu right nwo the layout is bad I don't like the search thingy is on top fix it up make the chart, and thhe rewind together merge or make it better..
+text disocery make it on top I want it to be better the laoytu right nwo the layout is bad I don't like the search thingy is on top fix it up make the chart, and thhe rewind together merge or make it better..

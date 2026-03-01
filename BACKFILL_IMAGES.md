@@ -16,19 +16,21 @@ If you already uploaded your JSON files and don't have images, you can manually 
 
 ```javascript
 // Get the token from localStorage
-const token = localStorage.getItem('spotify_token');
+const token = localStorage.getItem("spotify_token");
 
 if (!token) {
-    console.error('No Spotify token found. Please log in first.');
+  console.error("No Spotify token found. Please log in first.");
 } else {
-    // Import the function (works if your app exposes dbService)
-    import('/src/services/dbService.ts').then(async ({ backfillExtendedHistoryImages }) => {
-        console.log('Starting image backfill...');
-        const result = await backfillExtendedHistoryImages(token, (status) => {
-            console.log(status);
-        });
-        console.log('Result:', result);
-    });
+  // Import the function (works if your app exposes dbService)
+  import("/src/services/dbService.ts").then(
+    async ({ backfillExtendedHistoryImages }) => {
+      console.log("Starting image backfill...");
+      const result = await backfillExtendedHistoryImages(token, (status) => {
+        console.log(status);
+      });
+      console.log("Result:", result);
+    },
+  );
 }
 ```
 

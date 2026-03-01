@@ -1,23 +1,23 @@
 :root {
-  --color-primary: #EDEAE2;
+  --color-primary: #edeae2;
   --color-primary-glow: rgba(232, 128, 106, 0.1);
-  --color-bg: #1C1C1A;
+  --color-bg: #1c1c1a;
   --color-card: #252523;
-  --color-card-elevated: #2E2E2C;
-  --color-text-muted: #9E9C95;
+  --color-card-elevated: #2e2e2c;
+  --color-text-muted: #9e9c95;
   --color-border: rgba(237, 234, 226, 0.1);
 }
 
 ::selection {
-  background: #E8806A;
+  background: #e8806a;
   color: white;
 }
 
 body {
   margin: 0;
   background-color: var(--color-bg);
-  color: #EDEAE2;
-  font-family: 'DM Sans', sans-serif;
+  color: #edeae2;
+  font-family: "DM Sans", sans-serif;
   overflow-x: hidden;
   width: 100%;
   -webkit-font-smoothing: antialiased;
@@ -25,8 +25,13 @@ body {
   color-scheme: dark;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Playfair Display', serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Playfair Display", serif;
 }
 
 #root {
@@ -59,11 +64,11 @@ html {
   text-align: left;
   border-bottom: 2px solid rgba(28, 28, 26, 0.1);
   padding: 8px;
-  color: #EDEAE2;
+  color: #edeae2;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
 }
 
 .markdown-container td {
@@ -72,8 +77,8 @@ html {
 }
 
 .markdown-container strong {
-  color: #EDEAE2;
-  font-family: 'Playfair Display', serif;
+  color: #edeae2;
+  font-family: "Playfair Display", serif;
   font-weight: 600;
 }
 
@@ -102,12 +107,12 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #6B6964;
+  background: #6b6964;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #E8806A;
+  background: #e8806a;
 }
 
 /* Hide scrollbar for horizontal carousels */
@@ -135,7 +140,9 @@ html {
 
 /* Card Hover Effect */
 .card-hover {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .card-hover:hover {
@@ -145,27 +152,31 @@ html {
 
 /* Animate In Utilities */
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slide-up {
-  from { 
+  from {
     opacity: 0;
     transform: translateY(20px);
   }
-  to { 
+  to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
 @keyframes scale-in {
-  from { 
+  from {
     opacity: 0;
     transform: scale(0.95);
   }
-  to { 
+  to {
     opacity: 1;
     transform: scale(1);
   }
@@ -184,8 +195,12 @@ html {
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .bg-noise {
@@ -196,11 +211,11 @@ html {
 
 /* Authentication Page Styles */
 .auth-button-primary {
-  background-color: #EDEAE2;
+  background-color: #edeae2;
   color: white;
   border-radius: 9999px; /* Pill shape */
   padding: 16px 32px;
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
   font-weight: 600;
   width: 100%;
   transition: all 0.2s ease;
@@ -214,10 +229,10 @@ html {
 
 .auth-button-secondary {
   background-color: #ffffff;
-  color: #EDEAE2;
+  color: #edeae2;
   border-radius: 9999px;
   padding: 16px 32px;
-  font-family: 'Playfair Display', serif;
+  font-family: "Playfair Display", serif;
   font-weight: 600;
   width: 100%;
   display: flex;
@@ -247,6 +262,10 @@ html {
 
 @keyframes loading-dots {
   0%,
-  100% { opacity: 0; }
-  50% { opacity: 1; }
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
 }

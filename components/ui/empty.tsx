@@ -1,5 +1,5 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 const Empty = React.forwardRef<
   HTMLDivElement,
@@ -9,12 +9,12 @@ const Empty = React.forwardRef<
     ref={ref}
     className={cn(
       "flex flex-col items-center justify-center text-center p-8 border border-dashed border-[#e8e6dc] rounded-xl bg-[#e8e6dc]/50",
-      className
+      className,
     )}
     {...props}
   />
-))
-Empty.displayName = "Empty"
+));
+Empty.displayName = "Empty";
 
 const EmptyHeader = React.forwardRef<
   HTMLDivElement,
@@ -25,8 +25,8 @@ const EmptyHeader = React.forwardRef<
     className={cn("flex flex-col items-center gap-2 mb-4", className)}
     {...props}
   />
-))
-EmptyHeader.displayName = "EmptyHeader"
+));
+EmptyHeader.displayName = "EmptyHeader";
 
 const EmptyMedia = React.forwardRef<
   HTMLDivElement,
@@ -37,8 +37,8 @@ const EmptyMedia = React.forwardRef<
     className={cn("mb-4 flex justify-center", className)}
     {...props}
   />
-))
-EmptyMedia.displayName = "EmptyMedia"
+));
+EmptyMedia.displayName = "EmptyMedia";
 
 const EmptyTitle = React.forwardRef<
   HTMLHeadingElement,
@@ -49,8 +49,8 @@ const EmptyTitle = React.forwardRef<
     className={cn("text-lg font-bold text-[#141413] tracking-tight", className)}
     {...props}
   />
-))
-EmptyTitle.displayName = "EmptyTitle"
+));
+EmptyTitle.displayName = "EmptyTitle";
 
 const EmptyDescription = React.forwardRef<
   HTMLParagraphElement,
@@ -61,16 +61,16 @@ const EmptyDescription = React.forwardRef<
     className={cn("text-sm text-[#141413]/50 max-w-[280px]", className)}
     {...props}
   />
-))
-EmptyDescription.displayName = "EmptyDescription"
+));
+EmptyDescription.displayName = "EmptyDescription";
 
 const EmptyContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div ref={ref} className={cn("mt-2", className)} {...props} />
-))
-EmptyContent.displayName = "EmptyContent"
+));
+EmptyContent.displayName = "EmptyContent";
 
 export {
   Empty,
@@ -79,4 +79,4 @@ export {
   EmptyTitle,
   EmptyDescription,
   EmptyContent,
-}
+};

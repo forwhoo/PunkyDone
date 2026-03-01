@@ -1,11 +1,11 @@
-import React from 'react';
+import React from "react";
 
 export interface Artist {
   id: string;
   name: string;
   image: string;
   totalListens: number;
-  trend: number; 
+  trend: number;
   timeStr?: string;
   museInsight?: string;
   rank?: number;
@@ -14,7 +14,6 @@ export interface Artist {
   streak?: number;
   genres?: string[];
 }
-
 export interface Album {
   id: string;
   title: string;
@@ -30,7 +29,6 @@ export interface Album {
   streak?: number;
   trend?: number;
 }
-
 export interface Song {
   id: string;
   title: string;
@@ -46,14 +44,12 @@ export interface Song {
   peak?: number;
   prev?: number;
   streak?: number;
-  trend?: 'UP' | 'DOWN' | 'STABLE' | 'NEW';
+  trend?: "UP" | "DOWN" | "STABLE" | "NEW";
 }
-
 export interface ChartDataPoint {
   day: string;
   listens: number;
 }
-
 export interface NavItem {
   label: string;
   icon: React.ElementType;

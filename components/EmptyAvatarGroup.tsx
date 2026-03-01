@@ -1,5 +1,5 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Empty,
   EmptyContent,
@@ -7,21 +7,20 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
-import { PlusIcon } from "lucide-react"
+} from "@/components/ui/empty";
+import { PlusIcon } from "lucide-react";
 
 interface EmptyAvatarGroupProps {
-    title?: string;
-    description?: string;
-    actionLabel?: string;
-    onAction?: () => void;
+  title?: string;
+  description?: string;
+  actionLabel?: string;
+  onAction?: () => void;
 }
-
 export function EmptyAvatarGroup({
-    title = "No Data Available",
-    description = "We couldn't find enough data to display this section.",
-    actionLabel = "Refresh Data",
-    onAction
+  title = "No Data Available",
+  description = "We couldn't find enough data to display this section.",
+  actionLabel = "Refresh Data",
+  onAction,
 }: EmptyAvatarGroupProps) {
   return (
     <Empty>
@@ -49,18 +48,16 @@ export function EmptyAvatarGroup({
           </div>
         </EmptyMedia>
         <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>
-          {description}
-        </EmptyDescription>
+        <EmptyDescription>{description}</EmptyDescription>
       </EmptyHeader>
       {onAction && (
-          <EmptyContent>
-            <Button size="sm" onClick={onAction} className="gap-2">
-              <PlusIcon className="w-4 h-4" />
-              {actionLabel}
-            </Button>
-          </EmptyContent>
+        <EmptyContent>
+          <Button size="sm" onClick={onAction} className="gap-2">
+            <PlusIcon className="w-4 h-4" />
+            {actionLabel}
+          </Button>
+        </EmptyContent>
       )}
     </Empty>
-  )
+  );
 }

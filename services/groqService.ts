@@ -1,39 +1,46 @@
 import OpenAI from "openai";
-
 const getClient = () => {
-    // @ts-ignore
-    const apiKey = import.meta.env.VITE_MISTRAL_API_KEY || import.meta.env.VITE_GROQ_API_KEY;
-    if (!apiKey) return null;
-    
-    return new OpenAI({
-        apiKey: apiKey,
-        baseURL: "https://api.groq.com/openai/v1",
-        dangerouslyAllowBrowser: true 
-    });
-}
+  // @ts-ignore
+  const apiKey =
+    import.meta.env.VITE_MISTRAL_API_KEY || import.meta.env.VITE_GROQ_API_KEY;
+  if (!apiKey) return null;
+  return new OpenAI({
+    apiKey: apiKey,
+    baseURL: "https://api.groq.com/openai/v1",
+    dangerouslyAllowBrowser: true,
+  });
+};
 
 export const generateMusicInsight = async (query: string, stats: any) => {
-    const client = getClient();
-    if (!client) {
-        return "Please set VITE_MISTRAL_API_KEY in your environment to use the AI features.";
-    }
+  const client = getClient();
+  if (!client) {
+    return "Please set VITE_MISTRAL_API_KEY in your environment to use the AI features.";
+  }
 
-    // Prepare context from stats (summarized to avoid token limits if data is huge, though Groq is fast/large context)
-    const context = {
-        topArtist: stats?.artists?.[0] || null,
-        topSong: stats?.songs?.[0] || null,
-        topGenre: stats?.artists?.[0]?.genres?.[0] || "Unknown",
-        totalListeningTime: stats?.hourlyActivity?.reduce((acc: number, curr: any) => acc + curr.value, 0) || 0,
-        recentTracks: stats?.songs?.slice(0, 5).map((s: any) => s.title) || [],
-        allArtists: stats?.artists?.slice(0, 5).map((a: any) => ({ name: a.name, image: a.image })) || []
-    };
-
-    const systemPrompt = `
+  // Prepare context from stats (summarized to avoid token limits
+  //
+  // if data is huge, though Groq is fast/large context)
+  const context = {
+    topArtist: stats?.artists?.[0] || null,
+    topSong: stats?.songs?.[0] || null,
+    topGenre: stats?.artists?.[0]?.genres?.[0] || "Unknown",
+    totalListeningTime:
+      stats?.hourlyActivity?.reduce(
+        (acc: number, curr: any) => acc + curr.value,
+        0,
+      ) || 0,
+    recentTracks: stats?.songs?.slice(0, 5).map((s: any) => s.title) || [],
+    allArtists:
+      stats?.artists
+        ?.slice(0, 5)
+        .map((a: any) => ({ name: a.name, image: a.image })) || [],
+  };
+  const systemPrompt = `
 You are Harvey, a music analytics assistant.
 Your goal is to answer their questions about their listening habits using the provided data.
 
 Tools/Capabilities:
-- If the user asks for their top artist, tell them the name AND display their image using Markdown syntax: ![Artist Name](image_url).
+- If the user asks for their topartist, tell them the name AND display their image using Markdown syntax: ![Artist Name](image_url).
 - If the user asks for their top song, tell them the title and artist, and show the cover art if available: ![Title](cover_url).
 - Be extremely concise. Max 2-3 sentences.
 - Avoid flowery language. Get straight to the point.
@@ -43,20 +50,23 @@ Current User Data:
 ${JSON.stringify(context, null, 2)}
     `;
 
-    try {
-        const response = await client.chat.completions.create({
-            model: "moonshotai/kimi-k2-instruct-0905", // Using a solid model on Groq
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: query }
-            ],
-            temperature: 0.7,
-            max_tokens: 300
-        });
-
-        return response.choices[0]?.message?.content || "I couldn't process that request right now.";
-    } catch (error) {
-        console.error("Groq AI Error:", error);
-        return "Sorry, I'm having trouble connecting to my brain (Groq API).";
-    }
+  try {
+    const response = await client.chat.completions.create({
+      model: "moonshotai/kimi-k2-instruct-0905",
+      // Using a solid model on Groq
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: query },
+      ],
+      temperature: 0.7,
+      max_tokens: 300,
+    });
+    return (
+      response.choices[0]?.message?.content ||
+      "I couldn't process that request right now."
+    );
+  } catch (error) {
+    console.error("Groq AI Error:", error);
+    return "Sorry, I'm having trouble connecting to my brain (Groq API).";
+  }
 };

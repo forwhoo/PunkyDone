@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
-import { Renderer, Program, Mesh, Triangle, Texture } from 'ogl';
-import './PrismaticBurst.css';
+import React, { useEffect, useRef } from "react";
+import { Renderer, Program, Mesh, Triangle, Texture } from "ogl";
+import "./PrismaticBurst.css";
 
 type Offset = { x?: number | string; y?: number | string };
-type AnimationType = 'rotate' | 'rotate3d' | 'hover';
+type AnimationType = "rotate" | "rotate3d" | "hover";
 
 export type PrismaticBurstProps = {
   intensity?: number;
@@ -15,9 +15,8 @@ export type PrismaticBurstProps = {
   offset?: Offset;
   hoverDampness?: number;
   rayCount?: number;
-  mixBlendMode?: React.CSSProperties['mixBlendMode'] | 'none';
+  mixBlendMode?: React.CSSProperties["mixBlendMode"] | "none";
 };
-
 const vertexShader = `#version 300 es
 in vec2 position;
 in vec2 uv;
@@ -27,7 +26,6 @@ void main() {
     gl_Position = vec4(position, 0.0, 1.0);
 }
 `;
-
 const fragmentShader = `#version 300 es
 precision highp float;
 precision highp int;
@@ -51,7 +49,7 @@ uniform int   uRayCount;
 float hash21(vec2 p){
     p = floor(p);
     float f = 52.9829189 * fract(dot(p, vec2(0.065, 0.005)));
-    return fract(f);
+return fract(f);
 }
 
 mat2 rot30(){ return mat2(0.8, -0.5, 0.5, 0.8); }
@@ -65,12 +63,12 @@ float layeredNoise(vec2 fragPx){
     n += 0.20 * hash21(q * 4.0 + 47.0);
     n += 0.10 * hash21(q * 8.0 + 113.0);
     n += 0.05 * hash21(q * 16.0 + 191.0);
-    return n;
+return n;
 }
 
 vec3 rayDir(vec2 frag, vec2 res, vec2 offset, float dist){
     float focal = res.y * max(dist, 1e-3);
-    return normalize(vec3(2.0 * (frag - offset) - res, focal));
+return normalize(vec3(2.0 * (frag - offset) - res, focal));
 }
 
 float edgeFade(vec2 frag, vec2 res, vec2 offset){
@@ -83,28 +81,31 @@ float edgeFade(vec2 frag, vec2 res, vec2 offset){
     float tail = 1.0 - pow(1.0 - s, 2.0);
     s = mix(s, tail, 0.2);
     float dn = (layeredNoise(frag * 0.15) - 0.5) * 0.0015 * s;
-    return clamp(s + dn, 0.0, 1.0);
+return clamp(s + dn, 0.0, 1.0);
 }
 
-mat3 rotX(float a){ float c = cos(a), s = sin(a); return mat3(1.0,0.0,0.0, 0.0,c,-s, 0.0,s,c); }
-mat3 rotY(float a){ float c = cos(a), s = sin(a); return mat3(c,0.0,s, 0.0,1.0,0.0, -s,0.0,c); }
-mat3 rotZ(float a){ float c = cos(a), s = sin(a); return mat3(c,-s,0.0, s,c,0.0, 0.0,0.0,1.0); }
+mat3 rotX(float a){ float c = cos(a), s = sin(a);
+return mat3(1.0,0.0,0.0, 0.0,c,-s, 0.0,s,c); }
+mat3 rotY(float a){ float c = cos(a), s = sin(a);
+return mat3(c,0.0,s, 0.0,1.0,0.0, -s,0.0,c); }
+mat3 rotZ(float a){ float c = cos(a), s = sin(a);
+return mat3(c,-s,0.0, s,c,0.0, 0.0,0.0,1.0); }
 
 vec3 sampleGradient(float t){
     t = clamp(t, 0.0, 1.0);
-    return texture(uGradient, vec2(t, 0.5)).rgb;
+return texture(uGradient, vec2(t, 0.5)).rgb;
 }
 
 vec2 rot2(vec2 v, float a){
     float s = sin(a), c = cos(a);
-    return mat2(c, -s, s, c) * v;
+return mat2(c, -s, s, c) * v;
 }
 
 float bendAngle(vec3 q, float t){
     float a = 0.8 * sin(q.x * 0.55 + t * 0.6)
             + 0.7 * sin(q.y * 0.50 - t * 0.5)
             + 0.6 * sin(q.z * 0.60 + t * 0.7);
-    return a;
+return a;
 }
 
 void main(){
@@ -120,24 +121,22 @@ void main(){
     float amp = clamp(uDistort, 0.0, 50.0) * 0.15;
 
     mat3 rot3dMat = mat3(1.0);
-    if(uAnimType == 1){
+if(uAnimType == 1){
       vec3 ang = vec3(t * 0.31, t * 0.21, t * 0.17);
       rot3dMat = rotZ(ang.z) * rotY(ang.y) * rotX(ang.x);
     }
     mat3 hoverMat = mat3(1.0);
-    if(uAnimType == 2){
+if(uAnimType == 2){
       vec2 m = uMouse * 2.0 - 1.0;
       vec3 ang = vec3(m.y * 0.6, m.x * 0.6, 0.0);
       hoverMat = rotY(ang.y) * rotX(ang.x);
     }
-
-    for (int i = 0; i < 44; ++i) {
+for (int i = 0; i < 44; ++i) {
         vec3 P = marchT * dir;
         P.z -= 2.0;
         float rad = length(P);
         vec3 Pl = P * (10.0 / max(rad, 1e-6));
-
-        if(uAnimType == 0){
+if(uAnimType == 0){
             Pl.xz *= M2;
         } else if(uAnimType == 1){
       Pl = rot3dMat * Pl;
@@ -159,8 +158,7 @@ void main(){
             sin(Pb.x + cos(Pb.y) * cos(Pb.z)) *
             sin(Pb.z + sin(Pb.y) * cos(Pb.x + t))
         );
-
-        if (uRayCount > 0) {
+if (uRayCount > 0) {
             float ang = atan(Pb.y, Pb.x);
             float comb = 0.5 + 0.5 * cos(float(uRayCount) * ang);
             comb = pow(comb, 3.0);
@@ -190,10 +188,9 @@ void main(){
 
     fragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
-
 const hexToRgb01 = (hex: string): [number, number, number] => {
   let h = hex.trim();
-  if (h.startsWith('#')) h = h.slice(1);
+  if (h.startsWith("#")) h = h.slice(1);
   if (h.length === 3) {
     const r = h[0],
       g = h[1],
@@ -207,26 +204,24 @@ const hexToRgb01 = (hex: string): [number, number, number] => {
   const b = (intVal & 255) / 255;
   return [r, g, b];
 };
-
 const toPx = (v: number | string | undefined): number => {
   if (v == null) return 0;
-  if (typeof v === 'number') return v;
+  if (typeof v === "number") return v;
   const s = String(v).trim();
-  const num = parseFloat(s.replace('px', ''));
+  const num = parseFloat(s.replace("px", ""));
   return isNaN(num) ? 0 : num;
 };
-
 const PrismaticBurst = ({
   intensity = 2,
   speed = 0.5,
-  animationType = 'rotate3d',
+  animationType = "rotate3d",
   colors,
   distort = 0,
   paused = false,
   offset = { x: 0, y: 0 },
   hoverDampness = 0,
   rayCount,
-  mixBlendMode = 'lighten'
+  mixBlendMode = "lighten",
 }: PrismaticBurstProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const programRef = useRef<Program | null>(null);
@@ -250,26 +245,24 @@ const PrismaticBurst = ({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const renderer = new Renderer({ dpr, alpha: false, antialias: false });
     rendererRef.current = renderer;
-
     const gl = renderer.gl;
-    gl.canvas.style.position = 'absolute';
-    gl.canvas.style.inset = '0';
-    gl.canvas.style.width = '100%';
-    gl.canvas.style.height = '100%';
-    gl.canvas.style.mixBlendMode = mixBlendMode && mixBlendMode !== 'none' ? mixBlendMode : '';
+    gl.canvas.style.position = "absolute";
+    gl.canvas.style.inset = "0";
+    gl.canvas.style.width = "100%";
+    gl.canvas.style.height = "100%";
+    gl.canvas.style.mixBlendMode =
+      mixBlendMode && mixBlendMode !== "none" ? mixBlendMode : "";
     container.appendChild(gl.canvas);
-
     const white = new Uint8Array([255, 255, 255, 255]);
     const gradientTex = new Texture(gl, {
       image: white,
       width: 1,
       height: 1,
       generateMipmaps: false,
-      flipY: false
+      flipY: false,
     });
 
     gradientTex.minFilter = gl.LINEAR;
@@ -277,7 +270,6 @@ const PrismaticBurst = ({
     gradientTex.wrapS = gl.CLAMP_TO_EDGE;
     gradientTex.wrapT = gl.CLAMP_TO_EDGE;
     gradTexRef.current = gradientTex;
-
     const program = new Program(gl, {
       vertex: vertexShader,
       fragment: fragmentShader,
@@ -294,58 +286,60 @@ const PrismaticBurst = ({
         uOffset: { value: [0, 0] as [number, number] },
         uGradient: { value: gradientTex },
         uNoiseAmount: { value: 0.8 },
-        uRayCount: { value: 0 }
-      }
+        uRayCount: { value: 0 },
+      },
     });
 
     programRef.current = program;
-
     const triangle = new Triangle(gl);
     const mesh = new Mesh(gl, { geometry: triangle, program });
     triRef.current = triangle;
     meshRef.current = mesh;
-
     const resize = () => {
       const w = container.clientWidth || 1;
       const h = container.clientHeight || 1;
       renderer.setSize(w, h);
-      program.uniforms.uResolution.value = [gl.drawingBufferWidth, gl.drawingBufferHeight];
+      program.uniforms.uResolution.value = [
+        gl.drawingBufferWidth,
+        gl.drawingBufferHeight,
+      ];
     };
 
     let ro: ResizeObserver | null = null;
-    if ('ResizeObserver' in window) {
+    if ("ResizeObserver" in window) {
       ro = new ResizeObserver(resize);
       ro.observe(container);
     } else {
-      (window as Window).addEventListener('resize', resize);
+      (window as Window).addEventListener("resize", resize);
     }
     resize();
-
     const onPointer = (e: PointerEvent) => {
       const rect = container.getBoundingClientRect();
       const x = (e.clientX - rect.left) / Math.max(rect.width, 1);
       const y = (e.clientY - rect.top) / Math.max(rect.height, 1);
-      mouseTargetRef.current = [Math.min(Math.max(x, 0), 1), Math.min(Math.max(y, 0), 1)];
+      mouseTargetRef.current = [
+        Math.min(Math.max(x, 0), 1),
+        Math.min(Math.max(y, 0), 1),
+      ];
     };
-    container.addEventListener('pointermove', onPointer, { passive: true });
+    container.addEventListener("pointermove", onPointer, { passive: true });
 
     let io: IntersectionObserver | null = null;
-    if ('IntersectionObserver' in window) {
+    if ("IntersectionObserver" in window) {
       io = new IntersectionObserver(
-        entries => {
+        (entries) => {
           if (entries[0]) isVisibleRef.current = entries[0].isIntersecting;
         },
-        { root: null, threshold: 0.01 }
+        { root: null, threshold: 0.01 },
       );
       io.observe(container);
     }
     const onVis = () => {};
-    document.addEventListener('visibilitychange', onVis);
+    document.addEventListener("visibilitychange", onVis);
 
     let raf = 0;
     let last = performance.now();
     let accumTime = 0;
-
     const update = (now: number) => {
       const dt = Math.max(0, now - last) * 0.001;
       last = now;
@@ -367,14 +361,13 @@ const PrismaticBurst = ({
       raf = requestAnimationFrame(update);
     };
     raf = requestAnimationFrame(update);
-
     return () => {
       cancelAnimationFrame(raf);
-      container.removeEventListener('pointermove', onPointer);
+      container.removeEventListener("pointermove", onPointer);
       ro?.disconnect();
-      if (!ro) window.removeEventListener('resize', resize);
+      if (!ro) window.removeEventListener("resize", resize);
       io?.disconnect();
-      document.removeEventListener('visibilitychange', onVis);
+      document.removeEventListener("visibilitychange", onVis);
       try {
         container.removeChild(gl.canvas);
       } catch (e) {
@@ -382,7 +375,8 @@ const PrismaticBurst = ({
       }
       try {
         const glCtx = rendererRef.current?.gl;
-        if (glCtx && gradTexRef.current?.texture) glCtx.deleteTexture(gradTexRef.current.texture);
+        if (glCtx && gradTexRef.current?.texture)
+          glCtx.deleteTexture(gradTexRef.current.texture);
       } catch (e) {
         void e;
       }
@@ -395,9 +389,12 @@ const PrismaticBurst = ({
   }, []);
 
   useEffect(() => {
-    const canvas = rendererRef.current?.gl?.canvas as HTMLCanvasElement | undefined;
+    const canvas = rendererRef.current?.gl?.canvas as
+      | HTMLCanvasElement
+      | undefined;
     if (canvas) {
-      canvas.style.mixBlendMode = mixBlendMode && mixBlendMode !== 'none' ? mixBlendMode : '';
+      canvas.style.mixBlendMode =
+        mixBlendMode && mixBlendMode !== "none" ? mixBlendMode : "";
     }
   }, [mixBlendMode]);
 
@@ -409,16 +406,14 @@ const PrismaticBurst = ({
 
     program.uniforms.uIntensity.value = intensity ?? 1;
     program.uniforms.uSpeed.value = speed ?? 1;
-
     const animTypeMap: Record<AnimationType, number> = {
       rotate: 0,
       rotate3d: 1,
-      hover: 2
+      hover: 2,
     };
-    program.uniforms.uAnimType.value = animTypeMap[animationType ?? 'rotate'];
+    program.uniforms.uAnimType.value = animTypeMap[animationType ?? "rotate"];
 
-    program.uniforms.uDistort.value = typeof distort === 'number' ? distort : 0;
-
+    program.uniforms.uDistort.value = typeof distort === "number" ? distort : 0;
     const ox = toPx(offset?.x);
     const oy = toPx(offset?.y);
     program.uniforms.uOffset.value = [ox, oy];
@@ -454,7 +449,6 @@ const PrismaticBurst = ({
     }
     program.uniforms.uColorCount.value = count;
   }, [intensity, speed, animationType, colors, distort, offset, rayCount]);
-
   return <div className="prismatic-burst-container" ref={containerRef} />;
 };
 
