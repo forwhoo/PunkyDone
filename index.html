@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
-    <title>Lotus</title>
+    <title>Harvey</title>
     <!-- Tailwind CSS (CDN) -->
     <script>
       window.tailwind = {
@@ -12,34 +12,36 @@
           theme: {
             extend: {
               colors: {
-                border: "#2C2C2E",
-                input: "#2C2C2E",
-                ring: "#FA2D48",
-                background: "#000000",
-                foreground: "#FFFFFF",
+                border: "#e8e6dc",
+                input: "#e8e6dc",
+                ring: "#d97757",
+                background: "#faf9f5",
+                foreground: "#141413",
                 primary: {
-                  DEFAULT: "#FA2D48",
-                  foreground: "#FFFFFF",
+                  DEFAULT: "#d97757",
+                  foreground: "#faf9f5",
                 },
                 secondary: {
-                  DEFAULT: "#1C1C1E",
-                  foreground: "#EBEBF5",
+                  DEFAULT: "#e8e6dc",
+                  foreground: "#141413",
                 },
                 muted: {
-                  DEFAULT: "#2C2C2E",
-                  foreground: "#8E8E93",
+                  DEFAULT: "#e8e6dc",
+                  foreground: "#b0aea5",
                 },
                 accent: {
-                  DEFAULT: "#2C2C2E",
-                  foreground: "#FFFFFF",
+                  DEFAULT: "#6a9bcc",
+                  foreground: "#faf9f5",
                 },
                 card: {
-                  DEFAULT: "#1C1C1E",
-                  foreground: "#FFFFFF",
+                  DEFAULT: "#ffffff",
+                  foreground: "#141413",
                 },
               },
               fontFamily: {
-                sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                sans: ['Lora', 'Georgia', 'serif'],
+                heading: ['Poppins', 'Arial', 'sans-serif'],
+                body: ['Lora', 'Georgia', 'serif'],
               }
             }
           }
@@ -47,25 +49,27 @@
       }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Anton&family=Barlow:wght@400;500;700;900&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
     <style>
       :root {
-        --border: 240 3.7% 15.9%;
-        --input: 240 3.7% 15.9%;
-        --ring: 346 96% 58%;
+        --border: 0 0% 90%;
+        --input: 0 0% 90%;
+        --ring: 14 62% 60%;
       }
       
       body {
-        background-color: #000000;
-        color: #FFFFFF;
+        background-color: #faf9f5;
+        color: #141413;
         -webkit-font-smoothing: antialiased;
       }
 
       .glass {
-        background: rgba(28, 28, 30, 0.85);
+        background: rgba(250, 249, 245, 0.85);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
       }
 
       /* Hide scrollbar */
@@ -75,69 +79,6 @@
       .no-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
-      }
-
-      /* Outline Text for Numbers */
-      .text-outline {
-        -webkit-text-stroke: 2px #555555;
-        text-stroke: 2px #555555;
-        color: transparent;
-        font-family: 'Inter', sans-serif;
-      }
-      
-      .text-outline-lg {
-        -webkit-text-stroke: 3px #555555;
-        text-stroke: 3px #555555;
-        color: transparent;
-        font-family: 'Inter', sans-serif;
-      }
-
-      /* Silver Shine Effect */
-      .text-shine {
-        background: linear-gradient(to right, #9ca3af 20%, #ffffff 50%, #9ca3af 80%);
-        background-size: 200% auto;
-        color: #000;
-        background-clip: text;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: shine 4s linear infinite;
-        font-weight: 800;
-        letter-spacing: 0.05em;
-      }
-
-      @keyframes shine {
-        to {
-          background-position: 200% center;
-        }
-      }
-      
-      @keyframes fade-in-up {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      
-      .animate-fade-in-up {
-        animation: fade-in-up 0.5s ease-out forwards;
-      }
-
-      /* AI Wave Animation */
-      .wave-bar {
-        animation: wave-animation 1s ease-in-out infinite;
-      }
-      .wave-bar:nth-child(1) { animation-delay: 0.0s; }
-      .wave-bar:nth-child(2) { animation-delay: 0.1s; }
-      .wave-bar:nth-child(3) { animation-delay: 0.2s; }
-      .wave-bar:nth-child(4) { animation-delay: 0.3s; }
-
-      @keyframes wave-animation {
-        0%, 100% { height: 4px; opacity: 0.5; }
-        50% { height: 16px; opacity: 1; }
       }
     </style>
     <script type="importmap">
@@ -155,7 +96,7 @@
 </script>
   <link rel="stylesheet" href="/index.css">
 </head>
-  <body>
+  <body class="bg-[#faf9f5] text-[#141413] font-body">
     <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

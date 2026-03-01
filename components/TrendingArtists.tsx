@@ -436,14 +436,14 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                     <div className="flex justify-between items-start">
                         <div>
                             <div className="flex items-center gap-2">
-                                <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                                <h2 className="text-xl font-bold text-[#141413] tracking-tight flex items-center gap-2">
                                     Obsession Orbit
                                 </h2>
                                 <div className="relative group/info">
-                                    <Info size={16} className="text-[#8E8E93] hover:text-white transition-colors cursor-help" />
-                                    <div className="absolute left-0 top-full mt-2 w-72 bg-[#1C1C1E] border border-white/10 rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
-                                        <p className="text-[11px] text-[#8E8E93] leading-relaxed">
-                                            <span className="text-white font-semibold">Obsession Orbit</span> visualizes your top {activeTab}s based on listening patterns.
+                                    <Info size={16} className="text-[#b0aea5] hover:text-[#141413] transition-colors cursor-help" />
+                                    <div className="absolute left-0 top-full mt-2 w-72 bg-white border border-[#e8e6dc] rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
+                                        <p className="text-[11px] text-[#b0aea5] leading-relaxed">
+                                            <span className="text-[#141413] font-semibold">Obsession Orbit</span> visualizes your top {activeTab}s based on listening patterns.
                                             The center shows your #1, with rings displaying your most obsessed {activeTab}s based on consistency, volume, and recency.
                                         </p>
                                     </div>
@@ -457,12 +457,12 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                             <div className="relative" ref={dropdownRef}>
                                 <button 
                                     onClick={() => setShowYearDropdown(!showYearDropdown)}
-                                    className="flex items-center gap-1 text-[11px] font-medium text-[#8E8E93] bg-[#1C1C1E] px-3 py-1.5 rounded-lg border border-white/5 hover:bg-[#2C2C2E] transition-colors"
+                                    className="flex items-center gap-1 text-[11px] font-medium text-[#b0aea5] bg-white px-3 py-1.5 rounded-lg border border-[#e8e6dc] hover:bg-[#2C2C2E] transition-colors"
                                 >
                                     {selectedYear} <ChevronDown size={12} className={`transition-transform ${showYearDropdown ? 'rotate-180' : ''}`} />
                                 </button>
                                 {showYearDropdown && (
-                                    <div className="absolute right-0 top-full mt-1 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[90px] animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="absolute right-0 top-full mt-1 bg-white border border-[#e8e6dc] rounded-xl shadow-2xl z-50 overflow-hidden min-w-[90px] animate-in fade-in slide-in-from-top-2 duration-200">
                                         {AVAILABLE_YEARS.map(year => (
                                             <button
                                                 key={year}
@@ -471,12 +471,12 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                                     setShowYearDropdown(false);
                                                     setSelectedItem(null);
                                                 }}
-                                                className={`w-full px-3 py-1.5 text-left text-[11px] font-medium flex items-center justify-between gap-2 hover:bg-white/5 transition-colors ${
-                                                    year === selectedYear ? 'text-white bg-white/5' : 'text-[#8E8E93]'
+                                                className={`w-full px-3 py-1.5 text-left text-[11px] font-medium flex items-center justify-between gap-2 hover:bg-[#e8e6dc]/50 transition-colors ${
+                                                    year === selectedYear ? 'text-[#141413] bg-[#e8e6dc]/50' : 'text-[#b0aea5]'
                                                 }`}
                                             >
                                                 {year}
-                                                {year === selectedYear && <Check size={10} className="text-[#FA2D48]" />}
+                                                {year === selectedYear && <Check size={10} className="text-[#d97757]" />}
                                             </button>
                                         ))}
                                     </div>
@@ -484,16 +484,16 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                             </div>
 
                             {/* Custom Toggle UI */}
-                            <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-1 border border-white/5 shadow-sm">
+                            <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-1 border border-[#e8e6dc] shadow-sm">
                                 <button 
                                     onClick={() => setActiveTab('artist')}
-                                className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                                className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'artist' ? 'bg-[#3A3A3C] text-[#141413]' : 'text-[#b0aea5] hover:text-[#141413]'}`}
                             >
                                  Artists
                             </button>
                             <button 
                                 onClick={() => setActiveTab('album')}
-                                className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'album' ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white'}`}
+                                className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === 'album' ? 'bg-[#3A3A3C] text-[#141413]' : 'text-[#b0aea5] hover:text-[#141413]'}`}
                             >
                                  Albums
                             </button>
@@ -506,9 +506,9 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                 {/* MAIN VIEW */}
                 {trendingItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-500">
-                        <Music className="w-10 h-10 text-white/10 mb-4" />
-                        <p className="text-white/30 text-sm font-medium">No data for {selectedYear}</p>
-                        <p className="text-white/15 text-xs mt-1">Try selecting a different year</p>
+                        <Music className="w-10 h-10 text-[#141413]/10 mb-4" />
+                        <p className="text-[#141413]/30 text-sm font-medium">No data for {selectedYear}</p>
+                        <p className="text-[#141413]/15 text-xs mt-1">Try selecting a different year</p>
                     </div>
                 ) : (
                 <motion.div 
@@ -529,7 +529,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                             }}
                         >
                             <div className="relative w-28 h-28 md:w-36 md:h-36">
-                                <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-[#1C1C1E] transition-transform duration-500 group-hover:scale-105">
+                                <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-white transition-transform duration-500 group-hover:scale-105">
                                     <img src={centerItem.image} className="w-full h-full object-cover" />
                                 </div>
                             </div>
@@ -614,9 +614,9 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                     </div>
 
                     {/* Orbital Rings - Visible circles */}
-                    <div className="absolute inset-0 rounded-full border-2 border-white/10 scale-[0.68] pointer-events-none"></div>
-                    <div className="absolute inset-0 rounded-full border-2 border-white/10 scale-[0.96] pointer-events-none"></div>
-                    <div className="absolute inset-0 rounded-full border border-white/5 scale-[0.82] pointer-events-none"></div>
+                    <div className="absolute inset-0 rounded-full border-2 border-[#e8e6dc] scale-[0.68] pointer-events-none"></div>
+                    <div className="absolute inset-0 rounded-full border-2 border-[#e8e6dc] scale-[0.96] pointer-events-none"></div>
+                    <div className="absolute inset-0 rounded-full border border-[#e8e6dc] scale-[0.82] pointer-events-none"></div>
                 </motion.div>
                 )}
             </div>
@@ -631,7 +631,7 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[150]"
+                                className="fixed inset-0 bg-[#faf9f5]/40 backdrop-blur-sm z-[150]"
                                 onClick={() => setSelectedItem(null)}
                             />
 
@@ -644,12 +644,12 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                 className="fixed top-2 bottom-2 right-2 w-[calc(100vw-16px)] md:w-[320px] z-[200] max-h-[calc(100vh-16px)] pointer-events-none"
                             >
                                 <div 
-                                    className="h-full w-full bg-[#1C1C1E] rounded-3xl overflow-hidden flex flex-col relative shadow-2xl border border-white/10 pointer-events-auto"
+                                    className="h-full w-full bg-white rounded-3xl overflow-hidden flex flex-col relative shadow-2xl border border-[#e8e6dc] pointer-events-auto"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <button 
                                         onClick={() => setSelectedItem(null)} 
-                                        className="absolute top-4 right-4 bg-black/40 hover:bg-black/60 rounded-full p-2 text-white z-50 transition-colors backdrop-blur-md"
+                                        className="absolute top-4 right-4 bg-[#faf9f5]/40 hover:bg-[#faf9f5]/60 rounded-full p-2 text-[#141413] z-50 transition-colors "
                                     >
                                         <X size={20} />
                                     </button>
@@ -663,11 +663,11 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                     className="w-full h-full object-cover"
                                 />
                                 <div className="absolute bottom-4 left-6 z-20">
-                                    <h2 className="text-2xl font-black text-white leading-none tracking-tight mb-1 drop-shadow-lg line-clamp-2">{selectedItem.name}</h2>
-                                    {selectedItem.subName && <p className="text-white/60 text-xs font-medium tracking-wide drop-shadow-md">{selectedItem.subName}</p>}
-                                    <div className="inline-flex items-center gap-1.5 mt-2 bg-white/10 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/5">
-                                        <Sparkles size={10} className="text-white" />
-                                        <span className="text-[10px] uppercase font-bold text-white tracking-wider">Obsession Score: {selectedItem.trendScore}</span>
+                                    <h2 className="text-2xl font-black text-[#141413] leading-none tracking-tight mb-1 drop-shadow-lg line-clamp-2">{selectedItem.name}</h2>
+                                    {selectedItem.subName && <p className="text-[#141413]/60 text-xs font-medium tracking-wide drop-shadow-md">{selectedItem.subName}</p>}
+                                    <div className="inline-flex items-center gap-1.5 mt-2 bg-[#e8e6dc]  px-2.5 py-0.5 rounded-full border border-[#e8e6dc]">
+                                        <Sparkles size={10} className="text-[#141413]" />
+                                        <span className="text-[10px] uppercase font-bold text-[#141413] tracking-wider">Obsession Score: {selectedItem.trendScore}</span>
                                     </div>
                                 </div>
                             </div>
@@ -679,19 +679,19 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                         {/* Key Stats */}
                                         <div className="grid grid-cols-3 gap-3 px-5 mb-6">
                                             {/* @ts-ignore */}
-                                            <div className="bg-white/5 p-4 rounded-xl text-center">
-                                                <div className="text-2xl font-black text-white leading-none">{selectedItem.stats.totalPlays}</div>
-                                                <div className="text-[10px] font-semibold uppercase tracking-wider text-white/40 mt-1.5">Plays</div>
+                                            <div className="bg-[#e8e6dc]/50 p-4 rounded-xl text-center">
+                                                <div className="text-2xl font-black text-[#141413] leading-none">{selectedItem.stats.totalPlays}</div>
+                                                <div className="text-[10px] font-semibold uppercase tracking-wider text-[#141413]/40 mt-1.5">Plays</div>
                                             </div>
-                                            <div className="bg-white/5 p-4 rounded-xl text-center">
+                                            <div className="bg-[#e8e6dc]/50 p-4 rounded-xl text-center">
                                                 {/* @ts-ignore */}
-                                                <div className="text-2xl font-black text-white leading-none">{selectedItem.stats.totalTime.split('h')[0]}<span className="text-sm font-semibold text-white/50">h</span></div>
-                                                <div className="text-[10px] font-semibold uppercase tracking-wider text-white/40 mt-1.5">Listened</div>
+                                                <div className="text-2xl font-black text-[#141413] leading-none">{selectedItem.stats.totalTime.split('h')[0]}<span className="text-sm font-semibold text-[#141413]/50">h</span></div>
+                                                <div className="text-[10px] font-semibold uppercase tracking-wider text-[#141413]/40 mt-1.5">Listened</div>
                                             </div>
-                                            <div className="bg-white/5 p-4 rounded-xl text-center">
+                                            <div className="bg-[#e8e6dc]/50 p-4 rounded-xl text-center">
                                                 {/* @ts-ignore */}
-                                                <div className="text-2xl font-black text-white leading-none">{selectedItem.stats.streak}<span className="text-sm font-semibold text-white/50">d</span></div>
-                                                <div className="text-[10px] font-semibold uppercase tracking-wider text-white/40 mt-1.5">Streak</div>
+                                                <div className="text-2xl font-black text-[#141413] leading-none">{selectedItem.stats.streak}<span className="text-sm font-semibold text-[#141413]/50">d</span></div>
+                                                <div className="text-[10px] font-semibold uppercase tracking-wider text-[#141413]/40 mt-1.5">Streak</div>
                                             </div>
                                         </div>
 
@@ -699,22 +699,22 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                         {/* @ts-ignore */}
                                         {selectedItem.stats.topSong && (
                                             <div className="px-5 mb-6">
-                                                <div className="bg-gradient-to-br from-[#FA2D48]/10 to-[#FF6B35]/5 border border-[#FA2D48]/15 p-4 rounded-xl">
-                                                    <div className="text-[10px] font-bold uppercase tracking-widest text-[#FA2D48]/80 mb-2 flex items-center gap-1.5">
+                                                <div className="bg-gradient-to-br from-[#FA2D48]/10 to-[#FF6B35]/5 border border-[#d97757]/15 p-4 rounded-xl">
+                                                    <div className="text-[10px] font-bold uppercase tracking-widest text-[#d97757]/80 mb-2 flex items-center gap-1.5">
                                                         <Sparkles size={10} />
                                                         Top Track
                                                     </div>
                                                     {/* @ts-ignore */}
-                                                    <div className="text-[15px] font-bold text-white truncate">{selectedItem.stats.topSong}</div>
+                                                    <div className="text-[15px] font-bold text-[#141413] truncate">{selectedItem.stats.topSong}</div>
                                                     {/* @ts-ignore */}
-                                                    <div className="text-[11px] text-white/50 mt-1">{selectedItem.stats.topSongPlays} plays</div>
+                                                    <div className="text-[11px] text-[#141413]/50 mt-1">{selectedItem.stats.topSongPlays} plays</div>
                                                 </div>
                                             </div>
                                         )}
 
                                         {/* Tracks - Cleaned Up */}
                                         <div className="px-5">
-                                            <h3 className="text-white/40 text-[10px] font-bold uppercase tracking-[0.15em] mb-3">All Tracks</h3>
+                                            <h3 className="text-[#141413]/40 text-[10px] font-bold uppercase tracking-[0.15em] mb-3">All Tracks</h3>
                                             <div className="space-y-0.5">
                                                 {/* @ts-ignore */}
                                                 {selectedItem.tracks && selectedItem.tracks.length > 0 ? (
@@ -722,25 +722,25 @@ export const TrendingArtists: React.FC<TrendingArtistsProps> = ({ artists, album
                                                     .slice(0, 15)
                                                     .map((track: any, idx: number) => (
                                                         <div key={idx} className="flex items-center gap-2.5 py-1.5 px-2 hover:bg-white/[0.04] rounded-xl group transition-colors cursor-default">
-                                                            <div className="text-white/20 font-mono text-[10px] w-4 text-right font-bold">{idx + 1}</div>
-                                                            <div className="w-8 h-8 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 border border-white/5">
+                                                            <div className="text-[#141413]/20 font-mono text-[10px] w-4 text-right font-bold">{idx + 1}</div>
+                                                            <div className="w-8 h-8 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 border border-[#e8e6dc]">
                                                                 <img src={track.album_cover || track.cover} className="w-full h-full object-cover" alt="" />
                                                             </div>
                                                             <div className="min-w-0 flex-1">
-                                                                <div className="text-[12px] font-semibold text-white truncate group-hover:text-[#FA2D48] transition-colors">{track.track_name}</div>
-                                                                <div className="text-[10px] text-white/25 font-medium">{track.count} plays</div>
+                                                                <div className="text-[12px] font-semibold text-[#141413] truncate group-hover:text-[#d97757] transition-colors">{track.track_name}</div>
+                                                                <div className="text-[10px] text-[#141413]/25 font-medium">{track.count} plays</div>
                                                             </div>
                                                         </div>
                                                     ))
                                                 ) : (
-                                                     <div className="text-xs text-white/20 italic py-6 text-center">Track data unavailable</div>
+                                                     <div className="text-xs text-[#141413]/20 italic py-6 text-center">Track data unavailable</div>
                                                 )}
                                             </div>
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="text-center text-white/40 py-20 flex flex-col items-center gap-2">
-                                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                    <div className="text-center text-[#141413]/40 py-20 flex flex-col items-center gap-2">
+                                        <div className="w-5 h-5 border-2 border-[#b0aea5]/30 border-t-white rounded-full animate-spin"></div>
                                         <span className="text-xs tracking-widest uppercase">Calculating Orbit...</span>
                                     </div>
                                 )}
@@ -778,7 +778,7 @@ const OrbitNode = ({ item, rank, size, isActive, isDimmed, onClick }: { item: Tr
             onMouseMove={handleMouseMove}
         >
             <div 
-                className={`relative rounded-full overflow-hidden border transition-all duration-300 bg-[#1C1C1E] ${isActive ? 'border-[#FA2D48] shadow-[0_0_20px_#FA2D48]' : 'border-[#1C1C1E] shadow-lg group-hover:scale-125'}`}
+                className={`relative rounded-full overflow-hidden border transition-all duration-300 bg-white ${isActive ? 'border-[#d97757] shadow-[0_0_20px_#FA2D48]' : 'border-[#1C1C1E] shadow-lg group-hover:scale-125'}`}
                 style={{ width: size, height: size }}
             >
                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
@@ -795,14 +795,14 @@ const OrbitNode = ({ item, rank, size, isActive, isDimmed, onClick }: { item: Tr
                         pointerEvents: 'none'
                     }}
                 >
-                    <div className="bg-[#000000] border border-white/20 rounded-lg px-4 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
-                        <div className="text-[14px] font-bold text-white leading-tight">{item.name}</div>
-                        {item.subName && <div className="text-[11px] font-medium text-white/60 mt-0.5">{item.subName}</div>}
-                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10">
-                            <div className="text-[10px] font-bold text-[#FA2D48] bg-[#FA2D48]/10 px-1.5 py-0.5 rounded">
+                    <div className="bg-[#000000] border border-[#b0aea5]/30 rounded-lg px-4 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
+                        <div className="text-[14px] font-bold text-[#141413] leading-tight">{item.name}</div>
+                        {item.subName && <div className="text-[11px] font-medium text-[#141413]/60 mt-0.5">{item.subName}</div>}
+                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#e8e6dc]">
+                            <div className="text-[10px] font-bold text-[#d97757] bg-[#d97757]/10 px-1.5 py-0.5 rounded">
                                 SCORE: {item.trendScore}
                             </div>
-                            <div className="text-[10px] font-medium text-white/50">{item.recentPlays} plays</div>
+                            <div className="text-[10px] font-medium text-[#141413]/50">{item.recentPlays} plays</div>
                         </div>
                     </div>
                 </div>,

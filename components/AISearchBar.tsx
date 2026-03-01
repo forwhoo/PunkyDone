@@ -125,10 +125,10 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history = [], u
 
     const getIcon = (type: string) => {
         switch (type) {
-            case 'artist': return <User size={14} className="text-[#FA2D48]" />;
-            case 'song': return <Music size={14} className="text-[#FA2D48]" />;
-            case 'album': return <Disc size={14} className="text-[#FA2D48]" />;
-            default: return <Wand2 size={14} className="text-[#FA2D48]" />;
+            case 'artist': return <User size={14} className="text-[#d97757]" />;
+            case 'song': return <Music size={14} className="text-[#d97757]" />;
+            case 'album': return <Disc size={14} className="text-[#d97757]" />;
+            default: return <Wand2 size={14} className="text-[#d97757]" />;
         }
     };
 
@@ -136,7 +136,7 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history = [], u
         <div className="w-full flex flex-col items-center gap-4 z-50 relative" ref={containerRef}>
             <form onSubmit={(e) => handleSearch(e)} className="w-full relative group">
                 <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-                    <Search className="w-5 h-5 text-white/30 group-focus-within:text-[#FA2D48] transition-colors" />
+                    <Search className="w-5 h-5 text-[#141413]/30 group-focus-within:text-[#d97757] transition-colors" />
                 </div>
                 <input
                     type="text"
@@ -146,8 +146,8 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history = [], u
                         setShowSuggestions(true);
                     }}
                     onFocus={() => setShowSuggestions(true)}
-                    placeholder="Ask Lotus anything about your music..."
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-14 pr-32 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[#FA2D48]/30 focus:border-[#FA2D48]/50 transition-all text-base shadow-2xl backdrop-blur-md"
+                    placeholder="Ask Harvey anything about your music..."
+                    className="w-full bg-[#e8e6dc]/50 border border-[#e8e6dc] rounded-2xl py-4 pl-14 pr-32 text-[#141413] placeholder:text-[#141413]/20 focus:outline-none focus:ring-2 focus:ring-[#FA2D48]/30 focus:border-[#d97757]/50 transition-all text-base shadow-2xl "
                 />
                 <div className="absolute inset-y-2 right-2 flex items-center gap-2">
                     <button
@@ -172,25 +172,25 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({ token, history = [], u
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 backdrop-blur-xl"
+                        className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-[#e8e6dc] rounded-2xl shadow-2xl overflow-hidden z-50 "
                     >
                         <div className="py-2">
                             {suggestions.map((suggestion) => (
                                 <button
                                     key={suggestion.id}
                                     onClick={() => handleSuggestionClick(suggestion)}
-                                    className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-left group"
+                                    className="w-full flex items-center gap-3 px-5 py-3 hover:bg-[#e8e6dc]/50 transition-colors text-left group"
                                 >
-                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-white/10 transition-colors">
+                                    <div className="w-8 h-8 rounded-lg bg-[#e8e6dc]/50 flex items-center justify-center border border-[#e8e6dc] group-hover:border-[#e8e6dc] transition-colors">
                                         {getIcon(suggestion.type)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-white truncate group-hover:text-[#FA2D48] transition-colors">
+                                        <p className="text-sm font-medium text-[#141413] truncate group-hover:text-[#d97757] transition-colors">
                                             {suggestion.type === 'query' ? query : suggestion.text}
                                         </p>
-                                        <p className="text-xs text-white/40 truncate">{suggestion.subtext}</p>
+                                        <p className="text-xs text-[#141413]/40 truncate">{suggestion.subtext}</p>
                                     </div>
-                                    <TrendingUp size={14} className="text-white/20 group-hover:text-white/50 -rotate-45 group-hover:rotate-0 transition-all duration-300" />
+                                    <TrendingUp size={14} className="text-[#141413]/20 group-hover:text-[#141413]/50 -rotate-45 group-hover:rotate-0 transition-all duration-300" />
                                 </button>
                             ))}
                         </div>

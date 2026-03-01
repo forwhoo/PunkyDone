@@ -34,10 +34,10 @@ export const Button = ({ children, className = "", variant = 'default', size = '
   const baseStyles = "inline-flex items-center justify-center rounded-lg text-[13px] font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
   
   const variants = {
-    default: "bg-primary text-white hover:opacity-90",
-    secondary: "bg-[#2C2C2E] text-white hover:bg-[#3A3A3C]",
-    outline: "border border-[#2C2C2E] bg-transparent hover:bg-[#2C2C2E] text-white",
-    ghost: "hover:bg-[#2C2C2E] text-[#8E8E93] hover:text-white",
+    default: "bg-primary text-[#141413] hover:opacity-90",
+    secondary: "bg-[#2C2C2E] text-[#141413] hover:bg-[#3A3A3C]",
+    outline: "border border-[#2C2C2E] bg-transparent hover:bg-[#2C2C2E] text-[#141413]",
+    ghost: "hover:bg-[#2C2C2E] text-[#b0aea5] hover:text-[#141413]",
   };
 
   const sizes = {
@@ -63,9 +63,9 @@ interface BadgeProps {
 
 export const Badge = ({ children, variant = 'default', className = "" }: BadgeProps) => {
   const variants = {
-    default: "bg-primary text-white",
-    secondary: "bg-[#2C2C2E] text-[#8E8E93]",
-    outline: "border border-[#2C2C2E] text-[#8E8E93]",
+    default: "bg-primary text-[#141413]",
+    secondary: "bg-[#2C2C2E] text-[#b0aea5]",
+    outline: "border border-[#2C2C2E] text-[#b0aea5]",
   };
   
   return (

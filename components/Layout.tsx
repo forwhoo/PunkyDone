@@ -15,7 +15,7 @@ const Navbar = ({ user, currentTrack }: { user: any, currentTrack: any }) => (
 
 export const Layout: React.FC<LayoutProps> = ({ children, user, currentTrack }) => {
   return (
-    <div className="min-h-[100dvh] min-h-screen bg-black text-white selection:bg-[#FA2D48] selection:text-white font-[Inter] overflow-x-hidden relative">
+    <div className="min-h-[100dvh] min-h-screen bg-[#faf9f5] text-[#141413] selection:bg-[#d97757] selection:text-[#141413] font-[Inter] overflow-x-hidden relative">
       {/* Scroll Blur Effects - Top & Bottom */}
       <div className="fixed top-0 left-0 right-0 h-32 bg-gradient-to-b from-black via-black/60 to-transparent z-40 pointer-events-none touch-none" />
       <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black via-black/60 to-transparent z-40 pointer-events-none touch-none" />

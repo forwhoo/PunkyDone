@@ -29,7 +29,7 @@ export const BackToTop = () => {
     return (
         <button
             onClick={scrollToTop}
-            className="fixed bottom-6 right-6 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all z-50 border border-white/10 hover:scale-105 active:scale-95 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-300"
+            className="fixed bottom-6 right-6 p-3 rounded-full bg-[#e8e6dc] hover:bg-[#b0aea5]/30 text-[#141413]  transition-all z-50 border border-[#e8e6dc] hover:scale-105 active:scale-95 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-300"
             title="Back to Top"
         >
             <ArrowUp size={20} />

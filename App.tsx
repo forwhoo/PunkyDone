@@ -85,11 +85,11 @@ const RankedAlbum = ({ album, rank, onClick }: { album: Album, rank: number, onC
         className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]"
         onClick={onClick}
     >
-        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-white/5">
+        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-[#141413]/5">
             {rank}
         </span>
         <div className="relative z-10 ml-10 md:ml-12">
-            <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
+            <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-[#e8e6dc] group-hover:border-[#b0aea5]/30 transition-all duration-300 group-hover:-translate-y-2 relative">
                 {!imageLoaded && (
                     <div className="absolute inset-0 bg-[#2C2C2E] animate-pulse rounded-xl z-10" />
                 )}
@@ -101,13 +101,13 @@ const RankedAlbum = ({ album, rank, onClick }: { album: Album, rank: number, onC
                     className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm ${!imageLoaded ? 'opacity-0' : 'opacity-100'}`}
                 />
                 {/* Hover Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
-                     <span className="text-white font-bold text-xl drop-shadow-md">{album.timeStr}</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-[#faf9f5]/40">
+                     <span className="text-[#141413] font-bold text-xl drop-shadow-md">{album.timeStr}</span>
                 </div>
             </div>
             <div className="mt-3 relative z-20">
-                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-white transition-colors">{album.title}</h3>
-                <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">{album.artist} • <span className="text-white/60">{album.timeStr}</span></p>
+                <h3 className="text-[15px] font-semibold text-[#141413] truncate w-32 md:w-40 leading-tight group-hover:text-[#141413] transition-colors">{album.title}</h3>
+                <p className="text-[13px] text-[#b0aea5] truncate w-32 md:w-40 mt-0.5 font-medium">{album.artist} • <span className="text-[#141413]/60">{album.timeStr}</span></p>
             </div>
         </div>
     </div>
@@ -122,11 +122,11 @@ const RankedArtist = ({ artist, rank, realImage, onClick }: { artist: Artist, ra
         className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]"
         onClick={onClick}
     >
-        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-white/5">
+        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-[#141413]/5">
             {rank}
         </span>
         <div className="relative z-10 ml-10 md:ml-12">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#2C2C2E] shadow-2xl border border-[#e8e6dc] group-hover:border-[#b0aea5]/30 transition-all duration-300 group-hover:-translate-y-2 relative">
                 {!imageLoaded && (
                     <div className="absolute inset-0 bg-[#2C2C2E] animate-pulse rounded-full z-10" />
                 )}
@@ -138,12 +138,12 @@ const RankedArtist = ({ artist, rank, realImage, onClick }: { artist: Artist, ra
                     className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm ${!imageLoaded ? 'opacity-0' : 'opacity-100'}`}
                 />
                 {/* Hover Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
-                     <span className="text-white font-bold text-xl drop-shadow-md">{artist.timeStr}</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-[#faf9f5]/40">
+                     <span className="text-[#141413] font-bold text-xl drop-shadow-md">{artist.timeStr}</span>
                 </div>
             </div>
             <div className="mt-3 relative z-20">
-                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-white transition-colors">{artist.name}</h3>
+                <h3 className="text-[15px] font-semibold text-[#141413] truncate w-32 md:w-40 leading-tight group-hover:text-[#141413] transition-colors">{artist.name}</h3>
             </div>
         </div>
     </div>
@@ -158,11 +158,11 @@ const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick
         className="flex-shrink-0 relative flex items-center snap-start group cursor-pointer w-[180px] md:w-[220px]"
         onClick={onClick}
     >
-        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-white/5">
+        <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-[#141413]/5">
             {rank}
         </span>
         <div className="relative z-10 ml-10 md:ml-12">
-            <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300 group-hover:-translate-y-2 relative">
+            <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] shadow-2xl border border-[#e8e6dc] group-hover:border-[#b0aea5]/30 transition-all duration-300 group-hover:-translate-y-2 relative">
                 {!imageLoaded && (
                     <div className="absolute inset-0 bg-[#2C2C2E] animate-pulse rounded-xl z-10" />
                 )}
@@ -174,13 +174,13 @@ const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick
                     className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm ${!imageLoaded ? 'opacity-0' : 'opacity-100'}`}
                 />
                 {/* Hover Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-black/40">
-                     <span className="text-white font-bold text-xl drop-shadow-md">{song.timeStr}</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-[#faf9f5]/40">
+                     <span className="text-[#141413] font-bold text-xl drop-shadow-md">{song.timeStr}</span>
                 </div>
             </div>
             <div className="mt-3 relative z-20">
-                <h3 className="text-[15px] font-semibold text-white truncate w-32 md:w-40 leading-tight group-hover:text-white transition-colors">{song.title}</h3>
-                <p className="text-[13px] text-[#8E8E93] truncate w-32 md:w-40 mt-0.5 font-medium">{song.artist} • <span className="text-white/60">{song.timeStr}</span></p>
+                <h3 className="text-[15px] font-semibold text-[#141413] truncate w-32 md:w-40 leading-tight group-hover:text-[#141413] transition-colors">{song.title}</h3>
+                <p className="text-[13px] text-[#b0aea5] truncate w-32 md:w-40 mt-0.5 font-medium">{song.artist} • <span className="text-[#141413]/60">{song.timeStr}</span></p>
             </div>
         </div>
     </div>
@@ -189,8 +189,8 @@ const RankedSong = ({ song, rank, onClick }: { song: Song, rank: number, onClick
 
 const MobileHeroCard = ({ title, subtitle }: { title: string; subtitle: string }) => (
     <div className="glass-morph rounded-[32px] p-8 shadow-xl border border-white/[0.15]">
-        <h1 className="text-[28px] font-bold text-white leading-tight tracking-tight">{title}</h1>
-        <p className="text-[15px] text-white/70 mt-3 leading-relaxed font-medium">{subtitle}</p>
+        <h1 className="text-[28px] font-bold text-[#141413] leading-tight tracking-tight">{title}</h1>
+        <p className="text-[15px] text-[#141413]/70 mt-3 leading-relaxed font-medium">{subtitle}</p>
     </div>
 );
 
@@ -208,22 +208,22 @@ const MobileArtistCard = ({ artist, rank, image, onClick }: { artist: Artist; ra
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80" />
         <div className="absolute bottom-0 left-0 right-0 p-5 text-left">
-            <p className="text-[20px] font-bold text-white leading-tight tracking-tight drop-shadow-lg">{artist.name}</p>
-            <p className="text-[14px] text-white/70 mt-1 font-medium">{artist.timeStr}</p>
+            <p className="text-[20px] font-bold text-[#141413] leading-tight tracking-tight drop-shadow-lg">{artist.name}</p>
+            <p className="text-[14px] text-[#141413]/70 mt-1 font-medium">{artist.timeStr}</p>
         </div>
     </button>
 );
 
 const MobileListRow = ({ rank, cover, title, subtitle, meta }: { rank: number; cover: string; title: string; subtitle: string; meta?: string }) => (
-    <div className="flex items-center gap-4 py-4 active:bg-white/5 transition-colors rounded-2xl">
+    <div className="flex items-center gap-4 py-4 active:bg-[#e8e6dc]/50 transition-colors rounded-2xl">
         <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 shadow-md border border-white/[0.06]">
             <img src={cover} alt={title} loading="lazy" className="w-full h-full object-cover" />
         </div>
         <div className="flex-1 min-w-0">
-            <p className="text-[16px] font-semibold text-white truncate leading-tight tracking-tight">{title}</p>
-            <p className="text-[14px] text-white/50 truncate mt-1 font-medium">{subtitle}</p>
+            <p className="text-[16px] font-semibold text-[#141413] truncate leading-tight tracking-tight">{title}</p>
+            <p className="text-[14px] text-[#141413]/50 truncate mt-1 font-medium">{subtitle}</p>
         </div>
-        {meta && <div className="text-[13px] text-white/40 whitespace-nowrap font-medium flex-shrink-0">{meta}</div>}
+        {meta && <div className="text-[13px] text-[#141413]/40 whitespace-nowrap font-medium flex-shrink-0">{meta}</div>}
     </div>
 );
 
@@ -235,15 +235,15 @@ const StatsCarousel = ({ stats, artist }: { stats: any, artist: Artist }) => {
 
     // Group stats
     const slide1 = [
-        { icon: TrendingUp, value: artist.totalListens || 0, label: "Total Plays", color: "text-white" },
-        { icon: Clock, value: artist.timeStr ? String(artist.timeStr).replace('m', '') : '0', label: "Minutes", color: "text-white" },
-        { icon: Sparkles, value: `${stats?.popularityScore || 0}%`, label: "Of Time", color: "text-white" }
+        { icon: TrendingUp, value: artist.totalListens || 0, label: "Total Plays", color: "text-[#141413]" },
+        { icon: Clock, value: artist.timeStr ? String(artist.timeStr).replace('m', '') : '0', label: "Minutes", color: "text-[#141413]" },
+        { icon: Sparkles, value: `${stats?.popularityScore || 0}%`, label: "Of Time", color: "text-[#141413]" }
     ];
 
     const slide2 = [
-         { icon: Layers, value: stats?.varietyCount || 0, label: "Unique Songs", color: "text-white" },
-         { icon: Zap, value: stats?.dailyAverage || 0, label: "Avg / Day", color: "text-white" },
-         { icon: Globe, value: stats?.peakTimeLabel || '-', label: "Peak Time", color: "text-white" }
+         { icon: Layers, value: stats?.varietyCount || 0, label: "Unique Songs", color: "text-[#141413]" },
+         { icon: Zap, value: stats?.dailyAverage || 0, label: "Avg / Day", color: "text-[#141413]" },
+         { icon: Globe, value: stats?.peakTimeLabel || '-', label: "Peak Time", color: "text-[#141413]" }
     ];
 
     const slides = [slide1, slide2];
@@ -261,10 +261,10 @@ const StatsCarousel = ({ stats, artist }: { stats: any, artist: Artist }) => {
                 {slides.map((slide, i) => (
                     <div key={i} className="min-w-full grid grid-cols-3 gap-3 px-1">
                         {slide.map((stat, j) => (
-                            <div key={j} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center">
+                            <div key={j} className="bg-[#e8e6dc]/50  border border-[#e8e6dc] rounded-2xl p-4 flex flex-col items-center text-center">
                                 <stat.icon size={16} className={`mb-1.5 opacity-80 ${stat.color}`} />
-                                <span className="text-xl font-black text-white">{stat.value}</span>
-                                <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">{stat.label}</span>
+                                <span className="text-xl font-black text-[#141413]">{stat.value}</span>
+                                <span className="text-[10px] uppercase tracking-wider text-[#141413]/50 font-bold">{stat.label}</span>
                             </div>
                         ))}
                     </div>
@@ -275,7 +275,7 @@ const StatsCarousel = ({ stats, artist }: { stats: any, artist: Artist }) => {
                 {slides.map((_, i) => (
                     <button
                         key={i}
-                        className={`w-1.5 h-1.5 rounded-full transition-colors ${i === page ? 'bg-white' : 'bg-white/20'}`}
+                        className={`w-1.5 h-1.5 rounded-full transition-colors ${i === page ? 'bg-white' : 'bg-[#b0aea5]/30'}`}
                         onClick={() => setPage(i)}
                     />
                 ))}
@@ -606,7 +606,7 @@ function App() {
         // Cmd/Ctrl + K - Focus AI search
         if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
             e.preventDefault();
-            const searchInput = document.querySelector('[placeholder*="Ask Lotus"]') as HTMLInputElement;
+            const searchInput = document.querySelector('[placeholder*="Ask Harvey"]') as HTMLInputElement;
             if (searchInput) {
                 searchInput.focus();
                 searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -743,11 +743,11 @@ function App() {
           <Layout user={null} currentTrack={null}>
               <div className="flex h-[80vh] flex-col items-center justify-center gap-6 relative overflow-hidden">
                   <div className="relative z-10 flex flex-col items-center">
-                      <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-6 animate-pulse">
-                          <Music className="w-8 h-8 text-white opacity-50" />
+                      <div className="w-16 h-16 rounded-2xl bg-[#e8e6dc] flex items-center justify-center mb-6 animate-pulse">
+                          <Music className="w-8 h-8 text-[#141413] opacity-50" />
                       </div>
-                      <h3 className="text-2xl font-bold text-white tracking-tight mb-2">Finishing Sign In</h3>
-                      <p className="text-[#8E8E93] text-sm animate-pulse">Completing your Spotify authentication...</p>
+                      <h3 className="text-2xl font-heading font-bold text-[#141413] tracking-tight mb-2">Finishing Sign In</h3>
+                      <p className="text-[#b0aea5] text-sm animate-pulse">Completing your Spotify authentication...</p>
                   </div>
               </div>
           </Layout>
@@ -756,10 +756,10 @@ function App() {
 
   if (!token) {
       return (
-          <div className="fixed inset-0 bg-black text-white flex flex-col items-center justify-between p-6 overflow-hidden font-sans">
+          <div className="fixed inset-0 bg-[#faf9f5] text-[#141413] flex flex-col items-center justify-between p-6 overflow-hidden font-body">
               <div className="w-full flex justify-center pt-8 relative z-20">
-                  <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/5 shadow-lg">
-                      <Music size={20} className="text-white opacity-90" />
+                  <div className="w-12 h-12 rounded-full bg-[#e8e6dc] flex items-center justify-center  border border-[#e8e6dc] shadow-lg">
+                      <Music size={20} className="text-[#141413] opacity-90" />
                   </div>
               </div>
               <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-50">
@@ -778,8 +778,8 @@ function App() {
               </div>
               <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-8 pb-10 animate-fade-in">
                   <div className="text-center space-y-3">
-                      <h1 className="text-[34px] font-bold tracking-tight text-white leading-tight drop-shadow-lg">Welcome</h1>
-                      <p className="text-white/50 text-[17px] font-medium tracking-wide">Your journey starts from here</p>
+                      <h1 className="text-[34px] font-bold tracking-tight text-[#141413] leading-tight drop-shadow-lg">Welcome</h1>
+                      <p className="text-[#141413]/50 text-[17px] font-medium tracking-wide">Your journey starts from here</p>
                   </div>
                   <div className="w-full space-y-3">
                       <button
@@ -789,14 +789,14 @@ function App() {
                       >
                           {connecting ? 'Connecting...' : 'Continue with Spotify'}
                       </button>
-                       <button className="auth-button-secondary opacity-60 cursor-not-allowed hover:bg-[#1C1C1E] active:scale-[0.98] transition-all" disabled>
+                       <button className="auth-button-secondary opacity-60 cursor-not-allowed hover:bg-white active:scale-[0.98] transition-all" disabled>
                           <svg className="w-4 h-4 fill-current mb-0.5" viewBox="0 0 24 24">
                               <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.74 1.18 0 2.45-1.64 4.09-1.29 1.57.14 2.68.86 3.39 1.96-3.23 1.97-2.69 6.2 1.25 7.6-.66 1.7-1.6 3.48-3.81 3.96zm-1.89-13.43c.8-.97 1.34-2.31 1.19-3.66-1.15.05-2.54.77-3.36 1.73-.78.91-1.46 2.37-1.28 3.65 1.3.1 2.62-.63 3.45-1.72z"/>
                           </svg> Continue with Apple
                       </button>
                   </div>
-                  <p className="text-[11px] text-white/30 text-center max-w-[260px] leading-relaxed font-medium">
-                      By pressing on "Continue with..." you agree to our <span className="text-white/50 cursor-pointer hover:underline">Terms of Service</span> and <span className="text-white/50 cursor-pointer hover:underline">Privacy Policy</span>
+                  <p className="text-[11px] text-[#141413]/30 text-center max-w-[260px] leading-relaxed font-medium">
+                      By pressing on "Continue with..." you agree to our <span className="text-[#141413]/50 cursor-pointer hover:underline">Terms of Service</span> and <span className="text-[#141413]/50 cursor-pointer hover:underline">Privacy Policy</span>
                   </p>
               </div>
           </div>
@@ -805,7 +805,7 @@ function App() {
 
   if (loading || !data) {
       return (
-          <div className="fixed inset-0 bg-black text-white flex flex-col items-center justify-center p-6 overflow-hidden font-sans z-50">
+          <div className="fixed inset-0 bg-[#faf9f5] text-[#141413] flex flex-col items-center justify-center p-6 overflow-hidden font-body z-50">
               <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-30">
                   <Particles
                       particleCount={200}
@@ -821,11 +821,11 @@ function App() {
                   />
               </div>
               <div className="relative z-10 flex flex-col items-center animate-fade-in">
-                  <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-6 border border-white/10 shadow-2xl backdrop-blur-md">
-                      <RefreshCw className="w-8 h-8 text-white opacity-80 animate-spin" style={{ animationDuration: '3s' }} />
+                  <div className="w-16 h-16 rounded-2xl bg-[#e8e6dc]/50 flex items-center justify-center mb-6 border border-[#e8e6dc] shadow-2xl ">
+                      <RefreshCw className="w-8 h-8 text-[#141413] opacity-80 animate-spin" style={{ animationDuration: '3s' }} />
                   </div>
-                  <h3 className="text-3xl font-bold text-white tracking-tight mb-2 text-center drop-shadow-xl">Syncing Library</h3>
-                  <p className="text-white/50 text-sm font-medium tracking-wide">Analyzing your listening history...</p>
+                  <h3 className="text-3xl font-bold text-[#141413] tracking-tight mb-2 text-center drop-shadow-xl">Syncing Library</h3>
+                  <p className="text-[#141413]/50 text-sm font-medium tracking-wide">Analyzing your listening history...</p>
 
                   {loading === false && !data && (
                       <button onClick={handleConnect} disabled={connecting} className="mt-8 px-8 py-3 bg-white text-black text-sm font-bold rounded-full hover:bg-gray-200 transition-colors z-10 shadow-xl">
@@ -846,22 +846,22 @@ function App() {
             <div className="space-y-4 pt-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-[34px] font-bold text-white leading-none tracking-tight">{getGreeting()}, {data.user?.display_name?.split(' ')[0] || 'friend'}</h2>
+                        <h2 className="text-[34px] font-bold text-[#141413] leading-none tracking-tight">{getGreeting()}, {data.user?.display_name?.split(' ')[0] || 'friend'}</h2>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setDatabaseViewerOpen(true)}
-                            className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                            className="p-2 rounded-full bg-[#e8e6dc]/50 border border-[#e8e6dc] hover:bg-[#e8e6dc] transition-all"
                             title="View Database"
                         >
-                            <Database size={16} className="text-white/70" />
+                            <Database size={16} className="text-[#141413]/70" />
                         </button>
                         <button
                             onClick={handleManualRefresh}
-                            className={`p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all ${isRefreshing ? 'animate-spin' : ''}`}
+                            className={`p-2 rounded-full bg-[#e8e6dc]/50 border border-[#e8e6dc] hover:bg-[#e8e6dc] transition-all ${isRefreshing ? 'animate-spin' : ''}`}
                             title="Refresh Data"
                         >
-                            <RefreshCw size={16} className="text-white/70" />
+                            <RefreshCw size={16} className="text-[#141413]/70" />
                         </button>
                     </div>
                 </div>
@@ -889,7 +889,7 @@ function App() {
 
             <div className="relative">
                 {/* Time Range Selector */}
-                <div className="flex gap-2 p-1.5 overflow-x-auto no-scrollbar rounded-2xl border border-white/10 bg-white/5 mb-2 items-center">
+                <div className="flex gap-2 p-1.5 overflow-x-auto no-scrollbar rounded-2xl border border-[#e8e6dc] bg-[#e8e6dc]/50 mb-2 items-center">
                     {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
                         <button
                             key={range}
@@ -899,7 +899,7 @@ function App() {
                             }}
                             aria-pressed={timeRange === range}
                             className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
-                                timeRange === range ? 'bg-white text-black' : 'text-white/70 hover:text-white hover:bg-white/10'
+                                timeRange === range ? 'bg-white text-black' : 'text-[#141413]/70 hover:text-[#141413] hover:bg-[#e8e6dc]'
                             }`}
                         >
                             {range}
@@ -911,7 +911,7 @@ function App() {
                             <button
                                 className={cn(
                                     "px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5",
-                                    timeRange === 'Custom' ? 'bg-white text-black' : 'text-white/70 hover:text-white hover:bg-white/10'
+                                    timeRange === 'Custom' ? 'bg-white text-black' : 'text-[#141413]/70 hover:text-[#141413] hover:bg-[#e8e6dc]'
                                 )}
                             >
                                 <Calendar size={12} />
@@ -948,8 +948,8 @@ function App() {
                 <>
                     <section className="space-y-4">
                         <div className="flex items-center justify-between px-1">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">Your Top Artists</h3>
-                            <button onClick={() => handleSeeAll('artist')} className="text-xs font-semibold text-[#FA2D48] hover:text-[#ff5c70] transition-colors">See All</button>
+                            <h3 className="text-[20px] font-bold text-[#141413] tracking-tight">Your Top Artists</h3>
+                            <button onClick={() => handleSeeAll('artist')} className="text-xs font-semibold text-[#d97757] hover:text-[#ff5c70] transition-colors">See All</button>
                         </div>
                         {safeArtists.length > 0 ? (
                             <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
@@ -965,15 +965,15 @@ function App() {
                             </div>
                         ) : (
                             <div className="px-1">
-                                <p className="text-[#8E8E93] text-sm py-8 text-center italic">No artists found.</p>
+                                <p className="text-[#b0aea5] text-sm py-8 text-center italic">No artists found.</p>
                             </div>
                         )}
                     </section>
 
                     <section className="space-y-4">
                         <div className="flex items-center justify-between px-1">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
-                            <button onClick={() => handleSeeAll('song')} className="text-xs font-semibold text-[#FA2D48] hover:text-[#ff5c70] transition-colors">See All</button>
+                            <h3 className="text-[20px] font-bold text-[#141413] tracking-tight">Top Songs</h3>
+                            <button onClick={() => handleSeeAll('song')} className="text-xs font-semibold text-[#d97757] hover:text-[#ff5c70] transition-colors">See All</button>
                         </div>
                         <div>
                             {safeSongs.length > 0 ? (
@@ -989,7 +989,7 @@ function App() {
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-[#8E8E93] text-sm py-8 text-center italic">Not enough data to rank songs yet.</p>
+                                <p className="text-[#b0aea5] text-sm py-8 text-center italic">Not enough data to rank songs yet.</p>
                             )}
                         </div>
                     </section>
@@ -1004,8 +1004,8 @@ function App() {
 
                     <section className="space-y-4">
                         <div className="flex items-center justify-between px-1">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
-                            <button onClick={() => handleSeeAll('album')} className="text-xs font-semibold text-[#FA2D48] hover:text-[#ff5c70] transition-colors">See All</button>
+                            <h3 className="text-[20px] font-bold text-[#141413] tracking-tight">Top Albums</h3>
+                            <button onClick={() => handleSeeAll('album')} className="text-xs font-semibold text-[#d97757] hover:text-[#ff5c70] transition-colors">See All</button>
                         </div>
                         {safeAlbums.length > 0 ? (
                             <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x px-1">
@@ -1014,13 +1014,13 @@ function App() {
                                         <div className="relative w-full h-[180px] rounded-[24px] overflow-hidden shadow-xl border border-white/[0.08] active:scale-95 transition-transform">
                                             <img src={album.cover} alt={album.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                                         </div>
-                                        <p className="mt-3 text-[16px] font-semibold text-white truncate tracking-tight">{album.title}</p>
-                                        <p className="text-[14px] text-white/50 truncate mt-1 font-medium">{album.artist}</p>
+                                        <p className="mt-3 text-[16px] font-semibold text-[#141413] truncate tracking-tight">{album.title}</p>
+                                        <p className="text-[14px] text-[#141413]/50 truncate mt-1 font-medium">{album.artist}</p>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-[#8E8E93] text-sm italic px-1">Not enough data to rank albums yet.</p>
+                            <p className="text-[#b0aea5] text-sm italic px-1">Not enough data to rank albums yet.</p>
                         )}
                     </section>
 
@@ -1039,7 +1039,7 @@ function App() {
 
                     <section className="space-y-4">
                         <div className="flex items-center justify-between px-1">
-                            <h3 className="text-[20px] font-bold text-white tracking-tight">Activity Heatmap</h3>
+                            <h3 className="text-[20px] font-bold text-[#141413] tracking-tight">Activity Heatmap</h3>
                         </div>
                         <div className="overflow-hidden">
                             <ActivityHeatmap history={safeRecent} />
@@ -1072,7 +1072,7 @@ function App() {
             
             {/* Desktop Date Range Selector */}
             <div className="flex items-center justify-between mb-12">
-                <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10 items-center">
+                <div className="flex gap-2 p-1.5 bg-[#e8e6dc]/50 rounded-2xl border border-[#e8e6dc] items-center">
                     {(['Daily', 'Weekly', 'Monthly', 'All Time'] as const).map((range) => (
                         <button
                             key={range}
@@ -1081,7 +1081,7 @@ function App() {
                                 setCustomDateRange(null);
                             }}
                             className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                                timeRange === range ? 'bg-white text-black shadow-lg scale-105' : 'text-white/60 hover:text-white hover:bg-white/10'
+                                timeRange === range ? 'bg-white text-black shadow-lg scale-105' : 'text-[#141413]/60 hover:text-[#141413] hover:bg-[#e8e6dc]'
                             }`}
                         >
                             {range}
@@ -1093,7 +1093,7 @@ function App() {
                             <button
                                 className={cn(
                                     "px-6 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2",
-                                    timeRange === 'Custom' ? 'bg-white text-black shadow-lg scale-105' : 'text-white/60 hover:text-white hover:bg-white/10'
+                                    timeRange === 'Custom' ? 'bg-white text-black shadow-lg scale-105' : 'text-[#141413]/60 hover:text-[#141413] hover:bg-[#e8e6dc]'
                                 )}
                             >
                                 <Calendar size={14} />
@@ -1126,17 +1126,17 @@ function App() {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setDatabaseViewerOpen(true)}
-                        className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                        className="p-3 rounded-full bg-[#e8e6dc]/50 border border-[#e8e6dc] hover:bg-[#e8e6dc] transition-all"
                         title="View Database"
                     >
-                        <Database size={20} className="text-white/70" />
+                        <Database size={20} className="text-[#141413]/70" />
                     </button>
                     <button
                         onClick={handleManualRefresh}
-                        className={`p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all ${isRefreshing ? 'animate-spin' : 'hover:rotate-180 duration-500'}`}
+                        className={`p-3 rounded-full bg-[#e8e6dc]/50 border border-[#e8e6dc] hover:bg-[#e8e6dc] transition-all ${isRefreshing ? 'animate-spin' : 'hover:rotate-180 duration-500'}`}
                         title="Refresh Data"
                     >
-                        <RefreshCw size={20} className="text-white/70" />
+                        <RefreshCw size={20} className="text-[#141413]/70" />
                     </button>
                 </div>
             </div>
@@ -1148,8 +1148,8 @@ function App() {
                         {/* TOP ARTISTS */}
                         <div>
                             <div className="flex justify-between items-center mb-6 px-1">
-                                <h3 className="text-[20px] font-bold text-white tracking-tight">Top Artists</h3>
-                                <button onClick={() => handleSeeAll('artist')} className="text-sm font-semibold text-[#FA2D48] hover:text-[#ff5c70] transition-colors px-4 py-2 bg-white/5 rounded-full hover:bg-white/10">See All</button>
+                                <h3 className="text-[20px] font-bold text-[#141413] tracking-tight">Top Artists</h3>
+                                <button onClick={() => handleSeeAll('artist')} className="text-sm font-semibold text-[#d97757] hover:text-[#ff5c70] transition-colors px-4 py-2 bg-[#e8e6dc]/50 rounded-full hover:bg-[#e8e6dc]">See All</button>
                             </div>
                             {safeArtists.length > 0 && (
                                 <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
@@ -1169,8 +1169,8 @@ function App() {
                         {/* TOP ALBUMS */}
                         <div>
                             <div className="flex justify-between items-center mb-6 px-1">
-                                <h3 className="text-[20px] font-bold text-white tracking-tight">Top Albums</h3>
-                                <button onClick={() => handleSeeAll('album')} className="text-sm font-semibold text-[#FA2D48] hover:text-[#ff5c70] transition-colors px-4 py-2 bg-white/5 rounded-full hover:bg-white/10">See All</button>
+                                <h3 className="text-[20px] font-bold text-[#141413] tracking-tight">Top Albums</h3>
+                                <button onClick={() => handleSeeAll('album')} className="text-sm font-semibold text-[#d97757] hover:text-[#ff5c70] transition-colors px-4 py-2 bg-[#e8e6dc]/50 rounded-full hover:bg-[#e8e6dc]">See All</button>
                             </div>
                             {safeAlbums.length > 0 && (
                                 <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
@@ -1184,8 +1184,8 @@ function App() {
                         {/* TOP SONGS */}
                         <div>
                             <div className="flex justify-between items-center mb-6 px-1">
-                                <h3 className="text-[20px] font-bold text-white tracking-tight">Top Songs</h3>
-                                <button onClick={() => handleSeeAll('song')} className="text-sm font-semibold text-[#FA2D48] hover:text-[#ff5c70] transition-colors px-4 py-2 bg-white/5 rounded-full hover:bg-white/10">See All</button>
+                                <h3 className="text-[20px] font-bold text-[#141413] tracking-tight">Top Songs</h3>
+                                <button onClick={() => handleSeeAll('song')} className="text-sm font-semibold text-[#d97757] hover:text-[#ff5c70] transition-colors px-4 py-2 bg-[#e8e6dc]/50 rounded-full hover:bg-[#e8e6dc]">See All</button>
                             </div>
                             {safeSongs.length > 0 && (
                                 <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
@@ -1245,17 +1245,17 @@ function App() {
                         transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
                         className="relative group w-full"
                     >
-                        <div className="w-full aspect-square rounded-[32px] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.4)] border border-white/10 relative">
+                        <div className="w-full aspect-square rounded-[32px] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.4)] border border-[#e8e6dc] relative">
                             <img
                                 src={artistImages[selectedTopArtist.name] || selectedTopArtist.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedTopArtist.name)}&background=1C1C1E&color=fff`}
-                                className="w-full h-full object-cover bg-[#1C1C1E]"
+                                className="w-full h-full object-cover bg-white"
                                 alt={selectedTopArtist.name}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent mix-blend-multiply" />
 
                             <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
-                                <div className="bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-2xl font-bold text-sm shadow-xl border border-white/10 flex items-center gap-2">
-                                    <Trophy size={16} className="text-[#FA2D48]" />
+                                <div className="bg-[#faf9f5]/60  text-[#141413] px-4 py-2 rounded-2xl font-bold text-sm shadow-xl border border-[#e8e6dc] flex items-center gap-2">
+                                    <Trophy size={16} className="text-[#d97757]" />
                                     Rank #{safeArtists.findIndex((a: Artist) => a.id === selectedTopArtist.id) + 1 || '?'}
                                 </div>
                             </div>
@@ -1268,16 +1268,16 @@ function App() {
                         transition={{ delay: 0.15 }}
                         className="flex flex-col gap-2"
                     >
-                        <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none mb-2 drop-shadow-lg">
+                        <h1 className="text-5xl md:text-6xl font-black text-[#141413] tracking-tighter leading-none mb-2 drop-shadow-lg">
                             {selectedTopArtist.name}
                         </h1>
 
                         <div className="flex flex-wrap items-center gap-3">
-                            <div className="bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2 rounded-xl text-sm font-semibold text-white">
+                            <div className="bg-[#e8e6dc]  border border-[#e8e6dc] px-4 py-2 rounded-xl text-sm font-semibold text-[#141413]">
                                 {selectedTopArtist.timeStr || '0m'} listened
                             </div>
                             {artistDiscoveryDate && (
-                                <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-medium text-white/70">
+                                <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#e8e6dc]/50 border border-[#e8e6dc] text-sm font-medium text-[#141413]/70">
                                     <Calendar size={14} />
                                     <span>First discovered {new Date(artistDiscoveryDate).toLocaleDateString()}</span>
                                 </div>
@@ -1293,7 +1293,7 @@ function App() {
                         transition={{ delay: 0.2 }}
                         className="w-full mb-10"
                     >
-                        <h3 className="text-xs font-bold uppercase tracking-widest text-white/50 mb-4">Listening Stats</h3>
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-[#141413]/50 mb-4">Listening Stats</h3>
                         <StatsCarousel stats={selectedArtistStats} artist={selectedTopArtist} />
                     </motion.div>
 
@@ -1301,7 +1301,7 @@ function App() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.3 }}
-                        className="w-full bg-white/[0.02] border border-white/5 rounded-3xl p-6"
+                        className="w-full bg-white border border-[#e8e6dc] rounded-3xl p-6"
                     >
                         <ArtistOrbit
                             centralNode={{ id: selectedTopArtist.id, name: selectedTopArtist.name, image: artistImages[selectedTopArtist.name] || selectedTopArtist.image || '' }}
@@ -1341,7 +1341,7 @@ function App() {
                     transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
                     className="relative shrink-0 perspective-1000"
                 >
-                    <div className="w-64 h-64 md:w-96 md:h-96 rounded-2xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.6)] border border-white/20 relative group">
+                    <div className="w-64 h-64 md:w-96 md:h-96 rounded-2xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.6)] border border-[#b0aea5]/30 relative group">
                         <img
                             src={selectedTopAlbum.cover}
                             className="w-full h-full object-cover"
@@ -1357,13 +1357,13 @@ function App() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
                     >
-                        <div className="inline-block bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white mb-4 border border-white/10 shadow-sm">
+                        <div className="inline-block bg-[#e8e6dc]  px-3 py-1 rounded-full text-xs font-bold text-[#141413] mb-4 border border-[#e8e6dc] shadow-sm">
                             Rank #{safeAlbums.findIndex((a: Album) => a.id === selectedTopAlbum.id) + 1 || '?'}
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none mb-3 drop-shadow-xl">
+                        <h1 className="text-4xl md:text-6xl font-black text-[#141413] tracking-tighter leading-none mb-3 drop-shadow-xl">
                             {selectedTopAlbum.title}
                         </h1>
-                        <p className="text-xl md:text-2xl font-bold text-white/60 mb-8">
+                        <p className="text-xl md:text-2xl font-bold text-[#141413]/60 mb-8">
                             {selectedTopAlbum.artist}
                         </p>
                     </motion.div>
@@ -1372,28 +1372,28 @@ function App() {
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.25 }}
-                        className="flex flex-col gap-0 border-t border-white/10"
+                        className="flex flex-col gap-0 border-t border-[#e8e6dc]"
                     >
-                        <div className="flex justify-between items-center py-5 border-b border-white/10 hover:bg-white/[0.02] transition-colors px-2">
-                            <div className="flex items-center gap-3 text-white/50">
+                        <div className="flex justify-between items-center py-5 border-b border-[#e8e6dc] hover:bg-white transition-colors px-2">
+                            <div className="flex items-center gap-3 text-[#141413]/50">
                                 <TrendingUp size={20} />
                                 <span className="font-semibold uppercase tracking-wider text-xs">Total Plays</span>
                             </div>
-                            <span className="text-2xl font-bold text-white">{selectedTopAlbum.totalListens || (selectedTopAlbum as any).listens || 0}</span>
+                            <span className="text-2xl font-heading font-bold text-[#141413]">{selectedTopAlbum.totalListens || (selectedTopAlbum as any).listens || 0}</span>
                         </div>
-                        <div className="flex justify-between items-center py-5 border-b border-white/10 hover:bg-white/[0.02] transition-colors px-2">
-                            <div className="flex items-center gap-3 text-white/50">
+                        <div className="flex justify-between items-center py-5 border-b border-[#e8e6dc] hover:bg-white transition-colors px-2">
+                            <div className="flex items-center gap-3 text-[#141413]/50">
                                 <Clock size={20} />
                                 <span className="font-semibold uppercase tracking-wider text-xs">Time Listened</span>
                             </div>
-                            <span className="text-2xl font-bold text-white">{selectedTopAlbum.timeStr ? String(selectedTopAlbum.timeStr).replace('m', '') : '0'} <span className="text-sm text-white/50">mins</span></span>
+                            <span className="text-2xl font-heading font-bold text-[#141413]">{selectedTopAlbum.timeStr ? String(selectedTopAlbum.timeStr).replace('m', '') : '0'} <span className="text-sm text-[#141413]/50">mins</span></span>
                         </div>
-                        <div className="flex justify-between items-center py-5 border-b border-white/10 hover:bg-white/[0.02] transition-colors px-2">
-                            <div className="flex items-center gap-3 text-white/50">
+                        <div className="flex justify-between items-center py-5 border-b border-[#e8e6dc] hover:bg-white transition-colors px-2">
+                            <div className="flex items-center gap-3 text-[#141413]/50">
                                 <Sparkles size={20} />
                                 <span className="font-semibold uppercase tracking-wider text-xs">Share of Plays</span>
                             </div>
-                            <span className="text-2xl font-bold text-white">
+                            <span className="text-2xl font-heading font-bold text-[#141413]">
                                 {selectedTopAlbum.totalListens ? Math.round((selectedTopAlbum.totalListens / (safeRecent.length || 1)) * 100) : 0}%
                             </span>
                         </div>
@@ -1418,15 +1418,15 @@ function App() {
                     transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
                     className="relative shrink-0"
                 >
-                    <div className="w-64 h-64 md:w-96 md:h-96 rounded-2xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.6)] border border-white/20 relative group">
+                    <div className="w-64 h-64 md:w-96 md:h-96 rounded-2xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.6)] border border-[#b0aea5]/30 relative group">
                         <img
                             src={selectedTopSong.cover}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                             alt={selectedTopSong.title}
                         />
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60 mix-blend-multiply" />
-                        <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-xl font-bold text-xs text-white border border-white/10 shadow-lg flex items-center gap-2">
-                            <Music size={14} className="text-[#FA2D48]" />
+                        <div className="absolute bottom-4 left-4 bg-[#faf9f5]/50  px-3 py-1.5 rounded-xl font-bold text-xs text-[#141413] border border-[#e8e6dc] shadow-lg flex items-center gap-2">
+                            <Music size={14} className="text-[#d97757]" />
                             #{safeSongs.findIndex((s: Song) => s.id === selectedTopSong.id) + 1 || '?'}
                         </div>
                     </div>
@@ -1438,14 +1438,14 @@ function App() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
                     >
-                        <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none mb-3 drop-shadow-xl">
+                        <h1 className="text-4xl md:text-6xl font-black text-[#141413] tracking-tighter leading-none mb-3 drop-shadow-xl">
                             {selectedTopSong.title}
                         </h1>
-                        <p className="text-xl md:text-2xl font-bold text-white/80 mb-1">
+                        <p className="text-xl md:text-2xl font-bold text-[#141413]/80 mb-1">
                             {selectedTopSong.artist}
                         </p>
                         {selectedTopSong.album && (
-                            <p className="text-sm md:text-lg font-medium text-white/40 mb-8">
+                            <p className="text-sm md:text-lg font-medium text-[#141413]/40 mb-8">
                                 from {selectedTopSong.album}
                             </p>
                         )}
@@ -1455,28 +1455,28 @@ function App() {
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="grid grid-cols-1 gap-0 border-y border-white/10"
+                        className="grid grid-cols-1 gap-0 border-y border-[#e8e6dc]"
                     >
-                        <div className="flex justify-between items-center py-5 border-b border-white/5 hover:bg-white/[0.02] transition-colors px-4">
-                            <div className="flex items-center gap-4 text-white/50">
-                                <div className="p-2 rounded-xl bg-white/5"><TrendingUp size={18} /></div>
+                        <div className="flex justify-between items-center py-5 border-b border-[#e8e6dc] hover:bg-white transition-colors px-4">
+                            <div className="flex items-center gap-4 text-[#141413]/50">
+                                <div className="p-2 rounded-xl bg-[#e8e6dc]/50"><TrendingUp size={18} /></div>
                                 <span className="font-semibold uppercase tracking-wider text-xs">Total Plays</span>
                             </div>
-                            <span className="text-3xl font-black text-white">{selectedTopSong.listens || 0}</span>
+                            <span className="text-3xl font-black text-[#141413]">{selectedTopSong.listens || 0}</span>
                         </div>
-                        <div className="flex justify-between items-center py-5 border-b border-white/5 hover:bg-white/[0.02] transition-colors px-4">
-                            <div className="flex items-center gap-4 text-white/50">
-                                <div className="p-2 rounded-xl bg-white/5"><Clock size={18} /></div>
+                        <div className="flex justify-between items-center py-5 border-b border-[#e8e6dc] hover:bg-white transition-colors px-4">
+                            <div className="flex items-center gap-4 text-[#141413]/50">
+                                <div className="p-2 rounded-xl bg-[#e8e6dc]/50"><Clock size={18} /></div>
                                 <span className="font-semibold uppercase tracking-wider text-xs">Time Listened</span>
                             </div>
-                            <span className="text-3xl font-black text-white">{selectedTopSong.timeStr ? String(selectedTopSong.timeStr).replace('m', '') : '0'}<span className="text-base text-white/40 ml-1">m</span></span>
+                            <span className="text-3xl font-black text-[#141413]">{selectedTopSong.timeStr ? String(selectedTopSong.timeStr).replace('m', '') : '0'}<span className="text-base text-[#141413]/40 ml-1">m</span></span>
                         </div>
-                        <div className="flex justify-between items-center py-5 hover:bg-white/[0.02] transition-colors px-4">
-                            <div className="flex items-center gap-4 text-white/50">
-                                <div className="p-2 rounded-xl bg-white/5"><Sparkles size={18} /></div>
+                        <div className="flex justify-between items-center py-5 hover:bg-white transition-colors px-4">
+                            <div className="flex items-center gap-4 text-[#141413]/50">
+                                <div className="p-2 rounded-xl bg-[#e8e6dc]/50"><Sparkles size={18} /></div>
                                 <span className="font-semibold uppercase tracking-wider text-xs">Share of Plays</span>
                             </div>
-                            <span className="text-3xl font-black text-[#FA2D48]">
+                            <span className="text-3xl font-black text-[#d97757]">
                                 {selectedTopSong.listens ? Math.round((selectedTopSong.listens / (safeRecent.length || 1)) * 100) : 0}%
                             </span>
                         </div>
@@ -1504,16 +1504,16 @@ function App() {
                     className="relative w-full h-full flex flex-col"
                     style={{ height: '100dvh' }}
                 >
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#e8e6dc] flex-shrink-0">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-[#FA2D48]/10 flex items-center justify-center">
-                                <Sparkles className="w-4 h-4 text-[#FA2D48]" />
+                            <div className="w-8 h-8 rounded-lg bg-[#d97757]/10 flex items-center justify-center">
+                                <Sparkles className="w-4 h-4 text-[#d97757]" />
                             </div>
-                            <h2 className="text-base font-bold text-white tracking-tight">AI Discovery</h2>
+                            <h2 className="text-base font-bold text-[#141413] tracking-tight">AI Discovery</h2>
                         </div>
                         <button
                             onClick={() => { setAiModalOpen(false); setAiInitialQuery(undefined); }}
-                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/50 hover:text-white transition-all"
+                            className="p-2 rounded-full bg-[#e8e6dc] hover:bg-[#b0aea5]/30 text-[#141413]/50 hover:text-[#141413] transition-all"
                         >
                             <X size={18} />
                         </button>

@@ -27,14 +27,14 @@ const Typewriter = ({ text }: { text: string }) => {
 
   return (
     <div className='flex flex-col gap-2'>
-        <span className="text-lg md:text-xl font-medium text-white leading-relaxed">
+        <span className="text-lg md:text-xl font-medium text-[#141413] leading-relaxed">
         {displayedText}
-        <span className="inline-block w-[2px] h-5 ml-1 bg-[#FA2D48] align-middle animate-pulse"></span>
+        <span className="inline-block w-[2px] h-5 ml-1 bg-[#d97757] align-middle animate-pulse"></span>
         </span>
         {imageMatch && (
-            <div className="mt-2 rounded-lg overflow-hidden border border-white/10 w-fit max-w-[200px] animate-in fade-in slide-in-from-bottom-2 duration-500 delay-500">
+            <div className="mt-2 rounded-lg overflow-hidden border border-[#e8e6dc] w-fit max-w-[200px] animate-in fade-in slide-in-from-bottom-2 duration-500 delay-500">
                 <img src={imageMatch[2]} alt={imageMatch[1]} className="w-full object-cover" />
-                <div className="bg-black/50 p-1 text-[10px] text-white/70 text-center">{imageMatch[1]}</div>
+                <div className="bg-[#faf9f5]/50 p-1 text-[10px] text-[#141413]/70 text-center">{imageMatch[1]}</div>
             </div>
         )}
     </div>
@@ -45,10 +45,10 @@ const Typewriter = ({ text }: { text: string }) => {
 const WaveLoading = () => (
     <div className="flex items-center gap-1 h-6">
         {/* Changed wave color to #FA2D48 to match the cursor/theme */}
-        <div className="w-1 bg-[#FA2D48] rounded-full wave-bar h-1"></div>
-        <div className="w-1 bg-[#FA2D48] rounded-full wave-bar h-1"></div>
-        <div className="w-1 bg-[#FA2D48] rounded-full wave-bar h-1"></div>
-        <div className="w-1 bg-[#FA2D48] rounded-full wave-bar h-1"></div>
+        <div className="w-1 bg-[#d97757] rounded-full wave-bar h-1"></div>
+        <div className="w-1 bg-[#d97757] rounded-full wave-bar h-1"></div>
+        <div className="w-1 bg-[#d97757] rounded-full wave-bar h-1"></div>
+        <div className="w-1 bg-[#d97757] rounded-full wave-bar h-1"></div>
     </div>
 );
 
@@ -65,7 +65,7 @@ interface HeroCardProps {
 }
 
 const HeroCard = ({ title, subtitle, meta, gradientClass, icon: Icon, children, onClick, loading }: HeroCardProps) => (
-  <div className="relative flex-shrink-0 w-[85vw] md:w-[400px] h-[220px] rounded-2xl overflow-hidden snap-start cursor-pointer group border border-white/5 bg-[#1C1C1E]">
+  <div className="relative flex-shrink-0 w-[85vw] md:w-[400px] h-[220px] rounded-2xl overflow-hidden snap-start cursor-pointer group border border-[#e8e6dc] bg-white">
     {/* Aurora Gradient Background */}
     <div className={`absolute inset-0 opacity-40 group-hover:opacity-60 transition-opacity duration-700 ${gradientClass}`}></div>
     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
@@ -73,14 +73,14 @@ const HeroCard = ({ title, subtitle, meta, gradientClass, icon: Icon, children, 
     <div className="absolute inset-0 p-6 flex flex-col justify-between z-10">
       <div className="flex justify-between items-start">
         <div>
-           <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 mb-1 block">{subtitle}</span>
-           <h3 className="text-xl md:text-2xl font-bold text-white leading-tight max-w-[90%] drop-shadow-md">{title}</h3>
+           <span className="text-[10px] font-bold uppercase tracking-widest text-[#141413]/70 mb-1 block">{subtitle}</span>
+           <h3 className="text-xl md:text-2xl font-bold text-[#141413] leading-tight max-w-[90%] drop-shadow-md">{title}</h3>
         </div>
-        {Icon && <Icon className="w-5 h-5 text-white/80" />}
+        {Icon && <Icon className="w-5 h-5 text-[#141413]/80" />}
       </div>
       
       <div className="flex items-end justify-between">
-        <span className="text-sm font-medium text-white/90">{meta}</span>
+        <span className="text-sm font-medium text-[#141413]/90">{meta}</span>
         {children}
       </div>
     </div>
@@ -160,7 +160,7 @@ export const HeroCarousel = ({ userImage, insight, loadingInsight, onGenerateIns
                    <img src={userImage} alt="User" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                ) : (
                    <div className="w-full h-full bg-[#2C2C2E] flex items-center justify-center">
-                       <Music className="w-10 h-10 text-white/20" />
+                       <Music className="w-10 h-10 text-[#141413]/20" />
                    </div>
                )}
           </div>
