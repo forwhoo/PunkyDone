@@ -1,4 +1,3 @@
-
 const isDev = import.meta.env.DEV;
 
 export const logger = {
@@ -17,5 +16,5 @@ export const logger = {
   },
   error: (...args: any[]) => {
     console.error(...args);
-  }
+  },
 };

@@ -1,15 +1,16 @@
-import { Artist, Album, Song } from '../types';
+import { Artist, Album, Song } from "../types";
 
 // The Redirect URI provided by the user
-const REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI || "http://localhost:3000/";
+const REDIRECT_URI =
+  import.meta.env.VITE_SPOTIFY_REDIRECT_URI || "http://localhost:3000/";
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-
-const SCOPES = "user-top-read user-read-recently-played user-read-private user-read-currently-playing";
+const SCOPES =
+  "user-top-read user-read-recently-played user-read-private user-read-currently-playing";
 let authRedirectInProgress = false;
-
 function generateRandomString(length: number) {
-  let text = '';
-  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let text = "";
+  const possible =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
   for (let i = 0; i < length; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
@@ -20,14 +21,12 @@ function generateRandomString(length: number) {
 async function generateCodeChallenge(codeVerifier: string) {
   const encoder = new TextEncoder();
   const data = encoder.encode(codeVerifier);
-  const digest = await window.crypto.subtle.digest('SHA-256', data);
-  
+  const digest = await window.crypto.subtle.digest("SHA-256", data);
   return btoa(String.fromCharCode(...new Uint8Array(digest)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
-
 export const redirectToAuthCodeFlow = async () => {
   if (authRedirectInProgress) return;
   if (!CLIENT_ID) {
@@ -41,7 +40,6 @@ export const redirectToAuthCodeFlow = async () => {
     const challenge = await generateCodeChallenge(verifier);
 
     localStorage.setItem("verifier", verifier);
-
     const params = new URLSearchParams();
     params.append("client_id", CLIENT_ID);
     params.append("response_type", "code");
@@ -55,74 +53,73 @@ export const redirectToAuthCodeFlow = async () => {
     authRedirectInProgress = false;
     throw e;
   }
-}
-
+};
 
 export const getAccessToken = async (code: string) => {
   if (!CLIENT_ID) return null;
   const verifier = localStorage.getItem("verifier");
-
   const params = new URLSearchParams();
   params.append("client_id", CLIENT_ID);
   params.append("grant_type", "authorization_code");
   params.append("code", code);
   params.append("redirect_uri", REDIRECT_URI);
   params.append("code_verifier", verifier!);
-
   const result = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params,
   });
-
   const body = await result.json();
   if (body.access_token) {
-      localStorage.setItem('spotify_token', body.access_token);
+    localStorage.setItem("spotify_token", body.access_token);
   }
   if (body.refresh_token) {
-      localStorage.setItem('spotify_refresh_token', body.refresh_token);
+    localStorage.setItem("spotify_refresh_token", body.refresh_token);
   }
   return body.access_token;
-}
+};
 
 export const refreshAccessToken = async () => {
-    const refreshToken = localStorage.getItem('spotify_refresh_token');
-    if (!refreshToken || !CLIENT_ID) return null;
+  const refreshToken = localStorage.getItem("spotify_refresh_token");
+  if (!refreshToken || !CLIENT_ID) return null;
+  const params = new URLSearchParams();
+  params.append("client_id", CLIENT_ID);
+  params.append("grant_type", "refresh_token");
+  params.append("refresh_token", refreshToken);
 
-    const params = new URLSearchParams();
-    params.append("client_id", CLIENT_ID);
-    params.append("grant_type", "refresh_token");
-    params.append("refresh_token", refreshToken);
-
-    try {
-        const result = await fetch("https://accounts.spotify.com/api/token", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: params
-        });
-
-        const body = await result.json();
-        if (body.access_token) {
-            localStorage.setItem('spotify_token', body.access_token);
-            if (body.refresh_token) {
-                localStorage.setItem('spotify_refresh_token', body.refresh_token);
-            }
-            return body.access_token;
-        }
-    } catch (e) {
-        console.error("Token refresh failed", e);
+  try {
+    const result = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params,
+    });
+    const body = await result.json();
+    if (body.access_token) {
+      localStorage.setItem("spotify_token", body.access_token);
+      if (body.refresh_token) {
+        localStorage.setItem("spotify_refresh_token", body.refresh_token);
+      }
+      return body.access_token;
     }
-    return null;
-}
+  } catch (e) {
+    console.error("Token refresh failed", e);
+  }
+  return null;
+};
 
 export const getAuthUrl = () => {
-  // Deprecated: Legacy Implicit Grant URL 
-  // Kept for signature compatibility if needed, but redirectToAuthCodeFlow is preferred.
+  // Deprecated: Legacy Implicit Grant URL
+
+  // Kept for signature compatibility
+  //
+  // if needed, but redirectToAuthCodeFlow is preferred.
   if (!CLIENT_ID) {
     console.warn("Missing Spotify Client ID");
     return "#";
   }
-  return `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}&response_type=token&show_dialog=true`;
+  return `https://accounts.spotify.com/authorize?client_id=${
+    CLIENT_ID
+  }&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}&response_type=token&show_dialog=true`;
 };
 
 export const getTokenFromUrl = () => {
@@ -136,406 +133,478 @@ export const fetchSpotifyData = async (token: string) => {
   const headers = { Authorization: `Bearer ${token}` };
 
   try {
-    const [artistsRes, tracksRes, recentRes, userRes, nowPlayingRes] = await Promise.all([
-      fetch('https://api.spotify.com/v1/me/top/artists?limit=10&time_range=short_term', { headers }),
-      fetch('https://api.spotify.com/v1/me/top/tracks?limit=20&time_range=short_term', { headers }),
-      fetch('https://api.spotify.com/v1/me/player/recently-played?limit=50', { headers }),
-      fetch('https://api.spotify.com/v1/me', { headers }),
-      fetch('https://api.spotify.com/v1/me/player/currently-playing', { headers })
-    ]);
+    const [artistsRes, tracksRes, recentRes, userRes, nowPlayingRes] =
+      await Promise.all([
+        fetch(
+          "https://api.spotify.com/v1/me/top/artists?limit=10&time_range=short_term",
+          { headers },
+        ),
+        fetch(
+          "https://api.spotify.com/v1/me/top/tracks?limit=20&time_range=short_term",
+          { headers },
+        ),
+        fetch("https://api.spotify.com/v1/me/player/recently-played?limit=50", {
+          headers,
+        }),
+        fetch("https://api.spotify.com/v1/me", {
+          headers,
+        }),
+        fetch("https://api.spotify.com/v1/me/player/currently-playing", {
+          headers,
+        }),
+      ]);
 
     // Handle 401 Unauthorized globally for any endpoint
-    if ([artistsRes, tracksRes, recentRes, userRes, nowPlayingRes].some(r => r.status === 401)) {
-        console.warn("Spotify Token Unauthorized (401)");
-        return null;
+    if (
+      [artistsRes, tracksRes, recentRes, userRes, nowPlayingRes].some(
+        (r) => r.status === 401,
+      )
+    ) {
+      console.warn("Spotify Token Unauthorized (401)");
+      return null;
     }
-
     if (!artistsRes.ok || !tracksRes.ok || !recentRes.ok || !userRes.ok) {
-        console.warn("Spotify API Error:", artistsRes.status, tracksRes.status);
-        return null;
+      console.warn("Spotify API Error:", artistsRes.status, tracksRes.status);
+      return null;
     }
-
     const artistsData = await artistsRes.json();
     const tracksData = await tracksRes.json();
     const recentData = await recentRes.json();
     const userData = await userRes.json();
-    
+
     // Check Now Playing
     let currentTrack = null;
     let progress_ms = 0;
     let is_playing = false;
     let item = null;
-
     if (nowPlayingRes.status === 200) {
-        const nowPlayingData = await nowPlayingRes.json();
-        // Check if actually playing (isPlaying is true)
-        item = nowPlayingData.item;
-        is_playing = nowPlayingData.is_playing;
-        progress_ms = nowPlayingData.progress_ms;
+      const nowPlayingData = await nowPlayingRes.json();
 
-        if (is_playing && item) {
-             currentTrack = {
-                 id: item.id,
-                 title: item.name,
-                 artist: item.artists[0].name,
-                 cover: item.album.images[0]?.url || '',
-                 duration: item.duration_ms
-             };
-        }
-    } 
+      // Check if actually playing (isPlaying is true)
+      item = nowPlayingData.item;
+      is_playing = nowPlayingData.is_playing;
+      progress_ms = nowPlayingData.progress_ms;
 
+      if (is_playing && item) {
+        currentTrack = {
+          id: item.id,
+          title: item.name,
+          artist: item.artists[0].name,
+          cover: item.album.images[0]?.url || "",
+          duration: item.duration_ms,
+        };
+      }
+    }
     return {
       user: {
-          name: userData.display_name,
-          image: userData.images?.[0]?.url || "",
-          product: userData.product
+        name: userData.display_name,
+        image: userData.images?.[0]?.url || "",
+        product: userData.product,
       },
       currentTrack,
       playbackState: {
-          item,
-          is_playing,
-          progress_ms
+        item,
+        is_playing,
+        progress_ms,
       },
       artists: mapArtists(artistsData.items),
       songs: mapSongs(tracksData.items),
       albums: mapAlbumsFromTracks(tracksData.items),
       hourly: mapRecentToHourly(recentData.items),
       chart: mapRecentToDaily(recentData.items),
-      recentRaw: recentData.items // RAW DATA FOR DB SYNC
+      recentRaw: recentData.items,
+      // RAW DATA FOR DB SYNC
     };
   } catch (error) {
     console.error("Spotify Data Fetch Error", error);
     return null;
   }
 };
-
 const mapArtists = (items: any[]): Artist[] => {
   return items.map((item, index) => ({
     id: item.id,
     name: item.name,
-    image: item.images[0]?.url || '',
+    image: item.images[0]?.url || "",
     genres: item.genres,
-    totalListens: 0, // Will be populated by DB stats
-    trend: 0
+    totalListens: 0,
+    // Will be populated by DB stats
+    //     trend: 0,
   }));
 };
-
 const mapSongs = (items: any[]): Song[] => {
   return items.map((item) => ({
     id: item.id,
     title: item.name,
     artist: item.artists[0].name,
     album: item.album.name,
-    cover: item.album.images[0]?.url || '',
+    cover: item.album.images[0]?.url || "",
     duration: msToTime(item.duration_ms),
-    listens: 0, // Will be populated by DB stats
-    dailyChange: 0
+    listens: 0,
+    // Will be populated by DB stats
+    //     dailyChange: 0,
   }));
 };
-
 const mapAlbumsFromTracks = (items: any[]): Album[] => {
   const albumsMap = new Map();
-  items.forEach(item => {
+  items.forEach((item) => {
     if (!albumsMap.has(item.album.id)) {
       albumsMap.set(item.album.id, {
         id: item.album.id,
         title: item.album.name,
         artist: item.artists[0].name,
-        cover: item.album.images[0]?.url || '',
-        year: parseInt(item.album.release_date.split('-')[0]),
-        totalListens: 0
+        cover: item.album.images[0]?.url || "",
+        year: parseInt(item.album.release_date.split("-")[0]),
+        totalListens: 0,
       });
     }
   });
   return Array.from(albumsMap.values()).slice(0, 5);
 };
-
 const mapRecentToHourly = (items: any[]) => {
   // Initialize 24 hours
   const hours = Array.from({ length: 24 }, (_, i) => {
     const hour = i % 12 === 0 ? 12 : i % 12;
-    const ampm = i < 12 ? 'AM' : 'PM';
+    const ampm = i < 12 ? "AM" : "PM";
     return {
-        time: `${hour} ${ampm}`,
-        value: 0,
-        song: null as any
+      time: `${hour} ${ampm}`,
+      value: 0,
+      song: null as any,
     };
   });
 
-  items.forEach(item => {
+  items.forEach((item) => {
     const date = new Date(item.played_at);
     const hour = date.getHours();
     hours[hour].value += 1;
+
     // Set the song for this hour (preview)
     if (!hours[hour].song) {
-        hours[hour].song = {
-            id: item.track.id,
-            title: item.track.name,
-            artist: item.track.artists[0].name,
-            cover: item.track.album.images[0]?.url,
-            listens: 0
-        };
+      hours[hour].song = {
+        id: item.track.id,
+        title: item.track.name,
+        artist: item.track.artists[0].name,
+        cover: item.track.album.images[0]?.url,
+        listens: 0,
+      };
     }
   });
-  
+
   // Smooth out the graph visually and ensure structure matches DB aggregation
   return hours.map((h, i) => {
     const hour = i % 12 === 0 ? 12 : i % 12;
-    const ampm = i < 12 ? 'AM' : 'PM';
-    
+    const ampm = i < 12 ? "AM" : "PM";
     return {
-        ...h,
-        time: `${hour} ${ampm}`,
-        value: h.value * 10 + Math.floor(Math.random() * 5),
-        song: h.song?.title || 'No activity',
-        artist: h.song?.artist || '---',
-        cover: h.song?.cover || 'https://ui-avatars.com/api/?background=2C2C2E&color=8E8E93&name=?'
+      ...h,
+      time: `${hour} ${ampm}`,
+      value: h.value * 10 + Math.floor(Math.random() * 5),
+      song: h.song?.title || "No activity",
+      artist: h.song?.artist || "---",
+      cover:
+        h.song?.cover ||
+        "https://ui-avatars.com/api/?background=2C2C2E&color=8E8E93&name=?",
     };
-  }); 
+  });
 };
-
 const mapRecentToDaily = (items: any[]) => {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const counts = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
-    
-    items.forEach(item => {
-        const d = new Date(item.played_at).getDay();
-        // @ts-ignore
-        counts[d]++;
-    });
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const counts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
 
-    return Object.entries(counts).map(([key, val]) => ({
-        day: days[parseInt(key)],
-        listens: (val as number) * 150 // Scale for visual
-    }));
+  items.forEach((item) => {
+    const d = new Date(item.played_at).getDay();
+
+    // @ts-ignore
+    // counts[d]++;
+  });
+  return Object.entries(counts).map(([key, val]) => ({
+    day: days[parseInt(key)],
+    listens: (val as number) * 150,
+    // Scale for visual
+  }));
 };
-
 const msToTime = (duration: number) => {
   const minutes = Math.floor(duration / 60000);
   const seconds = ((duration % 60000) / 1000).toFixed(0);
-  return minutes + ":" + (parseInt(seconds) < 10 ? '0' : '') + seconds;
+  return minutes + ":" + (parseInt(seconds) < 10 ? "0" : "") + seconds;
 };
 
 // Simple in-memory cache
 const artistImageCache: Record<string, string> = {};
 
 export const fetchArtistImages = async (
-    token: string, 
-    artistNames: string[],
-    onProgress?: (status: string) => void
+  token: string,
+  artistNames: string[],
+  onProgress?: (status: string) => void,
 ) => {
-    if (!token || !artistNames.length) {
-        console.log('[fetchArtistImages] No token or empty artist list');
-        return {};
+  if (!token || !artistNames.length) {
+    console.log("[fetchArtistImages] No token or empty artist list");
+    return {};
+  }
+  const imageMap: Record<string, string> = {};
+  const uniqueNames = Array.from(new Set(artistNames));
+  const namesToFetch: string[] = [];
+
+  // Check cache first
+  uniqueNames.forEach((name) => {
+    if (artistImageCache[name]) {
+      imageMap[name] = artistImageCache[name];
+    } else {
+      namesToFetch.push(name);
     }
-    
-    const imageMap: Record<string, string> = {};
-    const uniqueNames = Array.from(new Set(artistNames));
-    const namesToFetch: string[] = [];
+  });
 
-    // Check cache first
-    uniqueNames.forEach(name => {
-        if (artistImageCache[name]) {
-            imageMap[name] = artistImageCache[name];
-        } else {
-            namesToFetch.push(name);
-        }
-    });
-
-    console.log(`[fetchArtistImages] 🎤 ${uniqueNames.length} unique artists, ${Object.keys(imageMap).length} cached, ${namesToFetch.length} to fetch`);
-
-    if (namesToFetch.length === 0) {
-        console.log('[fetchArtistImages] ✅ All images from cache!');
-        return imageMap;
-    }
-
-    // Throttle helper
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-    // Process in chunks of 5 (faster but still safe)
-    const chunkSize = 5;
-    let fetched = 0;
-    let found = 0;
-    let rateLimitHit = false;
-    
-    console.log(`[fetchArtistImages] 🌐 Starting fetch for ${namesToFetch.length} artists in chunks of ${chunkSize}...`);
-    
-    for (let i = 0; i < namesToFetch.length; i += chunkSize) {
-        if (rateLimitHit) {
-            console.warn('[fetchArtistImages] ⚠️ Rate limit hit, stopping early');
-            break;
-        }
-        
-        const chunk = namesToFetch.slice(i, i + chunkSize);
-        
-        await Promise.all(chunk.map(async (name) => {
-            try {
-                // Rate limit protection
-                await delay(Math.random() * 200 + 100); 
-
-                const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(name)}&type=artist&limit=1`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                
-                fetched++;
-                
-                if (res.status === 429) {
-                    console.warn(`[fetchArtistImages] ⚠️ Rate limit hit at ${name}`);
-                    rateLimitHit = true;
-                    return;
-                }
-
-                if (!res.ok) {
-                    console.warn(`[fetchArtistImages] ⚠️ ${res.status} for "${name}"`);
-                    return;
-                }
-
-                const data = await res.json();
-                const artist = data.artists?.items[0];
-
-                // Verify name match (case-insensitive) to prevent "Drake" -> "Kanye" issues
-                if (artist && artist.name.toLowerCase().trim() === name.toLowerCase().trim()) {
-                    if (artist.images?.length > 0) {
-                        const url = artist.images[0].url;
-                        imageMap[name] = url;
-                        artistImageCache[name] = url;
-                        found++;
-                    }
-                } else if (artist) {
-                    console.warn(`[fetchArtistImages] ⚠️ Mismatch: Searched "${name}", found "${artist.name}" - skipping`);
-                }
-            } catch (e) {
-                console.error(`[fetchArtistImages] ❌ Error for ${name}:`, e);
-            }
-        }));
-        
-        // Progress update
-        const percent = Math.round(((i + chunk.length) / namesToFetch.length) * 100);
-        console.log(`[fetchArtistImages] 📊 ${percent}% - Fetched ${fetched}/${namesToFetch.length}, found ${found} images`);
-        onProgress?.(`🌐 Fetching from Spotify: ${percent}% (${found}/${fetched} found)`);
-        
-        // Wait between chunks (500ms)
-        if (i + chunkSize < namesToFetch.length && !rateLimitHit) await delay(500);
-    }
-
-    console.log(`[fetchArtistImages] ✅ Complete! Found ${found}/${namesToFetch.length} artist images`);
+  console.log(
+    `[fetchArtistImages] 🎤 ${uniqueNames.length} unique artists, ${Object.keys(imageMap).length} cached, ${namesToFetch.length} to fetch`,
+  );
+  if (namesToFetch.length === 0) {
+    console.log("[fetchArtistImages] ✅ All images from cache!");
     return imageMap;
+  }
+
+  // Throttle helper
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+  // Process in chunks of 5 (faster but still safe)
+  const chunkSize = 5;
+  let fetched = 0;
+  let found = 0;
+  let rateLimitHit = false;
+
+  console.log(
+    `[fetchArtistImages] 🌐 Starting fetch for ${namesToFetch.length} artists in chunks of ${chunkSize}...`,
+  );
+
+  for (let i = 0; i < namesToFetch.length; i += chunkSize) {
+    if (rateLimitHit) {
+      console.warn("[fetchArtistImages] ⚠️ Rate limit hit, stopping early");
+      break;
+    }
+    const chunk = namesToFetch.slice(i, i + chunkSize);
+
+    await Promise.all(
+      chunk.map(async (name) => {
+        try {
+          // Rate limit protection
+          await delay(Math.random() * 200 + 100);
+          const res = await fetch(
+            `https://api.spotify.com/v1/search?q=${encodeURIComponent(
+              name,
+            )}&type=artist&limit=1`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+
+          fetched++;
+          if (res.status === 429) {
+            console.warn(`[fetchArtistImages] ⚠️ Rate limit hit at ${name}`);
+            rateLimitHit = true;
+            return;
+          }
+          if (!res.ok) {
+            console.warn(`[fetchArtistImages] ⚠️ ${res.status}for "${name}"`);
+            return;
+          }
+          const data = await res.json();
+          const artist = data.artists?.items[0];
+
+          // Verify name match (case-insensitive) to prevent "Drake" -> "Kanye" issues
+          if (
+            artist &&
+            artist.name.toLowerCase().trim() === name.toLowerCase().trim()
+          ) {
+            if (artist.images?.length > 0) {
+              const url = artist.images[0].url;
+              imageMap[name] = url;
+              artistImageCache[name] = url;
+              found++;
+            }
+          } else if (artist) {
+            console.warn(
+              `[fetchArtistImages] ⚠️ Mismatch: Searched "${name}", found "${artist.name}" - skipping`,
+            );
+          }
+        } catch (e) {
+          console.error(`[fetchArtistImages] ❌ Error for ${name}:`, e);
+        }
+      }),
+    );
+
+    // Progress update
+    const percent = Math.round(
+      ((i + chunk.length) / namesToFetch.length) * 100,
+    );
+    console.log(
+      `[fetchArtistImages] 📊 ${percent}% - Fetched ${fetched}/${namesToFetch.length}, found ${found} images`,
+    );
+    onProgress?.(
+      `🌐 Fetching from Spotify: ${percent}% (${found}/${fetched} found)`,
+    );
+
+    // Wait between chunks (500ms)
+    if (i + chunkSize < namesToFetch.length && !rateLimitHit) await delay(500);
+  }
+
+  console.log(
+    `[fetchArtistImages] ✅ Complete! Found ${found}/${namesToFetch.length} artist images`,
+  );
+  return imageMap;
 };
 
-export const fetchSpotifyRecommendations = async (token: string, seeds: { seed_artists?: string[], seed_tracks?: string[], seed_genres?: string[] }, limit = 20) => {
-    if (!token) return [];
-    
-    // Helper to resolve names to IDs
-    const resolveArtistIds = async (names: string[]) => {
-        const ids: string[] = [];
-        await Promise.all(names.map(async (name) => {
-            try {
-                // If it looks like an ID (22 chars alphanumeric), allow it, else search
-                // But simplified: just search to be safe if unsure, or assume names are passed
-                const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(name)}&type=artist&limit=1`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const d = await res.json();
-                if (d.artists?.items[0]?.id) ids.push(d.artists.items[0].id);
-            } catch (e) { console.error(e); }
-        }));
-        return ids;
-    };
+export const fetchSpotifyRecommendations = async (
+  token: string,
+  seeds: {
+    seed_artists?: string[];
+    seed_tracks?: string[];
+    seed_genres?: string[];
+  },
+  limit = 20,
+) => {
+  if (!token) return [];
 
-    const params = new URLSearchParams();
-    
-    // Resolve Artists
-    if (seeds.seed_artists?.length) {
-        const realIds = await resolveArtistIds(seeds.seed_artists.slice(0, 3)); // Limit to 3 seeds
-        if (realIds.length) params.append('seed_artists', realIds.join(','));
-    }
-    
-    // Tracks are usually IDs? If names, similar logic needed. Assuming IDs or we skip
-    if (seeds.seed_tracks?.length) params.append('seed_tracks', seeds.seed_tracks.slice(0, 3).join(','));
-    
-    if (seeds.seed_genres?.length) params.append('seed_genres', seeds.seed_genres.slice(0, 3).join(','));
-    
-    params.append('limit', limit.toString());
+  // Helper to resolve names to IDs
+  const resolveArtistIds = async (names: string[]) => {
+    const ids: string[] = [];
+    await Promise.all(
+      names.map(async (name) => {
+        try {
+          // If it looks like an ID (22 chars alphanumeric), allow it, else search
 
-    try {
-        const res = await fetch(`https://api.spotify.com/v1/recommendations?${params.toString()}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        return (data.tracks || []).map((t: any) => ({
-             id: t.id,
-             title: t.name,
-             artist: t.artists[0].name,
-             album: t.album.name,
-             cover: t.album.images[0]?.url,
-             uri: t.uri,
-             isSuggestion: true // Marker for UI
-        }));
-    } catch (e) {
-        console.error("Recs Error", e);
-        return [];
-    }
+          // But simplified: just search to be safe
+          // if unsure, or assume names are passed
+          const res = await fetch(
+            `https://api.spotify.com/v1/search?q=${encodeURIComponent(
+              name,
+            )}&type=artist&limit=1`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+          const d = await res.json();
+          if (d.artists?.items[0]?.id) ids.push(d.artists.items[0].id);
+        } catch (e) {
+          console.error(e);
+        }
+      }),
+    );
+    return ids;
+  };
+  const params = new URLSearchParams();
+
+  // Resolve Artists
+  if (seeds.seed_artists?.length) {
+    const realIds = await resolveArtistIds(seeds.seed_artists.slice(0, 3));
+    // Limit to 3 seeds
+    if (realIds.length) params.append("seed_artists", realIds.join(","));
+  }
+
+  // Tracks are usually IDs? If names, similar logic needed. Assuming IDs or we skip
+  if (seeds.seed_tracks?.length)
+    params.append("seed_tracks", seeds.seed_tracks.slice(0, 3).join(","));
+  if (seeds.seed_genres?.length)
+    params.append("seed_genres", seeds.seed_genres.slice(0, 3).join(","));
+
+  params.append("limit", limit.toString());
+
+  try {
+    const res = await fetch(
+      `https://api.spotify.com/v1/recommendations?${params.toString()}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    const data = await res.json();
+    return (data.tracks || []).map((t: any) => ({
+      id: t.id,
+      title: t.name,
+      artist: t.artists[0].name,
+      album: t.album.name,
+      cover: t.album.images[0]?.url,
+      uri: t.uri,
+      isSuggestion: true,
+      // Marker for UI
+    }));
+  } catch (e) {
+    console.error("Recs Error", e);
+    return [];
+  }
 };
 
-export const searchSpotifyTracks = async (token: string, query: string, limit = 20) => {
-    if (!token || !query) return [];
-    try {
-        const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        return (data.tracks?.items || []).map((t: any) => ({
-             id: t.id,
-             title: t.name,
-             artist: t.artists[0].name,
-             album: t.album.name,
-             cover: t.album.images[0]?.url,
-             uri: t.uri,
-             isSuggestion: true
-        }));
-    } catch (e) {
-        console.error("Search Error", e);
-        return [];
-    }
+export const searchSpotifyTracks = async (
+  token: string,
+  query: string,
+  limit = 20,
+) => {
+  if (!token || !query) return [];
+  try {
+    const res = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(
+        query,
+      )}&type=track&limit=${limit}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    const data = await res.json();
+    return (data.tracks?.items || []).map((t: any) => ({
+      id: t.id,
+      title: t.name,
+      artist: t.artists[0].name,
+      album: t.album.name,
+      cover: t.album.images[0]?.url,
+      uri: t.uri,
+      isSuggestion: true,
+    }));
+  } catch (e) {
+    console.error("Search Error", e);
+    return [];
+  }
 };
 
-
-export const fetchTrackPreviewUrls = async (token: string, trackIds: string[]): Promise<Record<string, string>> => {
+export const fetchTrackPreviewUrls = async (
+  token: string,
+  trackIds: string[],
+): Promise<Record<string, string>> => {
   const normalizeSpotifyTrackId = (value: string): string | null => {
     if (!value) return null;
     const trimmed = value.trim();
     if (!trimmed) return null;
-    const fromUri = trimmed.startsWith('spotify:track:') ? trimmed.split(':').pop() || '' : trimmed;
-    const fromUrl = fromUri.includes('/track/') ? fromUri.split('/track/')[1]?.split('?')[0] || '' : fromUri;
+    const fromUri = trimmed.startsWith("spotify:track:")
+      ? trimmed.split(":").pop() || ""
+      : trimmed;
+    const fromUrl = fromUri.includes("/track/")
+      ? fromUri.split("/track/")[1]?.split("?")[0] || ""
+      : fromUri;
     return /^[A-Za-z0-9]{22}$/.test(fromUrl) ? fromUrl : null;
   };
-
   const normalizedToRawIds = new Map<string, Set<string>>();
   for (const rawId of trackIds || []) {
     const normalizedId = normalizeSpotifyTrackId(rawId);
     if (!normalizedId) continue;
-    if (!normalizedToRawIds.has(normalizedId)) normalizedToRawIds.set(normalizedId, new Set());
+    if (!normalizedToRawIds.has(normalizedId))
+      normalizedToRawIds.set(normalizedId, new Set());
     normalizedToRawIds.get(normalizedId)!.add(rawId);
   }
-
   const ids = Array.from(normalizedToRawIds.keys());
   if (!token || ids.length === 0) return {};
-
   const headers = { Authorization: `Bearer ${token}` };
   const batches: string[][] = [];
   for (let i = 0; i < ids.length; i += 50) {
     batches.push(ids.slice(i, i + 50));
   }
 
-  console.log(`[fetchTrackPreviewUrls] 🎵 Fetching preview URLs for ${ids.length} unique track IDs in ${batches.length} batch(es)`);
-
+  console.log(
+    `[fetchTrackPreviewUrls] 🎵 Fetching preview URLs for ${ids.length} unique track IDs in ${batches.length} batch(es)`,
+  );
   const output: Record<string, string> = {};
   await Promise.all(
     batches.map(async (batch) => {
-      const url = `https://api.spotify.com/v1/tracks?ids=${batch.join(',')}`;
+      const url = `https://api.spotify.com/v1/tracks?ids=${batch.join(",")}`;
       const res = await fetch(url, { headers });
       if (!res.ok) {
-        console.warn(`[fetchTrackPreviewUrls] ⚠️ API error ${res.status} for batch of ${batch.length} IDs`);
+        console.warn(
+          `[fetchTrackPreviewUrls] ⚠️ API error ${res.status}for batch of ${batch.length} IDs`,
+        );
         return;
       }
       const data = await res.json();
@@ -553,10 +622,14 @@ export const fetchTrackPreviewUrls = async (token: string, trackIds: string[]): 
           missing++;
         }
       });
-      console.log(`[fetchTrackPreviewUrls] Batch done — ${found} with preview_url, ${missing} without (Spotify may have removed them)`);
-    })
+      console.log(
+        `[fetchTrackPreviewUrls] Batch done — ${found} with preview_url, ${missing} without (Spotify may have removed them)`,
+      );
+    }),
   );
 
-  console.log(`[fetchTrackPreviewUrls] ✅ Total preview URLs found: ${Object.keys(output).length} / ${ids.length}`);
+  console.log(
+    `[fetchTrackPreviewUrls] ✅ Total preview URLs found: ${Object.keys(output).length} / ${ids.length}`,
+  );
   return output;
 };

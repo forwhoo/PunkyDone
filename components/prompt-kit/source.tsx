@@ -1,19 +1,17 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface SourceContextValue {
-  showFavicon?: boolean
+  showFavicon?: boolean;
 }
-
-const SourceContext = React.createContext<SourceContextValue>({})
+const SourceContext = React.createContext<SourceContextValue>({});
 
 interface SourceProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
-  href: string
-  showFavicon?: boolean
+  href: string;
+  showFavicon?: boolean;
 }
-
 export function Source({
   children,
   className,
@@ -29,48 +27,47 @@ export function Source({
         rel="noopener noreferrer"
         className={cn(
           "group relative flex w-full max-w-xs flex-col gap-2 overflow-hidden rounded-lg border bg-background p-3 hover:bg-muted/50 transition-colors",
-          className
+          className,
         )}
         {...props}
       >
         {children}
       </a>
     </SourceContext.Provider>
-  )
+  );
 }
 
 interface SourceTriggerProps extends React.HTMLAttributes<HTMLDivElement> {
-  label?: React.ReactNode
-  showFavicon?: boolean
+  label?: React.ReactNode;
+  showFavicon?: boolean;
 }
-
 export function SourceTrigger({
   className,
   label,
   showFavicon: showFaviconProp,
   ...props
 }: SourceTriggerProps) {
-  const { showFavicon: contextShowFavicon } = React.useContext(SourceContext)
-  const showFavicon = showFaviconProp ?? contextShowFavicon
+  const { showFavicon: contextShowFavicon } = React.useContext(SourceContext);
+  const showFavicon = showFaviconProp ?? contextShowFavicon;
 
   return (
     <div
-      className={cn("flex items-center gap-2 text-xs text-muted-foreground", className)}
+      className={cn(
+        "flex items-center gap-2 text-xs text-muted-foreground",
+        className,
+      )}
       {...props}
     >
-      {showFavicon && (
-        <div className="h-4 w-4 rounded-sm bg-muted" />
-      )}
+      {showFavicon && <div className="h-4 w-4 rounded-sm bg-muted" />}
       <span className="truncate font-medium text-foreground">{label}</span>
     </div>
-  )
+  );
 }
 
 interface SourceContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  title?: string
-  description?: string
+  title?: string;
+  description?: string;
 }
-
 export function SourceContent({
   className,
   title,
@@ -92,5 +89,5 @@ export function SourceContent({
       )}
       {children}
     </div>
-  )
+  );
 }

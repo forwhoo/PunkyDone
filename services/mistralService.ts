@@ -45,7 +45,6 @@ const getAiClient = () => {
     import.meta.env.VITE_GROQ_API_KEY ||
     "";
   if (!apiKey) return null;
-
   return new Mistral({ apiKey });
 };
 
@@ -55,7 +54,6 @@ export interface AIModel {
   label: string;
   isReasoning: boolean;
 }
-
 export const AI_MODELS: AIModel[] = [
   { id: "mistral-medium-latest", label: "Mistral Medium", isReasoning: false },
   { id: "mistral-large-latest", label: "Mistral Large", isReasoning: false },
@@ -72,14 +70,11 @@ export const AI_MODELS: AIModel[] = [
 ];
 
 export const DEFAULT_MODEL_ID = "mistral-medium-latest";
-
 const trimToolPayload = (payload: any): any => {
   if (!payload) return payload;
-
   if (Array.isArray(payload)) {
     return payload.slice(0, 8).map((item) => trimToolPayload(item));
   }
-
   if (typeof payload === "object") {
     const clone: any = {};
     Object.keys(payload).forEach((key) => {
@@ -92,7 +87,6 @@ const trimToolPayload = (payload: any): any => {
     });
     return clone;
   }
-
   return payload;
 };
 
@@ -109,10 +103,10 @@ export interface ToolCallInfo {
 // ─── AGENT TOOL DEFINITIONS (JSON Schema Format) ──────────────────────
 const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Music Critic":
-    "You are a pretentious, snobby music critic. Use complex vocabulary, critique artistic merit harshly, and act like you know better than everyone else. Be very judgmental.",
+    "You are a pretentious, snobby music critic. Use complex vocabulary, critique artistic merit harshly, and act likeyou know better than everyone else. Be very judgmental.",
   Stan: 'You are an overly enthusiastic superfan (a "stan"). Use internet slang (slay, iconic, mother, ate that up), be obsessed with pop culture, and type with lots of energy and exclamation marks!',
   "Data Scientist":
-    "You are a cold, calculated data scientist. Speak entirely in numbers, trends, statistical significance, and analytical terms. Be extremely precise and avoid any emotional fluff.",
+    "You are a cold, calculated data scientist. Speak entirely in numbers, trends, statistical significance, and analyticalterms. Be extremely precise and avoid any emotional fluff.",
   Roaster:
     "You are a sarcastic, ruthless roaster. Your goal is to make fun of the user's music taste. Be witty, sarcastic, and do not hold back on playfully insulting their listening habits.",
 };
@@ -187,7 +181,7 @@ export const TOOL_DEFINITIONS = [
 
   {
     name: "get_top_songs",
-    description: "Get the user's top songs/tracks.",
+    description: "Get the user's Top Songs/tracks.",
     parameters: {
       type: "object",
       properties: {
@@ -205,7 +199,7 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: "get_top_artists",
-    description: "Get the user's top artists.",
+    description: "Get the user's Top Artists.",
     parameters: {
       type: "object",
       properties: {
@@ -222,7 +216,7 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: "get_top_albums",
-    description: "Get the user's top albums.",
+    description: "Get the user's Top Albums.",
     parameters: {
       type: "object",
       properties: {
@@ -479,7 +473,7 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: "compare_periods",
-    description: "Compare listening stats between two time periods.",
+    description: "Comparelistening stats between two time periods.",
     parameters: {
       type: "object",
       properties: {
@@ -724,7 +718,7 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: "get_obsession_score",
-    description: "Get obsession score for an artist.",
+    description: "Get obsession scorefor an artist.",
     parameters: {
       type: "object",
       properties: {
@@ -794,7 +788,6 @@ export const TOOL_DEFINITIONS = [
     },
   },
 ];
-
 const AGENT_TOOLS = TOOL_DEFINITIONS.map((tool) => ({
   type: "function",
   function: {
@@ -880,7 +873,6 @@ async function executeAgentTool(
         } else {
           stats = await fetchDashboardStats(period as any);
         }
-
         let songs = (stats.songs || []).slice(0, limit);
         if (funcArgs.artist_filter) {
           const filter = funcArgs.artist_filter.toLowerCase();
@@ -917,7 +909,6 @@ async function executeAgentTool(
         } else {
           stats = await fetchDashboardStats(period as any);
         }
-
         const artists = (stats.artists || []).slice(0, limit);
         return {
           period,
@@ -948,7 +939,6 @@ async function executeAgentTool(
         } else {
           stats = await fetchDashboardStats(period as any);
         }
-
         const albums = (stats.albums || []).slice(0, limit);
         return {
           period,
@@ -966,6 +956,7 @@ async function executeAgentTool(
           })),
         };
       }
+
       // ... (Existing cases remain unchanged) ...
       case "get_listening_time": {
         const period = funcArgs.period || "Weekly";
@@ -1063,7 +1054,6 @@ async function executeAgentTool(
 
         let totalMinutes = 0;
         let entityMinutes = 0;
-
         if (entityType === "artist") {
           const artists = stats.artists || [];
           artists.forEach((a: any) => {
@@ -1095,7 +1085,6 @@ async function executeAgentTool(
               entityMinutes += mins;
           });
         }
-
         const percentage =
           totalMinutes > 0
             ? Math.round((entityMinutes / totalMinutes) * 1000) / 10
@@ -1636,11 +1625,10 @@ async function executeAgentTool(
 }
 
 // ─── AGENT SYSTEM PROMPT ─────────────────────────────────────────
-const AGENT_SYSTEM_PROMPT = `
+const TOOL_MAKER_SYSTEM_PROMPT = `
 
 AI TOOL MAKER INSTRUCTIONS:
 You are an expert tool builder. When the user describes a tool they want, your job is to construct a complete, working tool definition using the \`ai_tool_maker\` tool. Do not ask unnecessary questions — if you have enough information, build it immediately. A tool is made up of: Tool Name, Description, Parameters, System Prompt / Behavior, and Parser Logic. Always output the tool in a clean structured format. If the user's description is vague, ask one focused clarifying question before building. Never hallucinate parameters or behaviors — only build what is described or reasonably implied.`;
-
 const AGENT_SYSTEM_PROMPT = `You are **Harvey**, the AI music analytics agent.
 
 **CORE DIRECTIVE:**
@@ -1648,7 +1636,7 @@ Answer user questions about their music listening habits using the provided tool
 You have access to a SQL database of the user's Spotify history and can fetch live data from Spotify.
 
 **CAPABILITIES:**
-- **Dashboard Stats**: Top artists, songs, albums, listening time (Daily/Weekly/Monthly/All Time).
+- **Dashboard Stats**: Top Artists, songs, albums, listening time (Daily/Weekly/Monthly/All Time).
 - **Deep Analysis**: Obsession Orbit, Artist Streaks, Listening Percentages, Heatmaps.
 - **Discovery**: Upcoming artists (Radar), Rising Stars, Genre Breakdown.
 - **Fun Stats**: Late Night Anthem, Most Skipped, One-Hit Wonders, Earworms.
@@ -1671,7 +1659,6 @@ export interface StreamChunk {
   toolCall?: ToolCallInfo;
   groundingMetadata?: any;
 }
-
 export const streamMusicQuestionWithTools = async (
   question: string,
   context: any,
@@ -1702,9 +1689,7 @@ export const streamMusicQuestionWithTools = async (
       });
       return;
     }
-
     const modelToUse = modelId || DEFAULT_MODEL_ID;
-
     const skillInstruction =
       skill && SKILL_DESCRIPTIONS[skill]
         ? `\n\n**CRITICAL ROLEPLAY INSTRUCTION:** You MUST strictly adopt the following skill: ${SKILL_DESCRIPTIONS[skill]} Do NOT break character under any circumstances. Adjust your tone, vocabulary, and attitude to match this skill completely.`
@@ -1718,7 +1703,9 @@ export const streamMusicQuestionWithTools = async (
       },
     ];
 
-    // Add history if provided
+    // Add history
+    //
+    // if provided
     if (history.length > 0) {
       history.forEach((msg) => {
         messages.push({
@@ -1735,12 +1722,12 @@ export const streamMusicQuestionWithTools = async (
 
     messages.push({
       role: "user",
-      content: `User: ${context.userName || "Unknown"} | Date: ${new Date().toLocaleString()} | Quick context: Top artists include ${context.artists.slice(0, 5).join(", ")}. Weekly time: ${context.globalStats?.weeklyTime || "?"}. \n\nQuestion: ${question}`,
+      content: `User: ${context.userName || "Unknown"} | Date: ${new Date().toLocaleString()} | Quick context: Top Artists include ${context.artists.slice(0, 5).join(", ")}. Weekly time: ${context.globalStats?.weeklyTime || "?"}. \n\nQuestion: ${question}`,
     });
 
     let continueLoop = true;
-    // Removed MCP Tools from Chat Agent
 
+    // Removed MCP Tools from Chat Agent
     while (continueLoop) {
       const tools: any[] = AGENT_TOOLS;
       if (webSearchEnabled) {
@@ -1765,7 +1752,6 @@ export const streamMusicQuestionWithTools = async (
             }),
           },
         );
-
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error?.message || "API request failed");
@@ -1798,21 +1784,19 @@ export const streamMusicQuestionWithTools = async (
         stream = await client.chat.stream({
           model: modelToUse,
           messages: messages,
+
           // @ts-ignore
-          tools: tools,
+          //           tools: tools,
         });
       }
-
       let toolCallsBuffer: any[] = [];
       let currentContent = "";
 
       for await (const chunk of stream) {
         // Log chunk for debugging
-        console.log("[Mistral Stream Chunk]", JSON.stringify(chunk, null, 2));
-
+        // console.log("[Mistral Stream Chunk]", JSON.stringify(chunk, null, 2));
         const choice = (chunk as any).data?.choices?.[0] || chunk.choices?.[0];
         if (!choice) continue;
-
         const delta = choice.delta;
 
         // Handle thinking content (new Mistral models)
@@ -1836,6 +1820,7 @@ export const streamMusicQuestionWithTools = async (
                 onChunk({ type: "text", content: part.text });
               } else if (part.type === "thinking") {
                 // Handle thinking part
+
                 // Based on user doc: "thinking": [ { "type": "text", "text": "..." } ]
                 if (typeof part.thinking === "string") {
                   onChunk({ type: "thinking", content: part.thinking });
@@ -1888,7 +1873,6 @@ export const streamMusicQuestionWithTools = async (
         assistantMessage.toolCalls = toolCallsBuffer;
       }
       messages.push(assistantMessage);
-
       if (toolCallsBuffer.length > 0) {
         // Execute tools
         for (const toolCall of toolCallsBuffer) {
@@ -1899,7 +1883,6 @@ export const streamMusicQuestionWithTools = async (
           } catch (e) {
             console.error("Failed to parse arguments", e);
           }
-
           let iconInfo = TOOL_ICON_MAP[funcName];
           if (!iconInfo) iconInfo = { icon: "Zap", label: funcName };
 
@@ -1914,7 +1897,6 @@ export const streamMusicQuestionWithTools = async (
               label: iconInfo.label,
             },
           });
-
           const rawResult = await executeAgentTool(funcName, funcArgs, token);
           const toolResult = trimToolPayload(rawResult);
 
@@ -1962,7 +1944,6 @@ export const answerMusicQuestionWithTools = async (
     webSearchEnabled,
     historyLength: history.length,
   });
-
   const fallbackResponse = {
     text: "Unable to answer right now. Try again!",
     toolCalls: [],
@@ -1975,10 +1956,11 @@ export const answerMusicQuestionWithTools = async (
         text: "Configure VITE_MISTRAL_API_KEY to use chat features.",
         toolCalls: [],
       };
-
     const modelToUse = modelId || DEFAULT_MODEL_ID;
 
-    // answerMusicQuestionWithTools is rarely used now, but we apply skill here just in case if added later
+    // answerMusicQuestionWithTools is rarely used now, but we apply skill here just in case
+    //
+    // if added later
     const messages: any[] = [
       {
         role: "system",
@@ -1986,7 +1968,9 @@ export const answerMusicQuestionWithTools = async (
       },
     ];
 
-    // Add history if provided
+    // Add history
+    //
+    // if provided
     if (history.length > 0) {
       history.forEach((msg) => {
         messages.push({
@@ -2003,14 +1987,14 @@ export const answerMusicQuestionWithTools = async (
 
     messages.push({
       role: "user",
-      content: `User: ${context.userName || "Unknown"} | Date: ${new Date().toLocaleString()} | Quick context: Top artists include ${context.artists.slice(0, 5).join(", ")}. Weekly time: ${context.globalStats?.weeklyTime || "?"}. \n\nQuestion: ${question}`,
+      content: `User: ${context.userName || "Unknown"} | Date: ${new Date().toLocaleString()} | Quick context: Top Artists include ${context.artists.slice(0, 5).join(", ")}. Weekly time: ${context.globalStats?.weeklyTime || "?"}. \n\nQuestion: ${question}`,
     });
 
     let finalResponseText = "";
     const collectedToolCalls: ToolCallInfo[] = [];
     let continueLoop = true;
-    // Removed MCP Tools from Chat Agent
 
+    // Removed MCP Tools from Chat Agent
     while (continueLoop) {
       const tools: any[] = AGENT_TOOLS;
       if (webSearchEnabled) {
@@ -2035,7 +2019,6 @@ export const answerMusicQuestionWithTools = async (
             }),
           },
         );
-
         if (!fetchRes.ok) {
           const errorData = await fetchRes.json();
           throw new Error(errorData.error?.message || "API request failed");
@@ -2046,22 +2029,19 @@ export const answerMusicQuestionWithTools = async (
         response = await client.chat.complete({
           model: modelToUse,
           messages: messages,
+
           // @ts-ignore
-          tools: tools,
+          //           tools: tools,
         });
       }
-
       const choice = response.choices?.[0];
       const message = choice?.message;
-
       if (!message) break;
 
       messages.push(message);
-
       if (message.content) {
         finalResponseText += message.content;
       }
-
       if (message.toolCalls && message.toolCalls.length > 0) {
         for (const toolCall of message.toolCalls) {
           const funcName = toolCall.function.name;
@@ -2073,7 +2053,6 @@ export const answerMusicQuestionWithTools = async (
           }
           let iconInfo = TOOL_ICON_MAP[funcName];
           if (!iconInfo) iconInfo = { icon: "Zap", label: funcName };
-
           const rawResult = await executeAgentTool(funcName, funcArgs, token);
           const toolResult = trimToolPayload(rawResult);
 
@@ -2097,7 +2076,6 @@ export const answerMusicQuestionWithTools = async (
         continueLoop = false;
       }
     }
-
     return {
       text: finalResponseText || "I processed your request.",
       toolCalls: collectedToolCalls,
@@ -2114,13 +2092,11 @@ export const generateMusicInsights = async (
   try {
     const client = getAiClient();
     if (!client) return "Configure VITE_MISTRAL_API_KEY to see insights.";
-
     const prompt = `You are a music analytics expert. Analyze: ${contextData}`;
     const result = await client.chat.complete({
       model: DEFAULT_MODEL_ID,
       messages: [{ role: "user", content: prompt }],
     });
-
     return (result.choices?.[0]?.message?.content as string) || "";
   } catch (error) {
     console.error("Mistral API Error:", error);
@@ -2135,13 +2111,11 @@ export const answerMusicQuestion = async (
   try {
     const client = getAiClient();
     if (!client) return "Configure VITE_MISTRAL_API_KEY.";
-
     const prompt = `User: ${context.userName}. Question: ${question}. Context: ${JSON.stringify(context.globalStats)}`;
     const result = await client.chat.complete({
       model: DEFAULT_MODEL_ID,
       messages: [{ role: "user", content: prompt }],
     });
-
     return (result.choices?.[0]?.message?.content as string) || "";
   } catch (e) {
     return "Error answering question.";
@@ -2338,12 +2312,12 @@ export interface WrappedSlide {
   gradient?: string;
   data?: any;
 }
-
 export const generateWrappedWithTools = async (
   period: string,
   fetchStats: any,
 ): Promise<any> => {
   // Simplified version without complex multi-turn tool use for now to ensure migration stability
+
   // In a real migration, we would implement the full chat loop with tools here too
   const stats = await fetchStats(period);
   return {

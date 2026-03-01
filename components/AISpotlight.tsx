@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Card } from "./UIComponents";
-// import { ActivityHeatmap } from './ActivityHeatmap';
+
+//
+import { ActivityHeatmap } from "./ActivityHeatmap";
 import {
   Sparkles,
   RefreshCcw,
   AlertTriangle,
   MessageSquare,
+  Plus,
   Send,
   Zap,
   ChevronRight,
@@ -62,11 +65,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import {
-  generateDynamicCategoryQuery,
-  answerMusicQuestionWithTools,
   streamMusicQuestionWithTools,
-  generateWeeklyInsightStory,
-  generateWrappedVibe,
   WrappedSlide,
   ToolCallInfo,
   AI_MODELS,
@@ -169,7 +168,6 @@ const TOOL_LUCIDE_MAP: Record<string, LucideIcon> = {
   Target,
   vote: CheckSquare,
 };
-
 const ToolIcon = ({
   iconName,
   size = 12,
@@ -181,10 +179,10 @@ const ToolIcon = ({
   if (IconComponent) {
     return <IconComponent size={size} />;
   }
+
   // Fallback to Zap for unknown icon names
   return <Zap size={size} />;
 };
-
 const VoteTool = ({
   tool,
   onVote,
@@ -197,9 +195,7 @@ const VoteTool = ({
   const options = tool.input?.options || [];
   const multiSelect = !!tool.input?.multi_select;
   const title = tool.input?.title || "Quick Poll";
-
   if (tool.state !== "output-available") return null;
-
   const toggleOption = (opt: string) => {
     if (submitted) return;
     if (multiSelect) {
@@ -210,13 +206,11 @@ const VoteTool = ({
       setSelections([opt]);
     }
   };
-
   const handleSubmit = () => {
     if (selections.length === 0) return;
     setSubmitted(true);
     onVote(selections);
   };
-
   return (
     <div className="w-full max-w-md my-4 border border-[#3A3A37] rounded-2xl overflow-hidden bg-[#252523] p-5 ">
       <h4 className="text-[15px] font-bold text-[#EDEAE2] mb-4 flex items-center gap-2">
@@ -259,7 +253,6 @@ const VoteTool = ({
     </div>
   );
 };
-
 const CollapsibleTools = ({
   tools,
   onVote,
@@ -270,9 +263,10 @@ const CollapsibleTools = ({
   const [isOpen, setIsOpen] = useState(false);
   if (!tools || tools.length === 0) return null;
 
-  // Check if there is a vote tool
+  // Check
+  //
+  // if there is a vote tool
   const voteTool = tools.find((t) => t.type === "vote");
-
   return (
     <div className="w-full max-w-md my-4 border border-[#3A3A37] rounded-xl overflow-hidden bg-[#252523]">
       <button
@@ -331,7 +325,6 @@ interface TopAIProps {
   user?: any;
   initialQuery?: string;
 }
-
 const DEFAULT_SKILLS = [
   { id: "default", label: "Default", icon: Sparkles },
   { id: "Music Critic", label: "Music Critic", icon: AlertTriangle },
@@ -346,8 +339,9 @@ interface CategoryResult {
   description: string;
   stats: string;
   tracks: any[];
+
   // View preference
-  viewMode?: "standard" | "ranked";
+  //   viewMode?: "standard" | "ranked";
 }
 
 interface ChatMessage {
@@ -359,7 +353,6 @@ interface ChatMessage {
   sources?: any;
   isThinking?: boolean;
 }
-
 export const AISpotlight: React.FC<TopAIProps> = ({
   contextData,
   token,
@@ -387,19 +380,21 @@ export const AISpotlight: React.FC<TopAIProps> = ({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [mode, setMode] = useState<"discover" | "chat">("chat"); // Default to chat
+  const [mode, setMode] = useState<"discover" | "chat">("chat");
+  // Default to chat
   const [typing, setTyping] = useState(false);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
   const [selectedSkill, setSelectedSkill] = useState("default");
   const [toolsModalOpen, setToolsModalOpen] = useState(false);
-  const [discoveryMode, setDiscoveryMode] = useState(false); // Kept for compatibility if needed, but UI removed
-
+  const [discoveryMode, setDiscoveryMode] = useState(false);
+  // Kept for compatibility
+  //
+  // if needed, but UI removed
   const sectionRef = useRef<HTMLDivElement>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Removed manual modelDropdownOpen handling in favor of Popover
-
   useEffect(() => {
     if (initialQuery && initialQuery.trim()) {
       handleQuery(initialQuery);
@@ -409,7 +404,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, displayedText, loading, categoryResults]);
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     // ... (existing upload logic) ...
     const file = e.target.files?.[0];
@@ -466,7 +460,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({
     };
     reader.readAsText(file);
   };
-
   const handleQuery = async (manualPrompt?: string) => {
     const promptToUse = manualPrompt || userPrompt;
     if (!promptToUse.trim()) return;
@@ -573,8 +566,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({
               if (matched) {
                 setSelectedSkill(matched.id);
               } else {
-                // Default to Custom or the exact string if needed, but we restrict it in tool definition
-                setSelectedSkill(newSkill);
+                // Default to Custom or the exact string
+                // if needed, but we restrict it in tool definition setSelectedSkill(newSkill);
               }
             }
           }
@@ -597,15 +590,15 @@ export const AISpotlight: React.FC<TopAIProps> = ({
         token,
         selectedModel,
         webSearchEnabled,
-        chatMessages.slice(-10), // Chat Memory
-        selectedSkill !== "default" ? selectedSkill : undefined,
+        chatMessages.slice(-10),
+        // Chat Memory
+        // selectedSkill !== "default" ? selectedSkill : undefined,
       );
     } catch (err: any) {
       setErrorMsg(`Error: ${err.message || "Unknown"}`);
     }
     setLoading(false);
   };
-
   return (
     <ChatContainerRoot
       id="ai-spotlight"
@@ -923,7 +916,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
       </div>
 
       <ToolsModal
-        customTools={customTools}
+        customTools={[]}
         isOpen={toolsModalOpen}
         onClose={() => setToolsModalOpen(false)}
         onSelectTool={(toolName) => setUserPrompt(`@tool ${toolName} `)}

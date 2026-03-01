@@ -5,9 +5,9 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
     "./services/**/*.{js,ts,jsx,tsx}",
-    "./*.{js,ts,jsx,tsx}"
+    "./*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
@@ -37,23 +37,23 @@ export default {
           foreground: "#EDEAE2",
         },
         anthropic: {
-          dark: '#1C1C1A',
-          light: '#252523',
-          mid: '#9E9C95',
-          lightGray: '#3A3A37',
-          orange: '#E8806A',
-          blue: '#3BBFBF',
-          green: '#3BBFBF'
-        }
+          dark: "#1C1C1A",
+          light: "#252523",
+          mid: "#9E9C95",
+          lightGray: "#3A3A37",
+          orange: "#E8806A",
+          blue: "#3BBFBF",
+          green: "#3BBFBF",
+        },
       },
       fontFamily: {
-        sans: ['"DM Sans"', 'sans-serif'],
-        heading: ['"Playfair Display"', 'serif'],
-        body: ['"DM Sans"', 'sans-serif'],
-        barlow: ['Barlow', 'sans-serif'],
-        'barlow-condensed': ['"Barlow Condensed"', 'sans-serif'],
-      }
-    }
+        sans: ['"DM Sans"', "sans-serif"],
+        heading: ['"Playfair Display"', "serif"],
+        body: ['"DM Sans"', "sans-serif"],
+        barlow: ["Barlow", "sans-serif"],
+        "barlow-condensed": ['"Barlow Condensed"', "sans-serif"],
+      },
+    },
   },
   plugins: [],
-}
+};
