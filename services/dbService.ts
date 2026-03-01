@@ -94,15 +94,20 @@ export const syncRecentPlays = async (recentItems: any[], token?: string) => {
 
     // Use all recent items and let the database handle duplicates via ON CONFLICT DO NOTHING
     // This ensures we don't miss items if local state gets out of sync or if we restart the app
-    const historyItems: HistoryItem[] = recentItems.map(item => ({
-        spotify_id: item.track.id,
-        played_at: item.played_at,
-        track_name: item.track.name,
-        artist_name: item.track.artists?.[0]?.name || 'Unknown',
-        album_name: item.track.album?.name || '',
-        album_cover: item.track.album?.images?.[0]?.url || '',
-        duration_ms: item.track.duration_ms
-    }));
+    // IMPORTANT: Filter out items without a valid track ID (e.g., local files) to prevent sync crashes
+    const historyItems: HistoryItem[] = recentItems
+        .filter(item => item?.track?.id)
+        .map(item => ({
+            spotify_id: item.track.id,
+            played_at: item.played_at,
+            track_name: item.track.name || 'Unknown',
+            artist_name: item.track.artists?.[0]?.name || 'Unknown',
+            album_name: item.track.album?.name || '',
+            album_cover: item.track.album?.images?.[0]?.url || '',
+            duration_ms: item.track.duration_ms || 0
+        }));
+
+    if (historyItems.length === 0) return;
 
     const { error } = await supabase
         .from('listening_history')
@@ -2485,6 +2490,50 @@ export const getMilestoneTracker = async (targetPlays: number, artistName?: stri
         };
     } catch (error) {
         console.error('getMilestoneTracker error:', error);
+        return null;
+    }
+};
+
+// Get forgotten favorites (songs heavily played before, but not in last 30 days)
+export const getForgottenFavorites = async (minPlays: number = 5): Promise<{ forgotten_songs: Array<{ title: string; artist: string; cover: string; plays: number; last_played: string }> } | null> => {
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const { data } = await supabase
+            .from('listening_history')
+            .select('track_name, artist_name, album_cover, played_at');
+
+        if (!data || data.length === 0) return null;
+
+        const songStats: Record<string, { plays: number; lastPlayed: Date; artist: string; cover: string }> = {};
+        data.forEach(item => {
+            if (!item.track_name) return;
+            const date = new Date(item.played_at);
+            if (!songStats[item.track_name]) {
+                songStats[item.track_name] = { plays: 0, lastPlayed: date, artist: item.artist_name || 'Unknown', cover: item.album_cover || '' };
+            }
+            songStats[item.track_name].plays++;
+            if (date > songStats[item.track_name].lastPlayed) {
+                songStats[item.track_name].lastPlayed = date;
+            }
+        });
+
+        const forgotten = Object.entries(songStats)
+            .filter(([_, stats]) => stats.plays >= minPlays && stats.lastPlayed < thirtyDaysAgo)
+            .sort((a, b) => b[1].plays - a[1].plays)
+            .slice(0, 10)
+            .map(([title, stats]) => ({
+                title,
+                artist: stats.artist,
+                cover: stats.cover,
+                plays: stats.plays,
+                last_played: stats.lastPlayed.toLocaleDateString()
+            }));
+
+        return { forgotten_songs: forgotten };
+    } catch (error) {
+        console.error('getForgottenFavorites error:', error);
         return null;
     }
 };

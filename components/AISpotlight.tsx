@@ -14,8 +14,6 @@ import {
 import { generateDynamicCategoryQuery, answerMusicQuestionWithTools, streamMusicQuestionWithTools, generateWeeklyInsightStory, generateWrappedVibe, WrappedSlide, ToolCallInfo, AI_MODELS, DEFAULT_MODEL_ID } from '../services/mistralService';
 import { fetchSmartPlaylist, uploadExtendedHistory, backfillExtendedHistoryImages, SpotifyHistoryItem, getWrappedStats } from '../services/dbService';
 import { fetchArtistImages, fetchSpotifyRecommendations, searchSpotifyTracks } from '../services/spotifyService';
-import { generateCanvasComponent, CanvasComponent } from '../services/canvasService';
-import { CanvasRenderer } from './CanvasRenderer';
 import { ToolsModal } from './ToolsModal';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -197,7 +195,6 @@ interface ChatMessage {
     role: 'user' | 'ai';
     text: string;
     timestamp: Date;
-    canvas?: CanvasComponent;
     toolCalls?: ToolCallInfo[];
     tools?: ToolPart[];
     sources?: any;
@@ -215,7 +212,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     const [wrappedMode, setWrappedMode] = useState(false);
     const [wrappedSlides, setWrappedSlides] = useState<WrappedSlide[]>([]);
     const [wrappedStep, setWrappedStep] = useState(0);
-    const [canvasMode, setCanvasMode] = useState(false);
     const [webSearchEnabled, setWebSearchEnabled] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [chatResponse, setChatResponse] = useState<string | null>(null);
@@ -329,19 +325,9 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
             // Simplified handling - mostly focusing on Chat now
             const lower = promptToUse.toLowerCase();
 
-            if (canvasMode) {
-                setMode('chat');
-                setChatResponse("🎨 Building component...");
-                const result = await generateCanvasComponent(promptToUse, contextData, chatMessages.filter(m => !m.canvas || m.role === 'user').map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })), (a, e) => setChatResponse(`🔄 Retry (${a}/5)... ${e}`));
-                setChatMessages(prev => [...prev, { role: 'ai', text: result && !result.error ? `Here's your **${result.title}**` : `Sorry, I couldn't build that. ${result?.error || ''}`, timestamp: new Date(), canvas: result || undefined }]);
-                setChatResponse(null);
-                setLoading(false);
-                return;
-            }
-
             setMode('chat');
             const aiMessageId = Date.now();
-            setChatMessages(prev => [...prev, { role: 'ai', text: '', timestamp: new Date(), isThinking: false, thoughts: [], tools: [], sources: null }]);
+            setChatMessages(prev => [...prev, { role: 'ai', text: '', timestamp: new Date(), isThinking: false, tools: [], sources: null }]);
             let currentText = "";
             let tools: any[] = [];
             let sources: any = null;
@@ -354,7 +340,22 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                     if (chunk.type === 'thinking') isThinking = true;
                     if (chunk.type === 'text' && chunk.content) { currentText += chunk.content; isThinking = false; }
                     if (chunk.type === 'tool-call' && chunk.toolCall) { tools.push({ type: chunk.toolCall.name, state: 'input-available', input: chunk.toolCall.arguments }); isThinking = true; }
-                    if (chunk.type === 'tool-result' && chunk.toolCall) { const ti = tools.findIndex(t => t.type === chunk.toolCall!.name && t.state === 'input-available'); if (ti !== -1) tools[ti] = { ...tools[ti], state: 'output-available', output: chunk.toolCall.result }; }
+                    if (chunk.type === 'tool-result' && chunk.toolCall) {
+                        const ti = tools.findIndex(t => t.type === chunk.toolCall!.name && t.state === 'input-available');
+                        if (ti !== -1) tools[ti] = { ...tools[ti], state: 'output-available', output: chunk.toolCall.result };
+
+                        // Intercept set_persona to update the UI
+                        if (chunk.toolCall.name === 'set_persona' && chunk.toolCall.arguments?.persona) {
+                            const newPersona = chunk.toolCall.arguments.persona;
+                            const matched = PERSONAS.find(p => p.label.toLowerCase() === newPersona.toLowerCase());
+                            if (matched) {
+                                setSelectedPersona(matched.id);
+                            } else {
+                                // Default to Custom or the exact string if needed, but we restrict it in tool definition
+                                setSelectedPersona(newPersona);
+                            }
+                        }
+                    }
                     if (chunk.type === 'grounding' && chunk.groundingMetadata) sources = chunk.groundingMetadata;
                     setChatMessages(prev => {
                         const next = [...prev];
@@ -376,22 +377,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
     };
 
     return (
-        <ChatContainerRoot id="ai-spotlight" ref={sectionRef}>
-            <div className="flex-shrink-0 flex items-center justify-between py-3 px-4 border-b border-white/5">
+        <ChatContainerRoot id="ai-spotlight" ref={sectionRef} className="bg-[#09090b] bg-noise relative h-full">
+            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80 pointer-events-none z-0" />
+            <div className="flex-shrink-0 flex items-center justify-between py-3 px-4 border-b border-white/5 relative z-10 bg-black/40 backdrop-blur-md">
                 <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-0 border border-white/10 bg-white/5 rounded-xl p-1 backdrop-blur-md">
-                        {([{id:'chat',label:'Chat'},{id:'canvas',label:'Canvas',icon:Palette}] as const).map(m => (
-                            <button
-                                key={m.id}
-                                onClick={() => { if(m.id==='chat'){setCanvasMode(false);}else{setCanvasMode(true);} }}
-                                className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all flex items-center gap-1.5 ${((m.id==='chat'&&!canvasMode)||(m.id==='canvas'&&canvasMode)) ? 'bg-white text-black' : 'text-[#8E8E93] hover:text-white'}`}
-                            >
-                                {m.icon && <m.icon size={12} />}
-                                {m.label}
-                            </button>
-                        ))}
-                    </div>
-
                     <Button
                         variant="ghost"
                         size="sm"
@@ -471,58 +460,31 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 </div>
             </div>
 
-            <ChatContainerContent className="flex-1">
+            <ChatContainerContent className="flex-1 relative z-10 px-4 pt-6">
                 <div className="max-w-4xl mx-auto space-y-6">
                     {chatMessages.length === 0 && !loading && categoryResults.length === 0 && !insightMode && !wrappedMode && (
-                        <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
-                            {canvasMode ? <><Palette className="w-8 h-8 text-white/20 mb-3" /><p className="text-[#8E8E93] text-sm">Describe a component to build...</p></> : <><Sparkles className="w-8 h-8 text-white/20 mb-3" /><p className="text-[#8E8E93] text-sm">Ask about your music...</p></>}
+                        <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-[#FA2D48]/10 flex items-center justify-center mb-6">
+                                <Sparkles className="w-8 h-8 text-[#FA2D48]" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white tracking-tight mb-2">Welcome to Lotus</h3>
+                            <p className="text-[#8E8E93] text-[15px] max-w-sm">Ask anything about your music listening habits, dive into your history, or discover new stats.</p>
                         </div>
                     )}
                     {chatMessages.map((msg, idx) => (
-                        <Message key={idx} role={msg.role === 'user' ? 'user' : 'ai'}>
-                            <MessageContent className="text-sm">
-                                {msg.role === 'ai' && msg.canvas && msg.canvas.code ? (
-                                    <div className="space-y-3">
-                                        <div className="bg-[#27272a] text-white rounded-2xl rounded-tl-sm px-5 py-3 border border-white/10 inline-block">
-                                            <div className="text-[15px] leading-relaxed whitespace-pre-wrap markdown-container">
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
-                                            </div>
-                                        </div>
-                                        <CanvasRenderer
-                                            code={msg.canvas.code}
-                                            title={msg.canvas.title}
-                                            description={msg.canvas.description}
-                                            retryCount={msg.canvas.retryCount}
-                                            error={msg.canvas.error}
-                                            onRetry={async () => {
-                                                setLoading(true);
-                                                setChatResponse("🔄 Regenerating component...");
-                                                const result = await generateCanvasComponent(
-                                                    chatMessages.filter(m => m.role === 'user').slice(-1)[0]?.text || 'Retry the last component',
-                                                    contextData,
-                                                    [],
-                                                    (attempt, err) => setChatResponse(`🔄 Retry ${attempt}/5... ${err}`)
-                                                );
-                                                if (result && !result.error) {
-                                                    setChatMessages(prev => {
-                                                        const updated = [...prev];
-                                                        updated[idx] = { ...updated[idx], canvas: result, text: `Here's your **${result.title}** — ${result.description}` };
-                                                        return updated;
-                                                    });
-                                                }
-                                                setChatResponse(null);
-                                                setLoading(false);
-                                            }}
-                                        />
-                                        <p className="text-[11px] text-[#666666] px-1">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                    </div>
-                                ) : msg.role === 'ai' ? (
+                        <Message key={idx} role={msg.role === 'user' ? 'user' : 'ai'} className="mb-6">
+                            <MessageContent className={`text-[15px] leading-relaxed ${msg.role === 'user' ? 'bg-white/10 text-white rounded-3xl rounded-tr-sm px-6 py-4' : 'text-zinc-200'}`}>
+                                {msg.role === 'ai' ? (
                                     <>
-                                        {msg.isThinking && !msg.text && <Loader variant="text-shimmer">Thinking...</Loader>}
+                                        {msg.isThinking && !msg.text && (
+                                            <div className="bg-white/5 rounded-2xl p-4 max-w-sm">
+                                                <Loader variant="text-shimmer">Analyzing history...</Loader>
+                                            </div>
+                                        )}
                                         {msg.tools && msg.tools.length > 0 && <CollapsibleTools tools={msg.tools} onVote={(sels) => handleQuery(`User selected: ${sels.join(', ')}`)} />}
                                         {msg.text && (
-                                            <div className="text-[15px] leading-relaxed markdown-container mt-2 prose prose-invert prose-zinc max-w-none prose-table:border prose-table:border-white/10 prose-th:border prose-th:border-white/10 prose-td:border prose-td:border-white/10 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-img:rounded-xl">
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ img: ({node, ...props}) => <img {...props} className="max-w-full md:max-w-md h-auto rounded-xl border border-white/10 mx-auto" loading="lazy" />, table: ({node, ...props}) => <div className="overflow-x-auto my-4 rounded-xl border border-white/10"><table {...props} className="min-w-full divide-y divide-white/10" /></div> }}>{msg.text}</ReactMarkdown>
+                                            <div className="text-[16px] leading-relaxed markdown-container mt-2 prose prose-invert prose-zinc max-w-none prose-table:border prose-table:border-white/10 prose-th:border prose-th:border-white/10 prose-td:border prose-td:border-white/10 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-img:rounded-xl">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ img: ({node, ...props}) => <img {...props} className="max-w-full md:max-w-md h-auto rounded-xl shadow-xl border border-white/10 mx-auto" loading="lazy" />, table: ({node, ...props}) => <div className="overflow-x-auto my-4 rounded-xl border border-white/10 bg-white/5"><table {...props} className="min-w-full divide-y divide-white/10" /></div> }}>{msg.text}</ReactMarkdown>
                                             </div>
                                         )}
                                         {msg.sources && msg.sources.groundingChunks && (
@@ -541,18 +503,17 @@ export const AISpotlight: React.FC<TopAIProps> = ({ contextData, token, history 
                 {errorMsg && <div className="max-w-2xl mx-auto mb-4 bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-xs font-mono flex items-center gap-2"><AlertTriangle className="w-4 h-4 flex-shrink-0" />{errorMsg}</div>}
             </ChatContainerContent>
 
-            <div className="flex-shrink-0 border-t border-white/5 bg-[#09090b] px-4 py-4">
+            <div className="flex-shrink-0 bg-transparent px-4 py-6 relative z-10">
                 <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".json" />
-                <div className="max-w-4xl mx-auto">
-                    <PromptInput value={userPrompt} onValueChange={setUserPrompt} onSubmit={() => handleQuery()} isLoading={loading} className="bg-[#1a1a1a] border-white/10">
-                        <PromptInputTextarea placeholder={canvasMode ? "Describe component..." : "Ask about music..."} className="text-white placeholder:text-white/30 min-h-[44px]" />
+                <div className="max-w-3xl mx-auto">
+                    <PromptInput value={userPrompt} onValueChange={setUserPrompt} onSubmit={() => handleQuery()} isLoading={loading} className="bg-white/10 border border-white/20 backdrop-blur-xl rounded-[32px] shadow-2xl">
+                        <PromptInputTextarea placeholder="Ask about your music..." className="text-white placeholder:text-white/50 min-h-[52px] px-6 py-4 text-[16px]" />
                         <PromptInputActions className="justify-end pt-0 pb-2 pr-2">
-                             <Button onClick={() => handleQuery()} disabled={loading || !userPrompt.trim()} size="icon" className={`h-8 w-8 rounded-lg transition-all ${loading || !userPrompt.trim() ? 'bg-zinc-800 text-zinc-500' : 'bg-white text-black hover:bg-zinc-200'}`}>
-                                {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
+                             <Button onClick={() => handleQuery()} disabled={loading || !userPrompt.trim()} size="icon" className={`h-10 w-10 rounded-full transition-all ${loading || !userPrompt.trim() ? 'bg-white/10 text-white/40' : 'bg-[#FA2D48] text-white hover:bg-[#ff4f66] shadow-lg shadow-[#FA2D48]/30'}`}>
+                                {loading ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <ArrowUp className="w-5 h-5" />}
                             </Button>
                         </PromptInputActions>
                     </PromptInput>
-                    <p className="text-[10px] text-white/20 text-center mt-2 font-medium tracking-wide">Press Enter to send</p>
                 </div>
             </div>
 
