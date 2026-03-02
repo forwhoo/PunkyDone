@@ -325,7 +325,14 @@ interface TopAIProps {
   user?: any;
   initialQuery?: string;
 }
-const DEFAULT_SKILLS = [
+interface Skill {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  description?: string;
+  system_prompt?: string;
+}
+const DEFAULT_SKILLS: Skill[] = [
   { id: "default", label: "Default", icon: Sparkles },
   { id: "Music Critic", label: "Music Critic", icon: AlertTriangle },
   { id: "Stan", label: "Stan", icon: Heart },
@@ -385,6 +392,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({
   const [typing, setTyping] = useState(false);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
   const [selectedSkill, setSelectedSkill] = useState("default");
+  const [skills, setSkills] = useState(DEFAULT_SKILLS);
+  const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
   const [toolsModalOpen, setToolsModalOpen] = useState(false);
   const [discoveryMode, setDiscoveryMode] = useState(false);
   // Kept for compatibility
@@ -560,15 +569,34 @@ export const AISpotlight: React.FC<TopAIProps> = ({
               chunk.toolCall.arguments?.skill
             ) {
               const newSkill = chunk.toolCall.arguments.skill;
-              const matched = SKILLS.find(
+              const matched = skills.find(
                 (p) => p.label.toLowerCase() === newSkill.toLowerCase(),
               );
               if (matched) {
                 setSelectedSkill(matched.id);
-              } else {
-                // Default to Custom or the exact string
-                // if needed, but we restrict it in tool definition setSelectedSkill(newSkill);
               }
+            }
+
+            // Intercept create_skill to add new skill to the list
+            if (
+              chunk.toolCall.name === "create_skill" &&
+              chunk.toolCall.arguments?.title
+            ) {
+              const newSkillId = chunk.toolCall.arguments.title
+                .toLowerCase()
+                .replace(/\s+/g, "-");
+              const newSkillEntry = {
+                id: newSkillId,
+                label: chunk.toolCall.arguments.title,
+                icon: Sparkles,
+                description: chunk.toolCall.arguments.description,
+                system_prompt: chunk.toolCall.arguments.system_prompt,
+              };
+              setSkills((prev) => {
+                if (prev.find((s) => s.id === newSkillId)) return prev;
+                return [...prev, newSkillEntry];
+              });
+              setSelectedSkill(newSkillId);
             }
           }
           if (chunk.type === "grounding" && chunk.groundingMetadata)
@@ -631,7 +659,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
               <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2E2E2C]/50 border border-[#3A3A37] text-[11px] font-semibold text-[#9E9C95] hover:text-[#EDEAE2] hover:border-[#3A3A37]/30 transition-all  min-w-[100px] justify-between">
                 <span className="flex items-center gap-2 truncate">
                   <UserCog size={11} />
-                  {SKILLS.find((p) => p.id === selectedSkill)?.label || "Skill"}
+                  {skills.find((p) => p.id === selectedSkill)?.label || "Skill"}
                 </span>
                 <ChevronDown size={11} />
               </button>
@@ -647,7 +675,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                 >
                   <Plus size={14} /> Create New Skill
                 </button>
-                {SKILLS.map((p) => (
+                {skills.map((p) => (
                   <div
                     key={p.id}
                     className="border border-[#3A3A37] rounded-lg overflow-hidden mb-1 bg-[#1C1C1A]"

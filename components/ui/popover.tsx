@@ -14,12 +14,10 @@ const PopoverContent = React.forwardRef<
   <PopoverPrimitive.Portal>
     <PopoverPrimitive.Content
       ref={ref}
-      a
-      lign={align}
-      sideO
-      ffset={sideOffset}
+      align={align}
+      sideOffset={sideOffset}
       className={cn(
-        "z-50 w-72 rounded-md border border-[#e8e6dc] bg-[#faf9f5]/90 p-4 text-[#141413] shadow-md outline-none animate-in data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        "z-50 w-72 rounded-md border border-[#3A3A37] bg-[#252523] p-4 text-[#EDEAE2] shadow-md outline-none animate-in data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         className,
       )}
       {...props}
