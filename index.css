@@ -235,25 +235,25 @@ html {
 
 /* Authentication Page Styles */
 .auth-button-primary {
-  background-color: #edeae2;
-  color: white;
+  background-color: #e8806a;
+  color: #1c1c1a;
   border-radius: 9999px; /* Pill shape */
   padding: 16px 32px;
   font-family: "Playfair Display", serif;
   font-weight: 600;
   width: 100%;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(28, 28, 26, 0.1);
+  box-shadow: 0 4px 20px rgba(232, 128, 106, 0.3);
 }
 
 .auth-button-primary:hover {
-  background-color: #333333;
+  background-color: #ff9985;
   transform: scale(1.02);
 }
 
 .auth-button-secondary {
-  background-color: #ffffff;
-  color: #edeae2;
+  background-color: #252523;
+  color: #9e9c95;
   border-radius: 9999px;
   padding: 16px 32px;
   font-family: "Playfair Display", serif;
@@ -264,11 +264,11 @@ html {
   justify-content: center;
   gap: 8px;
   transition: all 0.2s ease;
-  border: 1px solid rgba(28, 28, 26, 0.1);
+  border: 1px solid rgba(58, 58, 55, 0.8);
 }
 
 .auth-button-secondary:hover {
-  background-color: #f5f5f5;
+  background-color: #2e2e2c;
 }
 
 /* Prompt Kit Animations */
