@@ -1,11 +1,35 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-border: #2e2e2c;
+  --color-input: #3a3a37;
+  --color-ring: #e8806a;
+  --color-background: #1c1c1a;
+  --color-foreground: #edeae2;
+  --color-primary: #e8806a;
+  --color-primary-foreground: #1c1c1a;
+  --color-secondary: #252523;
+  --color-secondary-foreground: #edeae2;
+  --color-muted: #9e9c95;
+  --color-muted-foreground: #9e9c95;
+  --color-accent: #3bbfbf;
+  --color-accent-foreground: #1c1c1a;
+  --color-card: #252523;
+  --color-card-foreground: #edeae2;
+  --font-sans: "DM Sans", sans-serif;
+  --font-heading: "Playfair Display", serif;
+  --font-body: "DM Sans", sans-serif;
+  --font-barlow: "Barlow", sans-serif;
+  --font-barlow-condensed: "Barlow Condensed", sans-serif;
+}
+
 :root {
-  --color-primary: #edeae2;
   --color-primary-glow: rgba(232, 128, 106, 0.1);
   --color-bg: #1c1c1a;
-  --color-card: #252523;
   --color-card-elevated: #2e2e2c;
   --color-text-muted: #9e9c95;
-  --color-border: rgba(237, 234, 226, 0.1);
 }
 
 ::selection {
