@@ -1293,7 +1293,6 @@ function App() {
               >
                 {" "}
                 <PopoverTrigger asChild>
-                  {" "}
                   <button
                     className={cn(
                       "px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5",
@@ -1302,12 +1301,11 @@ function App() {
                         : "text-[#EDEAE2]/70 hover:text-[#EDEAE2] hover:bg-[#2E2E2C]",
                     )}
                   >
-                    {" "}
-                    <Calendar size={12} />{" "}
+                    <Calendar size={12} />
                     {timeRange === "Custom" && customDateRange
                       ? `${new Date(customDateRange.start).toLocaleDateString()} - ${new Date(customDateRange.end).toLocaleDateString()}`
                       : "Custom"}
-                  </button>{" "}
+                  </button>
                 </PopoverTrigger>{" "}
                 <PopoverContent className="w-auto p-0" align="start">
                   {" "}
@@ -1552,7 +1550,6 @@ function App() {
               >
                 {" "}
                 <PopoverTrigger asChild>
-                  {" "}
                   <button
                     className={cn(
                       "px-6 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2",
@@ -1561,12 +1558,11 @@ function App() {
                         : "text-[#EDEAE2]/60 hover:text-[#EDEAE2] hover:bg-[#2E2E2C]",
                     )}
                   >
-                    {" "}
-                    <Calendar size={14} />{" "}
+                    <Calendar size={14} />
                     {timeRange === "Custom" && customDateRange
                       ? `${new Date(customDateRange.start).toLocaleDateString()} - ${new Date(customDateRange.end).toLocaleDateString()}`
                       : "Custom Range"}
-                  </button>{" "}
+                  </button>
                 </PopoverTrigger>{" "}
                 <PopoverContent className="w-auto p-0" align="start">
                   {" "}
