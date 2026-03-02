@@ -871,7 +871,9 @@ function App() {
       }
     };
 
-    // Initial load setLoading(true); loadData().then(() => setLoading(false));
+    // Initial load
+    setLoading(true);
+    loadData();
     const spotifyInterval = setInterval(() => {
       loadData();
     }, 30000);
@@ -945,16 +947,17 @@ function App() {
       }
       try {
         if (code) {
+          // Always clean the URL to remove the auth code
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname,
+          );
           try {
             const accessToken = await getAccessToken(code);
             if (accessToken) {
               setToken(accessToken);
               localStorage.setItem("spotify_token", accessToken);
-              window.history.replaceState(
-                {},
-                document.title,
-                window.location.pathname,
-              );
             }
           } catch (e) {
             logger.error(e);
