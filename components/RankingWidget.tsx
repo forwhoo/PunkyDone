@@ -30,7 +30,7 @@ export const RankingWidget: React.FC<RankingWidgetProps> = ({
   type = "list",
 }) => {
   return (
-    <Card className="bg-white border border-[#e8e6dc] overflow-hidden relative group hover:border-[#e8e6dc] transition-all duration-300">
+    <Card className="bg-card border border-border overflow-hidden relative group hover:border-border transition-all duration-300">
       <div
         className="absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-10 pointer-events-none"
         style={{ backgroundColor: color }}
@@ -38,20 +38,20 @@ export const RankingWidget: React.FC<RankingWidgetProps> = ({
 
       <div className="p-5 flex justify-between items-end relative z-10">
         <div className="flex flex-col gap-1">
-          <h3 className="text-[19px] font-bold text-[#141413] tracking-tight flex items-center gap-2">
+          <h3 className="text-[19px] font-bold text-foreground tracking-tight flex items-center gap-2">
             {icon} {title}
           </h3>
-          <p className="text-[#b0aea5] text-[11px] font-medium uppercase tracking-wider">
+          <p className="text-muted-foreground text-[11px] font-medium uppercase tracking-wider">
             Top 5 This Week
           </p>
         </div>
         {onExpand && (
           <button
             onClick={onExpand}
-            className="w-8 h-8 rounded-full bg-[#e8e6dc]/50 flex items-center justify-center hover:bg-[#e8e6dc] transition-colors"
+            className="w-8 h-8 rounded-full bg-secondary/50 flex items-center justify-center hover:bg-secondary transition-colors"
             title="View Wrapped"
           >
-            <Play className="w-3 h-3 text-[#141413] fill-white" />
+            <Play className="w-3 h-3 text-foreground fill-white" />
           </button>
         )}
       </div>
@@ -60,7 +60,7 @@ export const RankingWidget: React.FC<RankingWidgetProps> = ({
         {items.slice(0, 5).map((item, index) => (
           <div
             key={index}
-            className="flex items-center gap-3 p-2 rounded-xl hover:bg-[#e8e6dc]/50 transition-colors group/item cursor-pointer relative"
+            className="flex items-center gap-3 p-2 rounded-xl hover:bg-secondary/50 transition-colors group/item cursor-pointer relative"
           >
             {/* Background Large Number */}
             <div className="absolute left-1 top-0 text-[40px] font-black italic select-none pointer-events-none opacity-[0.03] group-hover/item:opacity-[0.07] transition-opacity">
@@ -79,23 +79,23 @@ export const RankingWidget: React.FC<RankingWidgetProps> = ({
                 className="w-full h-full object-cover"
               />
               {/* Overlay play icon on hover */}
-              <div className="absolute inset-0 bg-[#faf9f5]/40 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity">
-                <Play className="w-3 h-3 text-[#141413] fill-white" />
+              <div className="absolute inset-0 bg-card/40 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity">
+                <Play className="w-3 h-3 text-foreground fill-white" />
               </div>
             </div>
 
             <div className="flex-1 min-w-0">
-              <h4 className="text-[#141413] font-semibold text-[13px] truncate">
+              <h4 className="text-foreground font-semibold text-[13px] truncate">
                 {item.title}
               </h4>
-              <p className="text-[#b0aea5] text-[11px] truncate">
+              <p className="text-muted-foreground text-[11px] truncate">
                 {item.subtitle}
               </p>
             </div>
 
             {item.value && (
               <div className="text-right">
-                <span className="text-[#141413]/60 text-[11px] font-medium block">
+                <span className="text-foreground/60 text-[11px] font-medium block">
                   {item.value}
                 </span>
                 {item.change ? (

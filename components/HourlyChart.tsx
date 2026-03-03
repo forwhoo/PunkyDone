@@ -93,15 +93,15 @@ export const HourlyChart: React.FC<HourlyChartProps> = ({ history }) => {
     return next.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
   return (
-    <div className="bg-white rounded-3xl p-6 border border-[#e8e6dc]">
+    <div className="bg-card rounded-3xl p-6 border border-border">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <div>
-          <h3 className="text-xl font-bold text-[#141413] flex items-center gap-2">
+          <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Clock className="text-purple-400" /> Hourly Activity
           </h3>
-          <p className="text-[#b0aea5] text-xs flex items-center gap-2 mt-1">
+          <p className="text-muted-foreground text-xs flex items-center gap-2 mt-1">
             <RefreshCw size={10} /> Next refresh:{" "}
-            <span className="text-[#141413]">{getNextRefresh()}</span>
+            <span className="text-foreground">{getNextRefresh()}</span>
           </p>
         </div>
 
@@ -113,8 +113,8 @@ export const HourlyChart: React.FC<HourlyChartProps> = ({ history }) => {
               onClick={() => setFilter(type as any)}
               className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
                 filter === type
-                  ? "bg-white text-black shadow-lg"
-                  : "text-[#b0aea5] hover:text-[#141413]"
+                  ? "bg-card text-black shadow-lg"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {type}
@@ -132,18 +132,18 @@ export const HourlyChart: React.FC<HourlyChartProps> = ({ history }) => {
           >
             {/* Tooltip */}
             {d.count > 0 && (
-              <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity bg-[#2C2C2E] border border-[#e8e6dc] p-2 rounded-lg shadow-xl w-32 z-20 flex flex-col items-center text-center">
+              <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity bg-[#2C2C2E] border border-border p-2 rounded-lg shadow-xl w-32 z-20 flex flex-col items-center text-center">
                 {d.topItem?.image && (
                   <img
                     src={d.topItem.image}
                     className="w-8 h-8 rounded mb-1 object-cover"
                   />
                 )}
-                <div className="text-[10px] text-[#141413] font-bold leading-tight">
+                <div className="text-[10px] text-foreground font-bold leading-tight">
                   {d.topItem?.label}
                 </div>
                 {d.topItem?.subLabel && (
-                  <div className="text-[9px] text-[#b0aea5]">
+                  <div className="text-[9px] text-muted-foreground">
                     {d.topItem.subLabel}
                   </div>
                 )}
@@ -162,18 +162,18 @@ export const HourlyChart: React.FC<HourlyChartProps> = ({ history }) => {
                 initial={{ height: 0 }}
                 animate={{ height: "100%" }}
                 transition={{ duration: 1, delay: i * 0.02 }}
-                className="w-full bg-[#e8e6dc] absolute bottom-0 left-0"
+                className="w-full bg-secondary absolute bottom-0 left-0"
               />
             </div>
 
             {/* Label */}
-            <div className="text-[9px] text-[#b0aea5] mt-2 group-hover:text-[#141413] transition-colors">
+            <div className="text-[9px] text-muted-foreground mt-2 group-hover:text-foreground transition-colors">
               {i % 3 === 0 ? i : ""}
             </div>
           </div>
         ))}
       </div>
-      <div className="text-center text-[10px] text-[#b0aea5] mt-2 font-mono uppercase tracking-widest">
+      <div className="text-center text-[10px] text-muted-foreground mt-2 font-mono uppercase tracking-widest">
         Hour of Day (0-23)
       </div>
     </div>

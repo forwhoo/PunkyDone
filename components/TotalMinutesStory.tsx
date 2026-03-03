@@ -468,7 +468,7 @@ export const TotalMinutesStory: React.FC<TotalMinutesStoryProps> = ({
               <>
                 {" "}
                 <span
-                  className="text-[#141413] font-bold leading-none "
+                  className="text-foreground font-bold leading-none "
                   style={{
                     fontSize: "clamp(120px, 15vw, 180px)",
                     fontVariantNumeric: "tabular-nums",
@@ -492,7 +492,7 @@ export const TotalMinutesStory: React.FC<TotalMinutesStoryProps> = ({
               <>
                 {" "}
                 <motion.span
-                  className="text-[#141413] font-bold leading-none "
+                  className="text-foreground font-bold leading-none "
                   style={{
                     fontSize: "clamp(120px, 15vw, 180px)",
                     fontVariantNumeric: "tabular-nums",

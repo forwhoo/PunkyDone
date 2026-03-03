@@ -132,18 +132,18 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl mx-auto"
       >
-        <div className="bg-white border border-red-500/20 rounded-2xl p-6 text-center">
+        <div className="bg-card border border-red-500/20 rounded-2xl p-6 text-center">
           <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-3" />
           <p className="text-red-400 text-sm font-medium mb-1">
             Component Generation Failed
           </p>
-          <p className="text-[#b0aea5] text-xs mb-4">
+          <p className="text-muted-foreground text-xs mb-4">
             {error || renderError || "Unknown error"}
           </p>
           {canRetry && (
             <button
               onClick={onRetry}
-              className="px-5 py-2 bg-[#d97757] text-[#141413] rounded-lg text-sm font-semibold hover:brightness-110 transition-all flex items-center gap-2 mx-auto"
+              className="px-5 py-2 bg-[#d97757] text-foreground rounded-lg text-sm font-semibold hover:brightness-110 transition-all flex items-center gap-2 mx-auto"
             >
               <RefreshCcw size={14} /> Try Again
             </button>
@@ -159,26 +159,26 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({
       transition={{ duration: 0.4 }}
       className="w-full max-w-4xl mx-auto"
     >
-      <div className="bg-white border border-[#e8e6dc] rounded-2xl overflow-hidden shadow-2xl">
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#e8e6dc] bg-white">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#e8e6dc]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#e8e6dc]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#e8e6dc]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-secondary" />
+              <span className="w-2.5 h-2.5 rounded-full bg-secondary" />
+              <span className="w-2.5 h-2.5 rounded-full bg-secondary" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h4 className="text-[#141413] text-sm font-semibold truncate">
+                <h4 className="text-foreground text-sm font-semibold truncate">
                   {title}
                 </h4>
-                <span className="text-[10px] bg-[#e8e6dc]/50 text-[#141413]/40 px-1.5 py-0.5 rounded border border-[#e8e6dc] font-mono">
+                <span className="text-[10px] bg-secondary/50 text-foreground/40 px-1.5 py-0.5 rounded border border-border font-mono">
                   TSX
                 </span>
               </div>
               {description && (
-                <p className="text-[#b0aea5] text-[11px] truncate">
+                <p className="text-muted-foreground text-[11px] truncate">
                   {description}
                 </p>
               )}
@@ -187,7 +187,7 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setExpanded(!expanded)}
-              className="p-1.5 rounded-lg text-[#b0aea5] hover:text-[#141413] hover:bg-[#e8e6dc] transition-all"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
             >
               {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
             </button>
@@ -204,7 +204,7 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({
           {transpiling ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0a0a0a]/80 backdrop-blur-sm z-10">
               <RefreshCcw size={24} className="animate-spin text-[#d97757]" />
-              <p className="text-[#141413]/50 text-xs font-medium">
+              <p className="text-foreground/50 text-xs font-medium">
                 Transpiling TypeScript...
               </p>
             </div>
@@ -214,13 +214,13 @@ export const CanvasRenderer: React.FC<CanvasRendererProps> = ({
               <p className="text-red-400 text-sm font-medium mb-1">
                 Runtime Error
               </p>
-              <pre className="text-[#141413]/40 text-[10px] bg-[#faf9f5]/40 p-4 rounded-xl mt-4 overflow-x-auto text-left border border-[#e8e6dc]">
+              <pre className="text-foreground/40 text-[10px] bg-card/40 p-4 rounded-xl mt-4 overflow-x-auto text-left border border-border">
                 {renderError}
               </pre>
               {canRetry && (
                 <button
                   onClick={onRetry}
-                  className="mt-6 px-4 py-2 bg-[#e8e6dc]/50 text-[#141413] rounded-lg text-xs font-semibold hover:bg-[#e8e6dc] transition-all"
+                  className="mt-6 px-4 py-2 bg-secondary/50 text-foreground rounded-lg text-xs font-semibold hover:bg-secondary transition-all"
                 >
                   Re-generate
                 </button>

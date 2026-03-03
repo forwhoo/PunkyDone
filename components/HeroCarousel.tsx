@@ -34,18 +34,18 @@ const Typewriter = ({ text }: { text: string }) => {
   // Reset on full text change
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-lg md:text-xl font-medium text-[#141413] leading-relaxed">
+      <span className="text-lg md:text-xl font-medium text-foreground leading-relaxed">
         {displayedText}
         <span className="inline-block w-[2px] h-5 ml-1 bg-[#d97757] align-middle animate-pulse"></span>
       </span>
       {imageMatch && (
-        <div className="mt-2 rounded-lg overflow-hidden border border-[#e8e6dc] w-fit max-w-[200px] animate-in fade-in slide-in-from-bottom-2 duration-500 delay-500">
+        <div className="mt-2 rounded-lg overflow-hidden border border-border w-fit max-w-[200px] animate-in fade-in slide-in-from-bottom-2 duration-500 delay-500">
           <img
             src={imageMatch[2]}
             alt={imageMatch[1]}
             className="w-full object-cover"
           />
-          <div className="bg-[#faf9f5]/50 p-1 text-[10px] text-[#141413]/70 text-center">
+          <div className="bg-card/50 p-1 text-[10px] text-foreground/70 text-center">
             {imageMatch[1]}
           </div>
         </div>
@@ -86,7 +86,7 @@ const HeroCard = ({
   onClick,
   loading,
 }: HeroCardProps) => (
-  <div className="relative flex-shrink-0 w-[85vw] md:w-[400px] h-[220px] rounded-2xl overflow-hidden snap-start cursor-pointer group border border-[#e8e6dc] bg-white">
+  <div className="relative flex-shrink-0 w-[85vw] md:w-[400px] h-[220px] rounded-2xl overflow-hidden snap-start cursor-pointer group border border-border bg-card">
     {/* Aurora Gradient Background */}
     <div
       className={`absolute inset-0 opacity-40 group-hover:opacity-60 transition-opacity duration-700 ${gradientClass}`}
@@ -96,18 +96,18 @@ const HeroCard = ({
     <div className="absolute inset-0 p-6 flex flex-col justify-between z-10">
       <div className="flex justify-between items-start">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#141413]/70 mb-1 block">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/70 mb-1 block">
             {subtitle}
           </span>
-          <h3 className="text-xl md:text-2xl font-bold text-[#141413] leading-tight max-w-[90%] drop-shadow-md">
+          <h3 className="text-xl md:text-2xl font-bold text-foreground leading-tight max-w-[90%] drop-shadow-md">
             {title}
           </h3>
         </div>
-        {Icon && <Icon className="w-5 h-5 text-[#141413]/80" />}
+        {Icon && <Icon className="w-5 h-5 text-foreground/80" />}
       </div>
 
       <div className="flex items-end justify-between">
-        <span className="text-sm font-medium text-[#141413]/90">{meta}</span>
+        <span className="text-sm font-medium text-foreground/90">{meta}</span>
         {children}
       </div>
     </div>
@@ -233,7 +233,7 @@ export const HeroCarousel = ({
             />
           ) : (
             <div className="w-full h-full bg-[#2C2C2E] flex items-center justify-center">
-              <Music className="w-10 h-10 text-[#141413]/20" />
+              <Music className="w-10 h-10 text-foreground/20" />
             </div>
           )}
         </div>
