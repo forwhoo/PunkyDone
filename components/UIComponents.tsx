@@ -42,11 +42,11 @@ export const Button = ({
   const baseStyles =
     "inline-flex items-center justify-center rounded-lg text-[13px] font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
   const variants = {
-    default: "bg-primary text-[#141413] hover:opacity-90",
-    secondary: "bg-[#2C2C2E] text-[#141413] hover:bg-[#3A3A3C]",
+    default: "bg-primary text-foreground hover:opacity-90",
+    secondary: "bg-[#2C2C2E] text-foreground hover:bg-[#3A3A3C]",
     outline:
-      "border border-[#2C2C2E] bg-transparent hover:bg-[#2C2C2E] text-[#141413]",
-    ghost: "hover:bg-[#2C2C2E] text-[#b0aea5] hover:text-[#141413]",
+      "border border-[#2C2C2E] bg-transparent hover:bg-[#2C2C2E] text-foreground",
+    ghost: "hover:bg-[#2C2C2E] text-muted-foreground hover:text-foreground",
   };
   const sizes = {
     default: "h-9 px-4 py-2",
@@ -76,9 +76,9 @@ export const Badge = ({
   className = "",
 }: BadgeProps) => {
   const variants = {
-    default: "bg-primary text-[#141413]",
-    secondary: "bg-[#2C2C2E] text-[#b0aea5]",
-    outline: "border border-[#2C2C2E] text-[#b0aea5]",
+    default: "bg-primary text-foreground",
+    secondary: "bg-[#2C2C2E] text-muted-foreground",
+    outline: "border border-[#2C2C2E] text-muted-foreground",
   };
   return (
     <div

@@ -75,25 +75,16 @@ export const FullScreenModal: React.FC<FullScreenModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex flex-col bg-[#faf9f5] text-[#141413] font-body overflow-hidden"
+          className="fixed inset-0 z-[100] flex flex-col bg-[#050505] text-[#F5F5F5] font-body overflow-hidden"
         >
-          {/* Dynamic Background Layer */}
+          {/* Solid Dark Background Layer */}
           <motion.div
             className="absolute inset-0 z-0 pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
           >
-            {/* Apple Music Style Mesh Gradient */}
-            <div
-              className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] rounded-full blur-[120px] mix-blend-screen opacity-40 animate-pulse-slow"
-              style={{ backgroundColor: bgColor }}
-            />
-            <div
-              className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] rounded-full blur-[120px] mix-blend-screen opacity-30 animate-pulse-slow"
-              style={{ backgroundColor: bgColor, animationDelay: "2s" }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/80 to-black" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/30 via-[#050505]/80 to-[#050505]" />
           </motion.div>
 
           {/* Content Layer */}
@@ -108,12 +99,12 @@ export const FullScreenModal: React.FC<FullScreenModalProps> = ({
             <div className="flex items-center justify-between p-6 md:p-8">
               <button
                 onClick={onClose}
-                className="w-10 h-10 rounded-full bg-[#e8e6dc] hover:bg-[#b0aea5]/30  flex items-center justify-center transition-all active:scale-95"
+                className="w-10 h-10 rounded-full bg-[#1A1A1A] hover:bg-[#2A2A2A] border border-[#2A2A2A] flex items-center justify-center transition-all active:scale-95"
               >
-                <ChevronLeft className="w-6 h-6 text-[#141413]" />
+                <ChevronLeft className="w-6 h-6 text-[#F5F5F5]" />
               </button>
               {title && (
-                <h2 className="text-lg font-bold tracking-tight uppercase text-[#141413]/80">
+                <h2 className="text-lg font-bold tracking-tight uppercase text-[#A0A0A0]">
                   {title}
                 </h2>
               )}

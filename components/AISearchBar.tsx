@@ -153,7 +153,7 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({
     >
       <form onSubmit={(e) => handleSearch(e)} className="w-full relative group">
         <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-          <Search className="w-5 h-5 text-[#141413]/30 group-focus-within:text-[#d97757] transition-colors" />
+          <Search className="w-5 h-5 text-foreground/30 group-focus-within:text-[#d97757] transition-colors" />
         </div>
         <input
           type="text"
@@ -164,13 +164,13 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({
           }}
           onFocus={() => setShowSuggestions(true)}
           placeholder="Ask Harvey anything about your music..."
-          className="w-full bg-[#e8e6dc]/50 border border-[#e8e6dc] rounded-2xl py-4 pl-14 pr-32 text-[#141413] placeholder:text-[#141413]/20 focus:outline-none focus:ring-2 focus:ring-[#FA2D48]/30 focus:border-[#d97757]/50 transition-all text-base shadow-2xl "
+          className="w-full bg-secondary/50 border border-border rounded-2xl py-4 pl-14 pr-32 text-foreground placeholder:text-foreground/20 focus:outline-none focus:ring-2 focus:ring-[#FA2D48]/30 focus:border-[#d97757]/50 transition-all text-base shadow-2xl "
         />
         <div className="absolute inset-y-2 right-2 flex items-center gap-2">
           <button
             type="submit"
             disabled={loading || !query.trim()}
-            className="h-full px-5 bg-white text-black rounded-xl font-bold text-sm hover:bg-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="h-full px-5 bg-card text-black rounded-xl font-bold text-sm hover:bg-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
@@ -189,29 +189,29 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-[#e8e6dc] rounded-2xl shadow-2xl overflow-hidden z-50 "
+            className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1a] border border-border rounded-2xl shadow-2xl overflow-hidden z-50 "
           >
             <div className="py-2">
               {suggestions.map((suggestion) => (
                 <button
                   key={suggestion.id}
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-[#e8e6dc]/50 transition-colors text-left group"
+                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-secondary/50 transition-colors text-left group"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-[#e8e6dc]/50 flex items-center justify-center border border-[#e8e6dc] group-hover:border-[#e8e6dc] transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-secondary/50 flex items-center justify-center border border-border group-hover:border-border transition-colors">
                     {getIcon(suggestion.type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#141413] truncate group-hover:text-[#d97757] transition-colors">
+                    <p className="text-sm font-medium text-foreground truncate group-hover:text-[#d97757] transition-colors">
                       {suggestion.type === "query" ? query : suggestion.text}
                     </p>
-                    <p className="text-xs text-[#141413]/40 truncate">
+                    <p className="text-xs text-foreground/40 truncate">
                       {suggestion.subtext}
                     </p>
                   </div>
                   <TrendingUp
                     size={14}
-                    className="text-[#141413]/20 group-hover:text-[#141413]/50 -rotate-45 group-hover:rotate-0 transition-all duration-300"
+                    className="text-foreground/20 group-hover:text-foreground/50 -rotate-45 group-hover:rotate-0 transition-all duration-300"
                   />
                 </button>
               ))}

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: "class",
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -11,45 +12,45 @@ export default {
   theme: {
     extend: {
       colors: {
-        border: "#2E2E2C",
-        input: "#3A3A37",
-        ring: "#E8806A",
-        background: "#1C1C1A",
-        foreground: "#EDEAE2",
+        border: "#2A2A2A",
+        input: "#1A1A1A",
+        ring: "#FFFFFF",
+        background: "#050505",
+        foreground: "#F5F5F5",
         primary: {
-          DEFAULT: "#E8806A",
-          foreground: "#1C1C1A",
+          DEFAULT: "#FFFFFF",
+          foreground: "#050505",
         },
         secondary: {
-          DEFAULT: "#252523",
-          foreground: "#EDEAE2",
+          DEFAULT: "#121212",
+          foreground: "#F5F5F5",
         },
         muted: {
-          DEFAULT: "#9E9C95",
-          foreground: "#9E9C95",
+          DEFAULT: "#A0A0A0",
+          foreground: "#A0A0A0",
         },
         accent: {
           DEFAULT: "#3BBFBF",
-          foreground: "#1C1C1A",
+          foreground: "#050505",
         },
         card: {
-          DEFAULT: "#252523",
-          foreground: "#EDEAE2",
+          DEFAULT: "#121212",
+          foreground: "#F5F5F5",
         },
         anthropic: {
-          dark: "#1C1C1A",
-          light: "#252523",
-          mid: "#9E9C95",
-          lightGray: "#3A3A37",
+          dark: "#050505",
+          light: "#121212",
+          mid: "#A0A0A0",
+          lightGray: "#1A1A1A",
           orange: "#E8806A",
           blue: "#3BBFBF",
           green: "#3BBFBF",
         },
       },
       fontFamily: {
-        sans: ['"DM Sans"', "sans-serif"],
-        heading: ['"Playfair Display"', "serif"],
-        body: ['"DM Sans"', "sans-serif"],
+        sans: ['"Epilogue"', "sans-serif"],
+        heading: ['"Syne"', "sans-serif"],
+        body: ['"Epilogue"', "sans-serif"],
         barlow: ["Barlow", "sans-serif"],
         "barlow-condensed": ['"Barlow Condensed"', "sans-serif"],
       },

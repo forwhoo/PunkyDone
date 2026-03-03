@@ -141,10 +141,10 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({
     <div className="mb-20 animate-in fade-in duration-700 select-none">
       <div className="flex items-end justify-between mb-4 px-1">
         <div>
-          <h2 className="text-[22px] font-bold text-[#141413] tracking-tight flex items-center gap-2">
+          <h2 className="text-[22px] font-bold text-foreground tracking-tight flex items-center gap-2">
             {new Date().getFullYear()} Rewind
           </h2>
-          <p className="text-[#b0aea5] text-[13px] mt-1">
+          <p className="text-muted-foreground text-[13px] mt-1">
             {totalPlays} tracks played in 2026
           </p>
         </div>
@@ -170,7 +170,7 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({
                 >
                   {/* Tooltip */}
                   {day.inYear && (
-                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 min-w-[max-content] bg-white text-[#141413] text-[10px] px-3 py-1.5 rounded-full shadow-xl border border-[#e8e6dc] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap text-center font-medium">
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 min-w-[max-content] bg-card text-foreground text-[10px] px-3 py-1.5 rounded-full shadow-xl border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap text-center font-medium">
                       {day.count} plays on{" "}
                       {day.dateObj.toLocaleDateString(undefined, {
                         month: "short",
@@ -190,7 +190,7 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({
         className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${selectedDate ? "max-h-[800px] opacity-100 mt-6" : "max-h-0 opacity-0"}`}
       >
         {selectedDate && (
-          <div className="bg-white border border-[#e8e6dc] rounded-2xl overflow-hidden shadow-2xl relative">
+          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-2xl relative">
             <div className="p-6 relative">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -198,21 +198,21 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({
                     <Calendar className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-[#141413] leading-none">
+                    <h3 className="text-xl font-bold text-foreground leading-none">
                       {formatDateHeader(selectedDate)}
                     </h3>
-                    <p className="text-[#b0aea5] text-xs mt-1 font-medium">
+                    <p className="text-muted-foreground text-xs mt-1 font-medium">
                       Daily Mix
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-[#141413] bg-[#e8e6dc] px-3 py-1.5 rounded-full ">
+                <span className="text-xs font-bold text-foreground bg-secondary px-3 py-1.5 rounded-full ">
                   {selectedDayItems.length} Tracks
                 </span>
               </div>
 
               {selectedDayItems.length === 0 ? (
-                <div className="text-center py-12 text-[#b0aea5]">
+                <div className="text-center py-12 text-muted-foreground">
                   <Clock className="w-8 h-8 mx-auto mb-3 opacity-20" />
                   <p>No listening history recorded.</p>
                 </div>
@@ -221,7 +221,7 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({
                   {selectedDayItems.map((item: any, i: number) => (
                     <div
                       key={i}
-                      className="flex items-center gap-4 p-3 rounded-xl bg-[#faf9f5]/40 hover:bg-[#e8e6dc]/50 transition-colors group border border-transparent hover:border-[#e8e6dc] cursor-default"
+                      className="flex items-center gap-4 p-3 rounded-xl bg-card/40 hover:bg-secondary/50 transition-colors group border border-transparent hover:border-border cursor-default"
                     >
                       <div className="relative w-12 h-12 flex-shrink-0 group-hover:scale-105 transition-transform duration-300">
                         <img
@@ -229,18 +229,18 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({
                           alt={item.track_name}
                           className="w-full h-full object-cover rounded-md shadow-lg"
                         />
-                        <div className="absolute inset-0 bg-[#faf9f5]/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md"></div>
+                        <div className="absolute inset-0 bg-card/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md"></div>
                       </div>
                       <div className="min-w-0 flex-1 flex flex-col justify-center">
-                        <h4 className="text-[#141413] text-[15px] font-semibold truncate group-hover:text-[#d97757] transition-colors leading-tight">
+                        <h4 className="text-foreground text-[15px] font-semibold truncate group-hover:text-[#d97757] transition-colors leading-tight">
                           {item.track_name}
                         </h4>
-                        <p className="text-[#b0aea5] text-[13px] truncate">
+                        <p className="text-muted-foreground text-[13px] truncate">
                           {item.artist_name}
                         </p>
                       </div>
                       <div className="text-right pl-2">
-                        <span className="font-mono text-[11px] text-[#b0aea5] bg-[#e8e6dc]/50 px-2 py-1 rounded">
+                        <span className="font-mono text-[11px] text-muted-foreground bg-secondary/50 px-2 py-1 rounded">
                           {new Date(item.played_at)
                             .toLocaleTimeString([], {
                               hour: "numeric",
@@ -260,8 +260,8 @@ export const HistoryTimeline: React.FC<HistoryTimelineProps> = ({
 
       {/* Empty State / Call to Action if no date selected */}
       {!selectedDate && (
-        <div className="mt-4 p-4 rounded-xl border border-dashed border-[#e8e6dc] text-center">
-          <p className="text-[#b0aea5] text-xs">
+        <div className="mt-4 p-4 rounded-xl border border-dashed border-border text-center">
+          <p className="text-muted-foreground text-xs">
             Select a square above to reveal your detailed listening history for
             that day.
           </p>

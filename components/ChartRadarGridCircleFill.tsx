@@ -36,10 +36,10 @@ export function ChartRadarGridCircleFill({
   data?: any[];
 }) {
   return (
-    <Card className="bg-transparent border-none shadow-none text-[#141413]">
+    <Card className="bg-transparent border-none shadow-none text-foreground">
       <CardHeader className="items-center pb-4">
         <CardTitle className="text-xl font-bold">Artist DNA</CardTitle>
-        <CardDescription className="text-[#141413]/40">
+        <CardDescription className="text-foreground/40">
           Metric breakdown for this rising star
         </CardDescription>
       </CardHeader>

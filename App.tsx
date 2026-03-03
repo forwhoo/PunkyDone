@@ -42,6 +42,7 @@ import { EmptyState } from "./components/EmptyState";
 import Particles from "./components/reactbits/Particles";
 import { FullScreenModal } from "./components/FullScreenModal";
 import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
+import { WeeklyVotes } from "./components/WeeklyVotes";
 import {
   Popover,
   PopoverContent,
@@ -163,16 +164,16 @@ const RankedAlbum = ({
       onClick={onClick}
     >
       {" "}
-      <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-[#EDEAE2]/5">
+      <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-foreground/5">
         {" "}
         {rank}
       </span>{" "}
       <div className="relative z-10 ml-10 md:ml-12">
         {" "}
-        <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] border border-[#3A3A37] group-hover:border-[#3A3A37]/30 transition-all duration-300 group-hover:-translate-y-2 relative">
+        <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-background border border-border group-hover:border-border/30 transition-all duration-300 group-hover:-translate-y-2 relative">
           {" "}
           {!imageLoaded && (
-            <div className="absolute inset-0 bg-[#2C2C2E] animate-pulse rounded-xl z-10" />
+            <div className="absolute inset-0 bg-background animate-pulse rounded-xl z-10" />
           )}
           <img
             src={album.cover}
@@ -182,21 +183,21 @@ const RankedAlbum = ({
             className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm ${!imageLoaded ? "opacity-0" : "opacity-100"}`}
           />{" "}
           {/* Hover Overlay */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-[#1C1C1A]/40">
+          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-background/40">
             {" "}
-            <span className="text-[#EDEAE2] font-bold text-xl drop-shadow-md">
+            <span className="text-foreground font-bold text-xl drop-shadow-md">
               {album.timeStr}
             </span>{" "}
           </div>{" "}
         </div>{" "}
         <div className="mt-3 relative z-20">
           {" "}
-          <h3 className="text-[15px] font-semibold text-[#EDEAE2] truncate w-32 md:w-40 leading-tight group-hover:text-[#EDEAE2] transition-colors">
+          <h3 className="text-[15px] font-semibold text-foreground truncate w-32 md:w-40 leading-tight group-hover:text-foreground transition-colors">
             {album.title}
           </h3>{" "}
-          <p className="text-[13px] text-[#9E9C95] truncate w-32 md:w-40 mt-0.5 font-medium">
+          <p className="text-[13px] text-foreground truncate w-32 md:w-40 mt-0.5 font-medium">
             {album.artist}•{" "}
-            <span className="text-[#EDEAE2]/60">{album.timeStr}</span>
+            <span className="text-foreground/60">{album.timeStr}</span>
           </p>{" "}
         </div>{" "}
       </div>{" "}
@@ -223,16 +224,16 @@ const RankedArtist = ({
       onClick={onClick}
     >
       {" "}
-      <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-[#EDEAE2]/5">
+      <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-foreground/5">
         {" "}
         {rank}
       </span>{" "}
       <div className="relative z-10 ml-10 md:ml-12">
         {" "}
-        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-[#2C2C2E] border border-[#3A3A37] group-hover:border-[#3A3A37]/30 transition-all duration-300 group-hover:-translate-y-2 relative">
+        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-background border border-border group-hover:border-border/30 transition-all duration-300 group-hover:-translate-y-2 relative">
           {" "}
           {!imageLoaded && (
-            <div className="absolute inset-0 bg-[#2C2C2E] animate-pulse rounded-full z-10" />
+            <div className="absolute inset-0 bg-background animate-pulse rounded-full z-10" />
           )}
           <img
             src={
@@ -248,16 +249,16 @@ const RankedArtist = ({
             className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm ${!imageLoaded ? "opacity-0" : "opacity-100"}`}
           />{" "}
           {/* Hover Overlay */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-[#1C1C1A]/40">
+          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-background/40">
             {" "}
-            <span className="text-[#EDEAE2] font-bold text-xl drop-shadow-md">
+            <span className="text-foreground font-bold text-xl drop-shadow-md">
               {artist.timeStr}
             </span>{" "}
           </div>{" "}
         </div>{" "}
         <div className="mt-3 relative z-20">
           {" "}
-          <h3 className="text-[15px] font-semibold text-[#EDEAE2] truncate w-32 md:w-40 leading-tight group-hover:text-[#EDEAE2] transition-colors">
+          <h3 className="text-[15px] font-semibold text-foreground truncate w-32 md:w-40 leading-tight group-hover:text-foreground transition-colors">
             {artist.name}
           </h3>{" "}
         </div>{" "}
@@ -283,16 +284,16 @@ const RankedSong = ({
       onClick={onClick}
     >
       {" "}
-      <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-[#EDEAE2]/5">
+      <span className="text-[140px] leading-none font-black text-outline absolute -left-6 -bottom-6 z-0 select-none pointer-events-none scale-y-90 italic opacity-40 text-foreground/5">
         {" "}
         {rank}
       </span>{" "}
       <div className="relative z-10 ml-10 md:ml-12">
         {" "}
-        <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-[#2C2C2E] border border-[#3A3A37] group-hover:border-[#3A3A37]/30 transition-all duration-300 group-hover:-translate-y-2 relative">
+        <div className="w-32 h-32 md:w-40 md:h-40 overflow-hidden rounded-xl bg-background border border-border group-hover:border-border/30 transition-all duration-300 group-hover:-translate-y-2 relative">
           {" "}
           {!imageLoaded && (
-            <div className="absolute inset-0 bg-[#2C2C2E] animate-pulse rounded-xl z-10" />
+            <div className="absolute inset-0 bg-background animate-pulse rounded-xl z-10" />
           )}
           <img
             src={song.cover}
@@ -302,21 +303,21 @@ const RankedSong = ({
             className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-sm ${!imageLoaded ? "opacity-0" : "opacity-100"}`}
           />{" "}
           {/* Hover Overlay */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-[#1C1C1A]/40">
+          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-background/40">
             {" "}
-            <span className="text-[#EDEAE2] font-bold text-xl drop-shadow-md">
+            <span className="text-foreground font-bold text-xl drop-shadow-md">
               {song.timeStr}
             </span>{" "}
           </div>{" "}
         </div>{" "}
         <div className="mt-3 relative z-20">
           {" "}
-          <h3 className="text-[15px] font-semibold text-[#EDEAE2] truncate w-32 md:w-40 leading-tight group-hover:text-[#EDEAE2] transition-colors">
+          <h3 className="text-[15px] font-semibold text-foreground truncate w-32 md:w-40 leading-tight group-hover:text-foreground transition-colors">
             {song.title}
           </h3>{" "}
-          <p className="text-[13px] text-[#9E9C95] truncate w-32 md:w-40 mt-0.5 font-medium">
+          <p className="text-[13px] text-foreground truncate w-32 md:w-40 mt-0.5 font-medium">
             {song.artist}•{" "}
-            <span className="text-[#EDEAE2]/60">{song.timeStr}</span>
+            <span className="text-foreground/60">{song.timeStr}</span>
           </p>{" "}
         </div>{" "}
       </div>{" "}
@@ -332,10 +333,10 @@ const MobileHeroCard = ({
 }) => (
   <div className="glass-morph rounded-[32px] p-8 shadow-xl border border-white/[0.15]">
     {" "}
-    <h1 className="text-[28px] font-bold text-[#EDEAE2] leading-tight tracking-tight">
+    <h1 className="text-[28px] font-bold text-foreground leading-tight tracking-tight">
       {title}
     </h1>{" "}
-    <p className="text-[15px] text-[#EDEAE2]/70 mt-3 leading-relaxed font-medium">
+    <p className="text-[15px] text-foreground/70 mt-3 leading-relaxed font-medium">
       {subtitle}
     </p>{" "}
   </div>
@@ -372,10 +373,10 @@ const MobileArtistCard = ({
     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80" />{" "}
     <div className="absolute bottom-0 left-0 right-0 p-5 text-left">
       {" "}
-      <p className="text-[20px] font-bold text-[#EDEAE2] leading-tight tracking-tight ">
+      <p className="text-[20px] font-bold text-foreground leading-tight tracking-tight ">
         {artist.name}
       </p>{" "}
-      <p className="text-[14px] text-[#EDEAE2]/70 mt-1 font-medium">
+      <p className="text-[14px] text-foreground/70 mt-1 font-medium">
         {artist.timeStr}
       </p>{" "}
     </div>{" "}
@@ -394,7 +395,7 @@ const MobileListRow = ({
   subtitle: string;
   meta?: string;
 }) => (
-  <div className="flex items-center gap-4 py-4 active:bg-[#2E2E2C]/50 transition-colors rounded-2xl">
+  <div className="flex items-center gap-4 py-4 active:bg-background/50 transition-colors rounded-2xl">
     {" "}
     <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 shadow-md border border-white/[0.06]">
       {" "}
@@ -407,15 +408,15 @@ const MobileListRow = ({
     </div>{" "}
     <div className="flex-1 min-w-0">
       {" "}
-      <p className="text-[16px] font-semibold text-[#EDEAE2] truncate leading-tight tracking-tight">
+      <p className="text-[16px] font-semibold text-foreground truncate leading-tight tracking-tight">
         {title}
       </p>{" "}
-      <p className="text-[14px] text-[#EDEAE2]/50 truncate mt-1 font-medium">
+      <p className="text-[14px] text-foreground/50 truncate mt-1 font-medium">
         {subtitle}
       </p>{" "}
     </div>{" "}
     {meta && (
-      <div className="text-[13px] text-[#EDEAE2]/40 whitespace-nowrap font-medium flex-shrink-0">
+      <div className="text-[13px] text-foreground/40 whitespace-nowrap font-medium flex-shrink-0">
         {meta}
       </div>
     )}
@@ -432,19 +433,19 @@ const StatsCarousel = ({ stats, artist }: { stats: any; artist: Artist }) => {
       icon: TrendingUp,
       value: artist.totalListens || 0,
       label: "Total Plays",
-      color: "text-[#EDEAE2]",
+      color: "text-foreground",
     },
     {
       icon: Clock,
       value: artist.timeStr ? String(artist.timeStr).replace("m", "") : "0",
       label: "Minutes",
-      color: "text-[#EDEAE2]",
+      color: "text-foreground",
     },
     {
       icon: Sparkles,
       value: `${stats?.popularityScore || 0}%`,
       label: "Of Time",
-      color: "text-[#EDEAE2]",
+      color: "text-foreground",
     },
   ];
   const slide2 = [
@@ -452,19 +453,19 @@ const StatsCarousel = ({ stats, artist }: { stats: any; artist: Artist }) => {
       icon: Layers,
       value: stats?.varietyCount || 0,
       label: "Unique Songs",
-      color: "text-[#EDEAE2]",
+      color: "text-foreground",
     },
     {
       icon: Zap,
       value: stats?.dailyAverage || 0,
       label: "Avg / Day",
-      color: "text-[#EDEAE2]",
+      color: "text-foreground",
     },
     {
       icon: Globe,
       value: stats?.peakTimeLabel || "-",
       label: "Peak Time",
-      color: "text-[#EDEAE2]",
+      color: "text-foreground",
     },
   ];
   const slides = [slide1, slide2];
@@ -490,17 +491,17 @@ const StatsCarousel = ({ stats, artist }: { stats: any; artist: Artist }) => {
             {slide.map((stat, j) => (
               <div
                 key={j}
-                className="bg-[#2E2E2C]/50 border border-[#3A3A37] rounded-2xl p-4 flex flex-col items-center text-center"
+                className="bg-background/50 border border-border rounded-2xl p-4 flex flex-col items-center text-center"
               >
                 {" "}
                 <stat.icon
                   size={16}
                   className={`mb-1.5 opacity-80 ${stat.color}`}
                 />{" "}
-                <span className="text-xl font-black text-[#EDEAE2]">
+                <span className="text-xl font-black text-foreground">
                   {stat.value}
                 </span>{" "}
-                <span className="text-[10px] uppercase tracking-wider text-[#EDEAE2]/50 font-bold">
+                <span className="text-[10px] uppercase tracking-wider text-foreground/50 font-bold">
                   {stat.label}
                 </span>{" "}
               </div>
@@ -515,7 +516,7 @@ const StatsCarousel = ({ stats, artist }: { stats: any; artist: Artist }) => {
         {slides.map((_, i) => (
           <button
             key={i}
-            className={`w-1.5 h-1.5 rounded-full transition-colors ${i === page ? "bg-[#252523]" : "bg-[#9E9C95]/30"}`}
+            className={`w-1.5 h-1.5 rounded-full transition-colors ${i === page ? "bg-background" : "bg-background/30"}`}
             onClick={() => setPage(i)}
           />
         ))}
@@ -1066,14 +1067,14 @@ function App() {
           {" "}
           <div className="relative z-10 flex flex-col items-center">
             {" "}
-            <div className="w-16 h-16 rounded-2xl bg-[#2E2E2C] flex items-center justify-center mb-6 animate-pulse">
+            <div className="w-16 h-16 rounded-2xl bg-background flex items-center justify-center mb-6 animate-pulse">
               {" "}
-              <Music className="w-8 h-8 text-[#EDEAE2] opacity-50" />{" "}
+              <Music className="w-8 h-8 text-foreground opacity-50" />{" "}
             </div>{" "}
-            <h3 className="text-2xl font-heading font-bold text-[#EDEAE2] tracking-tight mb-2">
+            <h3 className="text-2xl font-heading font-bold text-foreground tracking-tight mb-2">
               Finishing Sign In
             </h3>{" "}
-            <p className="text-[#9E9C95] text-sm animate-pulse">
+            <p className="text-foreground text-sm animate-pulse">
               Completing your Spotify authentication...
             </p>{" "}
           </div>{" "}
@@ -1083,13 +1084,13 @@ function App() {
   }
   if (!token) {
     return (
-      <div className="fixed inset-0 bg-[#1C1C1A] text-[#EDEAE2] flex flex-col items-center justify-between p-6 overflow-hidden font-body">
+      <div className="fixed inset-0 bg-background text-foreground flex flex-col items-center justify-between p-6 overflow-hidden font-body">
         {" "}
         <div className="w-full flex justify-center pt-8 relative z-20">
           {" "}
-          <div className="w-12 h-12 rounded-full bg-[#2E2E2C] flex items-center justify-center border border-[#3A3A37] shadow-lg">
+          <div className="w-12 h-12 rounded-full bg-background flex items-center justify-center border border-border shadow-lg">
             {" "}
-            <Music size={20} className="text-[#EDEAE2] opacity-90" />{" "}
+            <Music size={20} className="text-foreground opacity-90" />{" "}
           </div>{" "}
         </div>{" "}
         <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-50">
@@ -1111,10 +1112,10 @@ function App() {
           {" "}
           <div className="text-center space-y-3">
             {" "}
-            <h1 className="text-[34px] font-bold tracking-tight text-[#EDEAE2] leading-tight ">
+            <h1 className="text-[34px] font-bold tracking-tight text-foreground leading-tight ">
               Welcome
             </h1>{" "}
-            <p className="text-[#EDEAE2]/50 text-[17px] font-medium tracking-wide">
+            <p className="text-foreground/50 text-[17px] font-medium tracking-wide">
               Your journey starts from here
             </p>{" "}
           </div>{" "}
@@ -1129,7 +1130,7 @@ function App() {
               {connecting ? "Connecting..." : "Continue with Spotify"}
             </button>{" "}
             <button
-              className="auth-button-secondary opacity-60 cursor-not-allowed hover:bg-[#252523] active:scale-[0.98] transition-all"
+              className="auth-button-secondary opacity-60 cursor-not-allowed hover:bg-background active:scale-[0.98] transition-all"
               disabled
             >
               {" "}
@@ -1140,14 +1141,14 @@ function App() {
               Continue with Apple{" "}
             </button>{" "}
           </div>{" "}
-          <p className="text-[11px] text-[#EDEAE2]/30 text-center max-w-[260px] leading-relaxed font-medium">
+          <p className="text-[11px] text-foreground/30 text-center max-w-[260px] leading-relaxed font-medium">
             {" "}
             By pressing on "Continue with..." you agree to our{" "}
-            <span className="text-[#EDEAE2]/50 cursor-pointer hover:underline">
+            <span className="text-foreground/50 cursor-pointer hover:underline">
               Terms of Service
             </span>{" "}
             and{" "}
-            <span className="text-[#EDEAE2]/50 cursor-pointer hover:underline">
+            <span className="text-foreground/50 cursor-pointer hover:underline">
               Privacy Policy
             </span>{" "}
           </p>{" "}
@@ -1157,7 +1158,7 @@ function App() {
   }
   if (loading || !data) {
     return (
-      <div className="fixed inset-0 bg-[#1C1C1A] text-[#EDEAE2] flex flex-col items-center justify-center p-6 overflow-hidden font-body z-50">
+      <div className="fixed inset-0 bg-background text-foreground flex flex-col items-center justify-center p-6 overflow-hidden font-body z-50">
         {" "}
         <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-30">
           {" "}
@@ -1176,26 +1177,26 @@ function App() {
         </div>{" "}
         <div className="relative z-10 flex flex-col items-center animate-fade-in">
           {" "}
-          <div className="w-16 h-16 rounded-2xl bg-[#2E2E2C]/50 flex items-center justify-center mb-6 border border-[#3A3A37] ">
+          <div className="w-16 h-16 rounded-2xl bg-background/50 flex items-center justify-center mb-6 border border-border ">
             {" "}
             <RefreshCw
-              className="w-8 h-8 text-[#EDEAE2] opacity-80 animate-spin"
+              className="w-8 h-8 text-foreground opacity-80 animate-spin"
               style={{
                 animationDuration: "3s",
               }}
             />{" "}
           </div>{" "}
-          <h3 className="text-3xl font-bold text-[#EDEAE2] tracking-tight mb-2 text-center ">
+          <h3 className="text-3xl font-bold text-foreground tracking-tight mb-2 text-center ">
             Syncing Library
           </h3>{" "}
-          <p className="text-[#EDEAE2]/50 text-sm font-medium tracking-wide">
+          <p className="text-foreground/50 text-sm font-medium tracking-wide">
             Analyzing your listening history...
           </p>{" "}
           {loading === false && !data && (
             <button
               onClick={handleConnect}
               disabled={connecting}
-              className="mt-8 px-8 py-3 bg-[#252523] text-[#EDEAE2] text-sm font-bold rounded-full hover:bg-gray-200 transition-colors z-10 shadow-xl"
+              className="mt-8 px-8 py-3 bg-background text-foreground text-sm font-bold rounded-full hover:bg-gray-200 transition-colors z-10 shadow-xl"
             >
               {" "}
               {connecting ? "Connecting..." : "Retry Connection"}
@@ -1210,17 +1211,14 @@ function App() {
       {" "}
       <Layout user={data.user} currentTrack={data.currentTrack}>
         {" "}
-        <div className="lg:hidden space-y-8 safe-area-bottom safe-area-top safe-area-x px-4 sm:px-5 pb-20">
-          {" "}
-          {/*
-// Mobile Content */}
+        <div className="hidden">
           <div className="space-y-4 pt-4">
             {" "}
             <div className="flex items-center justify-between">
               {" "}
               <div>
                 {" "}
-                <h2 className="text-[34px] font-bold text-[#EDEAE2] leading-none tracking-tight">
+                <h2 className="text-[34px] font-bold text-foreground leading-none tracking-tight">
                   {getGreeting()},{" "}
                   {data.user?.display_name?.split(" ")[0] || "friend"}
                 </h2>{" "}
@@ -1229,19 +1227,19 @@ function App() {
                 {" "}
                 <button
                   onClick={() => setDatabaseViewerOpen(true)}
-                  className="p-2 rounded-full bg-[#2E2E2C]/50 border border-[#3A3A37] hover:bg-[#2E2E2C] transition-all"
+                  className="p-2 rounded-full bg-background/50 border border-border hover:bg-background transition-all"
                   title="View Database"
                 >
                   {" "}
-                  <Database size={16} className="text-[#EDEAE2]/70" />{" "}
+                  <Database size={16} className="text-foreground/70" />{" "}
                 </button>{" "}
                 <button
                   onClick={handleManualRefresh}
-                  className={`p-2 rounded-full bg-[#2E2E2C]/50 border border-[#3A3A37] hover:bg-[#2E2E2C] transition-all ${isRefreshing ? "animate-spin" : ""}`}
+                  className={`p-2 rounded-full bg-background/50 border border-border hover:bg-background transition-all ${isRefreshing ? "animate-spin" : ""}`}
                   title="Refresh Data"
                 >
                   {" "}
-                  <RefreshCw size={16} className="text-[#EDEAE2]/70" />{" "}
+                  <RefreshCw size={16} className="text-foreground/70" />{" "}
                 </button>{" "}
               </div>{" "}
             </div>{" "}
@@ -1269,7 +1267,7 @@ function App() {
             {" "}
             {/*
 // Time Range Selector */}
-            <div className="flex gap-2 p-1.5 overflow-x-auto no-scrollbar rounded-2xl border border-[#3A3A37] bg-[#2E2E2C]/50 mb-2 items-center">
+            <div className="flex gap-2 p-1.5 overflow-x-auto no-scrollbar rounded-2xl border border-border bg-background/50 mb-2 items-center">
               {" "}
               {(["Daily", "Weekly", "Monthly", "All Time"] as const).map(
                 (range) => (
@@ -1280,7 +1278,7 @@ function App() {
                       setCustomDateRange(null);
                     }}
                     aria-pressed={timeRange === range}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${timeRange === range ? "bg-[#252523] text-[#EDEAE2]" : "text-[#EDEAE2]/70 hover:text-[#EDEAE2] hover:bg-[#2E2E2C]"}`}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${timeRange === range ? "bg-background text-foreground" : "text-foreground/70 hover:text-foreground hover:bg-background"}`}
                   >
                     {" "}
                     {range}
@@ -1297,8 +1295,8 @@ function App() {
                     className={cn(
                       "px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5",
                       timeRange === "Custom"
-                        ? "bg-[#252523] text-[#EDEAE2]"
-                        : "text-[#EDEAE2]/70 hover:text-[#EDEAE2] hover:bg-[#2E2E2C]",
+                        ? "bg-background text-foreground"
+                        : "text-foreground/70 hover:text-foreground hover:bg-background",
                     )}
                   >
                     <Calendar size={12} />
@@ -1338,12 +1336,12 @@ function App() {
                 {" "}
                 <div className="flex items-center justify-between px-1">
                   {" "}
-                  <h3 className="text-[20px] font-bold text-[#EDEAE2] tracking-tight">
+                  <h3 className="text-[20px] font-bold text-foreground tracking-tight">
                     Your Top Artists
                   </h3>{" "}
                   <button
                     onClick={() => handleSeeAll("artist")}
-                    className="text-xs font-semibold text-[#E8806A] hover:text-[#ff5c70] transition-colors"
+                    className="text-xs font-semibold text-foreground hover:text-foreground transition-colors"
                   >
                     See All
                   </button>{" "}
@@ -1366,7 +1364,7 @@ function App() {
                 ) : (
                   <div className="px-1">
                     {" "}
-                    <p className="text-[#9E9C95] text-sm py-8 text-center italic">
+                    <p className="text-foreground text-sm py-8 text-center italic">
                       No artists found.
                     </p>{" "}
                   </div>
@@ -1376,12 +1374,12 @@ function App() {
                 {" "}
                 <div className="flex items-center justify-between px-1">
                   {" "}
-                  <h3 className="text-[20px] font-bold text-[#EDEAE2] tracking-tight">
+                  <h3 className="text-[20px] font-bold text-foreground tracking-tight">
                     Top Songs
                   </h3>{" "}
                   <button
                     onClick={() => handleSeeAll("song")}
-                    className="text-xs font-semibold text-[#E8806A] hover:text-[#ff5c70] transition-colors"
+                    className="text-xs font-semibold text-foreground hover:text-foreground transition-colors"
                   >
                     See All
                   </button>{" "}
@@ -1406,7 +1404,7 @@ function App() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-[#9E9C95] text-sm py-8 text-center italic">
+                    <p className="text-foreground text-sm py-8 text-center italic">
                       Not enough data to rank songs yet.
                     </p>
                   )}
@@ -1424,12 +1422,12 @@ function App() {
                 {" "}
                 <div className="flex items-center justify-between px-1">
                   {" "}
-                  <h3 className="text-[20px] font-bold text-[#EDEAE2] tracking-tight">
+                  <h3 className="text-[20px] font-bold text-foreground tracking-tight">
                     Top Albums
                   </h3>{" "}
                   <button
                     onClick={() => handleSeeAll("album")}
-                    className="text-xs font-semibold text-[#E8806A] hover:text-[#ff5c70] transition-colors"
+                    className="text-xs font-semibold text-foreground hover:text-foreground transition-colors"
                   >
                     See All
                   </button>{" "}
@@ -1455,17 +1453,17 @@ function App() {
                               className="absolute inset-0 w-full h-full object-cover"
                             />{" "}
                           </div>{" "}
-                          <p className="mt-3 text-[16px] font-semibold text-[#EDEAE2] truncate tracking-tight">
+                          <p className="mt-3 text-[16px] font-semibold text-foreground truncate tracking-tight">
                             {album.title}
                           </p>{" "}
-                          <p className="text-[14px] text-[#EDEAE2]/50 truncate mt-1 font-medium">
+                          <p className="text-[14px] text-foreground/50 truncate mt-1 font-medium">
                             {album.artist}
                           </p>{" "}
                         </div>
                       ))}
                   </div>
                 ) : (
-                  <p className="text-[#9E9C95] text-sm italic px-1">
+                  <p className="text-foreground text-sm italic px-1">
                     Not enough data to rank albums yet.
                   </p>
                 )}
@@ -1488,7 +1486,7 @@ function App() {
                 {" "}
                 <div className="flex items-center justify-between px-1">
                   {" "}
-                  <h3 className="text-[20px] font-bold text-[#EDEAE2] tracking-tight">
+                  <h3 className="text-[20px] font-bold text-foreground tracking-tight">
                     Activity Heatmap
                   </h3>{" "}
                 </div>{" "}
@@ -1500,11 +1498,11 @@ function App() {
             </>
           )}
         </div>{" "}
-        <div className="hidden lg:block">
+        <div className="block lg:block">
           {" "}
           {/*
 // Desktop Layout */}
-          <div className="mb-8 mt-8 max-w-4xl mx-auto">
+          <div className="mb-8 mt-8 max-w-5xl mx-auto">
             {" "}
             <AISearchBar
               token={token}
@@ -1527,7 +1525,7 @@ function App() {
 // Desktop Date Range Selector */}
           <div className="flex items-center justify-between mb-12">
             {" "}
-            <div className="flex gap-2 p-1.5 bg-[#2E2E2C]/50 rounded-2xl border border-[#3A3A37] items-center">
+            <div className="flex gap-2 p-1.5 bg-background/50 rounded-2xl border border-border items-center">
               {" "}
               {(["Daily", "Weekly", "Monthly", "All Time"] as const).map(
                 (range) => (
@@ -1537,7 +1535,7 @@ function App() {
                       setTimeRange(range);
                       setCustomDateRange(null);
                     }}
-                    className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${timeRange === range ? "bg-[#252523] text-[#EDEAE2] shadow-lg scale-105" : "text-[#EDEAE2]/60 hover:text-[#EDEAE2] hover:bg-[#2E2E2C]"}`}
+                    className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${timeRange === range ? "bg-background text-foreground shadow-lg scale-105" : "text-foreground/60 hover:text-foreground hover:bg-background"}`}
                   >
                     {" "}
                     {range}
@@ -1554,8 +1552,8 @@ function App() {
                     className={cn(
                       "px-6 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2",
                       timeRange === "Custom"
-                        ? "bg-[#252523] text-[#EDEAE2] shadow-lg scale-105"
-                        : "text-[#EDEAE2]/60 hover:text-[#EDEAE2] hover:bg-[#2E2E2C]",
+                        ? "bg-background text-foreground shadow-lg scale-105"
+                        : "text-foreground/60 hover:text-foreground hover:bg-background",
                     )}
                   >
                     <Calendar size={14} />
@@ -1589,161 +1587,154 @@ function App() {
               {" "}
               <button
                 onClick={() => setDatabaseViewerOpen(true)}
-                className="p-3 rounded-full bg-[#2E2E2C]/50 border border-[#3A3A37] hover:bg-[#2E2E2C] transition-all"
+                className="p-3 rounded-full bg-background/50 border border-border hover:bg-background transition-all"
                 title="View Database"
               >
                 {" "}
-                <Database size={20} className="text-[#EDEAE2]/70" />{" "}
+                <Database size={20} className="text-foreground/70" />{" "}
               </button>{" "}
               <button
                 onClick={handleManualRefresh}
-                className={`p-3 rounded-full bg-[#2E2E2C]/50 border border-[#3A3A37] hover:bg-[#2E2E2C] transition-all ${isRefreshing ? "animate-spin" : "hover:rotate-180 duration-500"}`}
+                className={`p-3 rounded-full bg-background/50 border border-border hover:bg-background transition-all ${isRefreshing ? "animate-spin" : "hover:rotate-180 duration-500"}`}
                 title="Refresh Data"
               >
                 {" "}
-                <RefreshCw size={20} className="text-[#EDEAE2]/70" />{" "}
+                <RefreshCw size={20} className="text-foreground/70" />{" "}
               </button>{" "}
             </div>{" "}
           </div>{" "}
           <div className="mb-20">
-            {" "}
-            {/* ... Top Charts ... */}
             {showEmptyState ? (
               <EmptyState timeRange={timeRange} />
             ) : (
               <div
                 key={timeRange}
-                className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500"
+                className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500 max-w-7xl mx-auto"
               >
-                {" "}
-                {/*
-// Top Artists */}
-                <div>
-                  {" "}
-                  <div className="flex justify-between items-center mb-6 px-1">
-                    {" "}
-                    <h3 className="text-[20px] font-bold text-[#EDEAE2] tracking-tight">
-                      Top Artists
-                    </h3>{" "}
-                    <button
-                      onClick={() => handleSeeAll("artist")}
-                      className="text-sm font-semibold text-[#E8806A] hover:text-[#ff5c70] transition-colors px-4 py-2 bg-[#2E2E2C]/50 rounded-full hover:bg-[#2E2E2C]"
-                    >
-                      See All
-                    </button>{" "}
-                  </div>{" "}
-                  {safeArtists.length > 0 && (
-                    <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                      {" "}
-                      {safeArtists
-                        .slice(0, 8)
-                        .map((artist: Artist, index: number) => (
-                          <RankedArtist
-                            key={artist.id}
-                            artist={artist}
-                            rank={index + 1}
-                            realImage={artistImages[artist.name]}
-                            onClick={() => setSelectedTopArtist(artist)}
-                          />
-                        ))}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  <div className="lg:col-span-8 space-y-12">
+                    {/* Top Artists */}
+                    <div>
+                      <div className="flex justify-between items-center mb-8 px-1">
+                        <h3 className="text-3xl font-heading font-bold text-foreground tracking-tight">
+                          Top Artists
+                        </h3>
+                        <button
+                          onClick={() => handleSeeAll("artist")}
+                          className="text-sm font-semibold text-foreground hover:text-foreground transition-colors px-5 py-2.5 bg-background border border-border rounded-full hover:bg-background"
+                        >
+                          See All
+                        </button>
+                      </div>
+                      {safeArtists.length > 0 && (
+                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                          {safeArtists
+                            .slice(0, 8)
+                            .map((artist: Artist, index: number) => (
+                              <RankedArtist
+                                key={artist.id}
+                                artist={artist}
+                                rank={index + 1}
+                                realImage={artistImages[artist.name]}
+                                onClick={() => setSelectedTopArtist(artist)}
+                              />
+                            ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>{" "}
-                {/*
-// Top Albums */}
-                <div>
-                  {" "}
-                  <div className="flex justify-between items-center mb-6 px-1">
-                    {" "}
-                    <h3 className="text-[20px] font-bold text-[#EDEAE2] tracking-tight">
-                      Top Albums
-                    </h3>{" "}
-                    <button
-                      onClick={() => handleSeeAll("album")}
-                      className="text-sm font-semibold text-[#E8806A] hover:text-[#ff5c70] transition-colors px-4 py-2 bg-[#2E2E2C]/50 rounded-full hover:bg-[#2E2E2C]"
-                    >
-                      See All
-                    </button>{" "}
-                  </div>{" "}
-                  {safeAlbums.length > 0 && (
-                    <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                      {" "}
-                      {safeAlbums
-                        .slice(0, 8)
-                        .map((album: Album, index: number) => (
-                          <RankedAlbum
-                            key={album.id}
-                            album={album}
-                            rank={index + 1}
-                            onClick={() => setSelectedTopAlbum(album)}
-                          />
-                        ))}
+
+                    {/* Top Albums */}
+                    <div>
+                      <div className="flex justify-between items-center mb-8 px-1">
+                        <h3 className="text-3xl font-heading font-bold text-foreground tracking-tight">
+                          Top Albums
+                        </h3>
+                        <button
+                          onClick={() => handleSeeAll("album")}
+                          className="text-sm font-semibold text-foreground hover:text-foreground transition-colors px-5 py-2.5 bg-background border border-border rounded-full hover:bg-background"
+                        >
+                          See All
+                        </button>
+                      </div>
+                      {safeAlbums.length > 0 && (
+                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                          {safeAlbums
+                            .slice(0, 8)
+                            .map((album: Album, index: number) => (
+                              <RankedAlbum
+                                key={album.id}
+                                album={album}
+                                rank={index + 1}
+                                onClick={() => setSelectedTopAlbum(album)}
+                              />
+                            ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>{" "}
-                {/*
-// Top Songs */}
-                <div>
-                  {" "}
-                  <div className="flex justify-between items-center mb-6 px-1">
-                    {" "}
-                    <h3 className="text-[20px] font-bold text-[#EDEAE2] tracking-tight">
-                      Top Songs
-                    </h3>{" "}
-                    <button
-                      onClick={() => handleSeeAll("song")}
-                      className="text-sm font-semibold text-[#E8806A] hover:text-[#ff5c70] transition-colors px-4 py-2 bg-[#2E2E2C]/50 rounded-full hover:bg-[#2E2E2C]"
-                    >
-                      See All
-                    </button>{" "}
-                  </div>{" "}
-                  {safeSongs.length > 0 && (
-                    <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
-                      {" "}
-                      {safeSongs
-                        .slice(0, 8)
-                        .map((song: Song, index: number) => (
-                          <RankedSong
-                            key={song.id}
-                            song={song}
-                            rank={index + 1}
-                            onClick={() => setSelectedTopSong(song)}
-                          />
-                        ))}
+
+                    {/* Top Songs */}
+                    <div>
+                      <div className="flex justify-between items-center mb-8 px-1">
+                        <h3 className="text-3xl font-heading font-bold text-foreground tracking-tight">
+                          Top Songs
+                        </h3>
+                        <button
+                          onClick={() => handleSeeAll("song")}
+                          className="text-sm font-semibold text-foreground hover:text-foreground transition-colors px-5 py-2.5 bg-background border border-border rounded-full hover:bg-background"
+                        >
+                          See All
+                        </button>
+                      </div>
+                      {safeSongs.length > 0 && (
+                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                          {safeSongs
+                            .slice(0, 8)
+                            .map((song: Song, index: number) => (
+                              <RankedSong
+                                key={song.id}
+                                song={song}
+                                rank={index + 1}
+                                onClick={() => setSelectedTopSong(song)}
+                              />
+                            ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>{" "}
-                <div>
-                  {" "}
-                  <UpcomingArtists
-                    recentPlays={safeRecent}
-                    topArtists={safeArtists}
-                    artistImages={artistImages}
-                  />{" "}
-                </div>{" "}
+                  </div>
+
+                  <div className="lg:col-span-4 space-y-8">
+                    {/* Weekly Votes Component integrated into Bento Desktop Layout */}
+                    <WeeklyVotes songs={safeSongs} />
+
+                    <UpcomingArtists
+                      recentPlays={safeRecent}
+                      topArtists={safeArtists}
+                      artistImages={artistImages}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-8 mt-12">
+                  <div className="rounded-3xl relative overflow-hidden bg-transparent w-full">
+                    <TrendingArtists
+                      artists={safeArtists}
+                      albums={safeAlbums}
+                      songs={safeSongs}
+                      recentPlays={safeRecent}
+                      artistImages={artistImages}
+                      timeRange={timeRange}
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-24 mt-12 px-1">
+                  <ActivityHeatmap history={safeRecent} />
+                </div>
               </div>
             )}
-          </div>{" "}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-20">
-            {" "}
-            <div className="rounded-3xl p-6 relative overflow-hidden min-h-[600px] border-none bg-transparent">
-              {" "}
-              <TrendingArtists
-                artists={safeArtists}
-                albums={safeAlbums}
-                songs={safeSongs}
-                recentPlays={safeRecent}
-                artistImages={artistImages}
-                timeRange={timeRange}
-              />{" "}
-            </div>{" "}
-          </div>{" "}
-          <div className="mb-24 px-1">
-            {" "}
-            <ActivityHeatmap history={safeRecent} />{" "}
-          </div>{" "}
-        </div>{" "}
-      </Layout>{" "}
+          </div>
+        </div>
+      </Layout>
       <SeeAllModal
         isOpen={seeAllModal.isOpen}
         onClose={() =>
@@ -1796,7 +1787,7 @@ function App() {
                 className="relative group w-full"
               >
                 {" "}
-                <div className="w-full aspect-square rounded-[32px] overflow-hidden border border-[#3A3A37] relative">
+                <div className="w-full aspect-square rounded-[32px] overflow-hidden border border-border relative">
                   {" "}
                   <img
                     src={
@@ -1806,15 +1797,15 @@ function App() {
                         selectedTopArtist.name,
                       )}&background=1C1C1E&color=fff`
                     }
-                    className="w-full h-full object-cover bg-[#252523]"
+                    className="w-full h-full object-cover bg-background"
                     alt={selectedTopArtist.name}
                   />{" "}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent mix-blend-multiply" />{" "}
                   <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
                     {" "}
-                    <div className="bg-[#1C1C1A]/60 text-[#EDEAE2] px-4 py-2 rounded-2xl font-bold text-sm shadow-xl border border-[#3A3A37] flex items-center gap-2">
+                    <div className="bg-background/60 text-foreground px-4 py-2 rounded-2xl font-bold text-sm shadow-xl border border-border flex items-center gap-2">
                       {" "}
-                      <Trophy size={16} className="text-[#E8806A]" /> Rank #
+                      <Trophy size={16} className="text-foreground" /> Rank #
                       {safeArtists.findIndex(
                         (a: Artist) => a.id === selectedTopArtist.id,
                       ) + 1 || "?"}
@@ -1837,19 +1828,19 @@ function App() {
                 className="flex flex-col gap-2"
               >
                 {" "}
-                <h1 className="text-5xl md:text-6xl font-black text-[#EDEAE2] tracking-tighter leading-none mb-2 ">
+                <h1 className="text-5xl md:text-6xl font-black text-foreground tracking-tighter leading-none mb-2 ">
                   {" "}
                   {selectedTopArtist.name}
                 </h1>{" "}
                 <div className="flex flex-wrap items-center gap-3">
                   {" "}
-                  <div className="bg-[#2E2E2C] border border-[#3A3A37] px-4 py-2 rounded-xl text-sm font-semibold text-[#EDEAE2]">
+                  <div className="bg-background border border-border px-4 py-2 rounded-xl text-sm font-semibold text-foreground">
                     {" "}
                     {selectedTopArtist.timeStr || "0m"}
                     listened{" "}
                   </div>{" "}
                   {artistDiscoveryDate && (
-                    <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2E2E2C]/50 border border-[#3A3A37] text-sm font-medium text-[#EDEAE2]/70">
+                    <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-background/50 border border-border text-sm font-medium text-foreground/70">
                       {" "}
                       <Calendar size={14} />{" "}
                       <span>
@@ -1878,7 +1869,7 @@ function App() {
                 className="w-full mb-10"
               >
                 {" "}
-                <h3 className="text-xs font-bold uppercase tracking-widest text-[#EDEAE2]/50 mb-4">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-foreground/50 mb-4">
                   Listening Stats
                 </h3>{" "}
                 <StatsCarousel
@@ -1898,7 +1889,7 @@ function App() {
                 transition={{
                   delay: 0.3,
                 }}
-                className="w-full bg-[#252523] border border-[#3A3A37] rounded-3xl p-6"
+                className="w-full bg-background border border-border rounded-3xl p-6"
               >
                 {" "}
                 <ArtistOrbit
@@ -1971,7 +1962,7 @@ function App() {
               className="relative shrink-0 perspective-1000"
             >
               {" "}
-              <div className="w-64 h-64 md:w-96 md:h-96 rounded-2xl overflow-hidden border border-[#3A3A37]/30 relative group">
+              <div className="w-64 h-64 md:w-96 md:h-96 rounded-2xl overflow-hidden border border-border/30 relative group">
                 {" "}
                 <img
                   src={selectedTopAlbum.cover}
@@ -1997,18 +1988,18 @@ function App() {
                 }}
               >
                 {" "}
-                <div className="inline-block bg-[#2E2E2C] px-3 py-1 rounded-full text-xs font-bold text-[#EDEAE2] mb-4 border border-[#3A3A37] shadow-sm">
+                <div className="inline-block bg-background px-3 py-1 rounded-full text-xs font-bold text-foreground mb-4 border border-border shadow-sm">
                   {" "}
                   Rank #
                   {safeAlbums.findIndex(
                     (a: Album) => a.id === selectedTopAlbum.id,
                   ) + 1 || "?"}
                 </div>{" "}
-                <h1 className="text-4xl md:text-6xl font-black text-[#EDEAE2] tracking-tighter leading-none mb-3 ">
+                <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter leading-none mb-3 ">
                   {" "}
                   {selectedTopAlbum.title}
                 </h1>{" "}
-                <p className="text-xl md:text-2xl font-bold text-[#EDEAE2]/60 mb-8">
+                <p className="text-xl md:text-2xl font-bold text-foreground/60 mb-8">
                   {" "}
                   {selectedTopAlbum.artist}
                 </p>{" "}
@@ -2025,50 +2016,50 @@ function App() {
                 transition={{
                   delay: 0.25,
                 }}
-                className="flex flex-col gap-0 border-t border-[#3A3A37]"
+                className="flex flex-col gap-0 border-t border-border"
               >
                 {" "}
-                <div className="flex justify-between items-center py-5 border-b border-[#3A3A37] hover:bg-[#252523] transition-colors px-2">
+                <div className="flex justify-between items-center py-5 border-b border-border hover:bg-background transition-colors px-2">
                   {" "}
-                  <div className="flex items-center gap-3 text-[#EDEAE2]/50">
+                  <div className="flex items-center gap-3 text-foreground/50">
                     {" "}
                     <TrendingUp size={20} />{" "}
                     <span className="font-semibold uppercase tracking-wider text-xs">
                       Total Plays
                     </span>{" "}
                   </div>{" "}
-                  <span className="text-2xl font-heading font-bold text-[#EDEAE2]">
+                  <span className="text-2xl font-heading font-bold text-foreground">
                     {selectedTopAlbum.totalListens ||
                       (selectedTopAlbum as any).listens ||
                       0}
                   </span>{" "}
                 </div>{" "}
-                <div className="flex justify-between items-center py-5 border-b border-[#3A3A37] hover:bg-[#252523] transition-colors px-2">
+                <div className="flex justify-between items-center py-5 border-b border-border hover:bg-background transition-colors px-2">
                   {" "}
-                  <div className="flex items-center gap-3 text-[#EDEAE2]/50">
+                  <div className="flex items-center gap-3 text-foreground/50">
                     {" "}
                     <Clock size={20} />{" "}
                     <span className="font-semibold uppercase tracking-wider text-xs">
                       Time Listened
                     </span>{" "}
                   </div>{" "}
-                  <span className="text-2xl font-heading font-bold text-[#EDEAE2]">
+                  <span className="text-2xl font-heading font-bold text-foreground">
                     {selectedTopAlbum.timeStr
                       ? String(selectedTopAlbum.timeStr).replace("m", "")
                       : "0"}
-                    <span className="text-sm text-[#EDEAE2]/50">mins</span>
+                    <span className="text-sm text-foreground/50">mins</span>
                   </span>{" "}
                 </div>{" "}
-                <div className="flex justify-between items-center py-5 border-b border-[#3A3A37] hover:bg-[#252523] transition-colors px-2">
+                <div className="flex justify-between items-center py-5 border-b border-border hover:bg-background transition-colors px-2">
                   {" "}
-                  <div className="flex items-center gap-3 text-[#EDEAE2]/50">
+                  <div className="flex items-center gap-3 text-foreground/50">
                     {" "}
                     <Sparkles size={20} />{" "}
                     <span className="font-semibold uppercase tracking-wider text-xs">
                       Share of Plays
                     </span>{" "}
                   </div>{" "}
-                  <span className="text-2xl font-heading font-bold text-[#EDEAE2]">
+                  <span className="text-2xl font-heading font-bold text-foreground">
                     {" "}
                     {selectedTopAlbum.totalListens
                       ? Math.round(
@@ -2117,7 +2108,7 @@ function App() {
               className="relative shrink-0"
             >
               {" "}
-              <div className="w-64 h-64 md:w-96 md:h-96 rounded-2xl overflow-hidden border border-[#3A3A37]/30 relative group">
+              <div className="w-64 h-64 md:w-96 md:h-96 rounded-2xl overflow-hidden border border-border/30 relative group">
                 {" "}
                 <img
                   src={selectedTopSong.cover}
@@ -2125,9 +2116,9 @@ function App() {
                   alt={selectedTopSong.title}
                 />{" "}
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60 mix-blend-multiply" />{" "}
-                <div className="absolute bottom-4 left-4 bg-[#1C1C1A]/50 px-3 py-1.5 rounded-xl font-bold text-xs text-[#EDEAE2] border border-[#3A3A37] shadow-lg flex items-center gap-2">
+                <div className="absolute bottom-4 left-4 bg-background/50 px-3 py-1.5 rounded-xl font-bold text-xs text-foreground border border-border shadow-lg flex items-center gap-2">
                   {" "}
-                  <Music size={14} className="text-[#E8806A]" /> #
+                  <Music size={14} className="text-foreground" /> #
                   {safeSongs.findIndex(
                     (s: Song) => s.id === selectedTopSong.id,
                   ) + 1 || "?"}
@@ -2150,16 +2141,16 @@ function App() {
                 }}
               >
                 {" "}
-                <h1 className="text-4xl md:text-6xl font-black text-[#EDEAE2] tracking-tighter leading-none mb-3 ">
+                <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter leading-none mb-3 ">
                   {" "}
                   {selectedTopSong.title}
                 </h1>{" "}
-                <p className="text-xl md:text-2xl font-bold text-[#EDEAE2]/80 mb-1">
+                <p className="text-xl md:text-2xl font-bold text-foreground/80 mb-1">
                   {" "}
                   {selectedTopSong.artist}
                 </p>{" "}
                 {selectedTopSong.album && (
-                  <p className="text-sm md:text-lg font-medium text-[#EDEAE2]/40 mb-8">
+                  <p className="text-sm md:text-lg font-medium text-foreground/40 mb-8">
                     {" "}
                     from {selectedTopSong.album}
                   </p>
@@ -2177,54 +2168,54 @@ function App() {
                 transition={{
                   delay: 0.3,
                 }}
-                className="grid grid-cols-1 gap-0 border-y border-[#3A3A37]"
+                className="grid grid-cols-1 gap-0 border-y border-border"
               >
                 {" "}
-                <div className="flex justify-between items-center py-5 border-b border-[#3A3A37] hover:bg-[#252523] transition-colors px-4">
+                <div className="flex justify-between items-center py-5 border-b border-border hover:bg-background transition-colors px-4">
                   {" "}
-                  <div className="flex items-center gap-4 text-[#EDEAE2]/50">
+                  <div className="flex items-center gap-4 text-foreground/50">
                     {" "}
-                    <div className="p-2 rounded-xl bg-[#2E2E2C]/50">
+                    <div className="p-2 rounded-xl bg-background/50">
                       <TrendingUp size={18} />
                     </div>{" "}
                     <span className="font-semibold uppercase tracking-wider text-xs">
                       Total Plays
                     </span>{" "}
                   </div>{" "}
-                  <span className="text-3xl font-black text-[#EDEAE2]">
+                  <span className="text-3xl font-black text-foreground">
                     {selectedTopSong.listens || 0}
                   </span>{" "}
                 </div>{" "}
-                <div className="flex justify-between items-center py-5 border-b border-[#3A3A37] hover:bg-[#252523] transition-colors px-4">
+                <div className="flex justify-between items-center py-5 border-b border-border hover:bg-background transition-colors px-4">
                   {" "}
-                  <div className="flex items-center gap-4 text-[#EDEAE2]/50">
+                  <div className="flex items-center gap-4 text-foreground/50">
                     {" "}
-                    <div className="p-2 rounded-xl bg-[#2E2E2C]/50">
+                    <div className="p-2 rounded-xl bg-background/50">
                       <Clock size={18} />
                     </div>{" "}
                     <span className="font-semibold uppercase tracking-wider text-xs">
                       Time Listened
                     </span>{" "}
                   </div>{" "}
-                  <span className="text-3xl font-black text-[#EDEAE2]">
+                  <span className="text-3xl font-black text-foreground">
                     {selectedTopSong.timeStr
                       ? String(selectedTopSong.timeStr).replace("m", "")
                       : "0"}
-                    <span className="text-base text-[#EDEAE2]/40 ml-1">m</span>
+                    <span className="text-base text-foreground/40 ml-1">m</span>
                   </span>{" "}
                 </div>{" "}
-                <div className="flex justify-between items-center py-5 hover:bg-[#252523] transition-colors px-4">
+                <div className="flex justify-between items-center py-5 hover:bg-background transition-colors px-4">
                   {" "}
-                  <div className="flex items-center gap-4 text-[#EDEAE2]/50">
+                  <div className="flex items-center gap-4 text-foreground/50">
                     {" "}
-                    <div className="p-2 rounded-xl bg-[#2E2E2C]/50">
+                    <div className="p-2 rounded-xl bg-background/50">
                       <Sparkles size={18} />
                     </div>{" "}
                     <span className="font-semibold uppercase tracking-wider text-xs">
                       Share of Plays
                     </span>{" "}
                   </div>{" "}
-                  <span className="text-3xl font-black text-[#E8806A]">
+                  <span className="text-3xl font-black text-foreground">
                     {" "}
                     {selectedTopSong.listens
                       ? Math.round(
@@ -2255,7 +2246,7 @@ function App() {
             exit={{
               opacity: 0,
             }}
-            className="fixed inset-0 z-[9999] bg-[#1C1C1A]"
+            className="fixed inset-0 z-[9999] bg-background"
             style={{
               height: "100dvh",
             }}
@@ -2283,15 +2274,15 @@ function App() {
               }}
             >
               {" "}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-[#3A3A37] flex-shrink-0">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
                 {" "}
                 <div className="flex items-center gap-3">
                   {" "}
-                  <div className="w-8 h-8 rounded-lg bg-[#E8806A]/10 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-background/10 flex items-center justify-center">
                     {" "}
-                    <Sparkles className="w-4 h-4 text-[#E8806A]" />{" "}
+                    <Sparkles className="w-4 h-4 text-foreground" />{" "}
                   </div>{" "}
-                  <h2 className="text-base font-bold text-[#EDEAE2] tracking-tight">
+                  <h2 className="text-base font-bold text-foreground tracking-tight">
                     AI Discovery
                   </h2>{" "}
                 </div>{" "}
@@ -2300,7 +2291,7 @@ function App() {
                     setAiModalOpen(false);
                     setAiInitialQuery(undefined);
                   }}
-                  className="p-2 rounded-full bg-[#2E2E2C] hover:bg-[#9E9C95]/30 text-[#EDEAE2]/50 hover:text-[#EDEAE2] transition-all"
+                  className="p-2 rounded-full bg-background hover:bg-background/30 text-foreground/50 hover:text-foreground transition-all"
                 >
                   {" "}
                   <X size={18} />{" "}

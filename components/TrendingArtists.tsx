@@ -554,17 +554,17 @@ m`,
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-[#141413] tracking-tight flex items-center gap-2">
+                <h2 className="text-xl font-bold text-[#F5F5F5] tracking-tight flex items-center gap-2">
                   Obsession Orbit
                 </h2>
                 <div className="relative group/info">
                   <Info
                     size={16}
-                    className="text-[#b0aea5] hover:text-[#141413] transition-colors cursor-help"
+                    className="text-[#A0A0A0] hover:text-[#F5F5F5] transition-colors cursor-help"
                   />
-                  <div className="absolute left-0 top-full mt-2 w-72 bg-white border border-[#e8e6dc] rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
-                    <p className="text-[11px] text-[#b0aea5] leading-relaxed">
-                      <span className="text-[#141413] font-semibold">
+                  <div className="absolute left-0 top-full mt-2 w-72 bg-[#121212] border border-[#2A2A2A] rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
+                    <p className="text-[11px] text-[#A0A0A0] leading-relaxed">
+                      <span className="text-[#F5F5F5] font-semibold">
                         Obsession Orbit
                       </span>{" "}
                       visualizes your top {activeTab}s based on listening
@@ -582,7 +582,7 @@ m`,
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setShowYearDropdown(!showYearDropdown)}
-                  className="flex items-center gap-1 text-[11px] font-medium text-[#b0aea5] bg-white px-3 py-1.5 rounded-lg border border-[#e8e6dc] hover:bg-[#2C2C2E] transition-colors"
+                  className="flex items-center gap-1 text-[11px] font-medium text-[#A0A0A0] bg-[#121212] px-3 py-1.5 rounded-lg border border-[#2A2A2A] hover:bg-[#1A1A1A] transition-colors"
                 >
                   {selectedYear}{" "}
                   <ChevronDown
@@ -591,7 +591,7 @@ m`,
                   />
                 </button>
                 {showYearDropdown && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-[#e8e6dc] rounded-xl shadow-2xl z-50 overflow-hidden min-w-[90px] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="absolute right-0 top-full mt-1 bg-[#121212] border border-[#2A2A2A] rounded-xl shadow-2xl z-50 overflow-hidden min-w-[90px] animate-in fade-in slide-in-from-top-2 duration-200">
                     {AVAILABLE_YEARS.map((year) => (
                       <button
                         key={year}
@@ -600,15 +600,15 @@ m`,
                           setShowYearDropdown(false);
                           setSelectedItem(null);
                         }}
-                        className={`w-full px-3 py-1.5 text-left text-[11px] font-medium flex items-center justify-between gap-2 hover:bg-[#e8e6dc]/50 transition-colors ${
+                        className={`w-full px-3 py-1.5 text-left text-[11px] font-medium flex items-center justify-between gap-2 hover:bg-[#1A1A1A] transition-colors ${
                           year === selectedYear
-                            ? "text-[#141413] bg-[#e8e6dc]/50"
-                            : "text-[#b0aea5]"
+                            ? "text-[#F5F5F5] bg-[#1A1A1A]"
+                            : "text-[#A0A0A0]"
                         }`}
                       >
                         {year}
                         {year === selectedYear && (
-                          <Check size={10} className="text-[#d97757]" />
+                          <Check size={10} className="text-[#FFFFFF]" />
                         )}
                       </button>
                     ))}
@@ -617,16 +617,16 @@ m`,
               </div>
 
               {/* Custom Toggle UI */}
-              <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-1 border border-[#e8e6dc] shadow-sm">
+              <div className="bg-[#121212] p-1 rounded-full flex gap-1 border border-[#2A2A2A] shadow-sm">
                 <button
                   onClick={() => setActiveTab("artist")}
-                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === "artist" ? "bg-[#3A3A3C] text-[#141413]" : "text-[#b0aea5] hover:text-[#141413]"}`}
+                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === "artist" ? "bg-[#1A1A1A] text-[#F5F5F5]" : "text-[#A0A0A0] hover:text-[#F5F5F5]"}`}
                 >
                   Artists
                 </button>
                 <button
                   onClick={() => setActiveTab("album")}
-                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === "album" ? "bg-[#3A3A3C] text-[#141413]" : "text-[#b0aea5] hover:text-[#141413]"}`}
+                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === "album" ? "bg-[#1A1A1A] text-[#F5F5F5]" : "text-[#A0A0A0] hover:text-[#F5F5F5]"}`}
                 >
                   Albums
                 </button>
@@ -638,11 +638,11 @@ m`,
         {/* MAIN VIEW */}
         {trendingItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-500">
-            <Music className="w-10 h-10 text-[#141413]/10 mb-4" />
-            <p className="text-[#141413]/30 text-sm font-medium">
+            <Music className="w-10 h-10 text-foreground/10 mb-4" />
+            <p className="text-foreground/30 text-sm font-medium">
               No data for {selectedYear}
             </p>
-            <p className="text-[#141413]/15 text-xs mt-1">
+            <p className="text-foreground/15 text-xs mt-1">
               Try selecting a different year
             </p>
           </div>
@@ -664,7 +664,7 @@ m`,
                 }}
               >
                 <div className="relative w-28 h-28 md:w-36 md:h-36">
-                  <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-white transition-transform duration-500 group-hover:scale-105">
+                  <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#1C1C1E] shadow-2xl relative z-10 bg-card transition-transform duration-500 group-hover:scale-105">
                     <img
                       src={centerItem.image}
                       className="w-full h-full object-cover"
@@ -766,9 +766,9 @@ deg)`,
             </div>
 
             {/* Orbital Rings - Visible circles */}
-            <div className="absolute inset-0 rounded-full border-2 border-[#e8e6dc] scale-[0.68] pointer-events-none"></div>
-            <div className="absolute inset-0 rounded-full border-2 border-[#e8e6dc] scale-[0.96] pointer-events-none"></div>
-            <div className="absolute inset-0 rounded-full border border-[#e8e6dc] scale-[0.82] pointer-events-none"></div>
+            <div className="absolute inset-0 rounded-full border-2 border-[#2A2A2A] scale-[0.68] pointer-events-none"></div>
+            <div className="absolute inset-0 rounded-full border-2 border-[#2A2A2A] scale-[0.96] pointer-events-none"></div>
+            <div className="absolute inset-0 rounded-full border border-[#2A2A2A] scale-[0.82] pointer-events-none"></div>
           </motion.div>
         )}
       </div>
@@ -783,7 +783,7 @@ deg)`,
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-[#faf9f5]/40 backdrop-blur-sm z-[150]"
+                className="fixed inset-0 bg-card/40 backdrop-blur-sm z-[150]"
                 onClick={() => setSelectedItem(null)}
               />
 
@@ -796,12 +796,12 @@ deg)`,
                 className="fixed top-2 bottom-2 right-2 w-[calc(100vw-16px)] md:w-[320px] z-[200] max-h-[calc(100vh-16px)] pointer-events-none"
               >
                 <div
-                  className="h-full w-full bg-white rounded-3xl overflow-hidden flex flex-col relative shadow-2xl border border-[#e8e6dc] pointer-events-auto"
+                  className="h-full w-full bg-card rounded-3xl overflow-hidden flex flex-col relative shadow-2xl border border-border pointer-events-auto"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
                     onClick={() => setSelectedItem(null)}
-                    className="absolute top-4 right-4 bg-[#faf9f5]/40 hover:bg-[#faf9f5]/60 rounded-full p-2 text-[#141413] z-50 transition-colors "
+                    className="absolute top-4 right-4 bg-card/40 hover:bg-card/60 rounded-full p-2 text-foreground z-50 transition-colors "
                   >
                     <X size={20} />
                   </button>
@@ -815,17 +815,17 @@ deg)`,
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute bottom-4 left-6 z-20">
-                      <h2 className="text-2xl font-black text-[#141413] leading-none tracking-tight mb-1 drop-shadow-lg line-clamp-2">
+                      <h2 className="text-2xl font-black text-foreground leading-none tracking-tight mb-1 drop-shadow-lg line-clamp-2">
                         {selectedItem.name}
                       </h2>
                       {selectedItem.subName && (
-                        <p className="text-[#141413]/60 text-xs font-medium tracking-wide drop-shadow-md">
+                        <p className="text-foreground/60 text-xs font-medium tracking-wide drop-shadow-md">
                           {selectedItem.subName}
                         </p>
                       )}
-                      <div className="inline-flex items-center gap-1.5 mt-2 bg-[#e8e6dc]  px-2.5 py-0.5 rounded-full border border-[#e8e6dc]">
-                        <Sparkles size={10} className="text-[#141413]" />
-                        <span className="text-[10px] uppercase font-bold text-[#141413] tracking-wider">
+                      <div className="inline-flex items-center gap-1.5 mt-2 bg-secondary  px-2.5 py-0.5 rounded-full border border-border">
+                        <Sparkles size={10} className="text-foreground" />
+                        <span className="text-[10px] uppercase font-bold text-foreground tracking-wider">
                           Obsession Score: {selectedItem.trendScore}
                         </span>
                       </div>
@@ -839,35 +839,35 @@ deg)`,
                         {/* Key Stats */}
                         <div className="grid grid-cols-3 gap-3 px-5 mb-6">
                           {/* @ts-ignore */}
-                          <div className="bg-[#e8e6dc]/50 p-4 rounded-xl text-center">
-                            <div className="text-2xl font-black text-[#141413] leading-none">
+                          <div className="bg-secondary/50 p-4 rounded-xl text-center">
+                            <div className="text-2xl font-black text-foreground leading-none">
                               {selectedItem.stats.totalPlays}
                             </div>
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#141413]/40 mt-1.5">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-foreground/40 mt-1.5">
                               Plays
                             </div>
                           </div>
-                          <div className="bg-[#e8e6dc]/50 p-4 rounded-xl text-center">
+                          <div className="bg-secondary/50 p-4 rounded-xl text-center">
                             {/* @ts-ignore */}
-                            <div className="text-2xl font-black text-[#141413] leading-none">
+                            <div className="text-2xl font-black text-foreground leading-none">
                               {selectedItem.stats.totalTime.split("h")[0]}
-                              <span className="text-sm font-semibold text-[#141413]/50">
+                              <span className="text-sm font-semibold text-foreground/50">
                                 h
                               </span>
                             </div>
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#141413]/40 mt-1.5">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-foreground/40 mt-1.5">
                               Listened
                             </div>
                           </div>
-                          <div className="bg-[#e8e6dc]/50 p-4 rounded-xl text-center">
+                          <div className="bg-secondary/50 p-4 rounded-xl text-center">
                             {/* @ts-ignore */}
-                            <div className="text-2xl font-black text-[#141413] leading-none">
+                            <div className="text-2xl font-black text-foreground leading-none">
                               {selectedItem.stats.streak}
-                              <span className="text-sm font-semibold text-[#141413]/50">
+                              <span className="text-sm font-semibold text-foreground/50">
                                 d
                               </span>
                             </div>
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#141413]/40 mt-1.5">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-foreground/40 mt-1.5">
                               Streak
                             </div>
                           </div>
@@ -883,11 +883,11 @@ deg)`,
                                 Top Track
                               </div>
                               {/* @ts-ignore */}
-                              <div className="text-[15px] font-bold text-[#141413] truncate">
+                              <div className="text-[15px] font-bold text-foreground truncate">
                                 {selectedItem.stats.topSong}
                               </div>
                               {/* @ts-ignore */}
-                              <div className="text-[11px] text-[#141413]/50 mt-1">
+                              <div className="text-[11px] text-foreground/50 mt-1">
                                 {selectedItem.stats.topSongPlays} plays
                               </div>
                             </div>
@@ -896,7 +896,7 @@ deg)`,
 
                         {/* Tracks - Cleaned Up */}
                         <div className="px-5">
-                          <h3 className="text-[#141413]/40 text-[10px] font-bold uppercase tracking-[0.15em] mb-3">
+                          <h3 className="text-foreground/40 text-[10px] font-bold uppercase tracking-[0.15em] mb-3">
                             All Tracks
                           </h3>
                           <div className="space-y-0.5">
@@ -908,12 +908,12 @@ deg)`,
                                 .map((track: any, idx: number) => (
                                   <div
                                     key={idx}
-                                    className="flex items-center gap-2.5 py-1.5 px-2 hover:bg-white/[0.04] rounded-xl group transition-colors cursor-default"
+                                    className="flex items-center gap-2.5 py-1.5 px-2 hover:bg-card/[0.04] rounded-xl group transition-colors cursor-default"
                                   >
-                                    <div className="text-[#141413]/20 font-mono text-[10px] w-4 text-right font-bold">
+                                    <div className="text-foreground/20 font-mono text-[10px] w-4 text-right font-bold">
                                       {idx + 1}
                                     </div>
-                                    <div className="w-8 h-8 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 border border-[#e8e6dc]">
+                                    <div className="w-8 h-8 rounded-lg bg-[#2C2C2E] overflow-hidden flex-shrink-0 border border-border">
                                       <img
                                         src={track.album_cover || track.cover}
                                         className="w-full h-full object-cover"
@@ -921,17 +921,17 @@ deg)`,
                                       />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                      <div className="text-[12px] font-semibold text-[#141413] truncate group-hover:text-[#d97757] transition-colors">
+                                      <div className="text-[12px] font-semibold text-foreground truncate group-hover:text-[#d97757] transition-colors">
                                         {track.track_name}
                                       </div>
-                                      <div className="text-[10px] text-[#141413]/25 font-medium">
+                                      <div className="text-[10px] text-foreground/25 font-medium">
                                         {track.count} plays
                                       </div>
                                     </div>
                                   </div>
                                 ))
                             ) : (
-                              <div className="text-xs text-[#141413]/20 italic py-6 text-center">
+                              <div className="text-xs text-foreground/20 italic py-6 text-center">
                                 Track data unavailable
                               </div>
                             )}
@@ -939,7 +939,7 @@ deg)`,
                         </div>
                       </>
                     ) : (
-                      <div className="text-center text-[#141413]/40 py-20 flex flex-col items-center gap-2">
+                      <div className="text-center text-foreground/40 py-20 flex flex-col items-center gap-2">
                         <div className="w-5 h-5 border-2 border-[#b0aea5]/30 border-t-white rounded-full animate-spin"></div>
                         <span className="text-xs tracking-widest uppercase">
                           Calculating Orbit...
@@ -992,7 +992,7 @@ const OrbitNode = ({
       onMouseMove={handleMouseMove}
     >
       <div
-        className={`relative rounded-full overflow-hidden border transition-all duration-300 bg-white ${isActive ? "border-[#d97757] shadow-[0_0_20px_#FA2D48]" : "border-[#1C1C1E] shadow-lg group-hover:scale-125"}`}
+        className={`relative rounded-full overflow-hidden border transition-all duration-300 bg-card ${isActive ? "border-[#d97757] shadow-[0_0_20px_#FA2D48]" : "border-[#1C1C1E] shadow-lg group-hover:scale-125"}`}
         style={{ width: size, height: size }}
       >
         <img
@@ -1015,19 +1015,19 @@ const OrbitNode = ({
             }}
           >
             <div className="bg-[#000000] border border-[#b0aea5]/30 rounded-lg px-4 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
-              <div className="text-[14px] font-bold text-[#141413] leading-tight">
+              <div className="text-[14px] font-bold text-foreground leading-tight">
                 {item.name}
               </div>
               {item.subName && (
-                <div className="text-[11px] font-medium text-[#141413]/60 mt-0.5">
+                <div className="text-[11px] font-medium text-foreground/60 mt-0.5">
                   {item.subName}
                 </div>
               )}
-              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#e8e6dc]">
+              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
                 <div className="text-[10px] font-bold text-[#d97757] bg-[#d97757]/10 px-1.5 py-0.5 rounded">
                   SCORE: {item.trendScore}
                 </div>
-                <div className="text-[10px] font-medium text-[#141413]/50">
+                <div className="text-[10px] font-medium text-foreground/50">
                   {item.recentPlays} plays
                 </div>
               </div>

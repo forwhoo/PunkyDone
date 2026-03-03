@@ -3,45 +3,45 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-border: #2e2e2c;
-  --color-input: #3a3a37;
-  --color-ring: #e8806a;
-  --color-background: #1c1c1a;
-  --color-foreground: #edeae2;
-  --color-primary: #e8806a;
-  --color-primary-foreground: #1c1c1a;
-  --color-secondary: #252523;
-  --color-secondary-foreground: #edeae2;
-  --color-muted: #9e9c95;
-  --color-muted-foreground: #9e9c95;
+  --color-border: #2a2a2a;
+  --color-input: #1a1a1a;
+  --color-ring: #ffffff;
+  --color-background: #050505;
+  --color-foreground: #f5f5f5;
+  --color-primary: #ffffff;
+  --color-primary-foreground: #050505;
+  --color-secondary: #121212;
+  --color-secondary-foreground: #f5f5f5;
+  --color-muted: #a0a0a0;
+  --color-muted-foreground: #a0a0a0;
   --color-accent: #3bbfbf;
-  --color-accent-foreground: #1c1c1a;
-  --color-card: #252523;
-  --color-card-foreground: #edeae2;
-  --font-sans: "DM Sans", sans-serif;
-  --font-heading: "Playfair Display", serif;
-  --font-body: "DM Sans", sans-serif;
+  --color-accent-foreground: #050505;
+  --color-card: #121212;
+  --color-card-foreground: #f5f5f5;
+  --font-sans: "Epilogue", sans-serif;
+  --font-heading: "Syne", sans-serif;
+  --font-body: "Epilogue", sans-serif;
   --font-barlow: "Barlow", sans-serif;
   --font-barlow-condensed: "Barlow Condensed", sans-serif;
 }
 
 :root {
-  --color-primary-glow: rgba(232, 128, 106, 0.1);
-  --color-bg: #1c1c1a;
-  --color-card-elevated: #2e2e2c;
-  --color-text-muted: #9e9c95;
+  --color-primary-glow: rgba(255, 255, 255, 0.1);
+  --color-bg: #050505;
+  --color-card-elevated: #121212;
+  --color-text-muted: #a0a0a0;
 }
 
 ::selection {
-  background: #e8806a;
-  color: white;
+  background: #ffffff;
+  color: #050505;
 }
 
 body {
   margin: 0;
   background-color: var(--color-bg);
-  color: #edeae2;
-  font-family: "DM Sans", sans-serif;
+  color: #f5f5f5;
+  font-family: "Epilogue", sans-serif;
   overflow-x: hidden;
   width: 100%;
   -webkit-font-smoothing: antialiased;
@@ -55,7 +55,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: "Playfair Display", serif;
+  font-family: "Syne", sans-serif;
 }
 
 #root {
@@ -86,23 +86,23 @@ html {
 
 .markdown-container th {
   text-align: left;
-  border-bottom: 2px solid rgba(28, 28, 26, 0.1);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
   padding: 8px;
-  color: #edeae2;
+  color: #f5f5f5;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-family: "Playfair Display", serif;
+  font-family: "Syne", sans-serif;
 }
 
 .markdown-container td {
   padding: 10px 8px;
-  border-bottom: 1px solid rgba(28, 28, 26, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .markdown-container strong {
-  color: #edeae2;
-  font-family: "Playfair Display", serif;
+  color: #f5f5f5;
+  font-family: "Syne", sans-serif;
   font-weight: 600;
 }
 
@@ -131,12 +131,12 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #6b6964;
+  background: #2a2a2a;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #e8806a;
+  background: #ffffff;
 }
 
 /* Hide scrollbar for horizontal carousels */
@@ -235,28 +235,28 @@ html {
 
 /* Authentication Page Styles */
 .auth-button-primary {
-  background-color: #e8806a;
-  color: #1c1c1a;
+  background-color: #ffffff;
+  color: #050505;
   border-radius: 9999px; /* Pill shape */
   padding: 16px 32px;
-  font-family: "Playfair Display", serif;
+  font-family: "Syne", sans-serif;
   font-weight: 600;
   width: 100%;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 20px rgba(232, 128, 106, 0.3);
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
 }
 
 .auth-button-primary:hover {
-  background-color: #ff9985;
+  background-color: #e0e0e0;
   transform: scale(1.02);
 }
 
 .auth-button-secondary {
-  background-color: #252523;
-  color: #9e9c95;
+  background-color: #121212;
+  color: #a0a0a0;
   border-radius: 9999px;
   padding: 16px 32px;
-  font-family: "Playfair Display", serif;
+  font-family: "Syne", sans-serif;
   font-weight: 600;
   width: 100%;
   display: flex;
@@ -264,7 +264,7 @@ html {
   justify-content: center;
   gap: 8px;
   transition: all 0.2s ease;
-  border: 1px solid rgba(58, 58, 55, 0.8);
+  border: 1px solid rgba(42, 42, 42, 0.8);
 }
 
 .auth-button-secondary:hover {

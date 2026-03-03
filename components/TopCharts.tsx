@@ -129,10 +129,10 @@ export const TopCharts: React.FC<TopChartsProps> = ({
       <div className="pb-4 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-[#141413] text-lg font-bold tracking-tight">
+            <h3 className="text-foreground text-lg font-bold tracking-tight">
               {title}
             </h3>
-            <div className="text-[#b0aea5] text-xs flex items-center gap-2 mt-1">
+            <div className="text-muted-foreground text-xs flex items-center gap-2 mt-1">
               <Calendar className="w-3 h-3" />
               <span>{getDateRangeText()}</span>
             </div>
@@ -147,8 +147,8 @@ export const TopCharts: React.FC<TopChartsProps> = ({
               onClick={() => setActiveTab(tab as any)}
               className={`px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide rounded-[6px] transition-all ${
                 activeTab === tab
-                  ? "bg-[#d97757] text-[#141413] shadow-md"
-                  : "text-[#b0aea5] hover:text-[#141413]"
+                  ? "bg-[#d97757] text-foreground shadow-md"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {tab}
@@ -160,7 +160,7 @@ export const TopCharts: React.FC<TopChartsProps> = ({
       <div className="flex-1 overflow-hidden">
         {/* LIST VIEW - LISTEN CHART */}
         <div className="w-full">
-          <div className="grid grid-cols-[40px_1fr_50px_50px_50px] px-3 py-3 border-b border-[#e8e6dc] text-[10px] font-bold uppercase tracking-widest text-[#b0aea5]">
+          <div className="grid grid-cols-[40px_1fr_50px_50px_50px] px-3 py-3 border-b border-border text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             <div className="text-center">#</div>
             <div>
               {activeTab === "Songs"
@@ -198,12 +198,12 @@ export const TopCharts: React.FC<TopChartsProps> = ({
               return (
                 <div
                   key={item.id}
-                  className="grid grid-cols-[40px_1fr_50px_50px_50px] items-center px-3 py-3 hover:bg-[#e8e6dc]/50 transition-colors group border-b border-[#e8e6dc] last:border-0"
+                  className="grid grid-cols-[40px_1fr_50px_50px_50px] items-center px-3 py-3 hover:bg-secondary/50 transition-colors group border-b border-border last:border-0"
                 >
                   {/* Rank + Trend Column */}
                   <div className="flex flex-col items-center justify-center">
                     <span
-                      className={`text-sm font-black ${rank <= 3 ? "text-[#d97757]" : "text-[#141413]"}`}
+                      className={`text-sm font-black ${rank <= 3 ? "text-[#d97757]" : "text-foreground"}`}
                     >
                       {rank}
                     </span>
@@ -220,24 +220,24 @@ export const TopCharts: React.FC<TopChartsProps> = ({
 
                   {/* Track Info */}
                   <div className="flex items-center gap-3 min-w-0 pr-2">
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#2C2C2E] relative shrink-0 border border-[#e8e6dc]">
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#2C2C2E] relative shrink-0 border border-border">
                       <img
                         src={getImageSrc(item)}
                         className="w-full h-full object-cover"
                         onError={handleImageError}
                       />
                       {activeTab === "Songs" && (
-                        <div className="absolute inset-0 bg-[#faf9f5]/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                          <Play className="w-4 h-4 text-[#141413] fill-white" />
+                        <div className="absolute inset-0 bg-card/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                          <Play className="w-4 h-4 text-foreground fill-white" />
                         </div>
                       )}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-semibold text-[#141413] text-sm truncate group-hover:text-[#d97757] transition-colors">
+                      <div className="font-semibold text-foreground text-sm truncate group-hover:text-[#d97757] transition-colors">
                         {item.name || item.title}
                       </div>
                       {item.artist && activeTab !== "Artists" && (
-                        <div className="text-xs text-[#b0aea5] truncate mt-0.5">
+                        <div className="text-xs text-muted-foreground truncate mt-0.5">
                           {item.artist}
                         </div>
                       )}
@@ -246,19 +246,19 @@ export const TopCharts: React.FC<TopChartsProps> = ({
 
                   {/* Stats Columns */}
                   <div className="text-center">
-                    <span className="text-sm font-bold text-[#141413]">
+                    <span className="text-sm font-bold text-foreground">
                       {peak}
                     </span>
                   </div>
 
                   <div className="text-center">
-                    <span className="text-sm font-medium text-[#b0aea5]">
+                    <span className="text-sm font-medium text-muted-foreground">
                       {trend === "NEW" ? "-" : prev}
                     </span>
                   </div>
 
                   <div className="text-center">
-                    <span className="text-sm font-bold text-[#141413]">
+                    <span className="text-sm font-bold text-foreground">
                       {streak}
                     </span>
                   </div>

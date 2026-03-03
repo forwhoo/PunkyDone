@@ -122,7 +122,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[#faf9f5]/90 "
+            className="absolute inset-0 bg-card/90 "
             onClick={onClose}
           />
 
@@ -140,16 +140,16 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
                 {/* Title & Search */}
                 <div className="flex-1 flex flex-col md:flex-row md:items-center gap-6">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-3xl font-bold text-[#141413] tracking-tight flex items-center gap-3">
+                    <h2 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
                       {title}
-                      <span className="text-sm font-normaltext-[#141413]/40 bg-[#e8e6dc] px-2 py-0.5 rounded-full">
+                      <span className="text-sm font-normaltext-foreground/40 bg-secondary px-2 py-0.5 rounded-full">
                         {processedItems.length}
                       </span>
                     </h2>
                     {/* Mobile Close Button (visible only on mobile) */}
                     <button
                       onClick={onClose}
-                      className="md:hidden bg-[#e8e6dc] hover:bg-[#b0aea5]/30 text-[#141413] rounded-full p-2 transition-colors"
+                      className="md:hidden bg-secondary hover:bg-[#b0aea5]/30 text-foreground rounded-full p-2 transition-colors"
                     >
                       <X size={20} />
                     </button>
@@ -158,7 +158,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
                   {/* Search Bar */}
                   <div className="relative group w-full md:max-w-md">
                     <Search
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#141413]/40 group-focus-within:text-[#141413] transition-colors"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40 group-focus-within:text-foreground transition-colors"
                       size={18}
                     />
                     <input
@@ -166,7 +166,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={`Search ${type}s...`}
-                      className="w-full bg-white/[0.05] border border-white/[0.05] focus:border-[#b0aea5]/30 rounded-xl py-2.5 pl-10 pr-4 text-sm text-[#141413] placeholder-white/30 focus:outline-none focus:bg-white/[0.08] transition-all"
+                      className="w-full bg-card/[0.05] border border-white/[0.05] focus:border-[#b0aea5]/30 rounded-xl py-2.5 pl-10 pr-4 text-sm text-foreground placeholder-white/30 focus:outline-none focus:bg-card/[0.08] transition-all"
                     />
                   </div>
                 </div>
@@ -177,19 +177,19 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
                   <div className="bg-[#18181b] p-1 rounded-lg flex border border-white/[0.06]">
                     <button
                       onClick={() => setSortBy("plays")}
-                      className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1.5 ${sortBy === "plays" ? "bg-white text-black shadow-sm" : "text-[#141413]/60 hover:text-[#141413] hover:bg-white/[0.05]"}`}
+                      className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1.5 ${sortBy === "plays" ? "bg-card text-black shadow-sm" : "text-foreground/60 hover:text-foreground hover:bg-card/[0.05]"}`}
                     >
                       <TrendingUp size={12} /> Plays
                     </button>
                     <button
                       onClick={() => setSortBy("time")}
-                      className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1.5 ${sortBy === "time" ? "bg-white text-black shadow-sm" : "text-[#141413]/60 hover:text-[#141413] hover:bg-white/[0.05]"}`}
+                      className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1.5 ${sortBy === "time" ? "bg-card text-black shadow-sm" : "text-foreground/60 hover:text-foreground hover:bg-card/[0.05]"}`}
                     >
                       <Clock size={12} /> Time
                     </button>
                     <button
                       onClick={() => setSortBy("name")}
-                      className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1.5 ${sortBy === "name" ? "bg-white text-black shadow-sm" : "text-[#141413]/60 hover:text-[#141413] hover:bg-white/[0.05]"}`}
+                      className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1.5 ${sortBy === "name" ? "bg-card text-black shadow-sm" : "text-foreground/60 hover:text-foreground hover:bg-card/[0.05]"}`}
                     >
                       A-Z
                     </button>
@@ -199,13 +199,13 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
                   <div className="bg-[#18181b] p-1 rounded-lg flex border border-white/[0.06]">
                     <button
                       onClick={() => setViewMode("list")}
-                      className={`p-1.5 rounded-md transition-all ${viewMode === "list" ? "bg-white text-black shadow-sm" : "text-[#141413]/60 hover:text-[#141413] hover:bg-white/[0.05]"}`}
+                      className={`p-1.5 rounded-md transition-all ${viewMode === "list" ? "bg-card text-black shadow-sm" : "text-foreground/60 hover:text-foreground hover:bg-card/[0.05]"}`}
                     >
                       <ListIcon size={14} />
                     </button>
                     <button
                       onClick={() => setViewMode("grid")}
-                      className={`p-1.5 rounded-md transition-all ${viewMode === "grid" ? "bg-white text-black shadow-sm" : "text-[#141413]/60 hover:text-[#141413] hover:bg-white/[0.05]"}`}
+                      className={`p-1.5 rounded-md transition-all ${viewMode === "grid" ? "bg-card text-black shadow-sm" : "text-foreground/60 hover:text-foreground hover:bg-card/[0.05]"}`}
                     >
                       <LayoutGrid size={14} />
                     </button>
@@ -213,24 +213,24 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
                   {/* Desktop Close Button */}
                   <button
                     onClick={onClose}
-                    className="hidden md:flex bg-[#e8e6dc] hover:bg-[#b0aea5]/30 text-[#141413] rounded-full p-2.5 transition-all hover:scale-105 active:scale-95 ml-2"
+                    className="hidden md:flex bg-secondary hover:bg-[#b0aea5]/30 text-foreground rounded-full p-2.5 transition-all hover:scale-105 active:scale-95 ml-2"
                   >
                     <X size={18} />
                   </button>
                 </div>
               </div>
               {/* Summary Bar */}
-              <div className="flex items-center gap-6 mt-6 text-xs font-medium text-[#141413]/40">
+              <div className="flex items-center gap-6 mt-6 text-xs font-medium text-foreground/40">
                 <span className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-card/40"></div>
                   {processedItems.length} visible
                 </span>
                 <span className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-card/40"></div>
                   {totalPlays.toLocaleString()} Total Plays
                 </span>
                 <span className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-card/40"></div>
                   {totalTime.toLocaleString()}m listened
                 </span>
               </div>
@@ -238,7 +238,7 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-[#09090b]">
               {processedItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-[#141413]/30">
+                <div className="flex flex-col items-center justify-center h-64 text-foreground/30">
                   <Search size={48} className="mb-4 opacity-20" />
                   <p>No results found for "{searchQuery}"</p>
                 </div>
@@ -263,8 +263,8 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
                         className={`group cursor-pointer relative overflow-hidden transition-all
 ${
   viewMode === "grid"
-    ? "bg-white hover:bg-white/[0.08] p-4 rounded-2xl flex flex-col items-center text-center gap-3 border border-white/[0.05] hover:border-[#b0aea5]/30 hover:-translate-y-1 hover:shadow-xl"
-    : "flex items-center gap-4 p-3 rounded-xl hover:bg-white/[0.06] active:scale-[0.99] border border-transparent hover:border-white/[0.05]"
+    ? "bg-card hover:bg-card/[0.08] p-4 rounded-2xl flex flex-col items-center text-center gap-3 border border-white/[0.05] hover:border-[#b0aea5]/30 hover:-translate-y-1 hover:shadow-xl"
+    : "flex items-center gap-4 p-3 rounded-xl hover:bg-card/[0.06] active:scale-[0.99] border border-transparent hover:border-white/[0.05]"
 }
                                                 `}
                         onClick={() => onItemClick?.(item)}
@@ -272,7 +272,7 @@ ${
                         {/* List View: Background Bar */}
                         {viewMode === "list" && (
                           <div
-                            className="absolute inset-y-0 left-0 bg-white rounded-xl transition-all duration-500"
+                            className="absolute inset-y-0 left-0 bg-card rounded-xl transition-all duration-500"
                             style={{ width: `${barWidth}%` }}
                           />
                         )}
@@ -282,8 +282,8 @@ ${
                           className={`
                                                     ${
                                                       viewMode === "grid"
-                                                        ? "absolute top-3 left-3 bg-[#faf9f5]/50  px-2 py-1 rounded-md text-xs font-bold text-[#141413] border border-[#e8e6dc]"
-                                                        : "relative z-10 w-8 text-center text-sm font-bold flex-shrink-0 text-[#141413]/50 group-hover:text-[#141413]"
+                                                        ? "absolute top-3 left-3 bg-card/50  px-2 py-1 rounded-md text-xs font-bold text-foreground border border-border"
+                                                        : "relative z-10 w-8 text-center text-sm font-bold flex-shrink-0 text-foreground/50 group-hover:text-foreground"
                                                     }
                                                 `}
                         >
@@ -291,7 +291,7 @@ ${
                         </div>
                         {/* Image */}
                         <div
-                          className={`relative z-10 overflow-hidden bg-white flex-shrink-0 border border-white/[0.08] group-hover:border-white/30 transition-all shadow-lg
+                          className={`relative z-10 overflow-hidden bg-card flex-shrink-0 border border-white/[0.08] group-hover:border-white/30 transition-all shadow-lg
                                                     ${
                                                       viewMode === "grid"
                                                         ? "w-32 h-32 rounded-full shadow-2xl mb-2"
@@ -305,7 +305,7 @@ ${
                             loading="lazy"
                           />
                           {/* Play Overlay */}
-                          <div className="absolute inset-0 bg-[#faf9f5]/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
+                          <div className="absolute inset-0 bg-card/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
                             {/* Icon removed per request */}
                           </div>
                         </div>
@@ -315,12 +315,12 @@ ${
                           className={`relative z-10 min-w-0 ${viewMode === "grid" ? "w-full" : "flex-1"}`}
                         >
                           <h3
-                            className={`font-semibold text-[#141413] truncate group-hover:text-[#141413]/90 transition-colors ${viewMode === "grid" ? "text-base mb-1" : "text-sm"}`}
+                            className={`font-semibold text-foreground truncate group-hover:text-foreground/90 transition-colors ${viewMode === "grid" ? "text-base mb-1" : "text-sm"}`}
                           >
                             {item.name || item.title}
                           </h3>
                           <p
-                            className={`text-xs text-[#141413]/50 truncate ${viewMode === "grid" ? "mx-auto max-w-[90%]" : ""}`}
+                            className={`text-xs text-foreground/50 truncate ${viewMode === "grid" ? "mx-auto max-w-[90%]" : ""}`}
                           >
                             {type === "artist"
                               ? `${item.timeStr || "0m"} listened`
@@ -330,13 +330,13 @@ ${
 
                         {/* Stats */}
                         <div
-                          className={`relative z-10 flex-shrink-0 ${viewMode === "grid" ? "bg-white/[0.05] rounded-full px-3 py-1 mt-1" : "text-right"}`}
+                          className={`relative z-10 flex-shrink-0 ${viewMode === "grid" ? "bg-card/[0.05] rounded-full px-3 py-1 mt-1" : "text-right"}`}
                         >
                           <span
-                            className={`font-bold text-[#141413] block ${viewMode === "grid" ? "text-xs" : "text-sm"}`}
+                            className={`font-bold text-foreground block ${viewMode === "grid" ? "text-xs" : "text-sm"}`}
                           >
                             {plays.toLocaleString()}
-                            <span className="text-[9px] uppercase tracking-wider text-[#141413]/40 ml-1 font-medium">
+                            <span className="text-[9px] uppercase tracking-wider text-foreground/40 ml-1 font-medium">
                               plays
                             </span>
                           </span>

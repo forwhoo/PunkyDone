@@ -127,48 +127,6 @@ export const TOOL_DEFINITIONS = [
     },
   },
   {
-    name: "ai_tool_maker",
-    description: "Creates a new AI tool dynamically based on user description.",
-    parameters: {
-      type: "object",
-      properties: {
-        name: {
-          type: "string",
-          description:
-            "A short, clear name for the tool (e.g. 'Late Night Mode')",
-        },
-        description: {
-          type: "string",
-          description:
-            "1-2 sentences describing what the tool does and when to use it",
-        },
-        parameters: {
-          type: "object",
-          description:
-            "A JSON schema object representing the tool's parameters",
-        },
-        system_prompt: {
-          type: "string",
-          description:
-            "The full instruction set for how the AI should behave when this tool is active.",
-        },
-        parser_logic: {
-          type: "string",
-          description:
-            "Describe how the tool's input should be parsed and output should be returned.",
-        },
-      },
-      required: [
-        "name",
-        "description",
-        "parameters",
-        "system_prompt",
-        "parser_logic",
-      ],
-    },
-  },
-
-  {
     name: "create_skill",
     description:
       "Creates a new custom skill/persona. Use this when the user asks you to create a new skill, after you have gathered enough context (asking clarifying questions if necessary).",
@@ -862,7 +820,6 @@ export const TOOL_ICON_MAP: Record<string, { icon: string; label: string }> = {
   vote: { icon: "CheckSquare", label: "Poll" },
   set_skill: { icon: "UserCog", label: "Set Skill" },
   create_skill: { icon: "UserCog", label: "Create Skill" },
-  ai_tool_maker: { icon: "Zap", label: "AI Tool Maker" },
 };
 
 // ─── TOOL EXECUTION HANDLER ─────────────────────────────────────
@@ -1646,10 +1603,6 @@ async function executeAgentTool(
           system_prompt: funcArgs.system_prompt,
         };
       }
-      case "ai_tool_maker": {
-        return { status: "tool_created", tool: funcArgs };
-      }
-
       default:
         return { error: `Unknown tool: ${funcName}` };
     }
@@ -1660,10 +1613,6 @@ async function executeAgentTool(
 }
 
 // ─── AGENT SYSTEM PROMPT ─────────────────────────────────────────
-const TOOL_MAKER_SYSTEM_PROMPT = `
-
-AI TOOL MAKER INSTRUCTIONS:
-You are an expert tool builder. When the user describes a tool they want, your job is to construct a complete, working tool definition using the \`ai_tool_maker\` tool. Do not ask unnecessary questions — if you have enough information, build it immediately. A tool is made up of: Tool Name, Description, Parameters, System Prompt / Behavior, and Parser Logic. Always output the tool in a clean structured format. If the user's description is vague, ask one focused clarifying question before building. Never hallucinate parameters or behaviors — only build what is described or reasonably implied.`;
 const AGENT_SYSTEM_PROMPT = `You are **Harvey**, the AI music analytics agent.
 
 **CORE DIRECTIVE:**
@@ -1819,9 +1768,8 @@ export const streamMusicQuestionWithTools = async (
         stream = await client.chat.stream({
           model: modelToUse,
           messages: messages,
-
           // @ts-ignore
-          //           tools: tools,
+          tools: tools,
         });
       }
       let toolCallsBuffer: any[] = [];
@@ -2064,9 +2012,8 @@ export const answerMusicQuestionWithTools = async (
         response = await client.chat.complete({
           model: modelToUse,
           messages: messages,
-
           // @ts-ignore
-          //           tools: tools,
+          tools: tools,
         });
       }
       const choice = response.choices?.[0];
