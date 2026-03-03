@@ -1,23 +1,12 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Card } from "./UIComponents";
-import { ActivityHeatmap } from "./ActivityHeatmap";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Sparkles,
   RefreshCcw,
   AlertTriangle,
-  MessageSquare,
-  Plus,
-  Send,
   Zap,
   ChevronRight,
   BarChart3,
-  ChartPie,
-  Trophy,
-  Music2,
-  Gift,
-  ChevronLeft,
   ArrowUp,
-  Palette,
   Music,
   Mic2,
   Disc,
@@ -29,11 +18,13 @@ import {
   Moon,
   SkipForward,
   BarChart2,
+  Gift,
   Search,
   SlidersHorizontal,
   Image,
   Grid3x3,
   Network,
+  ChartPie,
   History,
   ArrowLeftRight,
   ImageIcon,
@@ -51,7 +42,6 @@ import {
   CloudSun,
   CalendarClock,
   Car,
-  Sparkles as SparklesIcon,
   LineChart,
   FastForward,
   DoorOpen,
@@ -59,7 +49,6 @@ import {
   Target,
   ChevronDown,
   CheckSquare,
-  UserCog,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -84,25 +73,14 @@ import {
 import { ToolsModal } from "./ToolsModal";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Input,
-  Button,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui";
+import { Button } from "@/components/ui";
 import { Loader } from "@/components/prompt-kit/loader";
 import {
   ChatContainerRoot,
   ChatContainerContent,
   ChatContainerScrollAnchor,
 } from "@/components/prompt-kit/chat-container";
-import { Message, MessageContent } from "@/components/prompt-kit/message";
 import {
   PromptInput,
   PromptInputTextarea,
@@ -114,70 +92,14 @@ import {
   SourceTrigger,
 } from "@/components/prompt-kit/source";
 import { Tool, ToolPart } from "@/components/prompt-kit/tool";
-import {
-  ChainOfThought,
-  ChainOfThoughtStep,
-  ChainOfThoughtTrigger,
-  ChainOfThoughtContent,
-  ChainOfThoughtItem,
-} from "@/components/prompt-kit/chain-of-thought";
 
 const TOOL_LUCIDE_MAP: Record<string, LucideIcon> = {
-  Music,
-  Mic2,
-  Disc,
-  Clock,
-  Orbit,
-  Flame,
-  BarChart3,
-  Radio,
-  TrendingUp,
-  Moon,
-  SkipForward,
-  BarChart2,
-  Gift,
-  Search,
-  SlidersHorizontal,
-  Image,
-  Grid3x3,
-  Network,
-  ChartPie,
-  History,
-  ArrowLeftRight,
-  ImageIcon,
-  Timer,
-  ArrowUpDown,
-  Heart,
-  PieChart: PieChartIcon,
-  Calendar,
-  Play,
-  Star,
-  CheckCircle,
-  Repeat,
-  Briefcase,
-  CloudSun,
-  CalendarClock,
-  Car,
-  LineChart,
-  FastForward,
-  DoorOpen,
-  Users,
-  Target,
-  vote: CheckSquare,
-};
-
-const ToolIcon = ({
-  iconName,
-  size = 12,
-}: {
-  iconName: string;
-  size?: number;
-}) => {
-  const IconComponent = TOOL_LUCIDE_MAP[iconName];
-  if (IconComponent) {
-    return <IconComponent size={size} />;
-  }
-  return <Zap size={size} />;
+  Music, Mic2, Disc, Clock, Orbit, Flame, BarChart3, Radio, TrendingUp, Moon,
+  SkipForward, BarChart2, Gift, Search, SlidersHorizontal, Image, Grid3x3,
+  Network, ChartPie, History, ArrowLeftRight, ImageIcon, Timer, ArrowUpDown,
+  Heart, PieChart: PieChartIcon, Calendar, Play, Star, CheckCircle, Repeat,
+  Briefcase, CloudSun, CalendarClock, Car, LineChart, FastForward, DoorOpen,
+  Users, Target, vote: CheckSquare,
 };
 
 const VoteTool = ({
@@ -197,7 +119,7 @@ const VoteTool = ({
     if (submitted) return;
     if (multiSelect) {
       setSelections((prev) =>
-        prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt],
+        prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
       );
     } else {
       setSelections([opt]);
@@ -209,42 +131,42 @@ const VoteTool = ({
     onVote(selections);
   };
   return (
-    <div className="w-full max-w-md my-4 border border-zinc-800 rounded-2xl overflow-hidden bg-zinc-900 p-5">
-      <h4 className="text-[15px] font-semibold text-zinc-100 mb-4 flex items-center gap-2">
-        <CheckSquare size={16} className="text-zinc-400" />
+    <div className="w-full my-3 border border-white/[0.07] rounded-2xl overflow-hidden bg-white/[0.03] p-4">
+      <h4 className="text-[13px] font-semibold text-foreground mb-3 flex items-center gap-2">
+        <CheckSquare size={14} className="text-foreground/40" />
         {title}
       </h4>
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {options.map((opt: string, idx: number) => (
           <button
             key={idx}
             disabled={submitted}
             onClick={() => toggleOption(opt)}
-            className={`w-full text-left px-4 py-3 rounded-xl border transition-all text-sm font-medium flex items-center justify-between ${
+            className={`w-full text-left px-3 py-2.5 rounded-xl border transition-all text-[13px] font-medium flex items-center justify-between ${
               selections.includes(opt)
-                ? "bg-zinc-800 border-zinc-600 text-zinc-100"
-                : "bg-zinc-800/50 border-zinc-800 text-zinc-400 hover:border-zinc-700"
-            } ${submitted && !selections.includes(opt) ? "opacity-40" : ""}`}
+                ? "bg-foreground/10 border-foreground/20 text-foreground"
+                : "bg-transparent border-white/[0.06] text-foreground/50 hover:border-white/20 hover:text-foreground/80"
+            } ${submitted && !selections.includes(opt) ? "opacity-30" : ""}`}
           >
             <span>{opt}</span>
             {selections.includes(opt) && (
-              <CheckCircle size={14} className="text-zinc-300" />
+              <CheckCircle size={13} className="text-foreground/60" />
             )}
           </button>
         ))}
       </div>
       {!submitted && (
-        <Button
+        <button
           onClick={handleSubmit}
           disabled={selections.length === 0}
-          className="w-full mt-4 bg-zinc-100 text-zinc-900 hover:bg-zinc-200 font-semibold py-2.5"
+          className="w-full mt-3 bg-foreground text-background rounded-xl py-2 text-[13px] font-semibold disabled:opacity-30 transition-opacity hover:opacity-90"
         >
-          Submit Vote
-        </Button>
+          Submit
+        </button>
       )}
       {submitted && (
-        <p className="text-[11px] text-zinc-500 text-center mt-3 font-medium italic">
-          Vote submitted
+        <p className="text-[11px] text-foreground/30 text-center mt-2 font-medium">
+          Submitted ✓
         </p>
       )}
     </div>
@@ -262,16 +184,16 @@ const CollapsibleTools = ({
   if (!tools || tools.length === 0) return null;
   const voteTool = tools.find((t) => t.type === "vote");
   return (
-    <div className="w-full max-w-md my-3 border border-zinc-800 rounded-xl overflow-hidden bg-zinc-900/50">
+    <div className="w-full my-2 border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.02]">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-zinc-800/50 transition-colors text-[12px] font-medium text-zinc-500"
+        className="w-full flex items-center justify-between px-3 py-2 hover:bg-white/[0.04] transition-colors text-[11px] font-medium text-foreground/30"
       >
-        <div className="flex items-center gap-2">
-          <Zap size={12} className="text-amber-500" />
-          <span>Tools ({tools.length} calls)</span>
+        <div className="flex items-center gap-1.5">
+          <Zap size={10} className="text-foreground/40" />
+          <span>{tools.length} tool{tools.length > 1 ? "s" : ""} used</span>
         </div>
-        {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
       </button>
       <AnimatePresence>
         {isOpen && (
@@ -279,15 +201,15 @@ const CollapsibleTools = ({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.15 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-3 space-y-2 border-t border-zinc-800 pt-3">
+            <div className="px-3 pb-3 space-y-1.5 border-t border-white/[0.04] pt-2">
               {tools.map((tool, idx) => (
                 <Tool
                   key={idx}
                   toolPart={tool}
-                  className="my-0 border-zinc-800 bg-transparent"
+                  className="my-0 border-white/[0.06] bg-transparent text-[12px]"
                 />
               ))}
             </div>
@@ -298,6 +220,13 @@ const CollapsibleTools = ({
     </div>
   );
 };
+
+const SUGGESTIONS = [
+  "What's my most played song this week?",
+  "Which artist did I obsess over most?",
+  "What time of day do I listen most?",
+  "Roast my music taste",
+];
 
 interface TopAIProps {
   token?: string | null;
@@ -335,14 +264,6 @@ const DEFAULT_SKILLS: Skill[] = [
   { id: "Roaster", label: "Roaster", icon: Flame },
 ];
 
-interface CategoryResult {
-  id: string;
-  title: string;
-  description: string;
-  stats: string;
-  tracks: any[];
-}
-
 interface ChatMessage {
   role: "user" | "ai";
   text: string;
@@ -361,31 +282,15 @@ export const AISpotlight: React.FC<TopAIProps> = ({
   initialQuery,
 }) => {
   const [loading, setLoading] = useState(false);
-  const [categoryResults, setCategoryResults] = useState<CategoryResult[]>([]);
-  const [viewMode, setViewMode] = useState<"standard" | "ranked">("standard");
-  const [sortMode, setSortMode] = useState<"mins" | "plays" | "date" | "length">("mins");
-  const [insightMode, setInsightMode] = useState(false);
-  const [insightData, setInsightData] = useState<any[]>([]);
-  const [insightStep, setInsightStep] = useState(0);
-  const [wrappedMode, setWrappedMode] = useState(false);
-  const [wrappedSlides, setWrappedSlides] = useState<WrappedSlide[]>([]);
-  const [wrappedStep, setWrappedStep] = useState(0);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [chatResponse, setChatResponse] = useState<string | null>(null);
-  const [displayedText, setDisplayedText] = useState("");
   const [userPrompt, setUserPrompt] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [mode, setMode] = useState<"discover" | "chat">("chat");
-  const [typing, setTyping] = useState(false);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
   const [selectedSkill, setSelectedSkill] = useState("default");
   const [skills, setSkills] = useState(DEFAULT_SKILLS);
-  const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
   const [toolsModalOpen, setToolsModalOpen] = useState(false);
-  const [discoveryMode, setDiscoveryMode] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -398,56 +303,23 @@ export const AISpotlight: React.FC<TopAIProps> = ({
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, displayedText, loading, categoryResults]);
+  }, [chatMessages, loading]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    setUploadProgress(0);
     setErrorMsg(null);
-    setChatResponse("Reading file...");
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
         const text = event.target?.result as string;
         const json = JSON.parse(text) as SpotifyHistoryItem[];
-        if (!Array.isArray(json))
-          throw new Error("Invalid format: Expected an array.");
-        setChatResponse(`Processing ${json.length} items...`);
-        const result = await uploadExtendedHistory(json, (percent) => {
-          setUploadProgress(percent);
-          setChatResponse(`Uploading: ${percent}% `);
-        });
-        if (result.success) {
-          setChatResponse(
-            "✅ Upload complete! Fetching album covers from Spotify...",
-          );
-          if (token) {
-            const backfillResult = await backfillExtendedHistoryImages(
-              token,
-              (status) => {
-                setChatResponse(`✅ Upload complete! ${status} `);
-              },
-            );
-            setChatResponse(
-              backfillResult.success
-                ? `✅ All done! ${backfillResult.message} `
-                : `✅ Upload complete, but image fetch had issues: ${backfillResult.message} `,
-            );
-          } else {
-            setChatResponse(
-              "✅ Upload complete! (Could not fetch images - no Spotify token)",
-            );
-          }
-          setUserPrompt("");
-        } else {
-          setErrorMsg("Upload failed: " + result.message);
-          setChatResponse(null);
-        }
+        if (!Array.isArray(json)) throw new Error("Invalid format: Expected an array.");
+        const result = await uploadExtendedHistory(json, () => {});
+        if (!result.success) setErrorMsg("Upload failed: " + result.message);
       } catch (err: any) {
         setErrorMsg("Failed to parse JSON: " + err.message);
-        setChatResponse(null);
       } finally {
         setUploading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -467,20 +339,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({
     if (promptToUse.trim().toLowerCase() === "@backfill") {
       setUserPrompt("");
       setLoading(true);
-      setChatResponse("Fetching images from Spotify for extended history...");
-      if (!token) {
-        setErrorMsg(
-          "No Spotify token found. Please refresh the page and log in.",
-        );
-        setLoading(false);
-        return;
-      }
-      const result = await backfillExtendedHistoryImages(token, (status) =>
-        setChatResponse(status),
-      );
-      setChatResponse(
-        result.success ? `✅ ${result.message} ` : result.message,
-      );
+      if (!token) { setErrorMsg("No Spotify token."); setLoading(false); return; }
+      const result = await backfillExtendedHistoryImages(token, () => {});
       setLoading(false);
       return;
     }
@@ -491,27 +351,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({
     ]);
     setLoading(true);
     setErrorMsg(null);
-    setChatResponse(null);
-    setDisplayedText("");
-    setCategoryResults([]);
-    setInsightMode(false);
-    setWrappedMode(false);
     setUserPrompt("");
 
     try {
-      const lower = promptToUse.toLowerCase();
-      setMode("chat");
-      const aiMessageId = Date.now();
       setChatMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          text: "",
-          timestamp: new Date(),
-          isThinking: false,
-          tools: [],
-          sources: null,
-        },
+        { role: "ai", text: "", timestamp: new Date(), isThinking: true, tools: [], sources: null },
       ]);
       let currentText = "";
       let tools: any[] = [];
@@ -528,71 +373,29 @@ export const AISpotlight: React.FC<TopAIProps> = ({
             isThinking = false;
           }
           if (chunk.type === "tool-call" && chunk.toolCall) {
-            tools.push({
-              type: chunk.toolCall.name,
-              state: "input-available",
-              input: chunk.toolCall.arguments,
-            });
+            tools.push({ type: chunk.toolCall.name, state: "input-available", input: chunk.toolCall.arguments });
             isThinking = true;
           }
           if (chunk.type === "tool-result" && chunk.toolCall) {
-            const ti = tools.findIndex(
-              (t) =>
-                t.type === chunk.toolCall!.name &&
-                t.state === "input-available",
-            );
-            if (ti !== -1)
-              tools[ti] = {
-                ...tools[ti],
-                state: "output-available",
-                output: chunk.toolCall.result,
-              };
-            if (
-              chunk.toolCall.name === "set_skill" &&
-              chunk.toolCall.arguments?.skill
-            ) {
-              const newSkill = chunk.toolCall.arguments.skill;
-              const matched = skills.find(
-                (p) => p.label.toLowerCase() === newSkill.toLowerCase(),
-              );
-              if (matched) {
-                setSelectedSkill(matched.id);
-              }
+            const ti = tools.findIndex((t) => t.type === chunk.toolCall!.name && t.state === "input-available");
+            if (ti !== -1) tools[ti] = { ...tools[ti], state: "output-available", output: chunk.toolCall.result };
+            if (chunk.toolCall.name === "set_skill" && chunk.toolCall.arguments?.skill) {
+              const matched = skills.find((p) => p.label.toLowerCase() === chunk.toolCall!.arguments.skill.toLowerCase());
+              if (matched) setSelectedSkill(matched.id);
             }
-            if (
-              chunk.toolCall.name === "create_skill" &&
-              chunk.toolCall.arguments?.title
-            ) {
-              const newSkillId = chunk.toolCall.arguments.title
-                .toLowerCase()
-                .replace(/\s+/g, "-");
-              const newSkillEntry = {
-                id: newSkillId,
-                label: chunk.toolCall.arguments.title,
-                icon: Sparkles,
-                description: chunk.toolCall.arguments.description,
-                system_prompt: chunk.toolCall.arguments.system_prompt,
-              };
-              setSkills((prev) => {
-                if (prev.find((s) => s.id === newSkillId)) return prev;
-                return [...prev, newSkillEntry];
-              });
+            if (chunk.toolCall.name === "create_skill" && chunk.toolCall.arguments?.title) {
+              const newSkillId = chunk.toolCall.arguments.title.toLowerCase().replace(/\s+/g, "-");
+              const newSkillEntry = { id: newSkillId, label: chunk.toolCall.arguments.title, icon: Sparkles, description: chunk.toolCall.arguments.description, system_prompt: chunk.toolCall.arguments.system_prompt };
+              setSkills((prev) => { if (prev.find((s) => s.id === newSkillId)) return prev; return [...prev, newSkillEntry]; });
               setSelectedSkill(newSkillId);
             }
           }
-          if (chunk.type === "grounding" && chunk.groundingMetadata)
-            sources = chunk.groundingMetadata;
+          if (chunk.type === "grounding" && chunk.groundingMetadata) sources = chunk.groundingMetadata;
           setChatMessages((prev) => {
             const next = [...prev];
             const last = next.length - 1;
             if (last < 0 || next[last].role !== "ai") return prev;
-            next[last] = {
-              ...next[last],
-              text: currentText,
-              tools: [...tools],
-              sources,
-              isThinking,
-            };
+            next[last] = { ...next[last], text: currentText, tools: [...tools], sources, isThinking };
             return next;
           });
         },
@@ -607,175 +410,179 @@ export const AISpotlight: React.FC<TopAIProps> = ({
     setLoading(false);
   };
 
+  const isEmpty = chatMessages.length === 0 && !loading;
+
   return (
     <ChatContainerRoot
       id="ai-spotlight"
       ref={sectionRef}
-      className="bg-[#0A0A0A] relative h-full font-body"
+      className="bg-[#0A0A0A] relative h-full font-body flex flex-col"
     >
-      <ChatContainerContent className="flex-1 relative z-10 px-4 pt-6">
-        <div className="max-w-2xl mx-auto space-y-1">
-          {chatMessages.length === 0 &&
-            !loading &&
-            categoryResults.length === 0 &&
-            !insightMode &&
-            !wrappedMode && (
-              <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
-                <h3 className="text-3xl font-semibold text-zinc-100 tracking-tight">
-                  Ask Harvey
-                </h3>
-                <p className="text-zinc-500 text-base mt-2 max-w-sm">
-                  Your music assistant. Ask anything about your listening history.
-                </p>
+      <ChatContainerContent className="flex-1 relative z-10 px-4 pt-5 overflow-y-auto">
+        <div className="max-w-2xl mx-auto">
+          {isEmpty && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center min-h-[360px] text-center pb-6"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-foreground/[0.05] border border-white/[0.06] flex items-center justify-center mb-5">
+                <Sparkles size={20} className="text-foreground/40" />
               </div>
-            )}
-          {chatMessages.map((msg, idx) => (
-            <div key={idx} className={`flex w-full mb-6 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[85%] ${msg.role === "user" ? "ml-auto" : "mr-auto"}`}>
-                {msg.role === "user" ? (
-                  <div>
-                    <div className="bg-zinc-800 text-zinc-100 rounded-2xl rounded-br-md px-4 py-3 text-[15px] leading-relaxed">
-                      {msg.text}
+              <h3 className="text-[22px] font-bold text-foreground tracking-tight mb-1">
+                Ask Harvey
+              </h3>
+              <p className="text-foreground/40 text-[14px] max-w-[260px] leading-relaxed mb-8">
+                Your personal music analyst. Ask anything.
+              </p>
+              <div className="w-full max-w-sm space-y-2">
+                {SUGGESTIONS.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleQuery(s)}
+                    className="w-full text-left px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[13px] text-foreground/50 hover:text-foreground/80 hover:bg-white/[0.06] hover:border-white/[0.12] transition-all"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          <div className="space-y-5 pb-4">
+            {chatMessages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`flex w-full ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div className={`${msg.role === "user" ? "max-w-[78%]" : "max-w-[92%] w-full"}`}>
+                  {msg.role === "user" ? (
+                    <div>
+                      <div className="bg-white/[0.07] text-foreground rounded-2xl rounded-br-md px-4 py-2.5 text-[14px] leading-relaxed border border-white/[0.06]">
+                        {msg.text}
+                      </div>
+                      <p className="text-[10px] mt-1 text-foreground/20 text-right">
+                        {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </p>
                     </div>
-                    <p className="text-[11px] mt-1.5 text-zinc-600 text-right">
-                      {msg.timestamp.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                ) : (
-                  <div>
-                    {msg.isThinking && !msg.text && (
-                      <div className="py-2">
-                        <Loader variant="text-shimmer">
-                          Analyzing history...
-                        </Loader>
-                      </div>
-                    )}
-                    {msg.tools && msg.tools.length > 0 && (
-                      <CollapsibleTools
-                        tools={msg.tools}
-                        onVote={(sels) =>
-                          handleQuery(`User selected: ${sels.join(", ")}`)
-                        }
-                      />
-                    )}
-                    {msg.text && (
-                      <div className="text-[15px] leading-relaxed text-zinc-200 prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-table:border prose-table:border-zinc-800 prose-th:border prose-th:border-zinc-800 prose-td:border prose-td:border-zinc-800 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-img:rounded-2xl prose-headings:text-zinc-100 prose-a:text-zinc-300 prose-strong:text-zinc-100 prose-code:text-zinc-300">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            img: ({ node, ...props }) => (
-                              <img
-                                {...props}
-                                className="max-w-full md:max-w-md h-auto rounded-2xl shadow-xl border border-zinc-800 mx-auto"
-                                loading="lazy"
-                              />
-                            ),
-                            table: ({ node, ...props }) => (
-                              <div className="overflow-x-auto my-4 rounded-xl border border-zinc-800 bg-zinc-900/50">
-                                <table
-                                  {...props}
-                                  className="min-w-full divide-y divide-zinc-800"
-                                />
-                              </div>
-                            ),
-                          }}
-                        >
-                          {msg.text}
-                        </ReactMarkdown>
-                      </div>
-                    )}
-                    {msg.sources && msg.sources.groundingChunks && (
-                      <div className="mt-4 pt-4 border-t border-zinc-800/50">
-                        <p className="text-xs text-zinc-500 mb-2 font-medium">
-                          Sources
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {msg.sources.groundingChunks.map(
-                            (c: any, ci: number) =>
-                              c.web?.uri ? (
-                                <Source
-                                  key={ci}
-                                  href={c.web.uri}
-                                  showFavicon={true}
-                                >
-                                  <SourceTrigger
-                                    label={c.web.title || "Source"}
-                                  />
-                                  <SourceContent
-                                    title={c.web.title}
-                                    description={c.web.uri}
-                                  />
-                                </Source>
-                              ) : null,
-                          )}
+                  ) : (
+                    <div>
+                      {msg.isThinking && !msg.text && (
+                        <div className="py-1.5 px-1">
+                          <Loader variant="text-shimmer" className="text-foreground/30 text-[13px]">
+                            Thinking...
+                          </Loader>
                         </div>
-                      </div>
-                    )}
-                    <p className="text-[11px] mt-1.5 text-zinc-600">
-                      {msg.timestamp.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                )}
+                      )}
+                      {msg.tools && msg.tools.length > 0 && (
+                        <CollapsibleTools
+                          tools={msg.tools}
+                          onVote={(sels) => handleQuery(`User selected: ${sels.join(", ")}`)}
+                        />
+                      )}
+                      {msg.text && (
+                        <div className="text-[14px] leading-relaxed text-foreground/80 prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-p:text-foreground/80 prose-p:my-1.5 prose-headings:text-foreground prose-headings:font-semibold prose-headings:mt-4 prose-headings:mb-1.5 prose-li:text-foreground/70 prose-li:my-0.5 prose-strong:text-foreground prose-code:text-foreground/70 prose-code:bg-white/[0.06] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[12px] prose-a:text-foreground/60 prose-a:underline prose-a:underline-offset-2 prose-table:text-[13px] prose-th:font-semibold prose-th:text-foreground/60 prose-td:text-foreground/70">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              img: ({ node, ...props }) => (
+                                <img
+                                  {...props}
+                                  className="max-w-full md:max-w-sm h-auto rounded-xl shadow-lg border border-white/[0.06] mx-auto my-3"
+                                  loading="lazy"
+                                />
+                              ),
+                              table: ({ node, ...props }) => (
+                                <div className="overflow-x-auto my-3 rounded-xl border border-white/[0.07] bg-white/[0.02]">
+                                  <table {...props} className="min-w-full divide-y divide-white/[0.06]" />
+                                </div>
+                              ),
+                              th: ({ node, ...props }) => (
+                                <th {...props} className="px-3 py-2 text-left text-[11px] uppercase tracking-wider text-foreground/40 font-semibold" />
+                              ),
+                              td: ({ node, ...props }) => (
+                                <td {...props} className="px-3 py-2 border-t border-white/[0.04]" />
+                              ),
+                            }}
+                          >
+                            {msg.text}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                      {msg.sources && msg.sources.groundingChunks && (
+                        <div className="mt-3 pt-3 border-t border-white/[0.05]">
+                          <p className="text-[10px] text-foreground/25 mb-2 uppercase tracking-widest font-semibold">Sources</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {msg.sources.groundingChunks.map((c: any, ci: number) =>
+                              c.web?.uri ? (
+                                <Source key={ci} href={c.web.uri} showFavicon={true}>
+                                  <SourceTrigger label={c.web.title || "Source"} />
+                                  <SourceContent title={c.web.title} description={c.web.uri} />
+                                </Source>
+                              ) : null
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {msg.text && (
+                        <p className="text-[10px] mt-1.5 text-foreground/20">
+                          {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
           <div ref={messagesEndRef} />
         </div>
+
         {errorMsg && (
-          <div className="max-w-2xl mx-auto mb-4 bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-xs font-mono flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <div className="max-w-2xl mx-auto mb-4 bg-red-500/[0.08] border border-red-500/[0.15] text-red-400/80 p-3 rounded-xl text-[12px] flex items-center gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
             {errorMsg}
           </div>
         )}
       </ChatContainerContent>
 
-      <div className="flex-shrink-0 bg-transparent px-4 py-4 relative z-10">
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileUpload}
-          className="hidden"
-          accept=".json"
-        />
+      <div className="flex-shrink-0 px-4 pb-4 pt-2 relative z-10">
+        <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".json" />
         <div className="max-w-2xl mx-auto">
           <PromptInput
             value={userPrompt}
             onValueChange={setUserPrompt}
             onSubmit={() => handleQuery()}
             isLoading={loading}
-            className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-sm focus-within:border-zinc-700 transition-colors"
+            className="bg-white/[0.04] border border-white/[0.08] rounded-2xl shadow-none focus-within:border-white/[0.15] transition-colors"
           >
             <PromptInputTextarea
-              placeholder="Ask Harvey"
-              className="text-zinc-100 placeholder:text-zinc-600 min-h-[48px] px-4 py-3.5 text-[15px]"
+              placeholder="Ask Harvey..."
+              className="text-foreground placeholder:text-foreground/25 min-h-[44px] max-h-[120px] px-4 py-3 text-[14px] bg-transparent resize-none"
             />
             <PromptInputActions className="justify-end pt-0 pb-2 pr-2 flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 rounded-xl hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors"
+              <button
+                className="h-8 w-8 rounded-xl hover:bg-white/[0.06] text-foreground/30 hover:text-foreground/60 transition-colors flex items-center justify-center"
                 onClick={() => setToolsModalOpen(true)}
               >
-                <Zap className="w-4 h-4" />
-              </Button>
-              <Button
+                <Zap className="w-3.5 h-3.5" />
+              </button>
+              <button
                 onClick={() => handleQuery()}
                 disabled={loading || !userPrompt.trim()}
-                size="icon"
-                className={`h-9 w-9 rounded-xl transition-all ${loading || !userPrompt.trim() ? "bg-zinc-800 text-zinc-600" : "bg-zinc-100 text-zinc-900 hover:bg-white"}`}
+                className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all ${
+                  loading || !userPrompt.trim()
+                    ? "bg-white/[0.06] text-foreground/20 cursor-not-allowed"
+                    : "bg-foreground text-background hover:opacity-90"
+                }`}
               >
                 {loading ? (
-                  <RefreshCcw className="w-4 h-4 animate-spin" />
+                  <RefreshCcw className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <ArrowUp className="w-4 h-4" />
+                  <ArrowUp className="w-3.5 h-3.5" />
                 )}
-              </Button>
+              </button>
             </PromptInputActions>
           </PromptInput>
         </div>
