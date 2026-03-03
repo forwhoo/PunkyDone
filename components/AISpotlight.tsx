@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Card } from "./UIComponents";
-
-//
 import { ActivityHeatmap } from "./ActivityHeatmap";
 import {
   Sparkles,
@@ -124,7 +122,6 @@ import {
   ChainOfThoughtItem,
 } from "@/components/prompt-kit/chain-of-thought";
 
-// ─── Lucide Icon Map for Tool Call Pills ────────────────────────
 const TOOL_LUCIDE_MAP: Record<string, LucideIcon> = {
   Music,
   Mic2,
@@ -168,6 +165,7 @@ const TOOL_LUCIDE_MAP: Record<string, LucideIcon> = {
   Target,
   vote: CheckSquare,
 };
+
 const ToolIcon = ({
   iconName,
   size = 12,
@@ -179,10 +177,9 @@ const ToolIcon = ({
   if (IconComponent) {
     return <IconComponent size={size} />;
   }
-
-  // Fallback to Zap for unknown icon names
   return <Zap size={size} />;
 };
+
 const VoteTool = ({
   tool,
   onVote,
@@ -212,9 +209,9 @@ const VoteTool = ({
     onVote(selections);
   };
   return (
-    <div className="w-full max-w-md my-4 border border-[#3A3A37] rounded-2xl overflow-hidden bg-[#252523] p-5 ">
-      <h4 className="text-[15px] font-bold text-[#EDEAE2] mb-4 flex items-center gap-2">
-        <CheckSquare size={16} className="text-[#E8806A]" />
+    <div className="w-full max-w-md my-4 border border-zinc-800 rounded-2xl overflow-hidden bg-zinc-900 p-5">
+      <h4 className="text-[15px] font-semibold text-zinc-100 mb-4 flex items-center gap-2">
+        <CheckSquare size={16} className="text-zinc-400" />
         {title}
       </h4>
       <div className="space-y-2">
@@ -225,13 +222,13 @@ const VoteTool = ({
             onClick={() => toggleOption(opt)}
             className={`w-full text-left px-4 py-3 rounded-xl border transition-all text-sm font-medium flex items-center justify-between ${
               selections.includes(opt)
-                ? "bg-[#2E2E2C] border-[#d97757]/40 text-[#EDEAE2]"
-                : "bg-[#2E2E2C]/50 border-[#3A3A37] text-[#EDEAE2]/60 hover:border-[#3A3A37]/30"
+                ? "bg-zinc-800 border-zinc-600 text-zinc-100"
+                : "bg-zinc-800/50 border-zinc-800 text-zinc-400 hover:border-zinc-700"
             } ${submitted && !selections.includes(opt) ? "opacity-40" : ""}`}
           >
             <span>{opt}</span>
             {selections.includes(opt) && (
-              <CheckCircle size={14} className="text-[#E8806A]" />
+              <CheckCircle size={14} className="text-zinc-300" />
             )}
           </button>
         ))}
@@ -240,19 +237,20 @@ const VoteTool = ({
         <Button
           onClick={handleSubmit}
           disabled={selections.length === 0}
-          className="w-full mt-4 bg-[#252523] text-[#EDEAE2] hover:bg-zinc-200 font-bold py-2.5"
+          className="w-full mt-4 bg-zinc-100 text-zinc-900 hover:bg-zinc-200 font-semibold py-2.5"
         >
           Submit Vote
         </Button>
       )}
       {submitted && (
-        <p className="text-[11px] text-[#EDEAE2]/40 text-center mt-3 font-medium italic">
+        <p className="text-[11px] text-zinc-500 text-center mt-3 font-medium italic">
           Vote submitted
         </p>
       )}
     </div>
   );
 };
+
 const CollapsibleTools = ({
   tools,
   onVote,
@@ -262,19 +260,15 @@ const CollapsibleTools = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   if (!tools || tools.length === 0) return null;
-
-  // Check
-  //
-  // if there is a vote tool
   const voteTool = tools.find((t) => t.type === "vote");
   return (
-    <div className="w-full max-w-md my-4 border border-[#3A3A37] rounded-xl overflow-hidden bg-[#252523]">
+    <div className="w-full max-w-md my-3 border border-zinc-800 rounded-xl overflow-hidden bg-zinc-900/50">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[#252523] transition-colors text-[12px] font-medium text-[#EDEAE2]/50"
+        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-zinc-800/50 transition-colors text-[12px] font-medium text-zinc-500"
       >
         <div className="flex items-center gap-2">
-          <Zap size={12} className="text-[#FF9F0A]" />
+          <Zap size={12} className="text-amber-500" />
           <span>Tools ({tools.length} calls)</span>
         </div>
         {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -288,12 +282,12 @@ const CollapsibleTools = ({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-3 space-y-2 border-t border-[#3A3A37] pt-3 bg-[#1C1C1A]/20">
+            <div className="px-3 pb-3 space-y-2 border-t border-zinc-800 pt-3">
               {tools.map((tool, idx) => (
                 <Tool
                   key={idx}
                   toolPart={tool}
-                  className="my-0 border-[#3A3A37] bg-transparent"
+                  className="my-0 border-zinc-800 bg-transparent"
                 />
               ))}
             </div>
@@ -305,7 +299,6 @@ const CollapsibleTools = ({
   );
 };
 
-// ... existing interfaces ...
 interface TopAIProps {
   token?: string | null;
   history?: any[];
@@ -325,6 +318,7 @@ interface TopAIProps {
   user?: any;
   initialQuery?: string;
 }
+
 interface Skill {
   id: string;
   label: string;
@@ -332,6 +326,7 @@ interface Skill {
   description?: string;
   system_prompt?: string;
 }
+
 const DEFAULT_SKILLS: Skill[] = [
   { id: "default", label: "Default", icon: Sparkles },
   { id: "Music Critic", label: "Music Critic", icon: AlertTriangle },
@@ -346,9 +341,6 @@ interface CategoryResult {
   description: string;
   stats: string;
   tracks: any[];
-
-  // View preference
-  //   viewMode?: "standard" | "ranked";
 }
 
 interface ChatMessage {
@@ -360,6 +352,7 @@ interface ChatMessage {
   sources?: any;
   isThinking?: boolean;
 }
+
 export const AISpotlight: React.FC<TopAIProps> = ({
   contextData,
   token,
@@ -370,9 +363,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
   const [loading, setLoading] = useState(false);
   const [categoryResults, setCategoryResults] = useState<CategoryResult[]>([]);
   const [viewMode, setViewMode] = useState<"standard" | "ranked">("standard");
-  const [sortMode, setSortMode] = useState<
-    "mins" | "plays" | "date" | "length"
-  >("mins");
+  const [sortMode, setSortMode] = useState<"mins" | "plays" | "date" | "length">("mins");
   const [insightMode, setInsightMode] = useState(false);
   const [insightData, setInsightData] = useState<any[]>([]);
   const [insightStep, setInsightStep] = useState(0);
@@ -388,7 +379,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<"discover" | "chat">("chat");
-  // Default to chat
   const [typing, setTyping] = useState(false);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_ID);
   const [selectedSkill, setSelectedSkill] = useState("default");
@@ -396,14 +386,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({
   const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
   const [toolsModalOpen, setToolsModalOpen] = useState(false);
   const [discoveryMode, setDiscoveryMode] = useState(false);
-  // Kept for compatibility
-  //
-  // if needed, but UI removed
   const sectionRef = useRef<HTMLDivElement>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Removed manual modelDropdownOpen handling in favor of Popover
   useEffect(() => {
     if (initialQuery && initialQuery.trim()) {
       handleQuery(initialQuery);
@@ -413,8 +399,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, displayedText, loading, categoryResults]);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ... (existing upload logic) ...
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
@@ -469,6 +455,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
     };
     reader.readAsText(file);
   };
+
   const handleQuery = async (manualPrompt?: string) => {
     const promptToUse = manualPrompt || userPrompt;
     if (!promptToUse.trim()) return;
@@ -512,9 +499,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
     setUserPrompt("");
 
     try {
-      // Simplified handling - mostly focusing on Chat now
       const lower = promptToUse.toLowerCase();
-
       setMode("chat");
       const aiMessageId = Date.now();
       setChatMessages((prev) => [
@@ -562,8 +547,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                 state: "output-available",
                 output: chunk.toolCall.result,
               };
-
-            // Intercept set_skill to update the UI
             if (
               chunk.toolCall.name === "set_skill" &&
               chunk.toolCall.arguments?.skill
@@ -576,8 +559,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                 setSelectedSkill(matched.id);
               }
             }
-
-            // Intercept create_skill to add new skill to the list
             if (
               chunk.toolCall.name === "create_skill" &&
               chunk.toolCall.arguments?.title
@@ -619,195 +600,54 @@ export const AISpotlight: React.FC<TopAIProps> = ({
         selectedModel,
         webSearchEnabled,
         chatMessages.slice(-10),
-        // Chat Memory
-        // selectedSkill !== "default" ? selectedSkill : undefined,
       );
     } catch (err: any) {
       setErrorMsg(`Error: ${err.message || "Unknown"}`);
     }
     setLoading(false);
   };
+
   return (
     <ChatContainerRoot
       id="ai-spotlight"
       ref={sectionRef}
-      className="bg-[#1C1C1A] relative h-full font-body"
+      className="bg-[#0A0A0A] relative h-full font-body"
     >
-      <div className="flex-shrink-0 flex items-center justify-between py-3 px-4 border-b border-[#3A3A37] relative z-10 bg-[#1C1C1A] ">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setToolsModalOpen(true)}
-            className="text-xs font-semibold text-[#9E9C95] hover:text-[#EDEAE2] hover:bg-[#2E2E2C] h-9 rounded-xl border border-[#3A3A37] bg-[#252523] px-4"
-          >
-            <Zap size={14} className="mr-2" /> Tools
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setWebSearchEnabled(!webSearchEnabled)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all  text-[11px] font-semibold ${webSearchEnabled ? "bg-[#2E2E2C] border-[#d97757]/30 text-[#E8806A]" : "bg-[#2E2E2C]/50 border-[#3A3A37] text-[#9E9C95] hover:text-[#EDEAE2] hover:border-[#3A3A37]/30"}`}
-            title="Enable Web Search"
-          >
-            <Globe size={11} /> Search
-          </button>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2E2E2C]/50 border border-[#3A3A37] text-[11px] font-semibold text-[#9E9C95] hover:text-[#EDEAE2] hover:border-[#3A3A37]/30 transition-all  min-w-[100px] justify-between">
-                <span className="flex items-center gap-2 truncate">
-                  <UserCog size={11} />
-                  {skills.find((p) => p.id === selectedSkill)?.label || "Skill"}
-                </span>
-                <ChevronDown size={11} />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-[300px] p-2 bg-[#252523] border-[#3A3A37] border-[#3A3A37] z-[10002]"
-              align="end"
-            >
-              <div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto custom-scrollbar">
-                <button
-                  onClick={() => handleQuery("Create a new skill.")}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-center text-[12px] font-bold rounded-lg text-[#1C1C1A] bg-[#E8806A] hover:bg-[#ff9985] transition-colors mb-2"
-                >
-                  <Plus size={14} /> Create New Skill
-                </button>
-                {skills.map((p) => (
-                  <div
-                    key={p.id}
-                    className="border border-[#3A3A37] rounded-lg overflow-hidden mb-1 bg-[#1C1C1A]"
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <button
-                        onClick={() => setSelectedSkill(p.id)}
-                        className={`flex-1 flex items-center gap-2 px-3 py-2 text-left text-[12px] font-medium transition-colors hover:bg-[#2E2E2C]/50 ${selectedSkill === p.id ? "text-[#EDEAE2] bg-[#2E2E2C]/50" : "text-[#9E9C95]"}`}
-                      >
-                        <p.icon size={12} />
-                        {p.label}
-                        {selectedSkill === p.id && (
-                          <CheckCircle
-                            size={12}
-                            className="text-[#E8806A] ml-auto"
-                          />
-                        )}
-                      </button>
-                      {(p.description || p.system_prompt) && (
-                        <button
-                          onClick={() =>
-                            setExpandedSkill(
-                              expandedSkill === p.id ? null : p.id,
-                            )
-                          }
-                          className="px-3 py-2 text-[#9E9C95] hover:text-[#EDEAE2] transition-colors"
-                        >
-                          <ChevronDown
-                            size={12}
-                            className={`transition-transform ${expandedSkill === p.id ? "rotate-180" : ""}`}
-                          />
-                        </button>
-                      )}
-                    </div>
-                    {expandedSkill === p.id &&
-                      (p.description || p.system_prompt) && (
-                        <div className="px-3 pb-3 pt-1 text-[11px] text-[#9E9C95] border-t border-[#3A3A37] bg-[#252523]">
-                          {p.description && (
-                            <p className="mb-2">
-                              <strong>Desc:</strong> {p.description}
-                            </p>
-                          )}
-                          {p.system_prompt && (
-                            <p>
-                              <strong>Prompt:</strong> {p.system_prompt}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2E2E2C]/50 border border-[#3A3A37] text-[11px] font-semibold text-[#9E9C95] hover:text-[#EDEAE2] hover:border-[#3A3A37]/30 transition-all  min-w-[140px] justify-between">
-                <span className="truncate flex items-center gap-2">
-                  <Zap
-                    size={11}
-                    className={
-                      AI_MODELS.find((m) => m.id === selectedModel)?.isReasoning
-                        ? "text-[#FF9F0A]"
-                        : "text-[#9E9C95]"
-                    }
-                  />
-                  {AI_MODELS.find((m) => m.id === selectedModel)?.label ||
-                    "Model"}
-                </span>
-                <ChevronDown size={11} />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-[240px] p-1 bg-[#252523] border-[#3A3A37] border-[#3A3A37] z-[10002]"
-              align="end"
-            >
-              <div className="flex flex-col gap-0.5 max-h-[300px] overflow-y-auto custom-scrollbar">
-                {AI_MODELS.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setSelectedModel(m.id)}
-                    className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left text-[12px] font-medium rounded-lg transition-colors hover:bg-[#2E2E2C]/50 ${selectedModel === m.id ? "text-[#EDEAE2] bg-[#2E2E2C]/50" : "text-[#9E9C95]"}`}
-                  >
-                    <span>{m.label}</span>
-                    <div className="flex items-center gap-2">
-                      {m.isReasoning && (
-                        <span className="text-[9px] font-bold text-[#FF9F0A] bg-[#FF9F0A]/10 px-1.5 py-0.5 rounded-md">
-                          THINK
-                        </span>
-                      )}
-                      {selectedModel === m.id && (
-                        <CheckCircle size={12} className="text-[#EDEAE2]" />
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-
       <ChatContainerContent className="flex-1 relative z-10 px-4 pt-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-2xl mx-auto space-y-1">
           {chatMessages.length === 0 &&
             !loading &&
             categoryResults.length === 0 &&
             !insightMode &&
             !wrappedMode && (
-              <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center bg-[#050505]">
-                <h3 className="text-4xl font-heading font-bold text-[#F5F5F5] tracking-tight mb-2">
-                  Hey, Harvey here.
+              <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
+                <h3 className="text-3xl font-semibold text-zinc-100 tracking-tight">
+                  Ask Harvey
                 </h3>
-                <p className="text-[#A0A0A0] text-lg font-body max-w-md mt-2">
-                  How can we help?
+                <p className="text-zinc-500 text-base mt-2 max-w-sm">
+                  Your music assistant. Ask anything about your listening history.
                 </p>
               </div>
             )}
           {chatMessages.map((msg, idx) => (
-            <Message
-              key={idx}
-              role={msg.role === "user" ? "user" : "ai"}
-              className="mb-8"
-            >
-              <MessageContent
-                className={`text-[16px] leading-relaxed ${msg.role === "user" ? "bg-[#1A1A1A] text-[#F5F5F5] rounded-3xl rounded-tr-sm px-6 py-4 font-body border border-[#2A2A2A] shadow-md" : "text-[#F5F5F5] font-body"}`}
-              >
-                {msg.role === "ai" ? (
-                  <>
+            <div key={idx} className={`flex w-full mb-6 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[85%] ${msg.role === "user" ? "ml-auto" : "mr-auto"}`}>
+                {msg.role === "user" ? (
+                  <div>
+                    <div className="bg-zinc-800 text-zinc-100 rounded-2xl rounded-br-md px-4 py-3 text-[15px] leading-relaxed">
+                      {msg.text}
+                    </div>
+                    <p className="text-[11px] mt-1.5 text-zinc-600 text-right">
+                      {msg.timestamp.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                ) : (
+                  <div>
                     {msg.isThinking && !msg.text && (
-                      <div className="bg-[#1A1A1A]/80 rounded-2xl p-4 max-w-sm border border-[#2A2A2A]">
+                      <div className="py-2">
                         <Loader variant="text-shimmer">
                           Analyzing history...
                         </Loader>
@@ -822,22 +662,22 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                       />
                     )}
                     {msg.text && (
-                      <div className="text-[16px] leading-relaxed markdown-container mt-2 prose prose-zinc max-w-none prose-table:border prose-table:border-[#2A2A2A] prose-th:border prose-th:border-[#2A2A2A] prose-td:border prose-td:border-[#2A2A2A] prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-img:rounded-2xl">
+                      <div className="text-[15px] leading-relaxed text-zinc-200 prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-table:border prose-table:border-zinc-800 prose-th:border prose-th:border-zinc-800 prose-td:border prose-td:border-zinc-800 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-img:rounded-2xl prose-headings:text-zinc-100 prose-a:text-zinc-300 prose-strong:text-zinc-100 prose-code:text-zinc-300">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
                             img: ({ node, ...props }) => (
                               <img
                                 {...props}
-                                className="max-w-full md:max-w-md h-auto rounded-2xl shadow-xl border border-[#2A2A2A] mx-auto"
+                                className="max-w-full md:max-w-md h-auto rounded-2xl shadow-xl border border-zinc-800 mx-auto"
                                 loading="lazy"
                               />
                             ),
                             table: ({ node, ...props }) => (
-                              <div className="overflow-x-auto my-4 rounded-xl border border-[#2A2A2A] bg-[#121212]">
+                              <div className="overflow-x-auto my-4 rounded-xl border border-zinc-800 bg-zinc-900/50">
                                 <table
                                   {...props}
-                                  className="min-w-full divide-y divide-[#F5F5F5]/10"
+                                  className="min-w-full divide-y divide-zinc-800"
                                 />
                               </div>
                             ),
@@ -848,8 +688,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                       </div>
                     )}
                     {msg.sources && msg.sources.groundingChunks && (
-                      <div className="mt-4 pt-4 border-t border-[#2A2A2A]">
-                        <p className="text-xs text-[#A0A0A0] mb-2 font-semibold">
+                      <div className="mt-4 pt-4 border-t border-zinc-800/50">
+                        <p className="text-xs text-zinc-500 mb-2 font-medium">
                           Sources
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -874,26 +714,16 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                         </div>
                       </div>
                     )}
-                    <p className="text-[12px] mt-2 text-[#F5F5F5]/30 font-medium tracking-wide">
+                    <p className="text-[11px] mt-1.5 text-zinc-600">
                       {msg.timestamp.toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
                     </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[16px] leading-relaxed">{msg.text}</p>
-                    <p className="text-[12px] mt-2 text-[#F5F5F5]/40 tracking-wide">
-                      {msg.timestamp.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </>
+                  </div>
                 )}
-              </MessageContent>
-            </Message>
+              </div>
+            </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
@@ -905,7 +735,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
         )}
       </ChatContainerContent>
 
-      <div className="flex-shrink-0 bg-transparent px-4 py-6 relative z-10">
+      <div className="flex-shrink-0 bg-transparent px-4 py-4 relative z-10">
         <input
           type="file"
           ref={fileInputRef}
@@ -913,44 +743,37 @@ export const AISpotlight: React.FC<TopAIProps> = ({
           className="hidden"
           accept=".json"
         />
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-2xl mx-auto">
           <PromptInput
             value={userPrompt}
             onValueChange={setUserPrompt}
             onSubmit={() => handleQuery()}
             isLoading={loading}
-            className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[32px] shadow-lg"
+            className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-sm focus-within:border-zinc-700 transition-colors"
           >
             <PromptInputTextarea
-              placeholder="Find a party near me"
-              className="text-[#F5F5F5] placeholder:text-[#A0A0A0] min-h-[56px] px-6 py-4 text-[16px]"
+              placeholder="Ask Harvey"
+              className="text-zinc-100 placeholder:text-zinc-600 min-h-[48px] px-4 py-3.5 text-[15px]"
             />
-            <PromptInputActions className="justify-end pt-0 pb-2 pr-3 flex items-center gap-2">
+            <PromptInputActions className="justify-end pt-0 pb-2 pr-2 flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 rounded-full hover:bg-[#2A2A2A] text-[#A0A0A0] hover:text-[#F5F5F5] transition-all"
+                className="h-9 w-9 rounded-xl hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors"
                 onClick={() => setToolsModalOpen(true)}
               >
-                <Image className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-full hover:bg-[#2A2A2A] text-[#A0A0A0] hover:text-[#F5F5F5] transition-all"
-              >
-                <Mic2 className="w-5 h-5" />
+                <Zap className="w-4 h-4" />
               </Button>
               <Button
                 onClick={() => handleQuery()}
                 disabled={loading || !userPrompt.trim()}
                 size="icon"
-                className={`h-10 w-10 rounded-full transition-all ml-1 ${loading || !userPrompt.trim() ? "bg-[#2A2A2A] text-[#A0A0A0]" : "bg-[#FFFFFF] text-[#050505] hover:bg-[#E0E0E0] shadow-md"}`}
+                className={`h-9 w-9 rounded-xl transition-all ${loading || !userPrompt.trim() ? "bg-zinc-800 text-zinc-600" : "bg-zinc-100 text-zinc-900 hover:bg-white"}`}
               >
                 {loading ? (
-                  <RefreshCcw className="w-5 h-5 animate-spin" />
+                  <RefreshCcw className="w-4 h-4 animate-spin" />
                 ) : (
-                  <ArrowUp className="w-5 h-5" />
+                  <ArrowUp className="w-4 h-4" />
                 )}
               </Button>
             </PromptInputActions>
