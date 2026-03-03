@@ -550,6 +550,10 @@ function App() {
       }
     },
   );
+  const artistImagesRef = useRef(artistImages);
+  useEffect(() => {
+    artistImagesRef.current = artistImages;
+  }, [artistImages]);
 
   // Top Artist/Album/Song Modal States
   const [selectedTopArtist, setSelectedTopArtist] = useState<Artist | null>(
@@ -627,7 +631,7 @@ function App() {
         .forEach((p: any) => artistsToFetch.add(p.artist_name));
       if (artistsToFetch.size === 0) return;
       const needed = Array.from(artistsToFetch).filter(
-        (name) => !artistImages[name],
+        (name) => !artistImagesRef.current[name],
       );
       if (needed.length > 0) {
         try {
@@ -650,7 +654,7 @@ function App() {
     if (dbUnifiedData || (data && data.artists && data.artists.length > 0)) {
       loadImages();
     }
-  }, [dbUnifiedData, data, token, artistImages]);
+  }, [dbUnifiedData, data, token]);
   const [timeRange, setTimeRange] = useState<
     "Daily" | "Weekly" | "Monthly" | "All Time" | "Custom"
   >("Weekly");
@@ -1758,7 +1762,7 @@ function App() {
         onClose={() => setSelectedTopArtist(null)}
         image={
           selectedTopArtist
-            ? artistImages[selectedTopArtist.name] || selectedTopArtist.image
+            ? artistImages[selectedTopArtist.name] || selectedTopArtist?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedTopArtist.name)}&background=1C1C1E&color=fff`
             : undefined
         }
         color={auraColor}
@@ -1792,7 +1796,7 @@ function App() {
                   <img
                     src={
                       artistImages[selectedTopArtist.name] ||
-                      selectedTopArtist.image ||
+                      selectedTopArtist?.image ||
                       `https://ui-avatars.com/api/?name=${encodeURIComponent(
                         selectedTopArtist.name,
                       )}&background=1C1C1E&color=fff`
