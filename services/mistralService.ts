@@ -113,6 +113,20 @@ const SKILL_DESCRIPTIONS: Record<string, string> = {
 
 export const TOOL_DEFINITIONS = [
   {
+    name: "generate_visual_moodboard",
+    description: "Generates an aesthetic 3x3 HTML image grid moodboard based on search queries. Use this when the user asks for visual things, moodboards, or image grids.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "The search query to generate images for (e.g., 'dark aesthetic cyber')",
+        },
+      },
+      required: ["query"],
+    },
+  },
+  {
     name: "ai_tool_maker",
     description: "Creates a new AI tool dynamically based on user description.",
     parameters: {
@@ -799,6 +813,7 @@ const AGENT_TOOLS = TOOL_DEFINITIONS.map((tool) => ({
 
 // ─── TOOL ICON MAP ──────────────────────────────────────────────
 export const TOOL_ICON_MAP: Record<string, { icon: string; label: string }> = {
+  generate_visual_moodboard: { icon: "Grid3x3", label: "Visual Moodboard" },
   get_top_songs: { icon: "Music", label: "Top Songs" },
   get_forgotten_favorites: { icon: "History", label: "Forgotten Favorites" },
   get_top_artists: { icon: "Mic2", label: "Top Artists" },
@@ -860,6 +875,26 @@ async function executeAgentTool(
 
   try {
     switch (funcName) {
+      case "generate_visual_moodboard": {
+        const query = funcArgs.query || "aesthetic";
+        // Generate a simple deterministic but varied set of 9 images
+        const images = Array.from({ length: 9 }).map((_, i) =>
+          `https://source.unsplash.com/random/400x400/?${encodeURIComponent(query)},${i}`
+        );
+
+        // Return pre-rendered HTML to be injected via Markdown
+        const html = `
+          <div class="grid grid-cols-3 gap-2 mt-4 mb-4 rounded-xl overflow-hidden border border-[#3A3A37] bg-[#1A1A1A] p-2">
+            ${images.map(img => `<img src="${img}" alt="${query}" class="w-full h-auto aspect-square object-cover rounded-md opacity-80 hover:opacity-100 transition-opacity" />`).join('')}
+          </div>
+        `;
+
+        return {
+          type: "html",
+          content: html,
+          message: `Generated a visual moodboard for "${query}".`
+        };
+      }
       case "get_top_songs": {
         const period = funcArgs.period || "Weekly";
         const limit = Math.min(funcArgs.limit || 8, 20);
