@@ -108,12 +108,13 @@ interface ToolsModalProps {
   onSelectTool: (toolName: string) => void;
 }
 export const ToolsModal: React.FC<ToolsModalProps> = ({
+  customTools,
   isOpen,
   onClose,
   onSelectTool,
 }) => {
   const [search, setSearch] = React.useState("");
-  const allTools = [...TOOL_DEFINITIONS, ...customTools];
+  const allTools = [...TOOL_DEFINITIONS, ...(customTools || [])];
   const filteredTools = allTools.filter(
     (t) =>
       t.name.toLowerCase().includes(search.toLowerCase()) ||
