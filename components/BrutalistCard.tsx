@@ -26,6 +26,11 @@ export const BrutalistCard: React.FC<BrutalistCardProps> = ({
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  if (!artist) return null;
+  const imageSrc =
+    image ||
+    artist.image ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=1C1C1E&color=fff`;
   const downloadCard = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!cardRef.current) return;
@@ -83,7 +88,7 @@ export const BrutalistCard: React.FC<BrutalistCardProps> = ({
         <div className="relative mx-3 mt-3 border-[4px] border-black aspect-square bg-card overflow-hidden">
           {" "}
           <img
-            src={image || artist.image}
+            src={imageSrc}
             alt={artist.name}
             className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
             crossOrigin="anonymous"
