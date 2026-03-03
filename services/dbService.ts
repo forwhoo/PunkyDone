@@ -9,11 +9,7 @@ export interface HistoryItem {
   album_name: string;
   album_cover: string;
   duration_ms: number;
-  user_timezone?: string;
-  popularity?: number;
-  // Requires extra fetch usually, but we can store
-  //
-  // if we had it
+  // user_timezone and popularity removed — not guaranteed DB columns
 }
 
 // DYNAMIC CHART GENERATION (No Stored Table)
@@ -85,8 +81,6 @@ export const logSinglePlay = async (
     duration_ms: track.duration_ms
       ? Math.min(listenedMs, track.duration_ms)
       : listenedMs,
-    user_timezone:
-      extraData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
   };
 
   // Retry up to 3 times on transient failures
