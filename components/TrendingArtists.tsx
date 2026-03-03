@@ -697,21 +697,16 @@ m`,
                       key={item.id}
                       className="absolute top-1/2 left-1/2 w-0 h-0 pointer-events-auto"
                       style={{
-                        transform: `rotate(${angle}deg) translate(${radius * 5}
-px) rotate(-${angle}
-deg)`,
+                        transform: `rotate(${angle}deg) translate(${radius * 5}px) rotate(-${angle}deg)`,
                       }}
                     >
                       <div className="animate-spin-reverse-slow group-hover:[animation-play-state:paused]">
                         <OrbitNode
-                          i
-                          tem={item}
+                          item={item}
                           rank={i + 2}
                           size={60}
-                          isA
-                          ctive={selectedItem?.id === item.id}
-                          isD
-                          immed={
+                          isActive={selectedItem?.id === item.id}
+                          isDimmed={
                             selectedItem !== null && selectedItem.id !== item.id
                           }
                           onClick={() => handleItemClick(item)}
@@ -739,21 +734,16 @@ deg)`,
                       key={item.id}
                       className="absolute top-1/2 left-1/2 w-0 h-0 pointer-events-auto"
                       style={{
-                        transform: `rotate(${angle}deg) translate(${radius * 5}
-px) rotate(-${angle}
-deg)`,
+                        transform: `rotate(${angle}deg) translate(${radius * 5}px) rotate(-${angle}deg)`,
                       }}
                     >
                       <div className="animate-spin-slow group-hover:[animation-play-state:paused]">
                         <OrbitNode
-                          i
-                          tem={item}
+                          item={item}
                           rank={i + 10}
                           size={40}
-                          isA
-                          ctive={selectedItem?.id === item.id}
-                          isD
-                          immed={
+                          isActive={selectedItem?.id === item.id}
+                          isDimmed={
                             selectedItem !== null && selectedItem.id !== item.id
                           }
                           onClick={() => handleItemClick(item)}

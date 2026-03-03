@@ -1162,10 +1162,8 @@ function App() {
   }
   if (loading || !data) {
     return (
-      <div className="fixed inset-0 bg-background text-foreground flex flex-col items-center justify-center p-6 overflow-hidden font-body z-50">
-        {" "}
-        <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-30">
-          {" "}
+      <div className="fixed inset-0 bg-[#050505] text-[#F5F5F5] flex flex-col items-center justify-center p-6 overflow-hidden z-50">
+        <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-20">
           <Particles
             particleCount={200}
             particleSpread={10}
@@ -1177,36 +1175,47 @@ function App() {
             particleBaseSize={100}
             sizeRandomness={0.5}
             cameraDistance={20}
-          />{" "}
-        </div>{" "}
-        <div className="relative z-10 flex flex-col items-center animate-fade-in">
-          {" "}
-          <div className="w-16 h-16 rounded-2xl bg-background/50 flex items-center justify-center mb-6 border border-border ">
-            {" "}
-            <RefreshCw
-              className="w-8 h-8 text-foreground opacity-80 animate-spin"
-              style={{
-                animationDuration: "3s",
-              }}
-            />{" "}
-          </div>{" "}
-          <h3 className="text-3xl font-bold text-foreground tracking-tight mb-2 text-center ">
-            Syncing Library
-          </h3>{" "}
-          <p className="text-foreground/50 text-sm font-medium tracking-wide">
-            Analyzing your listening history...
-          </p>{" "}
+          />
+        </div>
+        <div className="relative z-10 flex flex-col items-center gap-8">
+          {/* Animated bars */}
+          <div className="flex items-end gap-1.5 h-12">
+            {[0.6, 1, 0.7, 0.9, 0.5, 1, 0.8].map((h, i) => (
+              <div
+                key={i}
+                className="w-1.5 rounded-full bg-[#d97757]"
+                style={{
+                  height: `${h * 100}%`,
+                  animation: `wave-load 1.2s ease-in-out ${i * 0.1}s infinite alternate`,
+                  opacity: 0.7 + h * 0.3,
+                }}
+              />
+            ))}
+          </div>
+          <div className="text-center">
+            <h3 className="text-2xl font-black text-[#F5F5F5] tracking-tight mb-2">
+              Loading your music
+            </h3>
+            <p className="text-[#A0A0A0] text-sm font-medium">
+              Analyzing your listening history...
+            </p>
+          </div>
           {loading === false && !data && (
             <button
               onClick={handleConnect}
               disabled={connecting}
-              className="mt-8 px-8 py-3 bg-background text-foreground text-sm font-bold rounded-full hover:bg-gray-200 transition-colors z-10 shadow-xl"
+              className="mt-4 px-8 py-3 bg-[#F5F5F5] text-[#050505] text-sm font-bold rounded-full hover:bg-[#d97757] hover:text-white transition-all"
             >
-              {" "}
               {connecting ? "Connecting..." : "Retry Connection"}
             </button>
           )}
-        </div>{" "}
+        </div>
+        <style>{`
+          @keyframes wave-load {
+            from { transform: scaleY(0.4); }
+            to { transform: scaleY(1); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -1529,86 +1538,86 @@ function App() {
           </div>{" "}
           {/*
 // Desktop Date Range Selector */}
-          <div className="flex items-center justify-between mb-12">
-            {" "}
-            <div className="flex gap-2 p-1.5 bg-background/50 rounded-2xl border border-border items-center">
-              {" "}
-              {(["Daily", "Weekly", "Monthly", "All Time"] as const).map(
-                (range) => (
-                  <button
-                    key={range}
-                    onClick={() => {
-                      setTimeRange(range);
-                      setCustomDateRange(null);
-                    }}
-                    className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${timeRange === range ? "bg-background text-foreground shadow-lg scale-105" : "text-foreground/60 hover:text-foreground hover:bg-background"}`}
+          <div className="flex flex-col gap-3 mb-12">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <div className="flex gap-2 p-1.5 bg-[#1A1A1A] rounded-2xl border border-[#2A2A2A] items-center">
+                  {(["Daily", "Weekly", "Monthly", "All Time"] as const).map(
+                    (range) => (
+                      <button
+                        key={range}
+                        onClick={() => {
+                          setTimeRange(range);
+                          setCustomDateRange(null);
+                        }}
+                        className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${timeRange === range ? "bg-[#d97757] text-white shadow-lg" : "text-[#A0A0A0] hover:text-[#F5F5F5] hover:bg-[#2A2A2A]"}`}
+                      >
+                        {range}
+                      </button>
+                    ),
+                  )}
+                  <Popover
+                    open={dateRangePickerOpen}
+                    onOpenChange={setDateRangePickerOpen}
                   >
-                    {" "}
-                    {range}
-                  </button>
-                ),
-              )}
-              <Popover
-                open={dateRangePickerOpen}
-                onOpenChange={setDateRangePickerOpen}
-              >
-                {" "}
-                <PopoverTrigger asChild>
-                  <button
-                    className={cn(
-                      "px-6 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2",
-                      timeRange === "Custom"
-                        ? "bg-background text-foreground shadow-lg scale-105"
-                        : "text-foreground/60 hover:text-foreground hover:bg-background",
-                    )}
-                  >
-                    <Calendar size={14} />
-                    {timeRange === "Custom" && customDateRange
-                      ? `${new Date(customDateRange.start).toLocaleDateString()} - ${new Date(customDateRange.end).toLocaleDateString()}`
-                      : "Custom Range"}
-                  </button>
-                </PopoverTrigger>{" "}
-                <PopoverContent className="w-auto p-0" align="start">
-                  {" "}
-                  <ShadcnCalendar
-                    mode="range"
-                    selected={calendarDate}
-                    onSelect={(range) => {
-                      setCalendarDate(range);
-                      if (range?.from && range?.to) {
-                        setCustomDateRange({
-                          start: format(range.from, "yyyy-MM-dd"),
-                          end: format(range.to, "yyyy-MM-dd"),
-                        });
-                        setTimeRange("Custom");
-                        setDateRangePickerOpen(false);
-                      }
-                    }}
-                    initialFocus
-                  />{" "}
-                </PopoverContent>{" "}
-              </Popover>{" "}
-            </div>{" "}
-            <div className="flex items-center gap-2">
-              {" "}
-              <button
-                onClick={() => setDatabaseViewerOpen(true)}
-                className="p-3 rounded-full bg-background/50 border border-border hover:bg-background transition-all"
-                title="View Database"
-              >
-                {" "}
-                <Database size={20} className="text-foreground/70" />{" "}
-              </button>{" "}
-              <button
-                onClick={handleManualRefresh}
-                className={`p-3 rounded-full bg-background/50 border border-border hover:bg-background transition-all ${isRefreshing ? "animate-spin" : "hover:rotate-180 duration-500"}`}
-                title="Refresh Data"
-              >
-                {" "}
-                <RefreshCw size={20} className="text-foreground/70" />{" "}
-              </button>{" "}
-            </div>{" "}
-          </div>{" "}
+                    <PopoverTrigger asChild>
+                      <button
+                        className={cn(
+                          "px-5 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2",
+                          timeRange === "Custom"
+                            ? "bg-[#d97757] text-white shadow-lg"
+                            : "text-[#A0A0A0] hover:text-[#F5F5F5] hover:bg-[#2A2A2A]",
+                        )}
+                      >
+                        <Calendar size={14} />
+                        {timeRange === "Custom" && customDateRange
+                          ? `${new Date(customDateRange.start).toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${new Date(customDateRange.end).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                          : "Custom"}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <ShadcnCalendar
+                        mode="range"
+                        selected={calendarDate}
+                        onSelect={(range) => {
+                          setCalendarDate(range);
+                          if (range?.from && range?.to) {
+                            setCustomDateRange({
+                              start: format(range.from, "yyyy-MM-dd"),
+                              end: format(range.to, "yyyy-MM-dd"),
+                            });
+                            setTimeRange("Custom");
+                            setDateRangePickerOpen(false);
+                          }
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                {/* Date range label */}
+                <span className="text-xs text-[#A0A0A0] font-medium px-2">
+                  {wrappedRange.label.trim()}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setDatabaseViewerOpen(true)}
+                  className="p-3 rounded-full bg-[#1A1A1A] border border-[#2A2A2A] hover:bg-[#2A2A2A] transition-all"
+                  title="View Database"
+                >
+                  <Database size={20} className="text-[#A0A0A0]" />
+                </button>
+                <button
+                  onClick={handleManualRefresh}
+                  className={`p-3 rounded-full bg-[#1A1A1A] border border-[#2A2A2A] hover:bg-[#2A2A2A] transition-all ${isRefreshing ? "animate-spin" : "hover:rotate-180 duration-500"}`}
+                  title="Refresh Data"
+                >
+                  <RefreshCw size={20} className="text-[#A0A0A0]" />
+                </button>
+              </div>
+            </div>
+          </div>
           <div className="mb-20">
             {showEmptyState ? (
               <EmptyState timeRange={timeRange} />
@@ -1712,15 +1721,22 @@ function App() {
                   </div>
 
                   <div className="lg:col-span-4 space-y-8">
-                    {/* Weekly Votes Component integrated into Bento Desktop Layout */}
-                    <WeeklyVotes songs={safeSongs} />
-
                     <UpcomingArtists
                       recentPlays={safeRecent}
                       topArtists={safeArtists}
                       artistImages={artistImages}
                     />
                   </div>
+                </div>
+
+                {/* Weekly Votes - Full Width Category Section */}
+                <div>
+                  <div className="flex items-center justify-between mb-6 px-1">
+                    <h3 className="text-3xl font-heading font-bold text-foreground tracking-tight">
+                      Weekly Votes
+                    </h3>
+                  </div>
+                  <WeeklyVotes songs={safeSongs} />
                 </div>
 
                 <div className="grid grid-cols-1 gap-8 mt-12">
@@ -1812,10 +1828,8 @@ function App() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent mix-blend-multiply" />{" "}
                   <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
                     {" "}
-                    <div className="bg-background/60 text-foreground px-4 py-2 rounded-2xl font-bold text-sm shadow-xl border border-border flex items-center gap-2">
-                      {" "}
-                      <Trophy size={16} className="text-foreground" /> Rank #
-                      {safeArtists.findIndex(
+                    <div className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-full font-black text-sm border border-white/10">
+                      #{safeArtists.findIndex(
                         (a: Artist) => a.id === selectedTopArtist.id,
                       ) + 1 || "?"}
                     </div>{" "}
@@ -1849,13 +1863,8 @@ function App() {
                     listened{" "}
                   </div>{" "}
                   {artistDiscoveryDate && (
-                    <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-background/50 border border-border text-sm font-medium text-foreground/70">
-                      {" "}
-                      <Calendar size={14} />{" "}
-                      <span>
-                        First discovered{" "}
-                        {new Date(artistDiscoveryDate).toLocaleDateString()}
-                      </span>{" "}
+                    <div className="px-4 py-2 rounded-xl bg-background/50 border border-border text-sm font-medium text-foreground/70">
+                      First heard {new Date(artistDiscoveryDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </div>
                   )}
                 </div>{" "}
@@ -2028,57 +2037,34 @@ function App() {
                 className="flex flex-col gap-0 border-t border-border"
               >
                 {" "}
-                <div className="flex justify-between items-center py-5 border-b border-border hover:bg-background transition-colors px-2">
-                  {" "}
-                  <div className="flex items-center gap-3 text-foreground/50">
-                    {" "}
-                    <TrendingUp size={20} />{" "}
-                    <span className="font-semibold uppercase tracking-wider text-xs">
-                      Total Plays
-                    </span>{" "}
-                  </div>{" "}
-                  <span className="text-2xl font-heading font-bold text-foreground">
+                <div className="flex justify-between items-center py-5 border-b border-border px-2">
+                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Total Plays</span>
+                  <span className="text-2xl font-heading font-black text-foreground">
                     {selectedTopAlbum.totalListens ||
                       (selectedTopAlbum as any).listens ||
                       0}
-                  </span>{" "}
+                  </span>
                 </div>{" "}
-                <div className="flex justify-between items-center py-5 border-b border-border hover:bg-background transition-colors px-2">
-                  {" "}
-                  <div className="flex items-center gap-3 text-foreground/50">
-                    {" "}
-                    <Clock size={20} />{" "}
-                    <span className="font-semibold uppercase tracking-wider text-xs">
-                      Time Listened
-                    </span>{" "}
-                  </div>{" "}
-                  <span className="text-2xl font-heading font-bold text-foreground">
+                <div className="flex justify-between items-center py-5 border-b border-border px-2">
+                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Time Listened</span>
+                  <span className="text-2xl font-heading font-black text-foreground">
                     {selectedTopAlbum.timeStr
                       ? String(selectedTopAlbum.timeStr).replace("m", "")
                       : "0"}
-                    <span className="text-sm text-foreground/50">mins</span>
-                  </span>{" "}
+                    <span className="text-sm text-foreground/40 ml-1">min</span>
+                  </span>
                 </div>{" "}
-                <div className="flex justify-between items-center py-5 border-b border-border hover:bg-background transition-colors px-2">
-                  {" "}
-                  <div className="flex items-center gap-3 text-foreground/50">
-                    {" "}
-                    <Sparkles size={20} />{" "}
-                    <span className="font-semibold uppercase tracking-wider text-xs">
-                      Share of Plays
-                    </span>{" "}
-                  </div>{" "}
-                  <span className="text-2xl font-heading font-bold text-foreground">
-                    {" "}
+                <div className="flex justify-between items-center py-5 border-b border-border px-2">
+                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Share of Plays</span>
+                  <span className="text-2xl font-heading font-black text-foreground">
                     {selectedTopAlbum.totalListens
                       ? Math.round(
                           (selectedTopAlbum.totalListens /
                             (safeRecent.length || 1)) *
                             100,
                         )
-                      : 0}
-                    %{" "}
-                  </span>{" "}
+                      : 0}%
+                  </span>
                 </div>{" "}
               </motion.div>{" "}
             </div>{" "}
@@ -2180,60 +2166,31 @@ function App() {
                 className="grid grid-cols-1 gap-0 border-y border-border"
               >
                 {" "}
-                <div className="flex justify-between items-center py-5 border-b border-border hover:bg-background transition-colors px-4">
-                  {" "}
-                  <div className="flex items-center gap-4 text-foreground/50">
-                    {" "}
-                    <div className="p-2 rounded-xl bg-background/50">
-                      <TrendingUp size={18} />
-                    </div>{" "}
-                    <span className="font-semibold uppercase tracking-wider text-xs">
-                      Total Plays
-                    </span>{" "}
-                  </div>{" "}
+                <div className="flex justify-between items-center py-5 border-b border-border px-4">
+                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Total Plays</span>
                   <span className="text-3xl font-black text-foreground">
                     {selectedTopSong.listens || 0}
-                  </span>{" "}
+                  </span>
                 </div>{" "}
-                <div className="flex justify-between items-center py-5 border-b border-border hover:bg-background transition-colors px-4">
-                  {" "}
-                  <div className="flex items-center gap-4 text-foreground/50">
-                    {" "}
-                    <div className="p-2 rounded-xl bg-background/50">
-                      <Clock size={18} />
-                    </div>{" "}
-                    <span className="font-semibold uppercase tracking-wider text-xs">
-                      Time Listened
-                    </span>{" "}
-                  </div>{" "}
+                <div className="flex justify-between items-center py-5 border-b border-border px-4">
+                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Time Listened</span>
                   <span className="text-3xl font-black text-foreground">
                     {selectedTopSong.timeStr
                       ? String(selectedTopSong.timeStr).replace("m", "")
                       : "0"}
                     <span className="text-base text-foreground/40 ml-1">m</span>
-                  </span>{" "}
+                  </span>
                 </div>{" "}
-                <div className="flex justify-between items-center py-5 hover:bg-background transition-colors px-4">
-                  {" "}
-                  <div className="flex items-center gap-4 text-foreground/50">
-                    {" "}
-                    <div className="p-2 rounded-xl bg-background/50">
-                      <Sparkles size={18} />
-                    </div>{" "}
-                    <span className="font-semibold uppercase tracking-wider text-xs">
-                      Share of Plays
-                    </span>{" "}
-                  </div>{" "}
+                <div className="flex justify-between items-center py-5 px-4">
+                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Share of Plays</span>
                   <span className="text-3xl font-black text-foreground">
-                    {" "}
                     {selectedTopSong.listens
                       ? Math.round(
                           (selectedTopSong.listens / (safeRecent.length || 1)) *
                             100,
                         )
-                      : 0}
-                    %{" "}
-                  </span>{" "}
+                      : 0}%
+                  </span>
                 </div>{" "}
               </motion.div>{" "}
             </div>{" "}
@@ -2255,7 +2212,7 @@ function App() {
             exit={{
               opacity: 0,
             }}
-            className="fixed inset-0 z-[9999] bg-background"
+            className="fixed inset-0 z-[9999] bg-[#050505]"
             style={{
               height: "100dvh",
             }}
@@ -2282,30 +2239,24 @@ function App() {
                 height: "100dvh",
               }}
             >
-              {" "}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
-                {" "}
-                <div className="flex items-center gap-3">
-                  {" "}
-                  <div className="w-8 h-8 rounded-lg bg-background/10 flex items-center justify-center">
-                    {" "}
-                    <Sparkles className="w-4 h-4 text-foreground" />{" "}
-                  </div>{" "}
-                  <h2 className="text-base font-bold text-foreground tracking-tight">
-                    AI Discovery
-                  </h2>{" "}
-                </div>{" "}
+
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#1A1A1A] flex-shrink-0 bg-[#050505]">
+                <div>
+                  <h2 className="text-lg font-black text-[#F5F5F5] tracking-tight">
+                    Harvey
+                  </h2>
+                  <p className="text-[11px] text-[#A0A0A0] font-medium">AI Music Discovery</p>
+                </div>
                 <button
                   onClick={() => {
                     setAiModalOpen(false);
                     setAiInitialQuery(undefined);
                   }}
-                  className="p-2 rounded-full bg-background hover:bg-background/30 text-foreground/50 hover:text-foreground transition-all"
+                  className="w-8 h-8 rounded-full bg-[#1A1A1A] hover:bg-[#2A2A2A] border border-[#2A2A2A] flex items-center justify-center text-[#A0A0A0] hover:text-[#F5F5F5] transition-all"
                 >
-                  {" "}
-                  <X size={18} />{" "}
-                </button>{" "}
-              </div>{" "}
+                  <X size={16} />
+                </button>
+              </div>
               <div className="flex-1 overflow-hidden min-h-0 h-0">
                 {" "}
                 <AISpotlight

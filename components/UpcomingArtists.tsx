@@ -306,7 +306,7 @@ export const UpcomingArtists: React.FC<UpcomingArtistsProps> = ({
               {/* RADAR CHART */}
               <div className="bg-secondary/50 border border-border rounded-3xl p-6 overflow-hidden relative group">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                <ChartRadarGridCircleFill d ata={radarData || undefined} />
+                <ChartRadarGridCircleFill data={radarData || undefined} />
               </div>
 
               {/* Top Tracks */}
