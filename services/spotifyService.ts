@@ -404,7 +404,7 @@ export const fetchArtistImages = async (
           // Rate limit protection
           await delay(Math.random() * 200 + 100);
           const res = await fetch(
-            `https://api.spotify.com/v1/search?q=${encodeURIComponent(
+            `https://api.spotify.com/v1/search?q=artist:${encodeURIComponent(
               name,
             )}&type=artist&limit=1`,
             {
@@ -425,21 +425,26 @@ export const fetchArtistImages = async (
           const data = await res.json();
           const artist = data.artists?.items[0];
 
-          // Verify name match (case-insensitive) to prevent "Drake" -> "Kanye" issues
-          if (
-            artist &&
-            artist.name.toLowerCase().trim() === name.toLowerCase().trim()
-          ) {
-            if (artist.images?.length > 0) {
-              const url = artist.images[0].url;
-              imageMap[name] = url;
-              artistImageCache[name] = url;
-              found++;
+          if (artist) {
+            const foundName = artist.name.toLowerCase().trim();
+            const searchedName = name.toLowerCase().trim();
+            const isMatch =
+              foundName === searchedName ||
+              foundName.includes(searchedName) ||
+              searchedName.includes(foundName);
+
+            if (isMatch) {
+              if (artist.images?.length > 0) {
+                const url = artist.images[0].url;
+                imageMap[name] = url;
+                artistImageCache[name] = url;
+                found++;
+              }
+            } else {
+              console.warn(
+                `[fetchArtistImages] ⚠️ Mismatch: Searched "${name}", found "${artist.name}" - skipping`,
+              );
             }
-          } else if (artist) {
-            console.warn(
-              `[fetchArtistImages] ⚠️ Mismatch: Searched "${name}", found "${artist.name}" - skipping`,
-            );
           }
         } catch (e) {
           console.error(`[fetchArtistImages] ❌ Error for ${name}:`, e);
