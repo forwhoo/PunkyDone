@@ -786,12 +786,12 @@ export const AISpotlight: React.FC<TopAIProps> = ({
             categoryResults.length === 0 &&
             !insightMode &&
             !wrappedMode && (
-              <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center bg-[#1C1C1A]">
-                <h3 className="text-4xl font-heading font-medium text-[#EDEAE2] tracking-tight mb-2">
-                  Good morning, I'm Harvey.
+              <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center bg-[#050505]">
+                <h3 className="text-4xl font-heading font-bold text-[#F5F5F5] tracking-tight mb-2">
+                  Hey, Harvey here.
                 </h3>
-                <p className="text-[#9E9C95] text-lg font-body max-w-md mt-2">
-                  How can I help you analyze your music today?
+                <p className="text-[#A0A0A0] text-lg font-body max-w-md mt-2">
+                  How can we help?
                 </p>
               </div>
             )}
@@ -799,15 +799,15 @@ export const AISpotlight: React.FC<TopAIProps> = ({
             <Message
               key={idx}
               role={msg.role === "user" ? "user" : "ai"}
-              className="mb-6"
+              className="mb-8"
             >
               <MessageContent
-                className={`text-[15px] leading-relaxed ${msg.role === "user" ? "bg-[#2E2E2C] text-[#EDEAE2] rounded-3xl rounded-tr-sm px-6 py-4 font-body" : "text-[#EDEAE2] font-body"}`}
+                className={`text-[16px] leading-relaxed ${msg.role === "user" ? "bg-[#1A1A1A] text-[#F5F5F5] rounded-3xl rounded-tr-sm px-6 py-4 font-body border border-[#2A2A2A] shadow-md" : "text-[#F5F5F5] font-body"}`}
               >
                 {msg.role === "ai" ? (
                   <>
                     {msg.isThinking && !msg.text && (
-                      <div className="bg-[#2E2E2C]/50 rounded-2xl p-4 max-w-sm">
+                      <div className="bg-[#1A1A1A]/80 rounded-2xl p-4 max-w-sm border border-[#2A2A2A]">
                         <Loader variant="text-shimmer">
                           Analyzing history...
                         </Loader>
@@ -822,22 +822,22 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                       />
                     )}
                     {msg.text && (
-                      <div className="text-[16px] leading-relaxed markdown-container mt-2 prose prose-zinc max-w-none prose-table:border prose-table:border-[#3A3A37] prose-th:border prose-th:border-[#3A3A37] prose-td:border prose-td:border-[#3A3A37] prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-img:rounded-xl">
+                      <div className="text-[16px] leading-relaxed markdown-container mt-2 prose prose-zinc max-w-none prose-table:border prose-table:border-[#2A2A2A] prose-th:border prose-th:border-[#2A2A2A] prose-td:border prose-td:border-[#2A2A2A] prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-img:rounded-2xl">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
                             img: ({ node, ...props }) => (
                               <img
                                 {...props}
-                                className="max-w-full md:max-w-md h-auto rounded-xl shadow-xl border border-[#3A3A37] mx-auto"
+                                className="max-w-full md:max-w-md h-auto rounded-2xl shadow-xl border border-[#2A2A2A] mx-auto"
                                 loading="lazy"
                               />
                             ),
                             table: ({ node, ...props }) => (
-                              <div className="overflow-x-auto my-4 rounded-xl border border-[#3A3A37] bg-[#252523]">
+                              <div className="overflow-x-auto my-4 rounded-xl border border-[#2A2A2A] bg-[#121212]">
                                 <table
                                   {...props}
-                                  className="min-w-full divide-y divide-[#e8e6dc]"
+                                  className="min-w-full divide-y divide-[#F5F5F5]/10"
                                 />
                               </div>
                             ),
@@ -848,8 +848,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                       </div>
                     )}
                     {msg.sources && msg.sources.groundingChunks && (
-                      <div className="mt-4 pt-4 border-t border-[#3A3A37]">
-                        <p className="text-xs text-[#9E9C95] mb-2 font-semibold">
+                      <div className="mt-4 pt-4 border-t border-[#2A2A2A]">
+                        <p className="text-xs text-[#A0A0A0] mb-2 font-semibold">
                           Sources
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -874,7 +874,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                         </div>
                       </div>
                     )}
-                    <p className="text-[11px] mt-2 text-[#EDEAE2]/30 font-medium">
+                    <p className="text-[12px] mt-2 text-[#F5F5F5]/30 font-medium tracking-wide">
                       {msg.timestamp.toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -883,8 +883,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                   </>
                 ) : (
                   <>
-                    <p className="text-[15px] leading-relaxed">{msg.text}</p>
-                    <p className="text-[11px] mt-1.5 text-[#EDEAE2]/40">
+                    <p className="text-[16px] leading-relaxed">{msg.text}</p>
+                    <p className="text-[12px] mt-2 text-[#F5F5F5]/40 tracking-wide">
                       {msg.timestamp.toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -919,18 +919,33 @@ export const AISpotlight: React.FC<TopAIProps> = ({
             onValueChange={setUserPrompt}
             onSubmit={() => handleQuery()}
             isLoading={loading}
-            className="bg-[#2E2E2C] border border-[#3A3A37]/30  rounded-[32px] "
+            className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[32px] shadow-lg"
           >
             <PromptInputTextarea
-              placeholder="How can I help you analyze your music?"
-              className="text-[#EDEAE2] placeholder:text-[#EDEAE2]/50 min-h-[52px] px-6 py-4 text-[16px]"
+              placeholder="Find a party near me"
+              className="text-[#F5F5F5] placeholder:text-[#A0A0A0] min-h-[56px] px-6 py-4 text-[16px]"
             />
-            <PromptInputActions className="justify-end pt-0 pb-2 pr-2">
+            <PromptInputActions className="justify-end pt-0 pb-2 pr-3 flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-full hover:bg-[#2A2A2A] text-[#A0A0A0] hover:text-[#F5F5F5] transition-all"
+                onClick={() => setToolsModalOpen(true)}
+              >
+                <Image className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-full hover:bg-[#2A2A2A] text-[#A0A0A0] hover:text-[#F5F5F5] transition-all"
+              >
+                <Mic2 className="w-5 h-5" />
+              </Button>
               <Button
                 onClick={() => handleQuery()}
                 disabled={loading || !userPrompt.trim()}
                 size="icon"
-                className={`h-10 w-10 rounded-full transition-all ${loading || !userPrompt.trim() ? "bg-[#2E2E2C] text-[#EDEAE2]/40" : "bg-[#E8806A] text-[#EDEAE2] hover:bg-[#ff4f66] shadow-lg  "}`}
+                className={`h-10 w-10 rounded-full transition-all ml-1 ${loading || !userPrompt.trim() ? "bg-[#2A2A2A] text-[#A0A0A0]" : "bg-[#FFFFFF] text-[#050505] hover:bg-[#E0E0E0] shadow-md"}`}
               >
                 {loading ? (
                   <RefreshCcw className="w-5 h-5 animate-spin" />
