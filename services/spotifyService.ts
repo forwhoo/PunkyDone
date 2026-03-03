@@ -154,7 +154,7 @@ export const fetchSpotifyData = async (token: string) => {
         }),
       ]);
 
-    // Handle 401 Unauthorized globally for any endpoint
+    // Handle 401 Unauthorized globally — always a hard fail
     if (
       [artistsRes, tracksRes, recentRes, userRes, nowPlayingRes].some(
         (r) => r.status === 401,
@@ -163,12 +163,29 @@ export const fetchSpotifyData = async (token: string) => {
       console.warn("Spotify Token Unauthorized (401)");
       return null;
     }
-    if (!artistsRes.ok || !tracksRes.ok || !recentRes.ok || !userRes.ok) {
-      console.warn("Spotify API Error:", artistsRes.status, tracksRes.status);
+
+    // Only recently-played and user profile are critical.
+    // top/artists and top/tracks may be restricted (403) per Spotify's Nov 2024 API changes.
+    if (!recentRes.ok || !userRes.ok) {
+      console.warn(
+        "Spotify API Error on critical endpoints:",
+        recentRes.status,
+        userRes.status,
+      );
       return null;
     }
-    const artistsData = await artistsRes.json();
-    const tracksData = await tracksRes.json();
+
+    // Log degraded mode if top endpoints are unavailable
+    if (!artistsRes.ok || !tracksRes.ok) {
+      console.warn(
+        `[Spotify] top/artists (${artistsRes.status}) or top/tracks (${tracksRes.status}) unavailable — ` +
+        `likely restricted by Spotify's Nov 2024 API changes. Falling back to recently-played only.`,
+      );
+    }
+
+    // Parse responses — top endpoints gracefully fall back to empty
+    const artistsData = artistsRes.ok ? await artistsRes.json() : { items: [] };
+    const tracksData = tracksRes.ok ? await tracksRes.json() : { items: [] };
     const recentData = await recentRes.json();
     const userData = await userRes.json();
 
@@ -207,12 +224,12 @@ export const fetchSpotifyData = async (token: string) => {
         is_playing,
         progress_ms,
       },
-      artists: mapArtists(artistsData.items),
-      songs: mapSongs(tracksData.items),
-      albums: mapAlbumsFromTracks(tracksData.items),
-      hourly: mapRecentToHourly(recentData.items),
-      chart: mapRecentToDaily(recentData.items),
-      recentRaw: recentData.items,
+      artists: mapArtists(artistsData.items || []),
+      songs: mapSongs(tracksData.items || []),
+      albums: mapAlbumsFromTracks(tracksData.items || []),
+      hourly: mapRecentToHourly(recentData.items || []),
+      chart: mapRecentToDaily(recentData.items || []),
+      recentRaw: recentData.items || [],
       // RAW DATA FOR DB SYNC
     };
   } catch (error) {
