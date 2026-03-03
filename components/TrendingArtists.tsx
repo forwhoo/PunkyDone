@@ -554,17 +554,17 @@ m`,
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-[#141413] tracking-tight flex items-center gap-2">
+                <h2 className="text-xl font-bold text-[#F5F5F5] tracking-tight flex items-center gap-2">
                   Obsession Orbit
                 </h2>
                 <div className="relative group/info">
                   <Info
                     size={16}
-                    className="text-[#b0aea5] hover:text-[#141413] transition-colors cursor-help"
+                    className="text-[#A0A0A0] hover:text-[#F5F5F5] transition-colors cursor-help"
                   />
-                  <div className="absolute left-0 top-full mt-2 w-72 bg-white border border-[#e8e6dc] rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
-                    <p className="text-[11px] text-[#b0aea5] leading-relaxed">
-                      <span className="text-[#141413] font-semibold">
+                  <div className="absolute left-0 top-full mt-2 w-72 bg-[#121212] border border-[#2A2A2A] rounded-xl p-3 opacity-0 group-hover/info:opacity-100 pointer-events-none group-hover/info:pointer-events-auto transition-opacity shadow-2xl z-50">
+                    <p className="text-[11px] text-[#A0A0A0] leading-relaxed">
+                      <span className="text-[#F5F5F5] font-semibold">
                         Obsession Orbit
                       </span>{" "}
                       visualizes your top {activeTab}s based on listening
@@ -582,7 +582,7 @@ m`,
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setShowYearDropdown(!showYearDropdown)}
-                  className="flex items-center gap-1 text-[11px] font-medium text-[#b0aea5] bg-white px-3 py-1.5 rounded-lg border border-[#e8e6dc] hover:bg-[#2C2C2E] transition-colors"
+                  className="flex items-center gap-1 text-[11px] font-medium text-[#A0A0A0] bg-[#121212] px-3 py-1.5 rounded-lg border border-[#2A2A2A] hover:bg-[#1A1A1A] transition-colors"
                 >
                   {selectedYear}{" "}
                   <ChevronDown
@@ -591,7 +591,7 @@ m`,
                   />
                 </button>
                 {showYearDropdown && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-[#e8e6dc] rounded-xl shadow-2xl z-50 overflow-hidden min-w-[90px] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="absolute right-0 top-full mt-1 bg-[#121212] border border-[#2A2A2A] rounded-xl shadow-2xl z-50 overflow-hidden min-w-[90px] animate-in fade-in slide-in-from-top-2 duration-200">
                     {AVAILABLE_YEARS.map((year) => (
                       <button
                         key={year}
@@ -600,15 +600,15 @@ m`,
                           setShowYearDropdown(false);
                           setSelectedItem(null);
                         }}
-                        className={`w-full px-3 py-1.5 text-left text-[11px] font-medium flex items-center justify-between gap-2 hover:bg-[#e8e6dc]/50 transition-colors ${
+                        className={`w-full px-3 py-1.5 text-left text-[11px] font-medium flex items-center justify-between gap-2 hover:bg-[#1A1A1A] transition-colors ${
                           year === selectedYear
-                            ? "text-[#141413] bg-[#e8e6dc]/50"
-                            : "text-[#b0aea5]"
+                            ? "text-[#F5F5F5] bg-[#1A1A1A]"
+                            : "text-[#A0A0A0]"
                         }`}
                       >
                         {year}
                         {year === selectedYear && (
-                          <Check size={10} className="text-[#d97757]" />
+                          <Check size={10} className="text-[#FFFFFF]" />
                         )}
                       </button>
                     ))}
@@ -617,16 +617,16 @@ m`,
               </div>
 
               {/* Custom Toggle UI */}
-              <div className="bg-[#1C1C1EFF] p-1 rounded-full flex gap-1 border border-[#e8e6dc] shadow-sm">
+              <div className="bg-[#121212] p-1 rounded-full flex gap-1 border border-[#2A2A2A] shadow-sm">
                 <button
                   onClick={() => setActiveTab("artist")}
-                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === "artist" ? "bg-[#3A3A3C] text-[#141413]" : "text-[#b0aea5] hover:text-[#141413]"}`}
+                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === "artist" ? "bg-[#1A1A1A] text-[#F5F5F5]" : "text-[#A0A0A0] hover:text-[#F5F5F5]"}`}
                 >
                   Artists
                 </button>
                 <button
                   onClick={() => setActiveTab("album")}
-                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === "album" ? "bg-[#3A3A3C] text-[#141413]" : "text-[#b0aea5] hover:text-[#141413]"}`}
+                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-semibold transition-all flex items-center gap-2 ${activeTab === "album" ? "bg-[#1A1A1A] text-[#F5F5F5]" : "text-[#A0A0A0] hover:text-[#F5F5F5]"}`}
                 >
                   Albums
                 </button>
@@ -766,9 +766,9 @@ deg)`,
             </div>
 
             {/* Orbital Rings - Visible circles */}
-            <div className="absolute inset-0 rounded-full border-2 border-[#e8e6dc] scale-[0.68] pointer-events-none"></div>
-            <div className="absolute inset-0 rounded-full border-2 border-[#e8e6dc] scale-[0.96] pointer-events-none"></div>
-            <div className="absolute inset-0 rounded-full border border-[#e8e6dc] scale-[0.82] pointer-events-none"></div>
+            <div className="absolute inset-0 rounded-full border-2 border-[#2A2A2A] scale-[0.68] pointer-events-none"></div>
+            <div className="absolute inset-0 rounded-full border-2 border-[#2A2A2A] scale-[0.96] pointer-events-none"></div>
+            <div className="absolute inset-0 rounded-full border border-[#2A2A2A] scale-[0.82] pointer-events-none"></div>
           </motion.div>
         )}
       </div>
