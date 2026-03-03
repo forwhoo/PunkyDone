@@ -1354,6 +1354,7 @@ function App() {
                   <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar snap-x px-1">
                     {" "}
                     {safeArtists
+                      .filter(Boolean)
                       .slice(0, 6)
                       .map((artist: Artist, index: number) => (
                         <MobileArtistCard
@@ -1391,7 +1392,7 @@ function App() {
                 <div>
                   {" "}
                   {safeSongs.length > 0 ? (
-                    safeSongs.slice(0, 6).map((song: Song, index: number) => (
+                    safeSongs.filter(Boolean).slice(0, 6).map((song: Song, index: number) => (
                       <div
                         key={song.id}
                         onClick={() => setSelectedTopSong(song)}
@@ -1440,6 +1441,7 @@ function App() {
                   <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x px-1">
                     {" "}
                     {safeAlbums
+                      .filter(Boolean)
                       .slice(0, 6)
                       .map((album: Album, index: number) => (
                         <div
@@ -1633,6 +1635,7 @@ function App() {
                       {safeArtists.length > 0 && (
                         <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
                           {safeArtists
+                            .filter(Boolean)
                             .slice(0, 8)
                             .map((artist: Artist, index: number) => (
                               <RankedArtist
@@ -1663,6 +1666,7 @@ function App() {
                       {safeAlbums.length > 0 && (
                         <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
                           {safeAlbums
+                            .filter(Boolean)
                             .slice(0, 8)
                             .map((album: Album, index: number) => (
                               <RankedAlbum
@@ -1692,6 +1696,7 @@ function App() {
                       {safeSongs.length > 0 && (
                         <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
                           {safeSongs
+                            .filter(Boolean)
                             .slice(0, 8)
                             .map((song: Song, index: number) => (
                               <RankedSong
