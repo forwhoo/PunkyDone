@@ -140,12 +140,12 @@ export const TopCharts: React.FC<TopChartsProps> = ({
         </div>
 
         {/* Category Toggle Only - Time range is controlled by parent */}
-        <div className="flex bg-[#2C2C2E] p-1 rounded-lg w-fit">
+        <div className="flex bg-[#2C2C2E] p-1 rounded-lg w-full">
           {["Artists", "Albums", "Songs"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
-              className={`px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide rounded-[6px] transition-all ${
+              className={`flex-1 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide rounded-[6px] transition-all ${
                 activeTab === tab
                   ? "bg-[#d97757] text-foreground shadow-md"
                   : "text-muted-foreground hover:text-foreground"

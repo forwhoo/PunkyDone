@@ -9,8 +9,10 @@ import {
   Search,
   LayoutGrid,
   List as ListIcon,
+  Headphones,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
 const getItemImage = (item: any) =>
   item.cover ||
   item.image ||
@@ -19,6 +21,7 @@ const getItemImage = (item: any) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(
     item.name || item.title || "",
   )}&background=1C1C1E&color=fff`;
+
 interface SeeAllModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -27,6 +30,19 @@ interface SeeAllModalProps {
   type: "artist" | "album" | "song";
   onItemClick?: (item: any) => void;
 }
+
+const TypeIcon = ({ type }: { type: string }) => {
+  if (type === "artist") return <Mic2 size={16} className="text-[#d97757]" />;
+  if (type === "album") return <Disc size={16} className="text-[#3BBFBF]" />;
+  return <Music size={16} className="text-[#F5A623]" />;
+};
+
+const TYPE_ACCENT: Record<string, string> = {
+  artist: "#d97757",
+  album: "#3BBFBF",
+  song: "#F5A623",
+};
+
 export const SeeAllModal: React.FC<SeeAllModalProps> = ({
   isOpen,
   onClose,
@@ -39,21 +55,18 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Reset states when modal opens
+  const accent = TYPE_ACCENT[type] || "#d97757";
+
   useEffect(() => {
     if (isOpen) {
       setSortBy("plays");
       setSearchQuery("");
-
-      // Default to list view for songs, grid for albums/artists could be nice but let's stick to user preference or default setViewMode("list");
+      setViewMode("list");
     }
   }, [isOpen]);
 
-  // Filter and Sort Items Logic
   const processedItems = useMemo(() => {
     let result = [...items];
-
-    // Filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter((item) => {
@@ -62,13 +75,9 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
         return name.includes(query) || artist.includes(query);
       });
     }
-
-    // Sort
     result.sort((a, b) => {
       if (sortBy === "plays") {
-        const playsA = a.totalListens || a.listens || 0;
-        const playsB = b.totalListens || b.listens || 0;
-        return playsB - playsA;
+        return (b.totalListens || b.listens || 0) - (a.totalListens || a.listens || 0);
       }
       if (sortBy === "time") {
         const timeA = parseInt((a.timeStr || "0").replace(/[^0-9]/g, "")) || 0;
@@ -76,16 +85,13 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
         return timeB - timeA;
       }
       if (sortBy === "name") {
-        const nameA = a.name || a.title || "";
-        const nameB = b.name || b.title || "";
-        return nameA.localeCompare(nameB);
+        return (a.name || a.title || "").localeCompare(b.name || b.title || "");
       }
       return 0;
     });
     return result;
   }, [items, sortBy, searchQuery]);
 
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -96,249 +102,226 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
       document.body.style.overflow = "";
     };
   }, [isOpen]);
+
   if (!isOpen) return null;
 
-  // Summary stats (based on filtered items or total? usually filtered is more helpful in this context)
   const totalPlays = processedItems.reduce(
-    (sum, item) => sum + (item.totalListens || item.listens || 0),
-    0,
+    (sum, item) => sum + (item.totalListens || item.listens || 0), 0,
   );
-  const totalTime = processedItems.reduce(
-    (sum, item) =>
-      sum +
-      (parseInt(String(item.timeStr || "0").replace(/[^0-9]/g, ""), 10) || 0),
-    0,
-  );
-  const maxPlays =
-    processedItems.length > 0
-      ? processedItems[0].totalListens || processedItems[0].listens || 1
-      : 1;
+  const maxPlays = processedItems.length > 0
+    ? processedItems[0].totalListens || processedItems[0].listens || 1
+    : 1;
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center w-full h-full">
+        <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center w-full h-full">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-card/90 "
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             onClick={onClose}
           />
 
-          {/* Modal Content - Full Screen */}
+          {/* Modal */}
           <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 50, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative bg-[#09090b] w-full h-full md:h-[90vh] md:w-[90vw] md:max-w-6xl md:rounded-3xl overflow-hidden flex flex-col border border-white/[0.08] shadow-2xl"
+            initial={{ y: 80, opacity: 0, scale: 0.97 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 80, opacity: 0, scale: 0.97 }}
+            transition={{ type: "spring", damping: 28, stiffness: 320 }}
+            className="relative bg-[#0C0C0C] w-full h-[92vh] md:h-[88vh] md:w-[88vw] md:max-w-5xl md:rounded-3xl overflow-hidden flex flex-col rounded-t-3xl"
+            style={{ border: `1px solid ${accent}22` }}
           >
+            {/* Accent line at top */}
+            <div className="h-[2px] w-full flex-shrink-0" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
+
             {/* Header */}
-            <div className="flex-shrink-0 px-6 py-6 bg-gradient-to-b from-white/[0.08] to-transparent border-b border-white/[0.06]  sticky top-0 z-20">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                {/* Title & Search */}
-                <div className="flex-1 flex flex-col md:flex-row md:items-center gap-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
-                      {title}
-                      <span className="text-sm font-normaltext-foreground/40 bg-secondary px-2 py-0.5 rounded-full">
+            <div className="flex-shrink-0 px-6 py-5 border-b border-white/[0.05]">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl border" style={{ background: `${accent}15`, borderColor: `${accent}30` }}>
+                    <TypeIcon type={type} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-2xl font-bold text-foreground tracking-tight">{title}</h2>
+                      <span
+                        className="text-xs font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: `${accent}20`, color: accent }}
+                      >
                         {processedItems.length}
                       </span>
-                    </h2>
-                    {/* Mobile Close Button (visible only on mobile) */}
-                    <button
-                      onClick={onClose}
-                      className="md:hidden bg-secondary hover:bg-[#b0aea5]/30 text-foreground rounded-full p-2 transition-colors"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-
-                  {/* Search Bar */}
-                  <div className="relative group w-full md:max-w-md">
-                    <Search
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40 group-focus-within:text-foreground transition-colors"
-                      size={18}
-                    />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={`Search ${type}s...`}
-                      className="w-full bg-card/[0.05] border border-white/[0.05] focus:border-[#b0aea5]/30 rounded-xl py-2.5 pl-10 pr-4 text-sm text-foreground placeholder-white/30 focus:outline-none focus:bg-card/[0.08] transition-all"
-                    />
+                    </div>
+                    <p className="text-xs text-foreground/30 mt-0.5 font-medium">
+                      {totalPlays.toLocaleString()} total plays
+                    </p>
                   </div>
                 </div>
 
-                {/* Controls */}
-                <div className="flex items-center gap-3 self-end md:self-auto">
-                  {/* Sort Toggle */}
-                  <div className="bg-[#18181b] p-1 rounded-lg flex border border-white/[0.06]">
-                    <button
-                      onClick={() => setSortBy("plays")}
-                      className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1.5 ${sortBy === "plays" ? "bg-card text-black shadow-sm" : "text-foreground/60 hover:text-foreground hover:bg-card/[0.05]"}`}
-                    >
-                      <TrendingUp size={12} /> Plays
-                    </button>
-                    <button
-                      onClick={() => setSortBy("time")}
-                      className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1.5 ${sortBy === "time" ? "bg-card text-black shadow-sm" : "text-foreground/60 hover:text-foreground hover:bg-card/[0.05]"}`}
-                    >
-                      <Clock size={12} /> Time
-                    </button>
-                    <button
-                      onClick={() => setSortBy("name")}
-                      className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1.5 ${sortBy === "name" ? "bg-card text-black shadow-sm" : "text-foreground/60 hover:text-foreground hover:bg-card/[0.05]"}`}
-                    >
-                      A-Z
-                    </button>
-                  </div>
-
-                  {/* View Toggle */}
-                  <div className="bg-[#18181b] p-1 rounded-lg flex border border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  {/* View toggle */}
+                  <div className="bg-white/[0.04] p-1 rounded-xl flex border border-white/[0.06] gap-0.5">
                     <button
                       onClick={() => setViewMode("list")}
-                      className={`p-1.5 rounded-md transition-all ${viewMode === "list" ? "bg-card text-black shadow-sm" : "text-foreground/60 hover:text-foreground hover:bg-card/[0.05]"}`}
+                      className="p-1.5 rounded-lg transition-all"
+                      style={viewMode === "list" ? { background: accent, color: "#000" } : { color: "rgba(255,255,255,0.3)" }}
                     >
-                      <ListIcon size={14} />
+                      <ListIcon size={13} />
                     </button>
                     <button
                       onClick={() => setViewMode("grid")}
-                      className={`p-1.5 rounded-md transition-all ${viewMode === "grid" ? "bg-card text-black shadow-sm" : "text-foreground/60 hover:text-foreground hover:bg-card/[0.05]"}`}
+                      className="p-1.5 rounded-lg transition-all"
+                      style={viewMode === "grid" ? { background: accent, color: "#000" } : { color: "rgba(255,255,255,0.3)" }}
                     >
-                      <LayoutGrid size={14} />
+                      <LayoutGrid size={13} />
                     </button>
                   </div>
-                  {/* Desktop Close Button */}
+
                   <button
                     onClick={onClose}
-                    className="hidden md:flex bg-secondary hover:bg-[#b0aea5]/30 text-foreground rounded-full p-2.5 transition-all hover:scale-105 active:scale-95 ml-2"
+                    className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-foreground/40 hover:text-foreground transition-all border border-white/[0.06]"
                   >
-                    <X size={18} />
+                    <X size={16} />
                   </button>
                 </div>
               </div>
-              {/* Summary Bar */}
-              <div className="flex items-center gap-6 mt-6 text-xs font-medium text-foreground/40">
-                <span className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-card/40"></div>
-                  {processedItems.length} visible
-                </span>
-                <span className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-card/40"></div>
-                  {totalPlays.toLocaleString()} Total Plays
-                </span>
-                <span className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-card/40"></div>
-                  {totalTime.toLocaleString()}m listened
-                </span>
+
+              {/* Search + Sort */}
+              <div className="flex items-center gap-3 mt-4">
+                <div className="relative flex-1 max-w-xs">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/25" size={14} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={`Search ${type}s...`}
+                    className="w-full bg-white/[0.04] border border-white/[0.06] focus:border-white/[0.15] rounded-xl py-2 pl-9 pr-3 text-sm text-foreground placeholder-white/20 focus:outline-none transition-all"
+                  />
+                </div>
+
+                {/* Sort pills */}
+                <div className="flex gap-1.5">
+                  {[
+                    { key: "plays", label: "Plays", icon: TrendingUp },
+                    { key: "time", label: "Time", icon: Clock },
+                    { key: "name", label: "A–Z", icon: null },
+                  ].map(({ key, label, icon: Icon }) => (
+                    <button
+                      key={key}
+                      onClick={() => setSortBy(key as any)}
+                      className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1"
+                      style={
+                        sortBy === key
+                          ? { background: accent, color: "#000" }
+                          : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.06)" }
+                      }
+                    >
+                      {Icon && <Icon size={10} />}
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-            {/* Content Area */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-[#09090b]">
-              {processedItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-foreground/30">
-                  <Search size={48} className="mb-4 opacity-20" />
-                  <p>No results found for "{searchQuery}"</p>
-                </div>
-              ) : (
-                <div
-                  className={
-                    viewMode === "grid"
-                      ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
-                      : "space-y-1"
-                  }
-                >
-                  {processedItems.map((item, index) => {
-                    const plays = item.totalListens || item.listens || 0;
-                    const barWidth = Math.max(0, (plays / maxPlays) * 100);
-                    return (
-                      <motion.div
-                        layout
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index < 20 ? index * 0.03 : 0 }}
-                        key={index}
-                        className={`group cursor-pointer relative overflow-hidden transition-all
-${
-  viewMode === "grid"
-    ? "bg-card hover:bg-card/[0.08] p-4 rounded-2xl flex flex-col items-center text-center gap-3 border border-white/[0.05] hover:border-[#b0aea5]/30 hover:-translate-y-1 hover:shadow-xl"
-    : "flex items-center gap-4 p-3 rounded-xl hover:bg-card/[0.06] active:scale-[0.99] border border-transparent hover:border-white/[0.05]"
-}
-                                                `}
-                        onClick={() => onItemClick?.(item)}
-                      >
-                        {/* List View: Background Bar */}
-                        {viewMode === "list" && (
-                          <div
-                            className="absolute inset-y-0 left-0 bg-card rounded-xl transition-all duration-500"
-                            style={{ width: `${barWidth}%` }}
-                          />
-                        )}
 
-                        {/* Rank Badge */}
-                        <div
-                          className={`
-                                                    ${
-                                                      viewMode === "grid"
-                                                        ? "absolute top-3 left-3 bg-card/50  px-2 py-1 rounded-md text-xs font-bold text-foreground border border-border"
-                                                        : "relative z-10 w-8 text-center text-sm font-bold flex-shrink-0 text-foreground/50 group-hover:text-foreground"
-                                                    }
-                                                `}
-                        >
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {processedItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 text-foreground/20">
+                  <Search size={40} className="mb-3 opacity-30" />
+                  <p className="text-sm">No results for "{searchQuery}"</p>
+                </div>
+              ) : viewMode === "grid" ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {processedItems.map((item, index) => (
+                    <motion.div
+                      key={index}
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index < 20 ? index * 0.025 : 0 }}
+                      className="group cursor-pointer bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.05] hover:border-white/[0.15] rounded-2xl p-3 flex flex-col items-center text-center gap-2.5 transition-all hover:-translate-y-1"
+                      onClick={() => onItemClick?.(item)}
+                    >
+                      <div className="relative w-full aspect-square overflow-hidden rounded-xl">
+                        <img
+                          src={getItemImage(item)}
+                          alt={item.name || item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          style={{ borderRadius: type === "artist" ? "50%" : undefined }}
+                          loading="lazy"
+                        />
+                        <div className="absolute top-2 left-2 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
                           #{index + 1}
                         </div>
-                        {/* Image */}
+                      </div>
+                      <div className="w-full">
+                        <p className="text-[12px] font-semibold text-foreground truncate">{item.name || item.title}</p>
+                        <p className="text-[10px] text-foreground/40 truncate mt-0.5">
+                          {(item.totalListens || item.listens || 0).toLocaleString()} plays
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {processedItems.map((item, index) => {
+                    const plays = item.totalListens || item.listens || 0;
+                    const barWidth = Math.max(2, (plays / maxPlays) * 100);
+                    return (
+                      <motion.div
+                        key={index}
+                        layout
+                        initial={{ opacity: 0, x: -12 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index < 30 ? index * 0.02 : 0 }}
+                        className="group relative cursor-pointer flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition-colors overflow-hidden"
+                        onClick={() => onItemClick?.(item)}
+                      >
+                        {/* Background bar */}
                         <div
-                          className={`relative z-10 overflow-hidden bg-card flex-shrink-0 border border-white/[0.08] group-hover:border-white/30 transition-all shadow-lg
-                                                    ${
-                                                      viewMode === "grid"
-                                                        ? "w-32 h-32 rounded-full shadow-2xl mb-2"
-                                                        : `w-14 h-14 ${type === "artist" ? "rounded-full" : "rounded-lg"}`
-                                                    }`}
-                        >
+                          className="absolute inset-y-0 left-0 rounded-xl transition-all duration-700"
+                          style={{ width: `${barWidth}%`, background: `${accent}12` }}
+                        />
+
+                        {/* Rank */}
+                        <span className="relative z-10 text-[12px] font-bold w-6 text-center flex-shrink-0"
+                          style={{ color: index < 3 ? accent : "rgba(255,255,255,0.3)" }}>
+                          {index + 1}
+                        </span>
+
+                        {/* Image */}
+                        <div className={`relative z-10 flex-shrink-0 overflow-hidden border border-white/[0.08] ${
+                          type === "artist" ? "w-10 h-10 rounded-full" : "w-10 h-10 rounded-lg"
+                        }`}>
                           <img
                             src={getItemImage(item)}
                             alt={item.name || item.title}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                             loading="lazy"
                           />
-                          {/* Play Overlay */}
-                          <div className="absolute inset-0 bg-card/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
-                            {/* Icon removed per request */}
-                          </div>
                         </div>
 
                         {/* Info */}
-                        <div
-                          className={`relative z-10 min-w-0 ${viewMode === "grid" ? "w-full" : "flex-1"}`}
-                        >
-                          <h3
-                            className={`font-semibold text-foreground truncate group-hover:text-foreground/90 transition-colors ${viewMode === "grid" ? "text-base mb-1" : "text-sm"}`}
-                          >
+                        <div className="relative z-10 flex-1 min-w-0">
+                          <p className="text-[13px] font-semibold text-foreground truncate group-hover:text-white transition-colors">
                             {item.name || item.title}
-                          </h3>
-                          <p
-                            className={`text-xs text-foreground/50 truncate ${viewMode === "grid" ? "mx-auto max-w-[90%]" : ""}`}
-                          >
+                          </p>
+                          <p className="text-[11px] text-foreground/40 truncate">
                             {type === "artist"
-                              ? `${item.timeStr || "0m"} listened`
-                              : `${item.artist || ""} ${item.artist ? "•" : ""} ${item.timeStr || "0m"}`}
+                              ? item.timeStr || ""
+                              : `${item.artist || ""}${item.artist ? " · " : ""}${item.timeStr || ""}`}
                           </p>
                         </div>
 
-                        {/* Stats */}
-                        <div
-                          className={`relative z-10 flex-shrink-0 ${viewMode === "grid" ? "bg-card/[0.05] rounded-full px-3 py-1 mt-1" : "text-right"}`}
-                        >
-                          <span
-                            className={`font-bold text-foreground block ${viewMode === "grid" ? "text-xs" : "text-sm"}`}
-                          >
+                        {/* Plays */}
+                        <div className="relative z-10 flex-shrink-0 flex items-center gap-1.5">
+                          <Headphones size={10} style={{ color: `${accent}80` }} />
+                          <span className="text-[12px] font-bold text-foreground/70 group-hover:text-foreground transition-colors">
                             {plays.toLocaleString()}
-                            <span className="text-[9px] uppercase tracking-wider text-foreground/40 ml-1 font-medium">
-                              plays
-                            </span>
                           </span>
                         </div>
                       </motion.div>
