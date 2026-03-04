@@ -1634,6 +1634,7 @@ You have access to a SQL database of the user's Spotify history and can fetch li
 3.  Be concise and witty in your final response (unless skill dictates otherwise).
 4.  Use Markdown for the final response (bold, lists, etc.).
 5.  If the user asks a general question unrelated to their data, use your knowledge.
+6.  When you call the \`vote\` tool to create a poll, do NOT list or repeat the poll options in your text response — the UI renders them automatically. Simply introduce the poll briefly.
 `;
 
 // ─── MAIN AGENT FUNCTION (Streamed) ──────────────────────────────

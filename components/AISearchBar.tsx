@@ -148,10 +148,10 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({
     <div className="w-full relative z-50" ref={containerRef}>
       <form onSubmit={(e) => handleSearch(e)} className="w-full relative">
         <div className="relative flex items-center">
-          <div className="absolute left-3.5 flex items-center pointer-events-none">
+          <div className="absolute left-4 flex items-center pointer-events-none">
             <Search
               className="w-4 h-4 transition-colors duration-200"
-              style={{ color: isFocused ? "#d97757" : "rgba(255,255,255,0.3)" }}
+              style={{ color: isFocused ? "#d97757" : "rgba(255,255,255,0.25)" }}
             />
           </div>
 
@@ -167,28 +167,39 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({
               setIsFocused(true);
             }}
             placeholder="Ask Harvey anything about your music..."
-            className="w-full h-10 rounded-md pl-9 pr-24 text-sm outline-none transition-all duration-200"
+            className="w-full h-11 rounded-2xl pl-10 pr-28 text-sm outline-none transition-all duration-200"
             style={{
-              background: "hsl(0,0%,9%)",
+              background: isFocused ? "hsl(0,0%,10%)" : "hsl(0,0%,8%)",
               border: isFocused
-                ? "1px solid rgba(217,119,87,0.6)"
-                : "1px solid hsl(0,0%,15%)",
+                ? "1px solid rgba(217,119,87,0.5)"
+                : "1px solid hsl(0,0%,14%)",
               color: "hsl(0,0%,95%)",
               caretColor: "#d97757",
               boxShadow: isFocused
-                ? "0 0 0 3px rgba(217,119,87,0.12)"
-                : "none",
+                ? "0 0 0 3px rgba(217,119,87,0.1), 0 4px 16px rgba(0,0,0,0.3)"
+                : "0 2px 8px rgba(0,0,0,0.2)",
             }}
           />
 
-          <div className="absolute right-1.5 flex items-center">
+          <div className="absolute right-2 flex items-center gap-1.5">
+            {query && (
+              <button
+                type="button"
+                onClick={() => { setQuery(""); setSuggestions([]); }}
+                className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-150"
+                style={{ color: "hsl(0,0%,40%)", background: "hsl(0,0%,14%)" }}
+              >
+                ×
+              </button>
+            )}
             <button
               type="submit"
               disabled={loading || !query.trim()}
-              className="h-7 px-3 rounded-sm text-xs font-medium flex items-center gap-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="h-7 px-3.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
-                background: query.trim() ? "#d97757" : "hsl(0,0%,15%)",
+                background: query.trim() ? "linear-gradient(135deg, #d97757, #c45e3e)" : "hsl(0,0%,14%)",
                 color: query.trim() ? "#fff" : "hsl(0,0%,45%)",
+                boxShadow: query.trim() ? "0 2px 8px rgba(217,119,87,0.3)" : "none",
               }}
             >
               {loading ? (

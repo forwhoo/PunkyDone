@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { ThumbsUp, ThumbsDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Star, MessageSquare, Trophy } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export interface VotableSong {
@@ -10,31 +10,23 @@ export interface VotableSong {
 }
 
 interface VoteState {
-  vote: "up" | "down" | null;
+  rating: number; // 1-5, 0 = unrated
   submittedNote: string;
 }
 
-function wilsonScore(ups: number, downs: number): number {
-  const n = ups + downs;
-  if (n === 0) return 0;
-  const z = 1.281551565545;
-  const phat = ups / n;
-  return (
-    (phat + (z * z) / (2 * n) - z * Math.sqrt((phat * (1 - phat) + (z * z) / (4 * n)) / n)) /
-    (1 + (z * z) / n)
-  );
+/** Bayesian average: avoids ties by weighting toward global mean when few votes */
+function bayesianScore(rating: number, totalRated: number, globalMean: number, priorWeight = 3): number {
+  if (rating === 0) return -1;
+  return (priorWeight * globalMean + rating) / (priorWeight + 1) + totalRated * 0.001;
 }
 
-function getSortScore(state: VoteState | undefined): number {
-  if (!state || state.vote === null) return -1;
-  if (state.vote === "up") return wilsonScore(1, 0);
-  return wilsonScore(0, 1) - 2;
-}
+const STAR_LABELS = ["", "Skip", "Meh", "Okay", "Good", "Banger!"];
+const STAR_COLORS = ["", "#6B6B6B", "#A0A0A0", "#d97757", "#F5A623", "#3BBFBF"];
 
 export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
   const [votes, setVotes] = useState<Record<string, VoteState>>(() => {
     try {
-      const saved = localStorage.getItem("weekly_votes");
+      const saved = localStorage.getItem("weekly_votes_v2");
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
@@ -42,20 +34,36 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
   });
 
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
-  const [hoveredImgId, setHoveredImgId] = useState<string | null>(null);
   const [draftNote, setDraftNote] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [hoveredStar, setHoveredStar] = useState<{ id: string; star: number } | null>(null);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    localStorage.setItem("weekly_votes", JSON.stringify(votes));
+    localStorage.setItem("weekly_votes_v2", JSON.stringify(votes));
   }, [votes]);
 
-  const handleVote = (id: string, type: "up" | "down") => {
+  if (!songs || songs.length === 0) return null;
+
+  const pool = songs.slice(0, 10);
+
+  const rated = pool.filter((s) => votes[s.id]?.rating > 0);
+  const totalRated = rated.length;
+  const globalMean = totalRated > 0
+    ? rated.reduce((sum, s) => sum + (votes[s.id]?.rating || 0), 0) / totalRated
+    : 3;
+
+  const sortedSongs = [...pool].sort((a, b) => {
+    const sa = bayesianScore(votes[a.id]?.rating || 0, totalRated, globalMean);
+    const sb = bayesianScore(votes[b.id]?.rating || 0, totalRated, globalMean);
+    return sb - sa;
+  });
+
+  const handleRate = (id: string, star: number) => {
     setVotes((prev) => ({
       ...prev,
       [id]: {
         submittedNote: prev[id]?.submittedNote || "",
-        vote: prev[id]?.vote === type ? null : type,
+        rating: prev[id]?.rating === star ? 0 : star,
       },
     }));
   };
@@ -77,67 +85,79 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
       const trimmed = draftNote.trim();
       setVotes((prev) => ({
         ...prev,
-        [id]: {
-          vote: prev[id]?.vote || null,
-          submittedNote: trimmed,
-        },
+        [id]: { rating: prev[id]?.rating || 0, submittedNote: trimmed },
       }));
       setActiveNoteId(null);
       setDraftNote("");
     }
   };
 
-  if (!songs || songs.length === 0) return null;
+  const allVoted = pool.every((s) => (votes[s.id]?.rating || 0) > 0);
+  const topSong = sortedSongs[0];
+  const topRating = votes[topSong?.id]?.rating || 0;
 
-  const pool = songs.slice(0, 10);
-
-  const allVoted = pool.every((s) => votes[s.id]?.vote != null);
-  const totalVotes = pool.filter((s) => votes[s.id]?.vote != null).length;
-
-  const sortedSongs = [...pool].sort((a, b) => {
-    const sa = getSortScore(votes[a.id]);
-    const sb = getSortScore(votes[b.id]);
-    if (sb !== sa) return sb - sa;
-    return pool.indexOf(a) - pool.indexOf(b);
-  });
-
-  const upCount = pool.filter((s) => votes[s.id]?.vote === "up").length;
-  const downCount = pool.filter((s) => votes[s.id]?.vote === "down").length;
+  // Distribution chart
+  const dist = [1, 2, 3, 4, 5].map((star) =>
+    pool.filter((s) => (votes[s.id]?.rating || 0) === star).length
+  );
+  const maxDist = Math.max(...dist, 1);
 
   return (
     <div className="w-full bg-[#121212] border border-[#2A2A2A] rounded-3xl overflow-hidden">
+      {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <div className="flex items-center gap-2">
           <h3 className="text-[17px] font-bold text-foreground tracking-tight">Weekly Votes</h3>
-          {totalVotes > 0 && (
+          {totalRated > 0 && (
             <span className="text-[10px] font-bold text-[#A0A0A0] bg-[#1A1A1A] border border-[#2A2A2A] px-2 py-0.5 rounded-full uppercase tracking-widest">
-              {upCount}↑ {downCount}↓
+              {totalRated}/{pool.length} rated
             </span>
           )}
         </div>
-        <span className="text-[10px] font-bold text-[#A0A0A0] uppercase tracking-widest">
-          {pool.length} tracks
-        </span>
+        <div className="flex items-center gap-1.5">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <div key={s} className="flex flex-col items-center gap-0.5">
+              <div
+                className="w-4 rounded-sm transition-all duration-300"
+                style={{
+                  height: `${Math.max(4, (dist[s - 1] / maxDist) * 28)}px`,
+                  backgroundColor: STAR_COLORS[s],
+                  opacity: dist[s - 1] > 0 ? 1 : 0.2,
+                }}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
-      {totalVotes > 0 && (
+      {/* Progress bar */}
+      {totalRated > 0 && (
         <div className="px-5 pb-3">
-          <div className="w-full h-1 bg-[#2A2A2A] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#F5F5F5] rounded-full transition-all duration-500"
-              style={{ width: `${(upCount / pool.length) * 100}%` }}
-            />
+          <div className="w-full h-1 bg-[#2A2A2A] rounded-full overflow-hidden flex">
+            {[5, 4, 3, 2, 1].map((star) => (
+              <div
+                key={star}
+                className="h-full transition-all duration-500"
+                style={{
+                  width: `${(dist[star - 1] / pool.length) * 100}%`,
+                  backgroundColor: STAR_COLORS[star],
+                }}
+              />
+            ))}
           </div>
         </div>
       )}
 
+      {/* Song list */}
       <div className="px-3 pb-3 space-y-0.5">
         <AnimatePresence>
           {sortedSongs.map((song, index) => {
-            const state = votes[song.id] || { vote: null, submittedNote: "" };
+            const state = votes[song.id] || { rating: 0, submittedNote: "" };
             const isNoteActive = activeNoteId === song.id;
-            const isHoveringImg = hoveredImgId === song.id;
             const hasNote = !!state.submittedNote;
+            const currentRating = state.rating;
+            const hovered = hoveredStar?.id === song.id ? hoveredStar.star : null;
+            const displayRating = hovered ?? currentRating;
 
             return (
               <motion.div
@@ -150,72 +170,66 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
                 className="flex flex-col"
               >
                 <div className="flex items-center gap-3 px-2 py-2 rounded-2xl hover:bg-[#1A1A1A] transition-colors group">
+                  {/* Rank */}
                   <span className="text-[11px] font-bold text-[#A0A0A0] w-4 text-center shrink-0">
-                    {index + 1}
+                    {currentRating > 0 ? index + 1 : "·"}
                   </span>
 
+                  {/* Cover */}
                   <div
                     className="relative w-9 h-9 rounded-lg overflow-hidden shrink-0 cursor-pointer"
-                    onMouseEnter={() => hasNote && setHoveredImgId(song.id)}
-                    onMouseLeave={() => setHoveredImgId(null)}
                     onClick={() => handleOpenNote(song.id)}
                   >
                     <img src={song.cover} alt={song.title} className="w-full h-full object-cover" />
                     {hasNote && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-[8px] text-white font-bold">✏️</span>
+                        <MessageSquare size={10} className="text-white" />
                       </div>
                     )}
-
-                    <AnimatePresence>
-                      {isHoveringImg && hasNote && !isNoteActive && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9, y: 4 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.9, y: 4 }}
-                          transition={{ duration: 0.12 }}
-                          className="absolute bottom-full left-0 mb-2 z-50 w-[160px] bg-[#1A1A1A] border border-[#3A3A3A] rounded-xl px-2.5 py-2 text-[11px] text-[#F5F5F5] shadow-xl whitespace-pre-wrap break-words pointer-events-none"
-                        >
-                          <div className="absolute bottom-[-5px] left-3 w-2.5 h-2.5 bg-[#1A1A1A] border-r border-b border-[#3A3A3A] rotate-45" />
-                          {state.submittedNote}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
 
+                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-semibold text-foreground truncate leading-tight">
                       {song.title}
                     </p>
-                    <p className="text-[11px] text-[#A0A0A0] truncate font-medium">
+                    <p className="text-[11px] text-[#A0A0A0] truncate font-medium flex items-center gap-1">
                       {song.artist}
+                      {currentRating > 0 && (
+                        <span
+                          className="text-[10px] font-bold ml-1"
+                          style={{ color: STAR_COLORS[currentRating] }}
+                        >
+                          {STAR_LABELS[currentRating]}
+                        </span>
+                      )}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={() => handleVote(song.id, "up")}
-                      className={`p-1.5 rounded-lg border transition-all ${
-                        state.vote === "up"
-                          ? "bg-[#F5F5F5] border-[#F5F5F5] text-[#050505]"
-                          : "bg-transparent border-transparent text-[#A0A0A0] hover:text-[#F5F5F5] hover:border-[#2A2A2A]"
-                      }`}
-                    >
-                      <ThumbsUp size={13} className={state.vote === "up" ? "fill-current" : ""} />
-                    </button>
-                    <button
-                      onClick={() => handleVote(song.id, "down")}
-                      className={`p-1.5 rounded-lg border transition-all ${
-                        state.vote === "down"
-                          ? "bg-[#3BBFBF] border-[#3BBFBF] text-[#050505]"
-                          : "bg-transparent border-transparent text-[#A0A0A0] hover:text-[#F5F5F5] hover:border-[#2A2A2A]"
-                      }`}
-                    >
-                      <ThumbsDown size={13} className={state.vote === "down" ? "fill-current" : ""} />
-                    </button>
+                  {/* Stars */}
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => handleRate(song.id, star)}
+                        onMouseEnter={() => setHoveredStar({ id: song.id, star })}
+                        onMouseLeave={() => setHoveredStar(null)}
+                        className="p-0.5 transition-transform hover:scale-125 active:scale-95"
+                      >
+                        <Star
+                          size={14}
+                          className="transition-all duration-100"
+                          style={{
+                            fill: star <= displayRating ? STAR_COLORS[currentRating || star] : "transparent",
+                            color: star <= displayRating ? STAR_COLORS[currentRating || star] : "#2A2A2A",
+                          }}
+                        />
+                      </button>
+                    ))}
                   </div>
                 </div>
 
+                {/* Note textarea */}
                 <AnimatePresence>
                   {isNoteActive && (
                     <motion.div
@@ -246,11 +260,27 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
         </AnimatePresence>
       </div>
 
-      {allVoted && pool.length > 0 && (
-        <div className="px-5 py-3 border-t border-[#1A1A1A]">
-          <p className="text-[11px] text-[#A0A0A0] font-medium text-center">
-            🏆 Top pick: <span className="text-[#F5F5F5] font-bold">{sortedSongs[0]?.title}</span>
-          </p>
+      {/* Top pick footer */}
+      {allVoted && pool.length > 0 && topRating > 0 && (
+        <div className="px-5 py-3 border-t border-[#1A1A1A] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trophy size={13} className="text-[#d97757]" />
+            <p className="text-[11px] text-[#A0A0A0] font-medium">
+              Top pick: <span className="text-[#F5F5F5] font-bold">{topSong?.title}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star
+                key={s}
+                size={10}
+                style={{
+                  fill: s <= topRating ? STAR_COLORS[topRating] : "transparent",
+                  color: s <= topRating ? STAR_COLORS[topRating] : "#2A2A2A",
+                }}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { AIFace, FaceExpression } from "./AIFace";
 import {
   Sparkles,
   RefreshCcw,
@@ -294,6 +295,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
   const sectionRef = useRef<HTMLDivElement>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [faceExpression, setFaceExpression] = useState<FaceExpression>("neutral");
 
   useEffect(() => {
     if (initialQuery && initialQuery.trim()) {
@@ -352,6 +354,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
     setLoading(true);
     setErrorMsg(null);
     setUserPrompt("");
+    setFaceExpression("thinking");
 
     try {
       setChatMessages((prev) => [
@@ -406,8 +409,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({
       );
     } catch (err: any) {
       setErrorMsg(`Error: ${err.message || "Unknown"}`);
+      setFaceExpression("upset");
     }
     setLoading(false);
+    setFaceExpression((prev) => prev === "thinking" || prev === "upset" ? "happy" : prev);
   };
 
   const isEmpty = chatMessages.length === 0 && !loading;
@@ -426,9 +431,13 @@ export const AISpotlight: React.FC<TopAIProps> = ({
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center justify-center min-h-[360px] text-center pb-6"
             >
-              <div className="w-12 h-12 rounded-2xl bg-foreground/[0.05] border border-white/[0.06] flex items-center justify-center mb-5">
-                <Sparkles size={20} className="text-foreground/40" />
-              </div>
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="mb-5"
+              >
+                <AIFace expression="neutral" size={80} />
+              </motion.div>
               <h3 className="text-[22px] font-bold text-foreground tracking-tight mb-1">
                 Ask Harvey
               </h3>
@@ -466,7 +475,18 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                       </p>
                     </div>
                   ) : (
-                    <div>
+                    <div className="flex gap-3 items-start">
+                      <div className="flex-shrink-0 mt-1">
+                        <AIFace
+                          expression={
+                            msg.isThinking && !msg.text ? "thinking" :
+                            idx === chatMessages.length - 1 && !loading ? faceExpression :
+                            "neutral"
+                          }
+                          size={32}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
                       {msg.isThinking && !msg.text && (
                         <div className="py-1.5 px-1">
                           <Loader variant="text-shimmer" className="text-foreground/30 text-[13px]">
@@ -529,6 +549,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                           {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </p>
                       )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -550,6 +571,10 @@ export const AISpotlight: React.FC<TopAIProps> = ({
       <div className="flex-shrink-0 px-4 pb-4 pt-2 relative z-10">
         <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".json" />
         <div className="max-w-2xl mx-auto">
+          <div className="flex items-end gap-3">
+            <div className="flex-shrink-0 pb-2">
+              <AIFace expression={loading ? "thinking" : errorMsg ? "upset" : faceExpression} size={36} />
+            </div>
           <PromptInput
             value={userPrompt}
             onValueChange={setUserPrompt}
@@ -585,6 +610,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
               </button>
             </PromptInputActions>
           </PromptInput>
+          </div>
         </div>
       </div>
 
