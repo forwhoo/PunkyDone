@@ -1,6 +1,12 @@
 import React from "react";
 
-export type FaceExpression = "neutral" | "thinking" | "happy" | "upset" | "excited" | "surprised";
+export type FaceExpression =
+  | "neutral"
+  | "thinking"
+  | "happy"
+  | "upset"
+  | "excited"
+  | "surprised";
 
 interface AIFaceProps {
   expression?: FaceExpression;
@@ -13,175 +19,228 @@ export const AIFace: React.FC<AIFaceProps> = ({
   size = 40,
   className = "",
 }) => {
-  // Mouth path data per expression
-  const mouthPath: Record<FaceExpression, string> = {
-    neutral: "M 140 195 Q 160 205 180 195",
-    thinking: "M 140 198 Q 160 198 180 198",
-    happy: "M 135 190 Q 160 215 185 190",
-    upset: "M 135 205 Q 160 190 185 205",
-    excited: "M 130 188 Q 160 220 190 188",
-    surprised: "M 148 192 Q 160 210 172 192",
-  };
+  const strokeColor = "currentColor";
+  const sw = 20; // stroke width
 
-  // Eyebrow transforms per expression
-  const leftBrowTransform: Record<FaceExpression, string> = {
-    neutral: "translate(0,0) rotate(0, 120, 130)",
-    thinking: "translate(0,-6) rotate(-8, 120, 130)",
-    happy: "translate(0,-4) rotate(0, 120, 130)",
-    upset: "translate(0,0) rotate(12, 120, 130)",
-    excited: "translate(0,-8) rotate(0, 120, 130)",
-    surprised: "translate(0,-10) rotate(0, 120, 130)",
-  };
+  // --- EYES (the "4"-shaped lids from the 404 face) ---
+  // Each eye is a polyline forming an inverted "V" lid (like the number 4)
+  // and a short vertical dash below it as the pupil.
 
-  const rightBrowTransform: Record<FaceExpression, string> = {
-    neutral: "translate(0,0) rotate(0, 200, 130)",
-    thinking: "translate(0,-2) rotate(8, 200, 130)",
-    happy: "translate(0,-4) rotate(0, 200, 130)",
-    upset: "translate(0,0) rotate(-12, 200, 130)",
-    excited: "translate(0,-8) rotate(0, 200, 130)",
-    surprised: "translate(0,-10) rotate(0, 200, 130)",
-  };
-
-  // Pupil offsets per expression
-  const pupilOffset: Record<FaceExpression, { x: number; y: number }> = {
-    neutral: { x: 0, y: 0 },
-    thinking: { x: -8, y: -6 },
-    happy: { x: 0, y: 2 },
-    upset: { x: 0, y: 0 },
-    excited: { x: 0, y: -2 },
-    surprised: { x: 0, y: 0 },
-  };
-
-  // Eyelid height (partial close for thinking/upset)
-  const eyelidHeight: Record<FaceExpression, number> = {
+  // Pupil horizontal offset per expression (looking left/right/center)
+  const pupilOffset: Record<FaceExpression, number> = {
     neutral: 0,
-    thinking: 10,
-    happy: 6,
-    upset: 12,
+    thinking: -20,
+    happy: 0,
+    upset: 0,
     excited: 0,
     surprised: 0,
   };
 
-  const mo = mouthPath[expression];
-  const ld = leftBrowTransform[expression];
-  const rd = rightBrowTransform[expression];
-  const po = pupilOffset[expression];
-  const el = eyelidHeight[expression];
+  // Eyelid vertical squish (0 = open, positive = closing)
+  // We translate the lid down to simulate half-closed eyes
+  const lidDrop: Record<FaceExpression, number> = {
+    neutral: 0,
+    thinking: 12,
+    happy: 14,
+    upset: 10,
+    excited: 0,
+    surprised: 0,
+  };
 
-  // Colors
-  const skinColor = "#E8806A";
-  const strokeColor = "#1C1C1A";
-  const eyeWhite = "#F5F5F5";
-  const pupilColor = "#1C1C1A";
-  const browColor = "#1C1C1A";
-  const highlightColor = "#FFFFFF";
-  const bgColor = "#252523";
-  const blushColor = expression === "happy" || expression === "excited" ? "rgba(232,128,106,0.35)" : "none";
+  // Pupil dash visibility (35 = visible, 0 = hidden for blink)
+  const pupilDash: Record<FaceExpression, string> = {
+    neutral: "28 28",
+    thinking: "28 28",
+    happy: "0 56", // hidden — happy has closed/squinted eyes
+    upset: "28 28",
+    excited: "28 28",
+    surprised: "28 28",
+  };
+
+  // --- NOSE ---
+  // Rectangular rounded nose, same as the 404 face
+  const noseHeight: Record<FaceExpression, number> = {
+    neutral: 110,
+    thinking: 110,
+    happy: 100,
+    upset: 115,
+    excited: 100,
+    surprised: 120,
+  };
+
+  // --- MOUTH ---
+  // Two cubic bezier halves (left + right) forming a smile/frown/O
+  const mouthPaths: Record<FaceExpression, { left: string; right: string }> = {
+    neutral: {
+      left: "M 0 15 C 0 15 30 0 70 0",
+      right: "M 70 0 C 110 0 140 15 140 15",
+    },
+    thinking: {
+      // Flat/slightly offset line
+      left: "M 0 5 C 0 5 30 8 70 5",
+      right: "M 70 5 C 110 2 140 5 140 5",
+    },
+    happy: {
+      // Big smile
+      left: "M 0 0 C 0 0 30 40 70 40",
+      right: "M 70 40 C 110 40 140 0 140 0",
+    },
+    upset: {
+      // Frown (inverted curve)
+      left: "M 0 30 C 0 30 30 0 70 0",
+      right: "M 70 0 C 110 0 140 30 140 30",
+    },
+    excited: {
+      // Wide open smile
+      left: "M 0 0 C 0 0 25 50 70 50",
+      right: "M 70 50 C 115 50 140 0 140 0",
+    },
+    surprised: {
+      // Small "O" shape — we'll draw an ellipse instead
+      left: "M 0 20 C 0 0 30 0 35 0",
+      right: "M 35 0 C 40 0 70 0 70 20",
+    },
+  };
+
+  // For surprised, also draw the bottom half of the "O"
+  const surprisedBottomLeft = "M 0 20 C 0 40 30 40 35 40";
+  const surprisedBottomRight = "M 35 40 C 40 40 70 40 70 20";
+
+  // Mouth width/position adjustments for surprised (smaller O)
+  const mouthTranslate: Record<FaceExpression, string> = {
+    neutral: "translate(90, 280)",
+    thinking: "translate(90, 278)",
+    happy: "translate(90, 268)",
+    upset: "translate(90, 275)",
+    excited: "translate(90, 265)",
+    surprised: "translate(125, 270)",
+  };
+
+  // --- THINKING BUBBLES ---
+  const showThinkingBubbles = expression === "thinking";
+
+  // --- EYEBROW TRANSFORMS ---
+  // Only some expressions get visible brows
+  const showBrows = ["upset", "surprised", "thinking"].includes(expression);
+
+  const leftBrowD: Record<string, string> = {
+    upset: "M 30 85 L 75 70", // angled down inward (angry)
+    surprised: "M 30 68 L 75 68", // raised flat
+    thinking: "M 30 75 L 75 68", // one slightly raised
+  };
+  const rightBrowD: Record<string, string> = {
+    upset: "M 245 70 L 290 85",
+    surprised: "M 245 68 L 290 68",
+    thinking: "M 245 68 L 290 75",
+  };
+
+  const po = pupilOffset[expression];
+  const ld = lidDrop[expression];
 
   return (
     <svg
-      viewBox="0 0 320 320"
+      viewBox="0 0 320 380"
       width={size}
       height={size}
       className={`select-none ${className}`}
       style={{ display: "block" }}
       aria-label={`Harvey is ${expression}`}
     >
-      {/* Background circle */}
-      <circle cx="160" cy="160" r="155" fill={bgColor} stroke="#3A3A37" strokeWidth="2" />
-
-      {/* Head */}
-      <ellipse cx="160" cy="170" rx="90" ry="95" fill={skinColor} />
-
-      {/* Blush (happy/excited) */}
-      {blushColor !== "none" && (
-        <>
-          <ellipse cx="108" cy="200" rx="20" ry="12" fill={blushColor} />
-          <ellipse cx="212" cy="200" rx="20" ry="12" fill={blushColor} />
-        </>
-      )}
-
-      {/* Left eye white */}
-      <ellipse cx="125" cy="165" rx="22" ry="22" fill={eyeWhite} />
-      {/* Right eye white */}
-      <ellipse cx="195" cy="165" rx="22" ry="22" fill={eyeWhite} />
-
-      {/* Left pupil */}
-      <circle cx={125 + po.x} cy={165 + po.y} r="10" fill={pupilColor} />
-      <circle cx={127 + po.x} cy={162 + po.y} r="3" fill={highlightColor} opacity="0.8" />
-
-      {/* Right pupil */}
-      <circle cx={195 + po.x} cy={165 + po.y} r="10" fill={pupilColor} />
-      <circle cx={197 + po.x} cy={162 + po.y} r="3" fill={highlightColor} opacity="0.8" />
-
-      {/* Left eyelid (for thinking/upset) */}
-      {el > 0 && (
-        <ellipse
-          cx="125"
-          cy={143 + el}
-          rx="22"
-          ry={el}
-          fill={skinColor}
-        />
-      )}
-      {/* Right eyelid */}
-      {el > 0 && (
-        <ellipse
-          cx="195"
-          cy={143 + el}
-          rx="22"
-          ry={el}
-          fill={skinColor}
-        />
-      )}
-
-      {/* Left eyebrow */}
-      <rect
-        x="103"
-        y="128"
-        width="40"
-        height="7"
-        rx="4"
-        fill={browColor}
-        transform={ld}
-      />
-
-      {/* Right eyebrow */}
-      <rect
-        x="177"
-        y="128"
-        width="40"
-        height="7"
-        rx="4"
-        fill={browColor}
-        transform={rd}
-      />
-
-      {/* Nose */}
-      <ellipse cx="160" cy="182" rx="6" ry="4" fill={strokeColor} opacity="0.25" />
-
-      {/* Mouth */}
-      <path
-        d={mo}
+      <g
         fill="none"
         stroke={strokeColor}
-        strokeWidth="5"
         strokeLinecap="round"
-      />
+        strokeLinejoin="round"
+        strokeWidth={sw}
+      >
+        {/* ===== EYEBROWS ===== */}
+        {showBrows && (
+          <>
+            <path
+              d={leftBrowD[expression]}
+              strokeWidth={sw * 0.6}
+            />
+            <path
+              d={rightBrowD[expression]}
+              strokeWidth={sw * 0.6}
+            />
+          </>
+        )}
 
-      {/* Thinking bubble dots (only for thinking) */}
-      {expression === "thinking" && (
-        <>
-          <circle cx="258" cy="95" r="12" fill={bgColor} stroke="#3A3A37" strokeWidth="2" />
-          <circle cx="278" cy="70" r="8" fill={bgColor} stroke="#3A3A37" strokeWidth="2" />
-          <circle cx="292" cy="52" r="5" fill={bgColor} stroke="#3A3A37" strokeWidth="2" />
-        </>
-      )}
+        {/* ===== LEFT EYE ===== */}
+        <g transform="translate(15, 95)">
+          {/* Lid — the "4" shaped inverted-V */}
+          <polyline
+            points="37,0 0,95 60,95"
+            style={{
+              transform: `translateY(${ld}px)`,
+              transition: "transform 0.3s ease",
+            }}
+          />
+          {/* Pupil — vertical dash */}
+          <polyline
+            points={`${42 + po},95 ${42 + po},123`}
+            strokeDasharray={pupilDash[expression]}
+            style={{
+              transform: `translateX(${po}px)`,
+              transition: "transform 0.3s ease, stroke-dasharray 0.3s ease",
+            }}
+          />
+        </g>
 
-      {/* Surprised "O" mouth override */}
-      {expression === "surprised" && (
-        <ellipse cx="160" cy="203" rx="14" ry="16" fill={strokeColor} opacity="0.8" />
-      )}
+        {/* ===== RIGHT EYE ===== */}
+        <g transform="translate(215, 95)">
+          {/* Lid */}
+          <polyline
+            points="37,0 0,95 60,95"
+            style={{
+              transform: `translateY(${ld}px)`,
+              transition: "transform 0.3s ease",
+            }}
+          />
+          {/* Pupil */}
+          <polyline
+            points={`${42 + po},95 ${42 + po},123`}
+            strokeDasharray={pupilDash[expression]}
+            style={{
+              transform: `translateX(${po}px)`,
+              transition: "transform 0.3s ease, stroke-dasharray 0.3s ease",
+            }}
+          />
+        </g>
+
+        {/* ===== NOSE ===== */}
+        <rect
+          rx="4"
+          ry="4"
+          x="138"
+          y="120"
+          width="44"
+          height={noseHeight[expression]}
+          style={{ transition: "height 0.3s ease" }}
+        />
+
+        {/* ===== MOUTH ===== */}
+        <g transform={mouthTranslate[expression]}>
+          <path d={mouthPaths[expression].left} />
+          <path d={mouthPaths[expression].right} />
+          {expression === "surprised" && (
+            <>
+              <path d={surprisedBottomLeft} />
+              <path d={surprisedBottomRight} />
+            </>
+          )}
+        </g>
+
+        {/* ===== THINKING BUBBLES ===== */}
+        {showThinkingBubbles && (
+          <>
+            <circle cx="290" cy="75" r="10" strokeWidth={sw * 0.4} />
+            <circle cx="305" cy="50" r="6" strokeWidth={sw * 0.35} />
+            <circle cx="313" cy="30" r="3.5" strokeWidth={sw * 0.3} />
+          </>
+        )}
+      </g>
     </svg>
   );
 };
