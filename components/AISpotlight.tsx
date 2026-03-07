@@ -436,7 +436,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                 className="mb-5"
               >
-                <AIFace expression="neutral" size={80} />
+                <AIFace expression="neutral" size={96} />
               </motion.div>
               <h3 className="text-[22px] font-bold text-foreground tracking-tight mb-1">
                 Ask Harvey
@@ -476,14 +476,14 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                     </div>
                   ) : (
                     <div className="flex gap-3 items-start">
-                      <div className="flex-shrink-0 mt-1">
+                      <div className="flex-shrink-0 mt-0.5">
                         <AIFace
                           expression={
                             msg.isThinking && !msg.text ? "thinking" :
                             idx === chatMessages.length - 1 && !loading ? faceExpression :
                             "neutral"
                           }
-                          size={32}
+                          size={40}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -570,11 +570,11 @@ export const AISpotlight: React.FC<TopAIProps> = ({
 
       <div className="flex-shrink-0 px-4 pb-4 pt-2 relative z-10">
         <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".json" />
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-end gap-3">
-            <div className="flex-shrink-0 pb-2">
-              <AIFace expression={loading ? "thinking" : errorMsg ? "upset" : faceExpression} size={36} />
-            </div>
+          <div className="max-w-2xl mx-auto">
+            <div className="flex items-end gap-3">
+              <div className="flex-shrink-0 pb-2">
+                <AIFace expression={loading ? "thinking" : errorMsg ? "upset" : faceExpression} size={44} />
+              </div>
           <PromptInput
             value={userPrompt}
             onValueChange={setUserPrompt}
