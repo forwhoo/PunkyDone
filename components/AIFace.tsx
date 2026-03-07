@@ -19,18 +19,6 @@ export const AIFace: React.FC<AIFaceProps> = ({
   size = 120,
   className = "",
 }) => {
-  // Map expressions to animation classes
-  const faceClassMap: Record<FaceExpression, string> = {
-    neutral: "face-looking",
-    thinking: "face-thinking",
-    happy: "face-happy",
-    upset: "face-sad",
-    excited: "face-excited",
-    surprised: "face-confused",
-  };
-
-  const currentClass = faceClassMap[expression];
-
   return (
     <div
       className={`select-none ${className}`}
@@ -42,264 +30,265 @@ export const AIFace: React.FC<AIFaceProps> = ({
         alignItems: "center",
       }}
       aria-label={`AI is ${expression}`}
+    >
+      <svg
+        viewBox="0 0 120 120"
+        width="100%"
+        height="100%"
+        style={{ overflow: "visible" }}
       >
-        <svg
-          viewBox="0 0 120 120"
-          width="100%"
-          height="100%"
-          className={currentClass}
-          style={{ overflow: "visible", filter: "drop-shadow(0 10px 22px rgba(0,0,0,0.22))" }}
+        <defs>
+          <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#6366f1" />
+            <stop offset="100%" stopColor="#8b5cf6" />
+          </linearGradient>
+          <linearGradient id="bodyGradHappy" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="100%" stopColor="#3b82f6" />
+          </linearGradient>
+          <linearGradient id="bodyGradUpset" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#6b7280" />
+            <stop offset="100%" stopColor="#4b5563" />
+          </linearGradient>
+          <linearGradient id="shimmer" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.3)" />
+            <stop offset="60%" stopColor="rgba(255,255,255,0)" />
+          </linearGradient>
+          <filter id="softShadow" x="-20%" y="-20%" width="140%" height="160%">
+            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="rgba(99,102,241,0.4)" />
+          </filter>
+        </defs>
+
+        <style>{`
+          .harvey-body { transition: all 0.4s ease; }
+          .harvey-eye { transition: all 0.3s ease; }
+          .harvey-mouth { transition: all 0.3s ease; }
+
+          /* Neutral: gentle idle bob */
+          .harvey-neutral .harvey-body {
+            animation: harvey-bob 3s ease-in-out infinite;
+          }
+          .harvey-neutral .harvey-pupil {
+            animation: harvey-look 5s ease-in-out infinite;
+          }
+          .harvey-neutral .harvey-blink {
+            animation: harvey-blink 4s ease-in-out infinite;
+          }
+
+          /* Thinking: tilt + pulsing dots */
+          .harvey-thinking .harvey-body {
+            animation: harvey-tilt 2s ease-in-out infinite;
+          }
+          .harvey-thinking .harvey-think-dot {
+            animation: harvey-dots 1.2s ease-in-out infinite;
+          }
+          .harvey-thinking .harvey-think-dot:nth-child(2) { animation-delay: 0.2s; }
+          .harvey-thinking .harvey-think-dot:nth-child(3) { animation-delay: 0.4s; }
+
+          /* Happy: bounce */
+          .harvey-happy .harvey-body {
+            animation: harvey-happy-bounce 0.6s ease-in-out infinite alternate;
+          }
+
+          /* Excited: wiggle */
+          .harvey-excited .harvey-body {
+            animation: harvey-wiggle 0.3s ease-in-out infinite alternate;
+          }
+
+          /* Upset: droop */
+          .harvey-upset .harvey-body {
+            animation: harvey-droop 2s ease-in-out infinite;
+          }
+
+          /* Surprised: pop */
+          .harvey-surprised .harvey-body {
+            animation: harvey-pop 0.5s ease-out forwards;
+          }
+
+          @keyframes harvey-bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+          }
+          @keyframes harvey-tilt {
+            0%, 100% { transform: rotate(0deg) translateY(0); }
+            30% { transform: rotate(-8deg) translateY(-2px); }
+            70% { transform: rotate(6deg) translateY(-1px); }
+          }
+          @keyframes harvey-happy-bounce {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-6px) scale(1.04); }
+          }
+          @keyframes harvey-wiggle {
+            0% { transform: rotate(-6deg) scale(1.02); }
+            100% { transform: rotate(6deg) scale(1.02); }
+          }
+          @keyframes harvey-droop {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(3px) rotate(-3deg); }
+          }
+          @keyframes harvey-pop {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.15); }
+            70% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+          }
+          @keyframes harvey-look {
+            0%, 100% { transform: translate(0,0); }
+            20%, 30% { transform: translate(2px,-1px); }
+            60%, 70% { transform: translate(-2px,1px); }
+          }
+          @keyframes harvey-blink {
+            0%, 88%, 100% { transform: scaleY(1); }
+            92% { transform: scaleY(0.08); }
+          }
+          @keyframes harvey-dots {
+            0%, 80%, 100% { transform: scale(0); opacity: 0; }
+            40% { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
+
+        {/* Character container with animations */}
+        <g
+          className={`harvey-body harvey-${expression}`}
+          style={{ transformOrigin: "60px 68px" }}
         >
-          <defs>
-            <linearGradient id="shellGrad" x1="22" y1="14" x2="98" y2="106" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#F5F5F5" />
-              <stop offset="52%" stopColor="#CFCFCF" />
-              <stop offset="100%" stopColor="#8D8D8D" />
-            </linearGradient>
-            <linearGradient id="shellSadGrad" x1="18" y1="18" x2="102" y2="102" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#E6E6E6" />
-              <stop offset="100%" stopColor="#999999" />
-            </linearGradient>
-            <linearGradient id="visorGrad" x1="30" y1="34" x2="90" y2="70" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#343434" />
-              <stop offset="100%" stopColor="#111111" />
-            </linearGradient>
-            <radialGradient id="glowGrad" cx="50%" cy="15%" r="85%">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.7)" />
-              <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-            </radialGradient>
-          </defs>
-
-          <style>
-            {`
-              /* Base Transitions */
-            .face-group { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform-origin: center; }
-            .feature { transition: all 0.3s ease; }
-            
-            /* ── NEUTRAL / LOOKING AROUND ── */
-            .face-looking .eye-pupil { animation: look-around 5s ease-in-out infinite; }
-            .face-looking .eyebrow { animation: look-brow 5s ease-in-out infinite; transform-origin: center; }
-
-            /* ── THINKING ── */
-            .face-thinking .eyebrow-left { animation: think-brow 2.5s ease-in-out infinite; transform-origin: 40px 40px; }
-            .face-thinking .thought-dot { animation: thought-appear 2s ease-in-out infinite; }
-            .face-thinking .thought-dot:nth-child(2) { animation-delay: 0.3s; }
-            .face-thinking .thought-dot:nth-child(3) { animation-delay: 0.6s; }
-            .face-thinking .eye-group { animation: look-up 2.5s ease-in-out infinite; }
-
-            /* ── UPSET (SAD) ── */
-            .face-sad .mouth-path { animation: sad-mouth 4s ease-in-out infinite; }
-            .face-sad .eyebrow-left { animation: sad-brow-l 4s ease-in-out infinite; transform-origin: 40px 40px; }
-            .face-sad .eyebrow-right { animation: sad-brow-r 4s ease-in-out infinite; transform-origin: 80px 40px; }
-            .face-sad .tear { animation: tear-drop 3s ease-in infinite; }
-
-            /* ── HAPPY ── */
-            .face-happy .face-group { animation: happy-bounce 1s ease-in-out infinite alternate; }
-            .face-happy .cheek { animation: cheek-glow 1.5s ease-in-out infinite alternate; }
-            .face-happy .eye { animation: happy-blink 2s ease-in-out infinite; }
-
-            /* ── EXCITED ── */
-            .face-excited .face-group { animation: excited-bounce 0.4s ease-in-out infinite alternate; }
-            .face-excited .cheek { opacity: 0.8; }
-            .face-excited .mouth-path { transform: scale(1.1) translateY(-2px); transform-origin: 60px 80px; }
-
-            /* ── SURPRISED / CONFUSED ── */
-            .face-confused .eyebrow-left { animation: confused-brow-l 2.5s ease-in-out infinite; transform-origin: 40px 40px; }
-            .face-confused .eyebrow-right { animation: confused-brow-r 2.5s ease-in-out infinite; transform-origin: 80px 40px; }
-            .face-confused .face-group { animation: confused-tilt 3s ease-in-out infinite; transform-origin: 60px 60px; }
-            .face-confused .question-mark { animation: qmark 2.5s ease-in-out infinite; transform-origin: 95px 25px; }
-
-            /* Animations */
-            @keyframes look-around {
-              0%, 100% { transform: translate(0, 0); }
-              20%, 30% { transform: translate(4px, -1px); }
-              60%, 70% { transform: translate(-4px, 1px); }
-            }
-            @keyframes look-brow {
-              0%, 100% { transform: translateY(0); }
-              25% { transform: translateY(-1px); }
-              65% { transform: translateY(1px); }
-            }
-            @keyframes think-brow {
-              0%, 100% { transform: translateY(0) rotate(0deg); }
-              50% { transform: translateY(-4px) rotate(-10deg); }
-            }
-            @keyframes thought-appear {
-              0%, 20% { opacity: 0; transform: scale(0); }
-              50%, 80% { opacity: 1; transform: scale(1); }
-              100% { opacity: 0; transform: scale(0); }
-            }
-            @keyframes look-up {
-              0%, 100% { transform: translate(0, 0); }
-              50% { transform: translate(2px, -3px); }
-            }
-            @keyframes sad-mouth {
-              0%, 100% { d: path("M 46 80 Q 60 72 74 80"); }
-              50% { d: path("M 46 82 Q 60 74 74 82"); }
-            }
-            @keyframes sad-brow-l {
-              0%, 100% { transform: rotate(5deg) translateY(2px); }
-              50% { transform: rotate(12deg) translateY(0px); }
-            }
-            @keyframes sad-brow-r {
-              0%, 100% { transform: rotate(-5deg) translateY(2px); }
-              50% { transform: rotate(-12deg) translateY(0px); }
-            }
-            @keyframes tear-drop {
-              0% { opacity: 0; transform: translateY(-5px) scale(0.8); }
-              20% { opacity: 1; transform: translateY(0) scale(1); }
-              80% { opacity: 1; transform: translateY(18px) scale(0.9); }
-              100% { opacity: 0; transform: translateY(22px) scale(0.5); }
-            }
-            @keyframes happy-bounce {
-              0% { transform: translateY(0); }
-              100% { transform: translateY(-4px); }
-            }
-            @keyframes excited-bounce {
-              0% { transform: translateY(0) scale(1); }
-              100% { transform: translateY(-6px) scale(1.02); }
-            }
-            @keyframes cheek-glow {
-              0% { opacity: 0.2; transform: scale(0.9); }
-              100% { opacity: 0.6; transform: scale(1.1); }
-            }
-            @keyframes happy-blink {
-              0%, 90%, 100% { transform: scaleY(1); }
-              95% { transform: scaleY(0.1); }
-            }
-            @keyframes confused-brow-l {
-              0%, 100% { transform: rotate(0deg) translateY(0); }
-              50% { transform: rotate(18deg) translateY(-3px); }
-            }
-            @keyframes confused-brow-r {
-              0%, 100% { transform: rotate(0deg) translateY(0); }
-              50% { transform: rotate(-8deg) translateY(3px); }
-            }
-            @keyframes confused-tilt {
-              0%, 100% { transform: rotate(0deg); }
-              30% { transform: rotate(-8deg); }
-              70% { transform: rotate(5deg); }
-            }
-            @keyframes qmark {
-              0%, 100% { opacity: 0; transform: translateY(5px) scale(0.5) rotate(-10deg); }
-              40%, 60% { opacity: 1; transform: translateY(-5px) scale(1) rotate(5deg); }
-            }
-          `}
-        </style>
-
-        <g className="face-group">
+          {/* Body — rounded rectangle like a note/card */}
           <rect
-            x="14"
-            y="12"
-            width="92"
-            height="96"
-            rx="30"
-            fill={expression === "upset" ? "url(#shellSadGrad)" : "url(#shellGrad)"}
-            stroke={expression === "upset" ? "#8A8A8A" : "#B4B4B4"}
+            x="18"
+            y="22"
+            width="84"
+            height="80"
+            rx="22"
+            fill={
+              expression === "happy" || expression === "excited"
+                ? "url(#bodyGradHappy)"
+                : expression === "upset"
+                  ? "url(#bodyGradUpset)"
+                  : "url(#bodyGrad)"
+            }
+            filter="url(#softShadow)"
+          />
+          {/* Shimmer highlight */}
+          <rect x="18" y="22" width="84" height="40" rx="22" fill="url(#shimmer)" />
+          {/* Top corner fold — like a sticky note */}
+          <path d="M 80 22 L 102 22 L 102 36 Z" fill="rgba(255,255,255,0.15)" />
+
+          {/* Small antenna / notification dot */}
+          <circle cx="60" cy="16" r="4" fill={expression === "thinking" ? "#f59e0b" : "rgba(255,255,255,0.5)"} />
+          <line x1="60" y1="20" x2="60" y2="26" stroke="rgba(255,255,255,0.4)" strokeWidth="2.5" strokeLinecap="round" />
+
+          {/* Eyes */}
+          <g className={`harvey-eye harvey-blink`} style={{ transformOrigin: "43px 57px" }}>
+            <ellipse cx="43" cy="57" rx="7" ry={expression === "upset" ? 4 : 7.5} fill="white" opacity="0.95" />
+            <ellipse
+              className="harvey-pupil"
+              cx={expression === "surprised" ? 44 : 43}
+              cy={expression === "thinking" ? 54 : 57}
+              rx={expression === "surprised" ? 4 : 3.5}
+              ry={expression === "surprised" ? 4 : 3.5}
+              fill="#312e81"
+            />
+            <circle cx={expression === "surprised" ? 46 : 44.5} cy={expression === "thinking" ? 52.5 : 55.5} r="1.2" fill="white" />
+          </g>
+          <g className={`harvey-eye harvey-blink`} style={{ transformOrigin: "77px 57px" }}>
+            <ellipse cx="77" cy="57" rx="7" ry={expression === "upset" ? 4 : 7.5} fill="white" opacity="0.95" />
+            <ellipse
+              className="harvey-pupil"
+              cx={expression === "surprised" ? 78 : 77}
+              cy={expression === "thinking" ? 54 : 57}
+              rx={expression === "surprised" ? 4 : 3.5}
+              ry={expression === "surprised" ? 4 : 3.5}
+              fill="#312e81"
+            />
+            <circle cx={expression === "surprised" ? 79 : 78.5} cy={expression === "thinking" ? 52.5 : 55.5} r="1.2" fill="white" />
+          </g>
+
+          {/* Eyebrows */}
+          <path
+            d={
+              expression === "upset"
+                ? "M 37 48 Q 43 44 49 47"
+                : expression === "thinking"
+                  ? "M 37 47 Q 43 42 49 46"
+                  : expression === "surprised"
+                    ? "M 36 45 Q 43 40 50 44"
+                    : "M 37 49 Q 43 46 49 49"
+            }
+            stroke="rgba(255,255,255,0.7)"
             strokeWidth="2.5"
-            className="feature"
-          />
-          <path
-            d="M 32 23 C 46 13, 75 13, 92 24"
-            stroke="rgba(255,255,255,0.55)"
-            strokeWidth="6"
             strokeLinecap="round"
             fill="none"
-            className="feature"
           />
-          <rect
-            x="28"
-            y="34"
-            width="64"
-            height="34"
-            rx="17"
-            fill="url(#visorGrad)"
-            stroke="rgba(255,255,255,0.08)"
-            strokeWidth="1.5"
-          />
-          <ellipse cx="60" cy="29" rx="28" ry="11" fill="url(#glowGrad)" opacity="0.55" />
-
-          <g style={{ opacity: ["happy", "excited"].includes(expression) ? 1 : 0, transition: "opacity 0.3s" }}>
-            <ellipse className="cheek" cx="32" cy="77" rx="8" ry="5.5" fill="rgba(255,255,255,0.2)" />
-            <ellipse className="cheek" cx="88" cy="77" rx="8" ry="5.5" fill="rgba(255,255,255,0.2)" />
-          </g>
-
           <path
-            className="feature eyebrow eyebrow-left"
             d={
-              expression === "happy" || expression === "excited" ? "M 36 45 Q 44 39 50 44" :
-              expression === "upset" ? "M 36 50 Q 43 43 50 47" :
-              "M 36 47 Q 43 43 50 46"
+              expression === "upset"
+                ? "M 71 47 Q 77 44 83 48"
+                : expression === "thinking"
+                  ? "M 71 46 Q 77 43 83 47"
+                  : expression === "surprised"
+                    ? "M 70 44 Q 77 40 84 45"
+                    : "M 71 49 Q 77 46 83 49"
             }
-            stroke="#6C6C6C"
+            stroke="rgba(255,255,255,0.7)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            fill="none"
+          />
+
+          {/* Mouth */}
+          <path
+            className="harvey-mouth"
+            d={
+              expression === "happy" || expression === "excited"
+                ? "M 46 74 Q 60 86 74 74"
+                : expression === "upset"
+                  ? "M 46 80 Q 60 72 74 80"
+                  : expression === "surprised"
+                    ? "M 51 74 Q 60 65 69 74 Q 60 80 51 74"
+                    : expression === "thinking"
+                      ? "M 50 76 Q 60 80 68 76"
+                      : "M 48 76 Q 60 82 72 76"
+            }
+            stroke="white"
             strokeWidth="3"
             strokeLinecap="round"
             fill="none"
-          />
-          <path
-            className="feature eyebrow eyebrow-right"
-            d={
-              expression === "happy" || expression === "excited" ? "M 70 44 Q 77 39 84 45" :
-              expression === "upset" ? "M 70 47 Q 77 43 84 50" :
-              "M 70 46 Q 77 43 84 47"
-            }
-            stroke="#6C6C6C"
-            strokeWidth="3"
-            strokeLinecap="round"
-            fill="none"
+            opacity="0.9"
           />
 
-          <g className="eye-group">
-            <g className="eye" style={{ transformOrigin: "45px 51px" }}>
-              <rect x="37" y={expression === "upset" ? 49 : 46} width="16" height={expression === "upset" ? 7 : 11} rx="5.5" fill="#F2F2F2" opacity={expression === "thinking" ? 0.92 : 1} />
-              <rect className="eye-pupil" x="42" y={expression === "upset" ? 49.5 : 46.5} width="7" height={expression === "upset" ? 6 : 10} rx="3.5" fill="#8A8A8A" />
-            </g>
-            <g className="eye" style={{ transformOrigin: "75px 51px" }}>
-              <rect x="67" y={expression === "upset" ? 49 : 46} width="16" height={expression === "upset" ? 7 : 11} rx="5.5" fill="#F2F2F2" opacity={expression === "thinking" ? 0.92 : 1} />
-              <rect className="eye-pupil" x="72" y={expression === "upset" ? 49.5 : 46.5} width="7" height={expression === "upset" ? 6 : 10} rx="3.5" fill="#8A8A8A" />
-            </g>
-            {expression === "upset" && (
-              <>
-                <path d="M 37 48 Q 45 44 53 48" stroke="#747474" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                <path d="M 67 48 Q 75 44 83 48" stroke="#747474" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-              </>
-            )}
-          </g>
-
-          <rect x="32" y="72" width="56" height="18" rx="9" fill="rgba(17,17,17,0.72)" stroke="rgba(255,255,255,0.08)" strokeWidth="1.2" />
-          <path
-            className="feature mouth-path"
-            d={
-              expression === "happy" || expression === "excited" ? "M 45 81 Q 60 92 75 81" :
-              expression === "upset" ? "M 46 84 Q 60 76 74 84" :
-              expression === "surprised" ? "M 50 82 Q 60 73 70 82 Q 60 88 50 82" :
-              "M 48 82 Q 60 86 72 82"
-            }
-            stroke="#F5F5F5"
-            strokeWidth="3"
-            strokeLinecap="round"
-            fill="none"
-          />
-          <path d="M 42 96 H 78" stroke="rgba(17,17,17,0.55)" strokeWidth="3" strokeLinecap="round" />
-
-          {expression === "upset" && (
-            <path className="tear" d="M 43 60 C 43 60, 40 65, 43 68 C 46 65, 43 60, 43 60 Z" fill="#B4B4B4" />
+          {/* Rosy cheeks for happy/excited */}
+          {(expression === "happy" || expression === "excited") && (
+            <>
+              <ellipse cx="34" cy="68" rx="7" ry="4.5" fill="rgba(255,255,255,0.2)" />
+              <ellipse cx="86" cy="68" rx="7" ry="4.5" fill="rgba(255,255,255,0.2)" />
+            </>
           )}
 
-          {/* Thinking Bubbles */}
+          {/* Thinking dots */}
           {expression === "thinking" && (
             <g>
-              <circle className="thought-dot" cx="88" cy="37" r="3" fill="#8E8E8E" />
-              <circle className="thought-dot" cx="96" cy="27" r="4.5" fill="#A4A4A4" />
-              <circle className="thought-dot" cx="105" cy="17" r="6" fill="#C8C8C8" />
-              <text className="thought-dot" x="105" y="20" textAnchor="middle" fontSize="9" fill="#303030" fontWeight="bold">?</text>
+              <circle className="harvey-think-dot" cx="90" cy="38" r="3.5" fill="rgba(255,255,255,0.7)" />
+              <circle className="harvey-think-dot" cx="100" cy="28" r="5" fill="rgba(255,255,255,0.85)" />
+              <circle className="harvey-think-dot" cx="111" cy="17" r="6.5" fill="rgba(255,255,255,0.9)" />
+              <text x="111" y="21" textAnchor="middle" fontSize="9" fill="#6366f1" fontWeight="bold">?</text>
             </g>
           )}
 
-          {/* Confused Question Mark */}
-          {expression === "surprised" && (
-            <text className="question-mark" x="90" y="32" fontSize="22" fontWeight="900" fill="#9A9A9A" fontFamily="Inter, system-ui, sans-serif">?</text>
-          )}
+          {/* Little hands / arms */}
+          <path d="M 18 72 Q 6 68 10 58 Q 12 52 18 56" strokeWidth="6" fill="none" strokeLinecap="round"
+            style={{ stroke: expression === "happy" || expression === "excited" ? "#10b981" : expression === "upset" ? "#6b7280" : "#6366f1" }}
+          />
+          <path d="M 102 72 Q 114 68 110 58 Q 108 52 102 56" strokeWidth="6" fill="none" strokeLinecap="round"
+            style={{ stroke: expression === "happy" || expression === "excited" ? "#10b981" : expression === "upset" ? "#6b7280" : "#6366f1" }}
+          />
+
+          {/* Bottom feet / base */}
+          <ellipse cx="46" cy="102" rx="12" ry="5"
+            style={{ fill: expression === "happy" || expression === "excited" ? "rgba(16,185,129,0.5)" : expression === "upset" ? "rgba(107,114,128,0.5)" : "rgba(99,102,241,0.5)" }}
+          />
+          <ellipse cx="74" cy="102" rx="12" ry="5"
+            style={{ fill: expression === "happy" || expression === "excited" ? "rgba(16,185,129,0.5)" : expression === "upset" ? "rgba(107,114,128,0.5)" : "rgba(99,102,241,0.5)" }}
+          />
         </g>
       </svg>
     </div>
