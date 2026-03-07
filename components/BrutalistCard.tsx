@@ -150,7 +150,7 @@ export const BrutalistCard: React.FC<BrutalistCardProps> = ({
         {/* Footer */}{" "}
         <div className="bg-card text-foreground text-[9px] p-1 text-center font-mono uppercase tracking-widest">
           {" "}
-          Harvey TCG • 2024 Edition{" "}
+          Claudius TCG • 2024 Edition{" "}
         </div>{" "}
         {/* Download Button (Hidden by default, visible on hover) */}{" "}
         <button

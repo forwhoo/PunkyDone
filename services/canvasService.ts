@@ -195,7 +195,7 @@ const CANVAS_TOOLS: any[] = [
 ];
 
 // ─── System Prompt ──────────────────────────────────────────────────────
-const CANVAS_SYSTEM_PROMPT = `You are Harvey Canvas, a world-class UI engineer.
+const CANVAS_SYSTEM_PROMPT = `You are Claudius Canvas, a world-class UI engineer.
 Your job is to build interactive, beautiful React components using TypeScript and Shadcn UI.
 
 ## AVAILABLE COMPONENTS (In Scope):

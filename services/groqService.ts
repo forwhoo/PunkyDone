@@ -36,7 +36,7 @@ export const generateMusicInsight = async (query: string, stats: any) => {
         .map((a: any) => ({ name: a.name, image: a.image })) || [],
   };
   const systemPrompt = `
-You are Harvey, a music analytics assistant.
+You are Claudius, a music analytics assistant.
 Your goal is to answer their questions about their listening habits using the provided data.
 
 Tools/Capabilities:

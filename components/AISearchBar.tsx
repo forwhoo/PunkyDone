@@ -145,15 +145,17 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({
   };
 
   return (
-    <div className="w-full relative z-50" ref={containerRef}>
+    <div className="w-full relative z-50 group/search" ref={containerRef}>
       <form onSubmit={(e) => handleSearch(e)} className="w-full relative">
         <div className="relative flex items-center">
-          <div className="absolute left-4 flex items-center pointer-events-none">
+          <div className="absolute left-4 flex items-center pointer-events-none z-10">
             <Search
-              className="w-4 h-4 transition-colors duration-200"
-              style={{ color: isFocused ? "#d97757" : "rgba(255,255,255,0.25)" }}
+              className="w-[18px] h-[18px] transition-colors duration-300"
+              style={{ color: isFocused ? "#d97757" : "rgba(255,255,255,0.4)" }}
             />
           </div>
+
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#d97757]/0 via-[#d97757]/5 to-[#d97757]/0 opacity-0 group-hover/search:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
           <input
             type="text"
@@ -166,28 +168,25 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({
               setShowSuggestions(true);
               setIsFocused(true);
             }}
-            placeholder="Ask Harvey anything about your music..."
-            className="w-full h-11 rounded-2xl pl-10 pr-28 text-sm outline-none transition-all duration-200"
+            placeholder="Ask Claudius anything about your music..."
+            className="w-full h-12 rounded-2xl pl-11 pr-28 text-[15px] outline-none transition-all duration-300 relative bg-[#121212] focus:bg-[#151515] text-foreground placeholder-[#6B6B6B]"
             style={{
-              background: isFocused ? "hsl(0,0%,10%)" : "hsl(0,0%,8%)",
               border: isFocused
-                ? "1px solid rgba(217,119,87,0.5)"
-                : "1px solid hsl(0,0%,14%)",
-              color: "hsl(0,0%,95%)",
+                ? "1px solid rgba(217,119,87,0.6)"
+                : "1px solid rgba(42,42,42,0.8)",
               caretColor: "#d97757",
               boxShadow: isFocused
-                ? "0 0 0 3px rgba(217,119,87,0.1), 0 4px 16px rgba(0,0,0,0.3)"
-                : "0 2px 8px rgba(0,0,0,0.2)",
+                ? "0 0 0 4px rgba(217,119,87,0.1), 0 8px 32px rgba(0,0,0,0.4)"
+                : "0 4px 12px rgba(0,0,0,0.2)",
             }}
           />
 
-          <div className="absolute right-2 flex items-center gap-1.5">
+          <div className="absolute right-2 flex items-center gap-1.5 z-10">
             {query && (
               <button
                 type="button"
                 onClick={() => { setQuery(""); setSuggestions([]); }}
-                className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-150"
-                style={{ color: "hsl(0,0%,40%)", background: "hsl(0,0%,14%)" }}
+                className="h-7 w-7 rounded-full flex items-center justify-center text-[12px] font-bold transition-all duration-200 hover:bg-[#2A2A2A] text-[#8A8A8A] hover:text-[#F5F5F5]"
               >
                 ×
               </button>
@@ -195,25 +194,26 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({
             <button
               type="submit"
               disabled={loading || !query.trim()}
-              className="h-7 px-3.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="h-8 px-4 rounded-xl text-[13px] font-bold flex items-center gap-2 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed group/ask-btn"
               style={{
-                background: query.trim() ? "linear-gradient(135deg, #d97757, #c45e3e)" : "hsl(0,0%,14%)",
-                color: query.trim() ? "#fff" : "hsl(0,0%,45%)",
-                boxShadow: query.trim() ? "0 2px 8px rgba(217,119,87,0.3)" : "none",
+                background: query.trim() ? "linear-gradient(135deg, #d97757, #c45e3e)" : "#1A1A1A",
+                color: query.trim() ? "#fff" : "#8A8A8A",
+                boxShadow: query.trim() ? "0 4px 12px rgba(217,119,87,0.25)" : "none",
+                border: query.trim() ? "none" : "1px solid #2A2A2A",
               }}
             >
               {loading ? (
                 <div
-                  className="w-3 h-3 rounded-full border-2 animate-spin"
+                  className="w-3.5 h-3.5 rounded-full border-[2.5px] animate-spin"
                   style={{
                     borderColor: "rgba(255,255,255,0.25)",
                     borderTopColor: "#fff",
                   }}
                 />
               ) : (
-                <Wand2 size={12} />
+                <Wand2 size={14} className={query.trim() ? "animate-pulse" : ""} />
               )}
-              <span>Ask</span>
+              <span className="tracking-wide">Ask</span>
             </button>
           </div>
         </div>
@@ -226,63 +226,51 @@ export const AISearchBar: React.FC<AISearchBarProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className="absolute top-full left-0 right-0 mt-1.5 rounded-md overflow-hidden z-50"
+            className="absolute top-full left-0 right-0 mt-2 rounded-2xl overflow-hidden z-50 backdrop-blur-xl"
             style={{
-              background: "hsl(0,0%,9%)",
-              border: "1px solid hsl(0,0%,15%)",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+              background: "rgba(18,18,18,0.95)",
+              border: "1px solid rgba(42,42,42,0.8)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
             }}
           >
-            <div className="p-1">
+            <div className="p-2 flex flex-col gap-1">
               {suggestions.map((suggestion, index) => (
                 <button
                   key={suggestion.id}
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-sm text-left group transition-colors duration-100"
-                  style={{ background: "transparent" }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "hsl(0,0%,13%)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left group transition-all duration-200 hover:bg-[#1A1A1A] border border-transparent hover:border-[#2A2A2A]"
                 >
                   <div
-                    className="w-6 h-6 rounded-sm flex items-center justify-center flex-shrink-0"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors"
                     style={{
                       background:
                         suggestion.type === "query"
                           ? "rgba(217,119,87,0.15)"
-                          : "hsl(0,0%,13%)",
+                          : "#151515",
                       border:
                         suggestion.type === "query"
-                          ? "1px solid rgba(217,119,87,0.25)"
-                          : "1px solid hsl(0,0%,18%)",
+                          ? "1px solid rgba(217,119,87,0.3)"
+                          : "1px solid #2A2A2A",
                     }}
                   >
                     {getIcon(suggestion.type)}
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className="text-xs font-medium truncate"
-                      style={{ color: "hsl(0,0%,90%)" }}
-                    >
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <p className="text-[14px] font-semibold truncate text-[#F5F5F5] tracking-tight">
                       {suggestion.type === "query" ? query : suggestion.text}
                     </p>
-                    <p
-                      className="text-[10px] truncate"
-                      style={{ color: "hsl(0,0%,40%)" }}
-                    >
+                    <p className="text-[11px] font-medium truncate text-[#8A8A8A] uppercase tracking-wider mt-0.5">
                       {suggestion.subtext}
                     </p>
                   </div>
 
-                  <TrendingUp
-                    size={11}
-                    className="-rotate-45 group-hover:rotate-0 transition-transform duration-200 flex-shrink-0"
-                    style={{ color: "hsl(0,0%,30%)" }}
-                  />
+                  <div className="w-6 h-6 rounded-full bg-[#1A1A1A] border border-[#2A2A2A] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:bg-[#d97757]/10 group-hover:border-[#d97757]/30">
+                    <TrendingUp
+                      size={12}
+                      className="-rotate-45 group-hover:rotate-0 transition-transform duration-300 flex-shrink-0 text-[#8A8A8A] group-hover:text-[#d97757]"
+                    />
+                  </div>
                 </button>
               ))}
             </div>
