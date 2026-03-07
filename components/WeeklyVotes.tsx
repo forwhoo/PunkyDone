@@ -17,10 +17,24 @@ interface VoteState {
 const WEEKLY_VOTES_STORAGE_PREFIX = "weekly_votes_v3";
 const LEGACY_WEEKLY_VOTES_KEY = "weekly_votes_v2";
 
-/** Bayesian average: avoids ties by weighting toward global mean when few votes */
-function bayesianScore(rating: number, globalMean: number, priorWeight = 3): number {
+/** Wilson Score Interval: A robust rating algorithm.
+ * Since each user has 1 vote per song, we map the 1-5 star rating to a probability of being a "positive" vote.
+ * We treat stars as: 1=0.0, 2=0.25, 3=0.5, 4=0.75, 5=1.0.
+ * We use a lower bound of Wilson score confidence interval for a Bernoulli parameter.
+ */
+function wilsonScore(rating: number, z = 1.96): number {
   if (rating === 0) return -1;
-  return (priorWeight * globalMean + rating) / (priorWeight + 1);
+
+  // Map 1-5 rating to 0-1 probability of "positive" interaction
+  const p = (rating - 1) / 4;
+  const n = 1; // 1 user rating
+
+  // Wilson score formula lower bound
+  const left = p + (z * z) / (2 * n);
+  const right = z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n));
+  const under = 1 + (z * z) / n;
+
+  return (left - right) / under;
 }
 
 const STAR_LABELS = ["", "Skip", "Meh", "Okay", "Good", "Banger!"];
@@ -115,9 +129,19 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
     : 3;
 
   const sortedSongs = [...pool].sort((a, b) => {
-    const sa = bayesianScore(votes[a.id]?.rating || 0, globalMean);
-    const sb = bayesianScore(votes[b.id]?.rating || 0, globalMean);
-    if (sb !== sa) return sb - sa;
+    const ratingA = votes[a.id]?.rating || 0;
+    const ratingB = votes[b.id]?.rating || 0;
+
+    const sa = wilsonScore(ratingA);
+    const sb = wilsonScore(ratingB);
+
+    // Sort by Wilson score descending
+    if (Math.abs(sb - sa) > 0.0001) return sb - sa;
+
+    // Tie-breaker: raw rating
+    if (ratingB !== ratingA) return ratingB - ratingA;
+
+    // Ultimate tie-breaker: original order
     return (originalOrder.get(a.id) || 0) - (originalOrder.get(b.id) || 0);
   });
 
@@ -166,26 +190,35 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
   const maxDist = Math.max(...dist, 1);
 
   return (
-    <div className="w-full bg-[#121212] border border-[#2A2A2A] rounded-3xl overflow-hidden">
+    <div className="w-full bg-[#121212] border border-[#2A2A2A] rounded-3xl overflow-hidden relative shadow-lg shadow-[#000000]/50 group/votes-card">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#d97757]/5 to-transparent pointer-events-none opacity-0 group-hover/votes-card:opacity-100 transition-opacity duration-700" />
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-[17px] font-bold text-foreground tracking-tight">Weekly Votes</h3>
-          {totalRated > 0 && (
-            <span className="text-[10px] font-bold text-[#A0A0A0] bg-[#1A1A1A] border border-[#2A2A2A] px-2 py-0.5 rounded-full uppercase tracking-widest">
-              {totalRated}/{pool.length} rated
-            </span>
-          )}
+      <div className="flex items-center justify-between px-5 pt-6 pb-4 border-b border-[#2A2A2A]/50 bg-[#151515]">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-[18px] font-bold text-foreground tracking-tight flex items-center gap-2">
+              Weekly Votes
+            </h3>
+            {totalRated > 0 && (
+              <span className="text-[10px] font-bold text-[#d97757] bg-[#d97757]/10 border border-[#d97757]/20 px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                {totalRated}/{pool.length} rated
+              </span>
+            )}
+          </div>
+          <p className="text-[12px] text-[#A0A0A0] font-medium leading-tight">Rate your top tracks this week using our Wilson Score algorithm.</p>
         </div>
-        <div className="flex items-center gap-1.5">
+
+        {/* Dynamic Equalizer / Chart */}
+        <div className="flex items-end gap-1.5 h-8">
           {[1, 2, 3, 4, 5].map((s) => (
-            <div key={s} className="flex flex-col items-center gap-0.5">
+            <div key={s} className="flex flex-col items-center justify-end h-full">
               <div
-                className="w-4 rounded-sm transition-all duration-300"
+                className="w-[6px] rounded-full transition-all duration-500 ease-out"
                 style={{
-                  height: `${Math.max(4, (dist[s - 1] / maxDist) * 28)}px`,
-                  backgroundColor: STAR_COLORS[s],
-                  opacity: dist[s - 1] > 0 ? 1 : 0.2,
+                  height: `${Math.max(4, (dist[s - 1] / maxDist) * 32)}px`,
+                  backgroundColor: dist[s - 1] > 0 ? STAR_COLORS[s] : '#2A2A2A',
+                  opacity: dist[s - 1] > 0 ? 0.9 : 0.4,
+                  boxShadow: dist[s - 1] > 0 ? `0 0 8px ${STAR_COLORS[s]}40` : 'none'
                 }}
               />
             </div>
@@ -195,8 +228,8 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
 
       {/* Progress bar */}
       {totalRated > 0 && (
-        <div className="px-5 pb-3">
-          <div className="w-full h-1 bg-[#2A2A2A] rounded-full overflow-hidden flex">
+        <div className="px-5 py-3 bg-[#181818]">
+          <div className="w-full h-1.5 bg-[#2A2A2A] rounded-full overflow-hidden flex shadow-inner">
             {[5, 4, 3, 2, 1].map((star) => (
               <div
                 key={star}
@@ -212,7 +245,7 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
       )}
 
       {/* Song list */}
-      <div className="px-3 pb-3 space-y-0.5">
+      <div className="p-3 space-y-1 bg-[#121212]">
         <AnimatePresence>
           {sortedSongs.map((song, index) => {
             const state = votes[song.id] || { rating: 0, submittedNote: "" };
@@ -232,11 +265,13 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
                 transition={{ duration: 0.2, ease: "easeInOut" }}
                 className="flex flex-col"
               >
-                <div className="flex items-center gap-3 px-2 py-2 rounded-2xl hover:bg-[#1A1A1A] transition-colors group">
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-[#1A1A1A] border border-transparent hover:border-[#2A2A2A] transition-all duration-300 group">
                   {/* Rank */}
-                  <span className="text-[11px] font-bold text-[#A0A0A0] w-4 text-center shrink-0">
-                    {currentRating > 0 ? index + 1 : "·"}
-                  </span>
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-[#181818] border border-[#2A2A2A] group-hover:border-[#3A3A3A] transition-colors shrink-0">
+                    <span className={`text-[11px] font-bold ${currentRating > 0 ? "text-foreground" : "text-[#6B6B6B]"}`}>
+                      {currentRating > 0 ? index + 1 : "—"}
+                    </span>
+                  </div>
 
                   {/* Cover */}
                   <div
@@ -252,39 +287,42 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-foreground truncate leading-tight">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <p className="text-[14px] font-semibold text-foreground truncate leading-tight tracking-tight">
                       {song.title}
                     </p>
-                    <p className="text-[11px] text-[#A0A0A0] truncate font-medium flex items-center gap-1">
+                    <p className="text-[12px] text-[#8A8A8A] truncate font-medium flex items-center gap-1.5 mt-0.5">
                       {song.artist}
                       {currentRating > 0 && (
-                        <span
-                          className="text-[10px] font-bold ml-1"
-                          style={{ color: STAR_COLORS[currentRating] }}
-                        >
-                          {STAR_LABELS[currentRating]}
-                        </span>
+                        <>
+                          <span className="w-1 h-1 rounded-full bg-[#3A3A3A]" />
+                          <span
+                            className="text-[11px] font-bold uppercase tracking-wider"
+                            style={{ color: STAR_COLORS[currentRating] }}
+                          >
+                            {STAR_LABELS[currentRating]}
+                          </span>
+                        </>
                       )}
                     </p>
                   </div>
 
                   {/* Stars */}
-                  <div className="flex items-center gap-0.5 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0 bg-[#181818] p-1.5 rounded-full border border-[#2A2A2A]">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
                         key={star}
                         onClick={() => handleRate(song.id, star)}
                         onMouseEnter={() => setHoveredStar({ id: song.id, star })}
                         onMouseLeave={() => setHoveredStar(null)}
-                        className="p-0.5 transition-transform hover:scale-125 active:scale-95"
+                        className="p-1 transition-all hover:scale-125 active:scale-95 focus:outline-none rounded-full"
                       >
                         <Star
-                          size={14}
-                          className="transition-all duration-100"
+                          size={15}
+                          className={`transition-all duration-200 ${star <= displayRating ? 'drop-shadow-md' : ''}`}
                           style={{
                             fill: star <= displayRating ? STAR_COLORS[currentRating || star] : "transparent",
-                            color: star <= displayRating ? STAR_COLORS[currentRating || star] : "#2A2A2A",
+                            color: star <= displayRating ? STAR_COLORS[currentRating || star] : "#3A3A3A",
                           }}
                         />
                       </button>

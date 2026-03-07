@@ -803,7 +803,7 @@ function App() {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         const searchInput = document.querySelector(
-          '[placeholder*="Ask Harvey"]',
+          '[placeholder*="Ask Claudius"]',
         ) as HTMLInputElement;
         if (searchInput) {
           searchInput.focus();
@@ -1536,20 +1536,23 @@ function App() {
                         </button>
                       </div>
                       {safeArtists.length > 0 && (
-                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0 scroll-pl-6">
-                          {safeArtists
-                            .filter(Boolean)
-                            .slice(0, 8)
-                            .map((artist: Artist, index: number) => (
-                              <RankedArtist
-                                key={artist.id}
-                                artist={artist}
-                                rank={index + 1}
-                                realImage={artistImages[artist.name]}
-                                onClick={() => setSelectedTopArtist(artist)}
-                              />
-                            ))}
-                          <div className="flex-shrink-0 w-6" aria-hidden="true" />
+                        <div className="relative -mx-6 px-6">
+                          <div className="absolute right-0 top-0 bottom-8 w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+                          <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x scroll-smooth gap-0 pr-24">
+                            {safeArtists
+                              .filter(Boolean)
+                              .slice(0, 8)
+                              .map((artist: Artist, index: number) => (
+                                <RankedArtist
+                                  key={artist.id}
+                                  artist={artist}
+                                  rank={index + 1}
+                                  realImage={artistImages[artist.name]}
+                                  onClick={() => setSelectedTopArtist(artist)}
+                                />
+                              ))}
+                            <div className="flex-shrink-0 w-6" aria-hidden="true" />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1568,19 +1571,22 @@ function App() {
                         </button>
                       </div>
                       {safeAlbums.length > 0 && (
-                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0 scroll-pl-6">
-                          {safeAlbums
-                            .filter(Boolean)
-                            .slice(0, 8)
-                            .map((album: Album, index: number) => (
-                              <RankedAlbum
-                                key={album.id}
-                                album={album}
-                                rank={index + 1}
-                                onClick={() => setSelectedTopAlbum(album)}
-                              />
-                            ))}
-                          <div className="flex-shrink-0 w-6" aria-hidden="true" />
+                        <div className="relative -mx-6 px-6">
+                          <div className="absolute right-0 top-0 bottom-8 w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+                          <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x scroll-smooth gap-0 pr-24">
+                            {safeAlbums
+                              .filter(Boolean)
+                              .slice(0, 8)
+                              .map((album: Album, index: number) => (
+                                <RankedAlbum
+                                  key={album.id}
+                                  album={album}
+                                  rank={index + 1}
+                                  onClick={() => setSelectedTopAlbum(album)}
+                                />
+                              ))}
+                            <div className="flex-shrink-0 w-6" aria-hidden="true" />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1599,19 +1605,22 @@ function App() {
                         </button>
                       </div>
                       {safeSongs.length > 0 && (
-                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0 scroll-pl-6">
-                          {safeSongs
-                            .filter(Boolean)
-                            .slice(0, 8)
-                            .map((song: Song, index: number) => (
-                              <RankedSong
-                                key={song.id}
-                                song={song}
-                                rank={index + 1}
-                                onClick={() => setSelectedTopSong(song)}
-                              />
-                            ))}
-                          <div className="flex-shrink-0 w-6" aria-hidden="true" />
+                        <div className="relative -mx-6 px-6">
+                          <div className="absolute right-0 top-0 bottom-8 w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+                          <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x scroll-smooth gap-0 pr-24">
+                            {safeSongs
+                              .filter(Boolean)
+                              .slice(0, 8)
+                              .map((song: Song, index: number) => (
+                                <RankedSong
+                                  key={song.id}
+                                  song={song}
+                                  rank={index + 1}
+                                  onClick={() => setSelectedTopSong(song)}
+                                />
+                              ))}
+                            <div className="flex-shrink-0 w-6" aria-hidden="true" />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1686,14 +1695,14 @@ function App() {
         color={auraColor}
       >
         {selectedTopArtist && (
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-16 max-w-5xl mx-auto w-full pt-4 md:pt-12">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-12 max-w-6xl mx-auto w-full pt-4 md:pt-8 h-full md:max-h-[85vh] overflow-hidden">
             <motion.div
               initial={{ scale: 0.9, opacity: 0, rotateY: 10 }}
               animate={{ scale: 1, opacity: 1, rotateY: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
-              className="relative shrink-0 perspective-1000"
+              className="relative shrink-0 perspective-1000 flex flex-col items-center justify-center md:h-full w-full md:w-5/12"
             >
-              <div className="w-64 h-64 md:w-96 md:h-96 rounded-full overflow-hidden border border-border/30 relative group">
+              <div className="w-48 h-48 md:w-full md:aspect-square md:h-auto md:max-h-[60vh] rounded-2xl md:rounded-3xl overflow-hidden border border-border/20 shadow-2xl relative group bg-[#111]">
                 <img
                   src={
                     artistImages[selectedTopArtist.name] ||
@@ -1703,63 +1712,114 @@ function App() {
                   className="w-full h-full object-cover"
                   alt={selectedTopArtist.name}
                 />
-                <div className="absolute inset-0 bg-gradient-to-tr from-black/40 to-transparent mix-blend-multiply opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-black/10 to-transparent mix-blend-multiply opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute bottom-6 left-6 right-6 hidden md:block">
+                  <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tighter leading-none mb-2 drop-shadow-lg break-words">
+                    {selectedTopArtist.name}
+                  </h1>
+                </div>
               </div>
             </motion.div>
-            <div className="flex flex-col flex-1 w-full text-center md:text-left">
+
+            <div className="flex flex-col flex-1 w-full text-center md:text-left h-full md:justify-center overflow-y-auto md:overflow-visible no-scrollbar pb-12 md:pb-0 px-2 md:px-0">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
+                className="md:hidden mb-6"
               >
-                <div className="inline-block bg-background px-3 py-1 rounded-full text-xs font-bold text-foreground mb-4 border border-border shadow-sm">
+                <div className="inline-block bg-[#1A1A1A] px-3 py-1 rounded-full text-[10px] font-bold text-[#d97757] uppercase tracking-widest mb-3 border border-[#2A2A2A] shadow-sm">
                   Rank #
                   {safeArtists.findIndex(
                     (a: Artist) => a.id === selectedTopArtist.id,
                   ) + 1 || "?"}
                 </div>
-                <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter leading-none mb-3">
+                <h1 className="text-4xl font-black text-foreground tracking-tighter leading-none">
                   {selectedTopArtist.name}
                 </h1>
-                {artistDiscoveryDate && (
-                  <p className="text-sm md:text-base font-medium text-foreground/50 mb-8">
-                    First heard {new Date(artistDiscoveryDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                  </p>
-                )}
-                {!artistDiscoveryDate && <div className="mb-8" />}
               </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="hidden md:flex items-center gap-4 mb-8"
+              >
+                <div className="bg-[#1A1A1A] px-4 py-1.5 rounded-full text-[11px] font-bold text-[#d97757] uppercase tracking-widest border border-[#2A2A2A] shadow-sm flex items-center gap-2">
+                  <Trophy size={12} />
+                  Rank #
+                  {safeArtists.findIndex(
+                    (a: Artist) => a.id === selectedTopArtist.id,
+                  ) + 1 || "?"}
+                </div>
+                {artistDiscoveryDate && (
+                  <div className="text-[12px] font-medium text-foreground/40 bg-background/50 px-4 py-1.5 rounded-full border border-border flex items-center gap-2">
+                    <Calendar size={12} />
+                    Discovered {new Date(artistDiscoveryDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </div>
+                )}
+              </motion.div>
+
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 }}
-                className="flex flex-col gap-0 border-t border-border"
+                className="grid grid-cols-2 gap-3 md:gap-4"
               >
-                <div className="flex justify-between items-center py-5 border-b border-border px-2">
-                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Total Plays</span>
-                  <span className="text-2xl font-heading font-black text-foreground">
+                {/* Stat Cards - Sleek & Compact */}
+                <div className="bg-[#121212]/80 backdrop-blur-md border border-[#2A2A2A]/60 p-5 rounded-2xl flex flex-col justify-center items-center md:items-start transition-all hover:bg-[#151515] hover:border-[#3A3A3A] group">
+                  <span className="font-bold uppercase tracking-widest text-[10px] text-[#A0A0A0] mb-1 group-hover:text-[#d97757] transition-colors">Total Plays</span>
+                  <span className="text-3xl md:text-4xl font-heading font-black text-foreground">
                     {selectedTopArtist.totalListens || 0}
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-5 border-b border-border px-2">
-                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Time Listened</span>
-                  <span className="text-2xl font-heading font-black text-foreground">
-                    {selectedTopArtist.timeStr
-                      ? String(selectedTopArtist.timeStr).replace("m", "")
-                      : "0"}
-                    <span className="text-sm text-foreground/40 ml-1">min</span>
-                  </span>
+
+                <div className="bg-[#121212]/80 backdrop-blur-md border border-[#2A2A2A]/60 p-5 rounded-2xl flex flex-col justify-center items-center md:items-start transition-all hover:bg-[#151515] hover:border-[#3A3A3A] group">
+                  <span className="font-bold uppercase tracking-widest text-[10px] text-[#A0A0A0] mb-1 group-hover:text-[#d97757] transition-colors">Time Listened</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl md:text-4xl font-heading font-black text-foreground">
+                      {selectedTopArtist.timeStr
+                        ? String(selectedTopArtist.timeStr).replace("m", "")
+                        : "0"}
+                    </span>
+                    <span className="text-sm font-bold text-[#6B6B6B]">min</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center py-5 border-b border-border px-2">
-                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Unique Songs</span>
-                  <span className="text-2xl font-heading font-black text-foreground">
+
+                <div className="bg-[#121212]/80 backdrop-blur-md border border-[#2A2A2A]/60 p-5 rounded-2xl flex flex-col justify-center items-center md:items-start transition-all hover:bg-[#151515] hover:border-[#3A3A3A] group">
+                  <span className="font-bold uppercase tracking-widest text-[10px] text-[#A0A0A0] mb-1 group-hover:text-[#d97757] transition-colors">Unique Songs</span>
+                  <span className="text-3xl md:text-4xl font-heading font-black text-foreground">
                     {selectedArtistStats?.varietyCount || 0}
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-5 px-2">
-                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Share of Plays</span>
-                  <span className="text-2xl font-heading font-black text-foreground">
-                    {selectedArtistStats?.popularityScore || 0}%
-                  </span>
+
+                <div className="bg-[#121212]/80 backdrop-blur-md border border-[#2A2A2A]/60 p-5 rounded-2xl flex flex-col justify-center items-center md:items-start transition-all hover:bg-[#151515] hover:border-[#3A3A3A] group">
+                  <span className="font-bold uppercase tracking-widest text-[10px] text-[#A0A0A0] mb-1 group-hover:text-[#d97757] transition-colors">Share of Plays</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl md:text-4xl font-heading font-black text-foreground">
+                      {selectedArtistStats?.popularityScore || 0}
+                    </span>
+                    <span className="text-xl font-bold text-[#6B6B6B]">%</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="mt-6 md:mt-8 p-4 bg-[#1A1A1A]/50 border border-[#2A2A2A] rounded-2xl flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3 text-left">
+                  <div className="w-10 h-10 rounded-full bg-[#2A2A2A] flex items-center justify-center flex-shrink-0">
+                    <Music size={16} className="text-[#A0A0A0]" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-[#8A8A8A] uppercase tracking-wider mb-0.5">Top Track</div>
+                    <div className="text-sm font-semibold text-[#F5F5F5] leading-tight line-clamp-1">
+                      {safeSongs.find(s => s.artist === selectedTopArtist.name)?.title || "Unknown Track"}
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -2061,7 +2121,7 @@ function App() {
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#1A1A1A] flex-shrink-0 bg-[#050505]">
                 <div>
                   <h2 className="text-lg font-black text-[#F5F5F5] tracking-tight">
-                    Harvey
+                    Claudius
                   </h2>
                   <p className="text-[11px] text-[#A0A0A0] font-medium">AI Music Discovery</p>
                 </div>

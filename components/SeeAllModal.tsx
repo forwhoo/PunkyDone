@@ -131,78 +131,83 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 80, opacity: 0, scale: 0.97 }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
-            className="relative bg-[#0C0C0C] w-full h-[92vh] md:h-[88vh] md:w-[88vw] md:max-w-5xl md:rounded-3xl overflow-hidden flex flex-col rounded-t-3xl"
-            style={{ border: `1px solid ${accent}22` }}
+            className="relative bg-[#0F0F0F] w-full h-[95vh] md:h-[85vh] md:w-[90vw] md:max-w-5xl md:rounded-3xl overflow-hidden flex flex-col rounded-t-3xl shadow-2xl"
+            style={{ border: `1px solid ${accent}40`, boxShadow: `0 0 80px -20px ${accent}40` }}
           >
-            {/* Accent line at top */}
-            <div className="h-[2px] w-full flex-shrink-0" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
+            {/* Ambient Background Glow */}
+            <div
+              className="absolute top-0 left-0 right-0 h-64 pointer-events-none opacity-20"
+              style={{ background: `radial-gradient(ellipse at 50% -20%, ${accent}, transparent 70%)` }}
+            />
 
             {/* Header */}
-            <div className="flex-shrink-0 px-6 py-5 border-b border-white/[0.05]">
-              <div className="flex items-start justify-between gap-4">
+            <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b border-[#2A2A2A]/40 relative z-10 bg-[#0F0F0F]/80 backdrop-blur-xl">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-2xl border" style={{ background: `${accent}15`, borderColor: `${accent}30` }}>
+                  <div className="p-3 rounded-2xl bg-[#1A1A1A] border border-[#2A2A2A] shadow-sm flex items-center justify-center">
                     <TypeIcon type={type} />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-2xl font-bold text-foreground tracking-tight">{title}</h2>
+                    <h2 className="text-3xl font-black text-foreground tracking-tighter flex items-center gap-3">
+                      {title}
                       <span
-                        className="text-xs font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: `${accent}20`, color: accent }}
+                        className="text-xs font-bold px-2.5 py-0.5 rounded-full border border-current shadow-sm"
+                        style={{ background: `${accent}15`, color: accent }}
                       >
                         {processedItems.length}
                       </span>
-                    </div>
-                    <p className="text-xs text-foreground/30 mt-0.5 font-medium">
+                    </h2>
+                    <p className="text-xs text-[#8A8A8A] mt-1 font-medium tracking-wide uppercase">
                       {totalPlays.toLocaleString()} total plays
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   {/* View toggle */}
-                  <div className="bg-white/[0.04] p-1 rounded-xl flex border border-white/[0.06] gap-0.5">
+                  <div className="bg-[#1A1A1A] p-1 rounded-xl flex border border-[#2A2A2A] shadow-inner">
                     <button
                       onClick={() => setViewMode("list")}
-                      className="p-1.5 rounded-lg transition-all"
-                      style={viewMode === "list" ? { background: accent, color: "#000" } : { color: "rgba(255,255,255,0.3)" }}
+                      className="p-2 rounded-lg transition-all focus:outline-none"
+                      style={viewMode === "list" ? { background: accent, color: "#000", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" } : { color: "#8A8A8A" }}
                     >
-                      <ListIcon size={13} />
+                      <ListIcon size={14} />
                     </button>
                     <button
                       onClick={() => setViewMode("grid")}
-                      className="p-1.5 rounded-lg transition-all"
-                      style={viewMode === "grid" ? { background: accent, color: "#000" } : { color: "rgba(255,255,255,0.3)" }}
+                      className="p-2 rounded-lg transition-all focus:outline-none"
+                      style={viewMode === "grid" ? { background: accent, color: "#000", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" } : { color: "#8A8A8A" }}
                     >
-                      <LayoutGrid size={13} />
+                      <LayoutGrid size={14} />
                     </button>
                   </div>
 
                   <button
                     onClick={onClose}
-                    className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-foreground/40 hover:text-foreground transition-all border border-white/[0.06]"
+                    className="p-2.5 rounded-xl bg-[#1A1A1A] hover:bg-[#2A2A2A] text-[#8A8A8A] hover:text-[#F5F5F5] transition-all border border-[#2A2A2A]"
                   >
-                    <X size={16} />
+                    <X size={18} />
                   </button>
                 </div>
               </div>
 
               {/* Search + Sort */}
-              <div className="flex items-center gap-3 mt-4">
-                <div className="relative flex-1 max-w-xs">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/25" size={14} />
+              <div className="flex items-center gap-3 bg-[#151515] p-2 rounded-2xl border border-[#2A2A2A]">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B6B6B]" size={16} />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={`Search ${type}s...`}
-                    className="w-full bg-white/[0.04] border border-white/[0.06] focus:border-white/[0.15] rounded-xl py-2 pl-9 pr-3 text-sm text-foreground placeholder-white/20 focus:outline-none transition-all"
+                    className="w-full bg-transparent border-none py-2 pl-10 pr-4 text-sm text-[#F5F5F5] placeholder-[#6B6B6B] focus:outline-none"
                   />
                 </div>
 
+                <div className="w-px h-6 bg-[#2A2A2A] mx-1"></div>
+
                 {/* Sort pills */}
-                <div className="flex gap-1.5">
+                <div className="flex gap-1 pr-1">
                   {[
                     { key: "plays", label: "Plays", icon: TrendingUp },
                     { key: "time", label: "Time", icon: Clock },
@@ -211,14 +216,14 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
                     <button
                       key={key}
                       onClick={() => setSortBy(key as any)}
-                      className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1"
+                      className="px-3.5 py-2 rounded-xl text-[11px] font-bold tracking-wider uppercase transition-all flex items-center gap-1.5 focus:outline-none"
                       style={
                         sortBy === key
-                          ? { background: accent, color: "#000" }
-                          : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.06)" }
+                          ? { background: accent, color: "#000", boxShadow: `0 2px 10px ${accent}40` }
+                          : { background: "transparent", color: "#8A8A8A", hover: { color: "#F5F5F5" } }
                       }
                     >
-                      {Icon && <Icon size={10} />}
+                      {Icon && <Icon size={12} />}
                       {label}
                     </button>
                   ))}
@@ -227,39 +232,40 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-6 bg-[#0F0F0F]">
               {processedItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-foreground/20">
-                  <Search size={40} className="mb-3 opacity-30" />
-                  <p className="text-sm">No results for "{searchQuery}"</p>
+                <div className="flex flex-col items-center justify-center h-full text-[#6B6B6B]">
+                  <Search size={48} className="mb-4 opacity-50" />
+                  <p className="text-lg font-medium">No results for "{searchQuery}"</p>
                 </div>
               ) : viewMode === "grid" ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {processedItems.map((item, index) => (
                     <motion.div
                       key={index}
                       layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index < 20 ? index * 0.025 : 0 }}
-                      className="group cursor-pointer bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.05] hover:border-white/[0.15] rounded-2xl p-3 flex flex-col items-center text-center gap-2.5 transition-all hover:-translate-y-1"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index < 20 ? index * 0.025 : 0, duration: 0.4 }}
+                      className="group cursor-pointer flex flex-col gap-3 transition-all"
                       onClick={() => onItemClick?.(item)}
                     >
-                      <div className="relative w-full aspect-square overflow-hidden rounded-xl">
+                      <div className="relative w-full aspect-square overflow-hidden rounded-2xl border border-[#2A2A2A] group-hover:border-[#4A4A4A] transition-colors shadow-lg">
                         <img
                           src={getItemImage(item)}
                           alt={item.name || item.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                           style={{ borderRadius: type === "artist" ? "50%" : undefined }}
                           loading="lazy"
                         />
-                        <div className="absolute top-2 left-2 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-                          #{index + 1}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <div className="absolute top-3 left-3 w-7 h-7 bg-black/80 backdrop-blur-md flex items-center justify-center text-[#F5F5F5] text-[11px] font-black rounded-full border border-white/10 shadow-sm">
+                          {index + 1}
                         </div>
                       </div>
-                      <div className="w-full">
-                        <p className="text-[12px] font-semibold text-foreground truncate">{item.name || item.title}</p>
-                        <p className="text-[10px] text-foreground/40 truncate mt-0.5">
+                      <div className="w-full px-1">
+                        <p className="text-[14px] font-bold text-[#F5F5F5] truncate leading-tight group-hover:text-white transition-colors">{item.name || item.title}</p>
+                        <p className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-wider truncate mt-1">
                           {(item.totalListens || item.listens || 0).toLocaleString()} plays
                         </p>
                       </div>
@@ -267,60 +273,67 @@ export const SeeAllModal: React.FC<SeeAllModalProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="space-y-0.5">
+                <div className="space-y-1.5">
                   {processedItems.map((item, index) => {
                     const plays = item.totalListens || item.listens || 0;
-                    const barWidth = Math.max(2, (plays / maxPlays) * 100);
+                    const barWidth = Math.max(1, (plays / maxPlays) * 100);
                     return (
                       <motion.div
                         key={index}
                         layout
-                        initial={{ opacity: 0, x: -12 }}
+                        initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index < 30 ? index * 0.02 : 0 }}
-                        className="group relative cursor-pointer flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition-colors overflow-hidden"
+                        transition={{ delay: index < 30 ? index * 0.02 : 0, duration: 0.3 }}
+                        className="group relative cursor-pointer flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-[#1A1A1A] border border-transparent hover:border-[#2A2A2A] transition-all overflow-hidden"
                         onClick={() => onItemClick?.(item)}
                       >
                         {/* Background bar */}
                         <div
-                          className="absolute inset-y-0 left-0 rounded-xl transition-all duration-700"
-                          style={{ width: `${barWidth}%`, background: `${accent}12` }}
+                          className="absolute inset-y-0 left-0 rounded-2xl transition-all duration-1000 ease-out opacity-20 group-hover:opacity-30"
+                          style={{ width: `${barWidth}%`, background: `linear-gradient(90deg, ${accent}40, ${accent}80)` }}
                         />
 
                         {/* Rank */}
-                        <span className="relative z-10 text-[12px] font-bold w-6 text-center flex-shrink-0"
-                          style={{ color: index < 3 ? accent : "rgba(255,255,255,0.3)" }}>
-                          {index + 1}
-                        </span>
+                        <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-[#151515] border border-[#2A2A2A] flex-shrink-0">
+                           <span className="text-[11px] font-black" style={{ color: index < 3 ? accent : "#8A8A8A" }}>
+                            {index + 1}
+                          </span>
+                        </div>
 
                         {/* Image */}
-                        <div className={`relative z-10 flex-shrink-0 overflow-hidden border border-white/[0.08] ${
-                          type === "artist" ? "w-10 h-10 rounded-full" : "w-10 h-10 rounded-lg"
+                        <div className={`relative z-10 flex-shrink-0 overflow-hidden border border-[#2A2A2A] shadow-md ${
+                          type === "artist" ? "w-14 h-14 rounded-full" : "w-14 h-14 rounded-xl"
                         }`}>
                           <img
                             src={getItemImage(item)}
                             alt={item.name || item.title}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                             loading="lazy"
                           />
                         </div>
 
                         {/* Info */}
-                        <div className="relative z-10 flex-1 min-w-0">
-                          <p className="text-[13px] font-semibold text-foreground truncate group-hover:text-white transition-colors">
+                        <div className="relative z-10 flex-1 min-w-0 pr-4">
+                          <p className="text-[16px] font-bold text-[#F5F5F5] truncate group-hover:text-white tracking-tight transition-colors">
                             {item.name || item.title}
                           </p>
-                          <p className="text-[11px] text-foreground/40 truncate">
+                          <p className="text-[12px] font-medium text-[#8A8A8A] truncate mt-0.5 flex items-center gap-1.5">
                             {type === "artist"
                               ? item.timeStr || ""
-                              : `${item.artist || ""}${item.artist ? " · " : ""}${item.timeStr || ""}`}
+                              : (
+                                <>
+                                  {item.artist && <span className="text-[#A0A0A0]">{item.artist}</span>}
+                                  {item.artist && item.timeStr && <span className="w-1 h-1 rounded-full bg-[#4A4A4A]" />}
+                                  {item.timeStr && <span>{item.timeStr}</span>}
+                                </>
+                              )}
                           </p>
                         </div>
 
                         {/* Plays */}
-                        <div className="relative z-10 flex-shrink-0 flex items-center gap-1.5">
-                          <Headphones size={10} style={{ color: `${accent}80` }} />
-                          <span className="text-[12px] font-bold text-foreground/70 group-hover:text-foreground transition-colors">
+                        <div className="relative z-10 flex-shrink-0 flex items-center gap-2 bg-[#151515] px-3 py-1.5 rounded-full border border-[#2A2A2A]">
+                          <Headphones size={12} style={{ color: accent }} />
+                          <span className="text-[13px] font-black text-[#F5F5F5] tracking-wide">
                             {plays.toLocaleString()}
                           </span>
                         </div>

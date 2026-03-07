@@ -297,6 +297,35 @@ export const AISpotlight: React.FC<TopAIProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [faceExpression, setFaceExpression] = useState<FaceExpression>("neutral");
 
+  // Keep track of the active tool call to switch expressions
+  useEffect(() => {
+    const aiMessages = chatMessages.filter(m => m.role === "ai");
+    const lastMsg = aiMessages[aiMessages.length - 1];
+
+    if (loading && lastMsg?.isThinking) {
+        if (lastMsg.tools && lastMsg.tools.length > 0) {
+            const currentTool = lastMsg.tools[lastMsg.tools.length - 1].type;
+            if (currentTool.includes("search") || currentTool.includes("get")) {
+                 setFaceExpression("tool-call-3"); // Scanning
+            } else if (currentTool.includes("vote") || currentTool.includes("roast")) {
+                 setFaceExpression("tool-call-1"); // Glasses
+            } else {
+                 setFaceExpression("tool-call-2"); // Processing/Sleepy
+            }
+        } else {
+             setFaceExpression("thinking");
+        }
+    } else if (!loading && errorMsg) {
+        setFaceExpression("upset");
+    } else if (!loading && !errorMsg) {
+        if (userPrompt.length > 0) {
+            setFaceExpression("watching");
+        } else {
+            setFaceExpression("neutral");
+        }
+    }
+  }, [chatMessages, loading, errorMsg, userPrompt]);
+
   useEffect(() => {
     if (initialQuery && initialQuery.trim()) {
       handleQuery(initialQuery);
@@ -354,7 +383,6 @@ export const AISpotlight: React.FC<TopAIProps> = ({
     setLoading(true);
     setErrorMsg(null);
     setUserPrompt("");
-    setFaceExpression("thinking");
 
     try {
       setChatMessages((prev) => [
@@ -409,10 +437,8 @@ export const AISpotlight: React.FC<TopAIProps> = ({
       );
     } catch (err: any) {
       setErrorMsg(`Error: ${err.message || "Unknown"}`);
-      setFaceExpression("upset");
     }
     setLoading(false);
-    setFaceExpression((prev) => prev === "thinking" || prev === "upset" ? "happy" : prev);
   };
 
   const isEmpty = chatMessages.length === 0 && !loading;
@@ -439,7 +465,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                 <AIFace expression="neutral" size={96} />
               </motion.div>
               <h3 className="text-[22px] font-bold text-foreground tracking-tight mb-1">
-                Ask Harvey
+                Ask Claudius
               </h3>
               <p className="text-foreground/40 text-[14px] max-w-[260px] leading-relaxed mb-8">
                 Your personal music analyst. Ask anything.
@@ -479,9 +505,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
                       <div className="flex-shrink-0 mt-0.5">
                         <AIFace
                           expression={
-                            msg.isThinking && !msg.text ? "thinking" :
-                            idx === chatMessages.length - 1 && !loading ? faceExpression :
-                            "neutral"
+                            idx === chatMessages.length - 1 ? faceExpression : "neutral"
                           }
                           size={40}
                         />
@@ -573,7 +597,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
           <div className="max-w-2xl mx-auto">
             <div className="flex items-end gap-3">
               <div className="flex-shrink-0 pb-2">
-                <AIFace expression={loading ? "thinking" : errorMsg ? "upset" : faceExpression} size={44} />
+                <AIFace expression={faceExpression} size={44} />
               </div>
           <PromptInput
             value={userPrompt}
@@ -583,7 +607,7 @@ export const AISpotlight: React.FC<TopAIProps> = ({
             className="bg-white/[0.04] border border-white/[0.08] rounded-2xl shadow-none focus-within:border-white/[0.15] transition-colors"
           >
             <PromptInputTextarea
-              placeholder="Ask Harvey..."
+              placeholder="Ask Claudius..."
               className="text-foreground placeholder:text-foreground/25 min-h-[44px] max-h-[120px] px-4 py-3 text-[14px] bg-transparent resize-none"
             />
             <PromptInputActions className="justify-end pt-0 pb-2 pr-2 flex items-center gap-1">

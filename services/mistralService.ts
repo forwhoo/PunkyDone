@@ -1632,7 +1632,7 @@ async function executeAgentTool(
 }
 
 // ─── AGENT SYSTEM PROMPT ─────────────────────────────────────────
-const AGENT_SYSTEM_PROMPT = `You are **Harvey**, the AI music analytics agent.
+const AGENT_SYSTEM_PROMPT = `You are **Claudius**, the AI music analytics agent.
 
 **CORE DIRECTIVE:**
 Answer user questions about their music listening habits using the provided tools.
@@ -1720,7 +1720,7 @@ export const streamMusicQuestionWithTools = async (
     } else {
       messages.push({
         role: "assistant",
-        content: "I understand. I am Harvey, ready to analyze music data.",
+        content: "I understand. I am Claudius, ready to analyze music data.",
       });
     }
 
@@ -1984,7 +1984,7 @@ export const answerMusicQuestionWithTools = async (
     } else {
       messages.push({
         role: "assistant",
-        content: "I understand. I am Harvey, ready to analyze music data.",
+        content: "I understand. I am Claudius, ready to analyze music data.",
       });
     }
 
