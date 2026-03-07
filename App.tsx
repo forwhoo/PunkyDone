@@ -8,19 +8,14 @@ import React, {
 import {
   Music,
   X,
-  TrendingUp,
   Clock,
   Calendar,
-  Sparkles,
   Disc,
   Info,
   ChevronRight,
   Shuffle,
   RefreshCw,
   ArrowUp,
-  Zap,
-  Layers,
-  Globe,
   Database,
   Trophy,
 } from "lucide-react";
@@ -37,7 +32,6 @@ import { AISearchBar } from "./components/AISearchBar";
 import { TrendingArtists } from "./components/TrendingArtists";
 import { UpcomingArtists } from "./components/UpcomingArtists";
 import { ActivityHeatmap } from "./components/ActivityHeatmap";
-import { ArtistOrbit } from "./components/ArtistOrbit";
 import { EmptyState } from "./components/EmptyState";
 import Particles from "./components/reactbits/Particles";
 import { FullScreenModal } from "./components/FullScreenModal";
@@ -424,106 +418,6 @@ const MobileListRow = ({
 );
 import { SeeAllModal } from "./components/SeeAllModal";
 import { DatabaseViewer } from "./components/DatabaseViewer";
-const StatsCarousel = ({ stats, artist }: { stats: any; artist: Artist }) => {
-  const [page, setPage] = useState(0);
-
-  // Group stats
-  const slide1 = [
-    {
-      icon: TrendingUp,
-      value: artist.totalListens || 0,
-      label: "Total Plays",
-      color: "text-foreground",
-    },
-    {
-      icon: Clock,
-      value: artist.timeStr ? String(artist.timeStr).replace("m", "") : "0",
-      label: "Minutes",
-      color: "text-foreground",
-    },
-    {
-      icon: Sparkles,
-      value: `${stats?.popularityScore || 0}%`,
-      label: "Of Time",
-      color: "text-foreground",
-    },
-  ];
-  const slide2 = [
-    {
-      icon: Layers,
-      value: stats?.varietyCount || 0,
-      label: "Unique Songs",
-      color: "text-foreground",
-    },
-    {
-      icon: Zap,
-      value: stats?.dailyAverage || 0,
-      label: "Avg / Day",
-      color: "text-foreground",
-    },
-    {
-      icon: Globe,
-      value: stats?.peakTimeLabel || "-",
-      label: "Peak Time",
-      color: "text-foreground",
-    },
-  ];
-  const slides = [slide1, slide2];
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPage((prev) => (prev + 1) % slides.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [slides.length]);
-  return (
-    <div className="w-full max-w-lg mb-8 overflow-hidden relative">
-      {" "}
-      <div
-        className="flex transition-transform duration-500 ease-in-out"
-        style={{
-          transform: `translateX(-${page * 100}%)`,
-        }}
-      >
-        {" "}
-        {slides.map((slide, i) => (
-          <div key={i} className="min-w-full grid grid-cols-3 gap-3 px-1">
-            {" "}
-            {slide.map((stat, j) => (
-              <div
-                key={j}
-                className="bg-background/50 border border-border rounded-2xl p-4 flex flex-col items-center text-center"
-              >
-                {" "}
-                <stat.icon
-                  size={16}
-                  className={`mb-1.5 opacity-80 ${stat.color}`}
-                />{" "}
-                <span className="text-xl font-black text-foreground">
-                  {stat.value}
-                </span>{" "}
-                <span className="text-[10px] uppercase tracking-wider text-foreground/50 font-bold">
-                  {stat.label}
-                </span>{" "}
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>{" "}
-      {/*
-// Indicators */}
-      <div className="flex justify-center gap-1.5 mt-3">
-        {" "}
-        {slides.map((_, i) => (
-          <button
-            key={i}
-            className={`w-1.5 h-1.5 rounded-full transition-colors ${i === page ? "bg-background" : "bg-background/30"}`}
-            onClick={() => setPage(i)}
-          />
-        ))}
-      </div>{" "}
-    </div>
-  );
-};
 function App() {
   const hasAuthCallback =
     window.location.search.includes("code=") ||
@@ -1642,7 +1536,7 @@ function App() {
                         </button>
                       </div>
                       {safeArtists.length > 0 && (
-                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0 scroll-pl-6">
                           {safeArtists
                             .filter(Boolean)
                             .slice(0, 8)
@@ -1655,6 +1549,7 @@ function App() {
                                 onClick={() => setSelectedTopArtist(artist)}
                               />
                             ))}
+                          <div className="flex-shrink-0 w-6" aria-hidden="true" />
                         </div>
                       )}
                     </div>
@@ -1673,7 +1568,7 @@ function App() {
                         </button>
                       </div>
                       {safeAlbums.length > 0 && (
-                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0 scroll-pl-6">
                           {safeAlbums
                             .filter(Boolean)
                             .slice(0, 8)
@@ -1685,6 +1580,7 @@ function App() {
                                 onClick={() => setSelectedTopAlbum(album)}
                               />
                             ))}
+                          <div className="flex-shrink-0 w-6" aria-hidden="true" />
                         </div>
                       )}
                     </div>
@@ -1703,7 +1599,7 @@ function App() {
                         </button>
                       </div>
                       {safeSongs.length > 0 && (
-                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0">
+                        <div className="flex items-start overflow-x-auto pb-8 pt-2 no-scrollbar snap-x pl-6 scroll-smooth gap-0 scroll-pl-6">
                           {safeSongs
                             .filter(Boolean)
                             .slice(0, 8)
@@ -1715,6 +1611,7 @@ function App() {
                                 onClick={() => setSelectedTopSong(song)}
                               />
                             ))}
+                          <div className="flex-shrink-0 w-6" aria-hidden="true" />
                         </div>
                       )}
                     </div>
@@ -1788,166 +1685,87 @@ function App() {
         }
         color={auraColor}
       >
-        {" "}
         {selectedTopArtist && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-6xl mx-auto w-full items-start">
-            {" "}
-            <div className="flex flex-col gap-6">
-              {" "}
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-16 max-w-5xl mx-auto w-full pt-4 md:pt-12">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, rotateY: 10 }}
+              animate={{ scale: 1, opacity: 1, rotateY: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.1 }}
+              className="relative shrink-0 perspective-1000"
+            >
+              <div className="w-64 h-64 md:w-96 md:h-96 rounded-full overflow-hidden border border-border/30 relative group">
+                <img
+                  src={
+                    artistImages[selectedTopArtist.name] ||
+                    selectedTopArtist?.image ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedTopArtist.name)}&background=1C1C1E&color=fff`
+                  }
+                  className="w-full h-full object-cover"
+                  alt={selectedTopArtist.name}
+                />
+                <div className="absolute inset-0 bg-gradient-to-tr from-black/40 to-transparent mix-blend-multiply opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              </div>
+            </motion.div>
+            <div className="flex flex-col flex-1 w-full text-center md:text-left">
               <motion.div
-                initial={{
-                  scale: 0.95,
-                  opacity: 0,
-                }}
-                animate={{
-                  scale: 1,
-                  opacity: 1,
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 200,
-                  damping: 25,
-                  delay: 0.1,
-                }}
-                className="relative group w-full"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
               >
-                {" "}
-                <div className="w-full aspect-square rounded-[32px] overflow-hidden border border-border relative">
-                  {" "}
-                  <img
-                    src={
-                      artistImages[selectedTopArtist.name] ||
-                      selectedTopArtist?.image ||
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        selectedTopArtist.name,
-                      )}&background=1C1C1E&color=fff`
-                    }
-                    className="w-full h-full object-cover bg-background"
-                    alt={selectedTopArtist.name}
-                  />{" "}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent mix-blend-multiply" />{" "}
-                  <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
-                    {" "}
-                    <div className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-full font-black text-sm border border-white/10">
-                      #{safeArtists.findIndex(
-                        (a: Artist) => a.id === selectedTopArtist.id,
-                      ) + 1 || "?"}
-                    </div>{" "}
-                  </div>{" "}
-                </div>{" "}
-              </motion.div>{" "}
-              <motion.div
-                initial={{
-                  opacity: 0,
-                  y: 20,
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                }}
-                transition={{
-                  delay: 0.15,
-                }}
-                className="flex flex-col gap-2"
-              >
-                {" "}
-                <h1 className="text-5xl md:text-6xl font-black text-foreground tracking-tighter leading-none mb-2 ">
-                  {" "}
+                <div className="inline-block bg-background px-3 py-1 rounded-full text-xs font-bold text-foreground mb-4 border border-border shadow-sm">
+                  Rank #
+                  {safeArtists.findIndex(
+                    (a: Artist) => a.id === selectedTopArtist.id,
+                  ) + 1 || "?"}
+                </div>
+                <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter leading-none mb-3">
                   {selectedTopArtist.name}
-                </h1>{" "}
-                <div className="flex flex-wrap items-center gap-3">
-                  {" "}
-                  <div className="bg-background border border-border px-4 py-2 rounded-xl text-sm font-semibold text-foreground">
-                    {" "}
-                    {selectedTopArtist.timeStr || "0m"}
-                    listened{" "}
-                  </div>{" "}
-                  {artistDiscoveryDate && (
-                    <div className="px-4 py-2 rounded-xl bg-background/50 border border-border text-sm font-medium text-foreground/70">
-                      First heard {new Date(artistDiscoveryDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                    </div>
-                  )}
-                </div>{" "}
-              </motion.div>{" "}
-            </div>{" "}
-            <div className="flex flex-col w-full">
-              {" "}
+                </h1>
+                {artistDiscoveryDate && (
+                  <p className="text-sm md:text-base font-medium text-foreground/50 mb-8">
+                    First heard {new Date(artistDiscoveryDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                  </p>
+                )}
+                {!artistDiscoveryDate && <div className="mb-8" />}
+              </motion.div>
               <motion.div
-                initial={{
-                  opacity: 0,
-                  x: 20,
-                }}
-                animate={{
-                  opacity: 1,
-                  x: 0,
-                }}
-                transition={{
-                  delay: 0.2,
-                }}
-                className="w-full mb-10"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="flex flex-col gap-0 border-t border-border"
               >
-                {" "}
-                <h3 className="text-xs font-bold uppercase tracking-widest text-foreground/50 mb-4">
-                  Listening Stats
-                </h3>{" "}
-                <StatsCarousel
-                  stats={selectedArtistStats}
-                  artist={selectedTopArtist}
-                />{" "}
-              </motion.div>{" "}
-              <motion.div
-                initial={{
-                  opacity: 0,
-                  scale: 0.95,
-                }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                }}
-                transition={{
-                  delay: 0.3,
-                }}
-                className="w-full bg-background border border-border rounded-3xl p-6"
-              >
-                {" "}
-                <ArtistOrbit
-                  centralNode={{
-                    id: selectedTopArtist.id,
-                    name: selectedTopArtist.name,
-                    image:
-                      artistImages[selectedTopArtist.name] ||
-                      selectedTopArtist.image ||
-                      "",
-                  }}
-                  orbitNodes={(dbUnifiedData?.songs || [])
-                    .filter(
-                      (s: any) =>
-                        s.artist_name === selectedTopArtist.name ||
-                        s.artist === selectedTopArtist.name,
-                    )
-                    .sort(
-                      (a: any, b: any) =>
-                        (b.plays || b.listens || 0) -
-                        (a.plays || a.listens || 0),
-                    )
-                    .slice(0, 24)
-                    .map((s: any) => ({
-                      id: s.id,
-                      name: s.track_name || s.title,
-                      image: s.cover || s.album_cover,
-                      plays: s.listens || s.plays,
-                      time: s.timeStr,
-                    }))}
-                  color={auraColor}
-                  history={safeRecent.filter(
-                    (p: any) => p.artist_name === selectedTopArtist.name,
-                  )}
-                />{" "}
-              </motion.div>{" "}
-            </div>{" "}
+                <div className="flex justify-between items-center py-5 border-b border-border px-2">
+                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Total Plays</span>
+                  <span className="text-2xl font-heading font-black text-foreground">
+                    {selectedTopArtist.totalListens || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-5 border-b border-border px-2">
+                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Time Listened</span>
+                  <span className="text-2xl font-heading font-black text-foreground">
+                    {selectedTopArtist.timeStr
+                      ? String(selectedTopArtist.timeStr).replace("m", "")
+                      : "0"}
+                    <span className="text-sm text-foreground/40 ml-1">min</span>
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-5 border-b border-border px-2">
+                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Unique Songs</span>
+                  <span className="text-2xl font-heading font-black text-foreground">
+                    {selectedArtistStats?.varietyCount || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-5 px-2">
+                  <span className="font-semibold uppercase tracking-widest text-xs text-foreground/40">Share of Plays</span>
+                  <span className="text-2xl font-heading font-black text-foreground">
+                    {selectedArtistStats?.popularityScore || 0}%
+                  </span>
+                </div>
+              </motion.div>
+            </div>
           </div>
         )}
-      </FullScreenModal>{" "}
+      </FullScreenModal>
       {/*
 // ALBUM DETAIL MODAL */}
       <FullScreenModal

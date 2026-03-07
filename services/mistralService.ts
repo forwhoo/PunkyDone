@@ -760,14 +760,33 @@ export const TOOL_DEFINITIONS = [
     },
   },
 ];
-const AGENT_TOOLS = TOOL_DEFINITIONS.map((tool) => ({
-  type: "function",
-  function: {
-    name: tool.name,
-    description: tool.description,
-    parameters: tool.parameters,
-  },
-}));
+// All names in DISABLED_TOOLS must match entries in TOOL_DEFINITIONS above.
+// Tools are kept in TOOL_DEFINITIONS so their case handlers remain available
+// but they are excluded from the active AGENT_TOOLS list exposed to the AI.
+const DISABLED_TOOLS = new Set([
+  "generate_visual_moodboard", // broken: uses deprecated Unsplash random URL
+  "get_obsession_orbit",        // deprecated: was used by removed ArtistOrbit component
+  "get_album_covers",           // redundant with get_top_albums
+  "get_work_vs_play_stats",     // niche: requires work-hours inference
+  "get_seasonal_vibe",          // niche: insufficient per-season data for most users
+  "get_anniversary_flashback",  // niche: rarely useful
+  "get_commute_soundtrack",     // niche: requires commute hour detection
+  "get_sleep_pattern",          // niche: requires late-night listening data
+  "get_skip_rate_by_artist",    // niche: requires skip tracking not always available
+  "get_gateway_tracks",         // niche: rarely requested
+  "get_album_completionist",    // niche: requires album track catalogue
+]);
+
+const AGENT_TOOLS = TOOL_DEFINITIONS
+  .filter((tool) => !DISABLED_TOOLS.has(tool.name))
+  .map((tool) => ({
+    type: "function",
+    function: {
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.parameters,
+    },
+  }));
 
 // ─── TOOL ICON MAP ──────────────────────────────────────────────
 export const TOOL_ICON_MAP: Record<string, { icon: string; label: string }> = {
