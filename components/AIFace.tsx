@@ -42,38 +42,37 @@ export const AIFace: React.FC<AIFaceProps> = ({
         alignItems: "center",
       }}
       aria-label={`AI is ${expression}`}
-    >
-      <svg
-        viewBox="0 0 120 120"
-        width="100%"
-        height="100%"
-        className={currentClass}
-        style={{ overflow: "visible", filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.15))" }}
       >
-        <defs>
-          {/* Smooth, rich skin gradients */}
-          <radialGradient id="skinGrad" cx="45%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#fff1e6" />
-            <stop offset="70%" stopColor="#ffe4c4" />
-            <stop offset="100%" stopColor="#eebd9f" />
-          </radialGradient>
+        <svg
+          viewBox="0 0 120 120"
+          width="100%"
+          height="100%"
+          className={currentClass}
+          style={{ overflow: "visible", filter: "drop-shadow(0 10px 22px rgba(0,0,0,0.22))" }}
+        >
+          <defs>
+            <linearGradient id="shellGrad" x1="22" y1="14" x2="98" y2="106" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#F5F5F5" />
+              <stop offset="52%" stopColor="#CFCFCF" />
+              <stop offset="100%" stopColor="#8D8D8D" />
+            </linearGradient>
+            <linearGradient id="shellSadGrad" x1="18" y1="18" x2="102" y2="102" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#E6E6E6" />
+              <stop offset="100%" stopColor="#999999" />
+            </linearGradient>
+            <linearGradient id="visorGrad" x1="30" y1="34" x2="90" y2="70" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#343434" />
+              <stop offset="100%" stopColor="#111111" />
+            </linearGradient>
+            <radialGradient id="glowGrad" cx="50%" cy="15%" r="85%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.7)" />
+              <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+            </radialGradient>
+          </defs>
 
-          <radialGradient id="sadGrad" cx="45%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#f0f4f8" />
-            <stop offset="100%" stopColor="#cbd5e1" />
-          </radialGradient>
-
-          <clipPath id="eyeClipL">
-            <ellipse cx="44" cy="52" rx="5" ry="5.5" />
-          </clipPath>
-          <clipPath id="eyeClipR">
-            <ellipse cx="76" cy="52" rx="5" ry="5.5" />
-          </clipPath>
-        </defs>
-
-        <style>
-          {`
-            /* Base Transitions */
+          <style>
+            {`
+              /* Base Transitions */
             .face-group { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform-origin: center; }
             .feature { transition: all 0.3s ease; }
             
@@ -189,140 +188,117 @@ export const AIFace: React.FC<AIFaceProps> = ({
         </style>
 
         <g className="face-group">
-          {/* Base Head */}
-          <circle
-            cx="60"
-            cy="60"
-            r="54"
-            fill={expression === "upset" ? "url(#sadGrad)" : "url(#skinGrad)"}
-            stroke={expression === "upset" ? "#94a3b8" : "#dca07a"}
-            strokeWidth="2"
+          <rect
+            x="14"
+            y="12"
+            width="92"
+            height="96"
+            rx="30"
+            fill={expression === "upset" ? "url(#shellSadGrad)" : "url(#shellGrad)"}
+            stroke={expression === "upset" ? "#8A8A8A" : "#B4B4B4"}
+            strokeWidth="2.5"
             className="feature"
           />
+          <path
+            d="M 32 23 C 46 13, 75 13, 92 24"
+            stroke="rgba(255,255,255,0.55)"
+            strokeWidth="6"
+            strokeLinecap="round"
+            fill="none"
+            className="feature"
+          />
+          <rect
+            x="28"
+            y="34"
+            width="64"
+            height="34"
+            rx="17"
+            fill="url(#visorGrad)"
+            stroke="rgba(255,255,255,0.08)"
+            strokeWidth="1.5"
+          />
+          <ellipse cx="60" cy="29" rx="28" ry="11" fill="url(#glowGrad)" opacity="0.55" />
 
-          {/* Cheeks (Visible on happy/excited) */}
-          <g style={{ opacity: ["happy", "excited"].includes(expression) ? 1 : 0, transition: 'opacity 0.3s' }}>
-            <ellipse className="cheek" cx="34" cy="65" rx="10" ry="7" fill="#ff7675" />
-            <ellipse className="cheek" cx="86" cy="65" rx="10" ry="7" fill="#ff7675" />
+          <g style={{ opacity: ["happy", "excited"].includes(expression) ? 1 : 0, transition: "opacity 0.3s" }}>
+            <ellipse className="cheek" cx="32" cy="77" rx="8" ry="5.5" fill="rgba(255,255,255,0.2)" />
+            <ellipse className="cheek" cx="88" cy="77" rx="8" ry="5.5" fill="rgba(255,255,255,0.2)" />
           </g>
 
-          {/* Eyebrows */}
           <path
             className="feature eyebrow eyebrow-left"
             d={
-              expression === "happy" || expression === "excited" ? "M 36 38 Q 44 34 50 37" :
-              expression === "upset" ? "M 36 44 Q 43 40 50 43" :
-              "M 36 42 Q 44 38 50 41"
+              expression === "happy" || expression === "excited" ? "M 36 45 Q 44 39 50 44" :
+              expression === "upset" ? "M 36 50 Q 43 43 50 47" :
+              "M 36 47 Q 43 43 50 46"
             }
-            stroke="#4a3018"
-            strokeWidth="3.2"
+            stroke="#6C6C6C"
+            strokeWidth="3"
             strokeLinecap="round"
             fill="none"
           />
           <path
             className="feature eyebrow eyebrow-right"
             d={
-              expression === "happy" || expression === "excited" ? "M 70 37 Q 76 34 84 38" :
-              expression === "upset" ? "M 70 43 Q 77 40 84 44" :
-              "M 70 41 Q 76 38 84 42"
+              expression === "happy" || expression === "excited" ? "M 70 44 Q 77 39 84 45" :
+              expression === "upset" ? "M 70 47 Q 77 43 84 50" :
+              "M 70 46 Q 77 43 84 47"
             }
-            stroke="#4a3018"
-            strokeWidth="3.2"
+            stroke="#6C6C6C"
+            strokeWidth="3"
             strokeLinecap="round"
             fill="none"
           />
 
-          {/* Eyes */}
           <g className="eye-group">
-            {/* Eye Backgrounds */}
-            {expression === "neutral" && (
-              <>
-                <ellipse cx="44" cy="52" rx="5" ry="5.5" fill="#fff" />
-                <ellipse cx="76" cy="52" rx="5" ry="5.5" fill="#fff" />
-              </>
-            )}
-
-            {/* Main Eyes / Pupils */}
-            {expression === "neutral" ? (
-              <>
-                <g clipPath="url(#eyeClipL)">
-                  <ellipse className="eye-pupil" cx="44" cy="52" rx="3.5" ry="4" fill="#2d1b0e" />
-                  <circle className="eye-pupil" cx="45" cy="50" r="1.2" fill="white" />
-                </g>
-                <g clipPath="url(#eyeClipR)">
-                  <ellipse className="eye-pupil" cx="76" cy="52" rx="3.5" ry="4" fill="#2d1b0e" />
-                  <circle className="eye-pupil" cx="77" cy="50" r="1.2" fill="white" />
-                </g>
-              </>
-            ) : (
-              <>
-                <g className="eye" style={{ transformOrigin: "44px 52px" }}>
-                  <ellipse cx="44" cy={expression === "upset" ? 53 : 51} rx="5" ry={expression === "upset" ? 4.5 : 5.5} fill="#2d1b0e" />
-                  <circle cx="46" cy={expression === "upset" ? 51 : 49} r="1.8" fill="white" />
-                </g>
-                <g className="eye" style={{ transformOrigin: "76px 52px" }}>
-                  <ellipse cx="76" cy={expression === "upset" ? 53 : 51} rx="5" ry={expression === "upset" ? 4.5 : 5.5} fill="#2d1b0e" />
-                  <circle cx="78" cy={expression === "upset" ? 51 : 49} r="1.8" fill="white" />
-                </g>
-              </>
-            )}
-            
-            {/* Sad Eyelids */}
+            <g className="eye" style={{ transformOrigin: "45px 51px" }}>
+              <rect x="37" y={expression === "upset" ? 49 : 46} width="16" height={expression === "upset" ? 7 : 11} rx="5.5" fill="#F2F2F2" opacity={expression === "thinking" ? 0.92 : 1} />
+              <rect className="eye-pupil" x="42" y={expression === "upset" ? 49.5 : 46.5} width="7" height={expression === "upset" ? 6 : 10} rx="3.5" fill="#8A8A8A" />
+            </g>
+            <g className="eye" style={{ transformOrigin: "75px 51px" }}>
+              <rect x="67" y={expression === "upset" ? 49 : 46} width="16" height={expression === "upset" ? 7 : 11} rx="5.5" fill="#F2F2F2" opacity={expression === "thinking" ? 0.92 : 1} />
+              <rect className="eye-pupil" x="72" y={expression === "upset" ? 49.5 : 46.5} width="7" height={expression === "upset" ? 6 : 10} rx="3.5" fill="#8A8A8A" />
+            </g>
             {expression === "upset" && (
               <>
-                <path d="M 39 51 Q 44 48 49 51" stroke="#a1b0c0" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                <path d="M 71 51 Q 76 48 81 51" stroke="#a1b0c0" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <path d="M 37 48 Q 45 44 53 48" stroke="#747474" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <path d="M 67 48 Q 75 44 83 48" stroke="#747474" strokeWidth="2.5" fill="none" strokeLinecap="round" />
               </>
             )}
           </g>
 
-          {/* Smooth Mustache */}
-          <path
-            className="feature"
-            d="M 36 67 C 36 61, 46 59, 54 64 C 57 66, 63 66, 66 64 C 74 59, 84 61, 84 67 C 84 70, 79 72, 74 70 C 68 67, 64 69, 60 69 C 56 69, 52 67, 46 70 C 41 72, 36 70, 36 67 Z"
-            fill="#8b5a2b"
-            stroke="#5c3a21"
-            strokeWidth="1.2"
-          />
-
-          {/* Mouth */}
+          <rect x="32" y="72" width="56" height="18" rx="9" fill="rgba(17,17,17,0.72)" stroke="rgba(255,255,255,0.08)" strokeWidth="1.2" />
           <path
             className="feature mouth-path"
             d={
-              expression === "happy" || expression === "excited" ? "M 44 78 Q 60 92 76 78" :
-              expression === "upset" ? "M 46 80 Q 60 72 74 80" :
-              expression === "surprised" ? "M 46 78 Q 52 74 58 78 Q 64 82 70 78" :
-              "M 50 78 Q 60 81 70 78"
+              expression === "happy" || expression === "excited" ? "M 45 81 Q 60 92 75 81" :
+              expression === "upset" ? "M 46 84 Q 60 76 74 84" :
+              expression === "surprised" ? "M 50 82 Q 60 73 70 82 Q 60 88 50 82" :
+              "M 48 82 Q 60 86 72 82"
             }
-            stroke="#5c3a21"
-            strokeWidth="2.5"
+            stroke="#F5F5F5"
+            strokeWidth="3"
             strokeLinecap="round"
             fill="none"
           />
+          <path d="M 42 96 H 78" stroke="rgba(17,17,17,0.55)" strokeWidth="3" strokeLinecap="round" />
 
-          {/* Smile Teeth Hint */}
-          {(expression === "happy" || expression === "excited") && (
-            <path d="M 47 79 Q 60 88 73 79 Q 60 86 47 79 Z" fill="white" opacity="0.7" />
-          )}
-
-          {/* Tear Drop */}
           {expression === "upset" && (
-            <path className="tear" d="M 44 60 C 44 60, 41 65, 44 68 C 47 65, 44 60, 44 60 Z" fill="#60a5fa" />
+            <path className="tear" d="M 43 60 C 43 60, 40 65, 43 68 C 46 65, 43 60, 43 60 Z" fill="#B4B4B4" />
           )}
 
           {/* Thinking Bubbles */}
           {expression === "thinking" && (
             <g>
-              <circle className="thought-dot" cx="88" cy="38" r="3" fill="#a3a3a3" />
-              <circle className="thought-dot" cx="95" cy="28" r="4.5" fill="#a3a3a3" />
-              <circle className="thought-dot" cx="104" cy="18" r="6" fill="#a3a3a3" />
-              <text className="thought-dot" x="104" y="21" textAnchor="middle" fontSize="9" fill="#fff" fontWeight="bold">?</text>
+              <circle className="thought-dot" cx="88" cy="37" r="3" fill="#8E8E8E" />
+              <circle className="thought-dot" cx="96" cy="27" r="4.5" fill="#A4A4A4" />
+              <circle className="thought-dot" cx="105" cy="17" r="6" fill="#C8C8C8" />
+              <text className="thought-dot" x="105" y="20" textAnchor="middle" fontSize="9" fill="#303030" fontWeight="bold">?</text>
             </g>
           )}
 
           {/* Confused Question Mark */}
           {expression === "surprised" && (
-            <text className="question-mark" x="90" y="32" fontSize="22" fontWeight="900" fill="#64748b" fontFamily="Georgia, serif">?</text>
+            <text className="question-mark" x="90" y="32" fontSize="22" fontWeight="900" fill="#9A9A9A" fontFamily="Inter, system-ui, sans-serif">?</text>
           )}
         </g>
       </svg>

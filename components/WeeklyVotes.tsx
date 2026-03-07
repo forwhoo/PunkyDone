@@ -14,24 +14,77 @@ interface VoteState {
   submittedNote: string;
 }
 
+const WEEKLY_VOTES_STORAGE_PREFIX = "weekly_votes_v3";
+const LEGACY_WEEKLY_VOTES_KEY = "weekly_votes_v2";
+
 /** Bayesian average: avoids ties by weighting toward global mean when few votes */
-function bayesianScore(rating: number, totalRated: number, globalMean: number, priorWeight = 3): number {
+function bayesianScore(rating: number, globalMean: number, priorWeight = 3): number {
   if (rating === 0) return -1;
-  return (priorWeight * globalMean + rating) / (priorWeight + 1) + totalRated * 0.001;
+  return (priorWeight * globalMean + rating) / (priorWeight + 1);
 }
 
 const STAR_LABELS = ["", "Skip", "Meh", "Okay", "Good", "Banger!"];
 const STAR_COLORS = ["", "#6B6B6B", "#A0A0A0", "#d97757", "#F5A623", "#3BBFBF"];
 
-export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
-  const [votes, setVotes] = useState<Record<string, VoteState>>(() => {
-    try {
-      const saved = localStorage.getItem("weekly_votes_v2");
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
+const getWeekStartKey = (date = new Date()) => {
+  const start = new Date(date);
+  const dayOfWeek = start.getDay();
+  const daysToMonday = (dayOfWeek + 6) % 7;
+  start.setDate(start.getDate() - daysToMonday);
+  start.setHours(0, 0, 0, 0);
+  return start.toISOString().split("T")[0];
+};
+
+const getWeeklyVotesStorageKey = (weekKey: string) =>
+  `${WEEKLY_VOTES_STORAGE_PREFIX}_${weekKey}`;
+
+const isVoteState = (value: unknown): value is VoteState => {
+  if (!value || typeof value !== "object") return false;
+  const vote = value as VoteState;
+  return (
+    typeof vote.rating === "number" &&
+    vote.rating >= 0 &&
+    vote.rating <= 5 &&
+    typeof vote.submittedNote === "string"
+  );
+};
+
+const readStoredVotes = (weekKey: string) => {
+  if (typeof window === "undefined") return {};
+
+  const currentKey = getWeeklyVotesStorageKey(weekKey);
+
+  try {
+    const saved = localStorage.getItem(currentKey);
+    if (saved) {
+      const parsed = JSON.parse(saved) as Record<string, VoteState>;
+      return Object.fromEntries(
+        Object.entries(parsed).filter(([, value]) => isVoteState(value))
+      );
     }
-  });
+
+    const legacy = localStorage.getItem(LEGACY_WEEKLY_VOTES_KEY);
+    if (!legacy) return {};
+
+    const parsed = JSON.parse(legacy) as Record<string, VoteState>;
+    const sanitized = Object.fromEntries(
+      Object.entries(parsed).filter(([, value]) => isVoteState(value))
+    );
+
+    localStorage.setItem(currentKey, JSON.stringify(sanitized));
+    localStorage.removeItem(LEGACY_WEEKLY_VOTES_KEY);
+
+    return sanitized;
+  } catch {
+    return {};
+  }
+};
+
+export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
+  const [weekKey] = useState(() => getWeekStartKey());
+  const [votes, setVotes] = useState<Record<string, VoteState>>(() =>
+    readStoredVotes(weekKey)
+  );
 
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [draftNote, setDraftNote] = useState("");
@@ -39,12 +92,21 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    localStorage.setItem("weekly_votes_v2", JSON.stringify(votes));
-  }, [votes]);
+    localStorage.setItem(getWeeklyVotesStorageKey(weekKey), JSON.stringify(votes));
+
+    Object.keys(localStorage)
+      .filter(
+        (key) =>
+          key.startsWith(`${WEEKLY_VOTES_STORAGE_PREFIX}_`) &&
+          key !== getWeeklyVotesStorageKey(weekKey)
+      )
+      .forEach((key) => localStorage.removeItem(key));
+  }, [votes, weekKey]);
 
   if (!songs || songs.length === 0) return null;
 
   const pool = songs.slice(0, 10);
+  const originalOrder = new Map(pool.map((song, index) => [song.id, index]));
 
   const rated = pool.filter((s) => votes[s.id]?.rating > 0);
   const totalRated = rated.length;
@@ -53,9 +115,10 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
     : 3;
 
   const sortedSongs = [...pool].sort((a, b) => {
-    const sa = bayesianScore(votes[a.id]?.rating || 0, totalRated, globalMean);
-    const sb = bayesianScore(votes[b.id]?.rating || 0, totalRated, globalMean);
-    return sb - sa;
+    const sa = bayesianScore(votes[a.id]?.rating || 0, globalMean);
+    const sb = bayesianScore(votes[b.id]?.rating || 0, globalMean);
+    if (sb !== sa) return sb - sa;
+    return (originalOrder.get(a.id) || 0) - (originalOrder.get(b.id) || 0);
   });
 
   const handleRate = (id: string, star: number) => {
@@ -177,14 +240,14 @@ export const WeeklyVotes = ({ songs }: { songs: VotableSong[] }) => {
 
                   {/* Cover */}
                   <div
-                    className="relative w-9 h-9 rounded-lg overflow-hidden shrink-0 cursor-pointer"
+                    className="relative w-10 h-10 rounded-xl overflow-hidden shrink-0 cursor-pointer"
                     onClick={() => handleOpenNote(song.id)}
                   >
                     <img src={song.cover} alt={song.title} className="w-full h-full object-cover" />
                     {hasNote && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MessageSquare size={10} className="text-white" />
-                      </div>
+                      <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#121212]/90 border border-[#2A2A2A] flex items-center justify-center shadow-sm">
+                        <MessageSquare size={9} className="text-[#F5F5F5]" />
+                      </span>
                     )}
                   </div>
 
